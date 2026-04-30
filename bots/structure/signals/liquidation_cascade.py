@@ -98,9 +98,11 @@ class LiquidationCascadeDetector:
             if total_liqs < LIQ_NOTIONAL_THRESHOLD_USD:
                 continue
 
-            # 5-min price move
-            p_start = w.prices[0][1]
-            p_end = w.prices[-1][1]
+            # 5-min price move (sort by timestamp — observe_liquidation may
+            # interleave price entries out of order)
+            sorted_prices = sorted(w.prices, key=lambda p: p[0])
+            p_start = sorted_prices[0][1]
+            p_end = sorted_prices[-1][1]
             move_pct = abs(p_end - p_start) / p_start * 100.0 if p_start else 0.0
             if move_pct < LIQ_PRICE_MOVE_THRESHOLD_PCT:
                 continue

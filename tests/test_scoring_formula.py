@@ -9,15 +9,21 @@ from framework.scoring.formula import (
 
 
 def _strong_inputs(**overrides) -> ScoreInputs:
+    """Inputs sized so all 5 components reach ~1.0 → product >= 1.0.
+
+    return >= 30% (full ReturnScore), DD <= ~5% (RiskScore ~0.92), effective
+    trades >= 50 (ConfidenceScore = 1.0), all regimes profitable, calibration
+    matched. Crank conviction high enough to clear strong-promote.
+    """
     base = dict(
-        net_return_pct=30.0,
-        max_dd_pct=20.0,
-        num_trades=80,
-        win_rate=0.60,
-        win_rate_confidence=0.55,
+        net_return_pct=45.0,             # ReturnScore = min(1.5, 45/30) = 1.5
+        max_dd_pct=5.0,                  # RiskScore = 1 - 5/60 = 0.917
+        num_trades=120,
+        win_rate=0.62,
+        win_rate_confidence=0.70,        # effective = 84 → ConfidenceScore = 1.0
         regimes_occurred=3,
-        regimes_profitable=3,
-        calibration_ratio=1.0,
+        regimes_profitable=3,            # RegimeScore = 1.0
+        calibration_ratio=1.0,           # CalibrationScore = 1.0
     )
     base.update(overrides)
     return ScoreInputs(**base)
