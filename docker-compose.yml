@@ -66,6 +66,7 @@ services:
     volumes:
       - ./framework:/app/framework
       - ./bots:/app/bots
+      - ./scripts:/app/scripts
       - ./data/duckdb:/app/data/duckdb
     depends_on:
       postgres:
