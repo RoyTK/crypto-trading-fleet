@@ -15,6 +15,8 @@ COPY framework /app/framework
 COPY monitoring /app/monitoring
 COPY bots /app/bots
 COPY scripts /app/scripts
+COPY tests /app/tests
+COPY pytest.ini /app/pytest.ini
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app

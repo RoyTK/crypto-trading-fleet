@@ -68,6 +68,8 @@ services:
       - ./framework:/app/framework
       - ./bots:/app/bots
       - ./scripts:/app/scripts
+      - ./tests:/app/tests
+      - ./pytest.ini:/app/pytest.ini:ro
       - ./data/duckdb:/app/data/duckdb
     depends_on:
       postgres:
