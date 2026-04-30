@@ -1,0 +1,119 @@
+{
+  "uid": "per-bot-detail",
+  "title": "Per-Bot Detail",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "tags": ["bot"],
+  "templating": {
+    "list": [
+      {
+        "name": "bot",
+        "type": "query",
+        "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+        "query": "SELECT bot_id FROM bot_state ORDER BY bot_id",
+        "refresh": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "PromotionScore",
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT promotion_score FROM bot_state WHERE bot_id = '$bot'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Paper clock day",
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT paper_clock_day FROM bot_state WHERE bot_id = '$bot'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "State",
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT state FROM bot_state WHERE bot_id = '$bot'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Allocation %",
+      "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT allocation_pct FROM bot_state WHERE bot_id = '$bot'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "PnL by trade (paper)",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 9},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT exit_at AS time, pnl_pct AS value FROM trades WHERE bot_id = '$bot' AND mode = 'paper' AND fill_status = 'closed' ORDER BY exit_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Score components",
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 9},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT computed_at AS time, return_score AS \"return\", risk_score AS risk, confidence_score AS confidence, regime_score AS regime, calibration_score AS calibration FROM scores WHERE bot_id = '$bot' ORDER BY computed_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Halts (last 14d)",
+      "gridPos": {"x": 0, "y": 13, "w": 24, "h": 9},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT halted_at, halt_type, severity, reason, resumed_at FROM halts WHERE bot_id = '$bot' AND halted_at >= NOW() - INTERVAL '14 days' ORDER BY halted_at DESC",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    }
+  ]
+}

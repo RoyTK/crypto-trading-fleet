@@ -1,0 +1,88 @@
+{
+  "uid": "fleet-overview",
+  "title": "Fleet Overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "tags": ["fleet"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Bots tracked",
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "targets": [{"refId": "A", "rawSql": "SELECT COUNT(*) FROM bot_state", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Halts (24h)",
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT COUNT(*) FROM halts WHERE halted_at >= NOW() - INTERVAL '24 hours'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Trades (24h)",
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT COUNT(*) FROM trades WHERE created_at >= NOW() - INTERVAL '24 hours'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Signals (24h)",
+      "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT COUNT(*) FROM signals WHERE created_at >= NOW() - INTERVAL '24 hours'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Per-bot state",
+      "gridPos": {"x": 0, "y": 4, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT bot_id, state, paper_clock_day, ROUND(promotion_score::numeric, 3) AS score, allocation_pct, halt_reason, updated_at FROM bot_state ORDER BY bot_id",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "PromotionScore over time",
+      "gridPos": {"x": 0, "y": 12, "w": 24, "h": 9},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT computed_at AS time, bot_id AS metric, promotion_score AS value FROM scores WHERE computed_at >= NOW() - INTERVAL '14 days' ORDER BY computed_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./data/prometheus:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - postgres
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./monitoring/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/dashboards/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+
+  framework:
+    build:
+      context: .
+      dockerfile: framework/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./framework:/app/framework
+      - ./bots:/app/bots
+      - ./data/duckdb:/app/data/duckdb
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "framework.main"]
+
+  scoring:
+    build:
+      context: .
+      dockerfile: framework/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./framework:/app/framework
+      - ./data/duckdb:/app/data/duckdb
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["python", "-m", "framework.scoring.main"]
+
+  alerting:
+    build:
+      context: .
+      dockerfile: framework/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./framework:/app/framework
+      - ./monitoring:/app/monitoring
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "monitoring.alerting.main"]
+
+  report_cron:
+    build:
+      context: .
+      dockerfile: framework/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./framework:/app/framework
+      - ./monitoring:/app/monitoring
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "framework.reporting.cron"]
+
+  migrate:
+    build:
+      context: .
+      dockerfile: framework/Dockerfile
+    profiles: ["tools"]
+    env_file: .env
+    volumes:
+      - ./framework:/app/framework
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["alembic", "-c", "framework/alembic.ini", "upgrade", "head"]

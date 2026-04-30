@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - "localhost:9090"
+
+  - job_name: framework
+    static_configs:
+      - targets:
+          - "framework:9100"
+    scrape_interval: 30s
+
+  - job_name: scoring
+    static_configs:
+      - targets:
+          - "scoring:9101"
+    scrape_interval: 60s
+
+  - job_name: alerting
+    static_configs:
+      - targets:
+          - "alerting:9102"
+    scrape_interval: 30s

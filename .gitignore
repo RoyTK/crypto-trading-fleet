@@ -1,0 +1,34 @@
+.env
+.env.local
+*.pyc
+__pycache__/
+.venv/
+venv/
+.duckdb
+*.duckdb
+*.duckdb.wal
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+*.log
+logs/
+secrets/
+*.key
+*.pem
+data/postgres/
+data/redis/
+data/grafana/
+data/prometheus/
+data/duckdb/
+.idea/
+.vscode/
+node_modules/
+
+# Unrelated tooling that happens to live in this directory
+Skills/
+
+# Binary reference docs (keep separately; not source code)
+*.pdf
