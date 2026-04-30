@@ -16,3 +16,4 @@ structlog==24.4.0
 python-dotenv==1.0.1
 hyperliquid-python-sdk==0.20.1
 eth-account==0.13.7
+pytest==8.3.4
