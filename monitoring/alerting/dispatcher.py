@@ -48,6 +48,10 @@ class Dispatcher:
         ping(PROCESS_NAME, {"role": "alerting"})
         write_audit("alerting_started")
 
+        # Periodic heartbeat — alerting is async-only so it can't ride APScheduler
+        # like the other framework processes. Ping every 30s to match config.
+        self._hb_task = asyncio.create_task(self._heartbeat_loop())
+
         log.info("dispatcher_listening")
         async for msg in pubsub.listen():
             if msg["type"] != "message":
@@ -70,8 +74,20 @@ class Dispatcher:
                 log.exception("alert_handling_failed", channel=channel)
 
     async def stop(self) -> None:
+        if hasattr(self, "_hb_task"):
+            self._hb_task.cancel()
         await self.discord.stop()
         await self.telegram.stop()
+
+    async def _heartbeat_loop(self) -> None:
+        from framework.config import get_settings
+        interval = get_settings().heartbeat_interval_seconds
+        while True:
+            try:
+                ping(PROCESS_NAME, {"role": "alerting"})
+            except Exception:
+                log.warning("alerting_heartbeat_ping_failed")
+            await asyncio.sleep(interval)
         await self.redis.aclose()
 
     # -- Handlers ----------------------------------------------------------
