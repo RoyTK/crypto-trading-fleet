@@ -14,3 +14,5 @@ httpx==0.28.1
 tenacity==9.0.0
 structlog==24.4.0
 python-dotenv==1.0.1
+hyperliquid-python-sdk==0.20.1
+eth-account==0.13.7

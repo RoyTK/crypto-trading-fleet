@@ -13,6 +13,8 @@ RUN pip install --no-cache-dir -r /app/framework/requirements.txt
 
 COPY framework /app/framework
 COPY monitoring /app/monitoring
+COPY bots /app/bots
+COPY scripts /app/scripts
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app

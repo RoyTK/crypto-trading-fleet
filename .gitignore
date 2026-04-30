@@ -25,6 +25,7 @@ data/prometheus/
 data/duckdb/
 .idea/
 .vscode/
+.claude/
 node_modules/
 
 # Unrelated tooling that happens to live in this directory

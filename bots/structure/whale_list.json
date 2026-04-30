@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "generated_at": null,
+  "source": "manual_seed_2026-04-30",
+  "notes": "Seed file. Empty list ships with the build; populate via scripts/curate_whale_list.py before shakedown. Detector handles empty list gracefully.",
+  "whales": []
+}

@@ -122,6 +122,24 @@ services:
         condition: service_healthy
     command: ["python", "-m", "framework.reporting.cron"]
 
+  bot_structure:
+    build:
+      context: .
+      dockerfile: framework/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./framework:/app/framework
+      - ./bots:/app/bots
+      - ./monitoring:/app/monitoring
+      - ./scripts:/app/scripts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "bots.structure.main"]
+
   migrate:
     build:
       context: .

@@ -1,0 +1,157 @@
+{
+  "uid": "structure-detail",
+  "title": "STRUCTURE Bot Detail",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "tags": ["bot", "structure"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "State",
+      "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT state FROM bot_state WHERE bot_id='structure'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Paper clock day",
+      "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT paper_clock_day FROM bot_state WHERE bot_id='structure'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "PromotionScore",
+      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT ROUND(promotion_score::numeric, 3) FROM bot_state WHERE bot_id='structure'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Open positions",
+      "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='structure' AND mode='paper' AND fill_status='open'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Trades 24h",
+      "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='structure' AND created_at >= NOW() - INTERVAL '24 hours'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Halts 24h",
+      "gridPos": {"x": 20, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM halts WHERE bot_id='structure' AND halted_at >= NOW() - INTERVAL '24 hours'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 10,
+      "type": "barchart",
+      "title": "Signals by type (last 7d)",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, signal_type, COUNT(*) AS count FROM signals WHERE bot_id='structure' AND created_at >= NOW() - INTERVAL '7 days' GROUP BY 1, 2 ORDER BY 1",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Cumulative paper PnL (USD)",
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='structure' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL ORDER BY exit_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Calibration ratio (Build B)",
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT created_at AS time, calibration_ratio AS value FROM calibration_records WHERE bot_id='structure' ORDER BY created_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 13,
+      "type": "histogram",
+      "title": "Slippage distribution (bps)",
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT (sim_metadata->>'slippage_bps')::float AS slippage_bps FROM trades WHERE bot_id='structure' AND mode IN ('paper','shadow') AND sim_metadata ? 'slippage_bps' AND created_at >= NOW() - INTERVAL '7 days'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 20,
+      "type": "table",
+      "title": "Open paper trades",
+      "gridPos": {"x": 0, "y": 20, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT id, asset, direction, entry_price, size_usd, leverage, entry_at FROM trades WHERE bot_id='structure' AND mode='paper' AND fill_status='open' ORDER BY entry_at DESC",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 21,
+      "type": "table",
+      "title": "Recent halts (14d)",
+      "gridPos": {"x": 0, "y": 28, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT halted_at, halt_type, severity, reason, resumed_at FROM halts WHERE bot_id='structure' AND halted_at >= NOW() - INTERVAL '14 days' ORDER BY halted_at DESC",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    }
+  ]
+}
