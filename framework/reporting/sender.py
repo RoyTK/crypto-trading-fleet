@@ -62,11 +62,13 @@ def send_daily_report() -> None:
 
     try:
         send_discord(text_body=text_body, embed=embed)
+        log.info("daily_discord_dispatched")
     except Exception:
         log.exception("daily_discord_failed")
 
     try:
         send_email(text_body=text_body)
+        log.info("daily_email_sent", to=settings.smtp_to)
     except Exception:
         log.exception("daily_email_failed")
 

@@ -97,5 +97,6 @@ class TelegramConnector:
         msg = f"[{event.severity.upper()}] {bot_tag}{event.title}\n{event.body}"
         try:
             await self.app.bot.send_message(chat_id=int(owner_id), text=msg[:3500])
+            log.info("telegram_alert_sent", severity=event.severity.value, title=event.title)
         except Exception:
             log.exception("telegram_send_failed")

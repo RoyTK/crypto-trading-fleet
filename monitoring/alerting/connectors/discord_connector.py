@@ -126,6 +126,7 @@ class DiscordConnector:
         msg = f"{prefix}**[{event.severity.upper()}]** {bot_tag}{event.title}\n{event.body}"
         try:
             await channel.send(msg[:1900])
+            log.info("discord_alert_sent", severity=event.severity.value, title=event.title)
         except Exception:
             log.exception("discord_send_failed")
 
@@ -143,5 +144,6 @@ class DiscordConnector:
                 content=content[:1900] if content else None,
                 embed=discord.Embed.from_dict(embed) if embed else None,
             )
+            log.info("discord_embed_sent", channel_id=channel_id)
         except Exception:
             log.exception("discord_embed_send_failed")
