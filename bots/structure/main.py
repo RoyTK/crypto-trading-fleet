@@ -43,7 +43,8 @@ from bots.structure.signals.base import SignalCandidate
 from bots.structure.sizing import size_position
 from bots.structure.venue import HyperliquidVenue, L2Book, LiquidationEvent, AssetCtx
 from framework.alerts import emit_alert
-from framework.reconciliation import register_venue_fetcher
+from framework.config import get_settings as get_framework_settings
+from framework.reconciliation import reconcile_once, register_venue_fetcher
 from monitoring.alerting.taxonomy import Severity
 
 
@@ -66,6 +67,7 @@ class StructureBot(BotLifecycle):
         self._asset_ctx_cache: list[AssetCtx] = []
         self._last_funding_poll_ts: float = 0.0
         self._last_whale_poll_ts: float = 0.0
+        self._last_reconcile_ts: float = 0.0
         self._liq_ws_task: Optional[asyncio.Task] = None
 
     # ---- Lifecycle hooks ---------------------------------------------------
@@ -131,6 +133,17 @@ class StructureBot(BotLifecycle):
             await self._poll_whales()
             self._evaluate_whale_flips()
             self._last_whale_poll_ts = now
+
+        # Reconciliation cron (must run in this process — venue fetcher
+        # registry is per-process; framework supervisor's reconcile would
+        # see an empty registry).
+        recon_interval = get_framework_settings().reconciliation_interval_seconds
+        if now - self._last_reconcile_ts >= recon_interval:
+            try:
+                await asyncio.to_thread(reconcile_once)
+            except Exception:
+                self.log.exception("reconcile_once_failed")
+            self._last_reconcile_ts = now
 
         # Position management every iteration
         await self._manage_open_positions()

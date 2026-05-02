@@ -30,13 +30,17 @@ EPS = 1e-9
 def _bot_open_positions() -> dict[tuple[str, str], float]:
     """Return {(venue, asset): bot_tracked_size_usd_signed}.
 
-    Sums open Trades by (venue, asset) using signed notional (+long, -short).
+    Sums open shadow + live Trades by (venue, asset) using signed notional
+    (+long, -short). PAPER trades are excluded by design — paper trades have
+    no on-venue counterpart and would always show 100% drift, which is
+    non-actionable noise.
     """
     out: dict[tuple[str, str], float] = {}
     with session_scope() as s:
         q = select(Trade).where(
             Trade.bot_id == BOT_ID,
             Trade.fill_status == "open",
+            Trade.mode.in_(("shadow", "live")),
         )
         for trade in s.execute(q).scalars():
             if trade.size_usd is None:

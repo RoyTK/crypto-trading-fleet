@@ -13,11 +13,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from framework.logging_setup import configure_logging, get_logger
 from framework.heartbeat import ping
 from framework.scoring.engine import score_all_bots
+from framework.dd_monitor import check_all_bots_dd
 from framework.audit import write_audit
 
 
 PROCESS_NAME = "scoring"
 SCORING_INTERVAL_MINUTES = 15
+DD_CHECK_INTERVAL_MINUTES = 5  # tighter cadence than scoring; halts respond fast
 
 
 def _run() -> None:
@@ -39,8 +41,16 @@ def _run() -> None:
         id="score_all_bots",
         next_run_time=None,  # run on schedule, not at boot
     )
+    scheduler.add_job(
+        check_all_bots_dd,
+        "interval",
+        minutes=DD_CHECK_INTERVAL_MINUTES,
+        id="dd_monitor",
+        next_run_time=None,
+    )
     scheduler.start()
     score_all_bots()  # one immediate pass
+    check_all_bots_dd()  # one immediate DD check
 
     stop = False
 
