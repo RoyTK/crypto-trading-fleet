@@ -14,7 +14,28 @@
       "targets": [
         {"refId": "A", "rawSql": "SELECT state FROM bot_state WHERE bot_id='structure'", "format": "table"}
       ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"initializing": {"text": "initializing", "color": "yellow"}}},
+            {"type": "value", "options": {"shakedown": {"text": "shakedown", "color": "blue"}}},
+            {"type": "value", "options": {"paper": {"text": "paper", "color": "green"}}},
+            {"type": "value", "options": {"halted": {"text": "halted", "color": "red"}}},
+            {"type": "value", "options": {"killed": {"text": "killed", "color": "dark-red"}}}
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "/^state$/", "values": false},
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      }
     },
     {
       "id": 2,
@@ -112,17 +133,30 @@
     },
     {
       "id": 13,
-      "type": "histogram",
-      "title": "Slippage distribution (bps)",
+      "type": "barchart",
+      "title": "Slippage distribution (bps, last 7d)",
       "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT (sim_metadata->>'slippage_bps')::float AS slippage_bps FROM trades WHERE bot_id='structure' AND mode IN ('paper','shadow') AND sim_metadata ? 'slippage_bps' AND created_at >= NOW() - INTERVAL '7 days'",
+          "rawSql": "WITH slip AS (SELECT (sim_metadata->>'slippage_bps')::float AS bps FROM trades WHERE bot_id='structure' AND mode IN ('paper','shadow') AND sim_metadata ? 'slippage_bps' AND created_at >= NOW() - INTERVAL '7 days') SELECT CASE WHEN bps < 5 THEN '0-5' WHEN bps < 10 THEN '5-10' WHEN bps < 25 THEN '10-25' WHEN bps < 50 THEN '25-50' WHEN bps < 100 THEN '50-100' ELSE '100+' END AS bucket, MIN(bps) AS sort_key, COUNT(*) AS count FROM slip GROUP BY 1 ORDER BY sort_key",
           "format": "table"
         }
       ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "options": {
+        "xField": "bucket",
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "legend": {"showLegend": false}
+      },
+      "fieldConfig": {
+        "defaults": {"color": {"mode": "palette-classic"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "sort_key"}, "properties": [{"id": "custom.hideFrom", "value": {"viz": true, "legend": true, "tooltip": true}}]}
+        ]
+      }
     },
 
     {
