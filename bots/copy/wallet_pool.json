@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "version": 0,
+    "curated_at": null,
+    "source": "scripts/curate_wallet_pool.py",
+    "criteria": {
+      "min_pnl_usd_180d": 50000,
+      "min_win_rate": 0.55,
+      "hold_time_minutes": [30, 10080],
+      "min_trades_90d": 20,
+      "min_wallet_age_days": 60,
+      "target_pool_size": [200, 300]
+    },
+    "notes": "Empty seed. Populated by scripts/curate_wallet_pool.py once Helius + Cielo API keys are configured. Bot loads on startup; missing/empty file is a warning not a fatal error."
+  },
+  "wallets": []
+}

@@ -1,0 +1,234 @@
+{
+  "uid": "copy-detail",
+  "title": "COPY Bot Detail",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "tags": ["bot", "copy"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "State",
+      "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT state FROM bot_state WHERE bot_id='copy'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"initializing": {"text": "initializing", "color": "yellow"}}},
+            {"type": "value", "options": {"shakedown": {"text": "shakedown", "color": "blue"}}},
+            {"type": "value", "options": {"paper": {"text": "paper", "color": "green"}}},
+            {"type": "value", "options": {"halted": {"text": "halted", "color": "red"}}},
+            {"type": "value", "options": {"killed": {"text": "killed", "color": "dark-red"}}}
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "/^state$/", "values": false},
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Paper clock day",
+      "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT paper_clock_day FROM bot_state WHERE bot_id='copy'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "PromotionScore",
+      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT ROUND(promotion_score::numeric, 3) FROM bot_state WHERE bot_id='copy'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Open positions",
+      "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Trades 24h",
+      "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at >= NOW() - INTERVAL '24 hours'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Halts 24h",
+      "gridPos": {"x": 20, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM halts WHERE bot_id='copy' AND halted_at >= NOW() - INTERVAL '24 hours'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 10,
+      "type": "barchart",
+      "title": "Cluster signals by chain (last 7d)",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, venue AS chain, COUNT(*) AS count FROM signals WHERE bot_id='copy' AND created_at >= NOW() - INTERVAL '7 days' GROUP BY 1, 2 ORDER BY 1",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Cumulative paper PnL (USD)",
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL ORDER BY exit_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Calibration ratio (Build B)",
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT created_at AS time, calibration_ratio AS value FROM calibration_records WHERE bot_id='copy' ORDER BY created_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 13,
+      "type": "barchart",
+      "title": "Slippage distribution (bps, last 7d)",
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "WITH slip AS (SELECT (sim_metadata->>'slippage_bps')::float AS bps FROM trades WHERE bot_id='copy' AND mode IN ('paper','shadow') AND sim_metadata->>'slippage_bps' IS NOT NULL AND created_at >= NOW() - INTERVAL '7 days') SELECT CASE WHEN bps < 5 THEN '0-5' WHEN bps < 10 THEN '5-10' WHEN bps < 25 THEN '10-25' WHEN bps < 50 THEN '25-50' WHEN bps < 100 THEN '50-100' ELSE '100+' END AS bucket, MIN(bps) AS sort_key, COUNT(*) AS count FROM slip GROUP BY 1 ORDER BY sort_key",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "options": {
+        "xField": "bucket",
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "legend": {"showLegend": false}
+      },
+      "fieldConfig": {
+        "defaults": {"color": {"mode": "palette-classic"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "sort_key"}, "properties": [{"id": "custom.hideFrom", "value": {"viz": true, "legend": true, "tooltip": true}}]}
+        ]
+      }
+    },
+
+    {
+      "id": 14,
+      "type": "barchart",
+      "title": "Cluster size distribution (last 7d)",
+      "gridPos": {"x": 0, "y": 20, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT (sim_metadata->>'cluster_size')::int AS cluster_size, COUNT(*) AS count FROM trades WHERE bot_id='copy' AND sim_metadata->>'cluster_size' IS NOT NULL AND created_at >= NOW() - INTERVAL '7 days' GROUP BY 1 ORDER BY 1",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Open allocation (% of paper)",
+      "gridPos": {"x": 12, "y": 20, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT ROUND((COALESCE(SUM(size_usd), 0) / 1000.0 * 100)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Avg slippage 7d (bps)",
+      "gridPos": {"x": 18, "y": 20, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT ROUND(AVG((sim_metadata->>'slippage_bps')::float)::numeric, 1) FROM trades WHERE bot_id='copy' AND sim_metadata->>'slippage_bps' IS NOT NULL AND created_at >= NOW() - INTERVAL '7 days'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 20,
+      "type": "table",
+      "title": "Open paper trades",
+      "gridPos": {"x": 0, "y": 28, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT id, asset, venue AS chain, direction, entry_price, size_usd, entry_at, sim_metadata->>'cluster_size' AS cluster_size FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' ORDER BY entry_at DESC",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 21,
+      "type": "table",
+      "title": "Recent halts (14d)",
+      "gridPos": {"x": 0, "y": 36, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT halted_at, halt_type, severity, reason, resumed_at FROM halts WHERE bot_id='copy' AND halted_at >= NOW() - INTERVAL '14 days' ORDER BY halted_at DESC",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    }
+  ]
+}
