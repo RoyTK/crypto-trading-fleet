@@ -32,7 +32,7 @@ from framework.models import Trade
 BOT_ID = "structure"
 TEST_ASSET = "BTC"
 TEST_NOTIONAL_USD = 12.0
-SL_OFFSET_PCT = 0.5  # SL 0.5% below entry (won't actually trigger in test window)
+SL_OFFSET_PCT = 1.0  # SL 1% below entry (HL requires meaningful distance)
 
 
 def main() -> None:
@@ -104,7 +104,8 @@ def main() -> None:
     print(f"  opened: shadow_id={shadow_id} entry=${actual_entry} size_usd=${sz_usd}")
 
     sz_native = round(sz_usd / actual_entry, venue.sz_decimals(TEST_ASSET))
-    sl_trigger_px = round(actual_entry * (1.0 - SL_OFFSET_PCT / 100.0), 1)
+    # BTC price grid is $1 — round to integer to satisfy HL's tick-size validation.
+    sl_trigger_px = float(round(actual_entry * (1.0 - SL_OFFSET_PCT / 100.0)))
 
     print(f"\n[2/5] Place server-side SL trigger at ${sl_trigger_px} (entry - {SL_OFFSET_PCT}%)")
     try:
