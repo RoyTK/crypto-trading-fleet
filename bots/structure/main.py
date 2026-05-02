@@ -1,15 +1,13 @@
 """STRUCTURE bot — main entry point.
 
-Build A scope:
+Phase 1 scope (Builds A + B):
 - 3 signal generators (Funding Fade, Liquidation Cascade, Whale Flip)
 - Median-realistic fill simulator
-- Paper-mode trades only (no real orders; no shadow yet)
+- Paper trades on every signal
+- Shadow trades on STRUCTURE_SHADOW_PCT% of signals (real $5-20 orders)
 - Per-bot DD halts via framework/halt_state
-- Position management (stops, take-profits, timeouts)
+- Position management (stops, take-profits, timeouts) — also closes paired shadow
 - Reconciliation against Hyperliquid user_state for the master wallet
-
-Build B (later) adds the shadow execution layer in `executor.py` and wires
-10% sampling of paper signals into real $5-20 orders.
 """
 from __future__ import annotations
 
@@ -25,14 +23,16 @@ from bots.structure.config import (
     LIQ_TOP_VOL_RANK,
     get_structure_settings,
 )
+from bots.structure.executor import StructureExecutor
 from bots.structure.fill_simulator import StructureFillSimulator
 from bots.structure.loop_helpers import (
     OpenPaperTrade,
     close_paper_trade,
+    find_open_shadow_for_paper,
     has_open_position,
     list_open_paper_trades,
     panic_close_all_open,
-    persist_paper_trade,
+    paper_id_for_shadow as _paper_id_for_shadow,
     persist_signal,
 )
 from bots.structure.reconciliation import make_fetcher
@@ -59,6 +59,7 @@ class StructureBot(BotLifecycle):
         self.loop_interval_seconds = self.struct_settings.structure_loop_interval_seconds
         self.venue = HyperliquidVenue()
         self.simulator = StructureFillSimulator()
+        self.executor = StructureExecutor(self.venue)
         self.liq_detector = LiquidationCascadeDetector()
         self.whale_detector = WhaleFlipDetector()
         self._whale_list: list[dict[str, Any]] = []
@@ -86,8 +87,32 @@ class StructureBot(BotLifecycle):
             self._liq_ws_task.cancel()
 
     async def on_panic(self, payload: dict[str, Any]) -> None:
+        # 1. Flatten any open shadow positions on Hyperliquid FIRST — these are
+        #    real money. Synchronous so /panic doesn't return until done.
+        from sqlalchemy import select as sa_select
+        from framework.db import session_scope
+        from framework.models import Trade
+        with session_scope() as s:
+            q = sa_select(Trade).where(
+                Trade.bot_id == self.bot_id,
+                Trade.mode == "shadow",
+                Trade.fill_status == "open",
+            )
+            shadow_trades = [(t.id, _paper_id_for_shadow(t.id)) for t in s.execute(q).scalars()]
+        for shadow_id, paper_id in shadow_trades:
+            try:
+                await asyncio.to_thread(
+                    self.executor.close_shadow, shadow_id, paper_id or 0, "panic",
+                )
+            except Exception:
+                self.log.exception("panic_shadow_close_failed", shadow_trade_id=shadow_id)
+
+        # 2. Mark all open paper trades closed in DB (no venue call needed)
         n = panic_close_all_open()
-        self.log.warning("panic_closed_paper_trades", count=n, actor=payload.get("actor"))
+        self.log.warning(
+            "panic_closed", paper_count=n, shadow_count=len(shadow_trades),
+            actor=payload.get("actor"),
+        )
 
     # ---- Main iterate ------------------------------------------------------
 
@@ -196,13 +221,23 @@ class StructureBot(BotLifecycle):
         )
 
         signal_id = persist_signal(candidate)
-        persist_paper_trade(
+        paper_trade_id = self.executor.place_paper(
             signal_id=signal_id,
             candidate=candidate,
             sim_fill=sim_fill,
             notional_usd=notional_usd,
             leverage=leverage,
         )
+
+        # Shadow execution sampling — only on filled paper trades
+        if paper_trade_id is not None and sim_fill.fill_price is not None:
+            self.executor.maybe_place_shadow(
+                signal_id=signal_id,
+                paper_trade_id=paper_trade_id,
+                candidate=candidate,
+                paper_sim_fill=sim_fill,
+                paper_notional_usd=notional_usd,
+            )
 
     # ---- Position management ----------------------------------------------
 
@@ -271,6 +306,18 @@ class StructureBot(BotLifecycle):
                 exit_fill=exit_fill,
                 exit_reason=exit_reason,
             )
+
+            # Mirror the exit on any paired shadow trade
+            shadow_id = find_open_shadow_for_paper(trade.trade_id)
+            if shadow_id is not None:
+                # Off the hot path so a slow exchange call doesn't block the loop
+                asyncio.get_running_loop().run_in_executor(
+                    None,
+                    self.executor.close_shadow,
+                    shadow_id,
+                    trade.trade_id,
+                    exit_reason,
+                )
 
     # ---- Liquidation websocket --------------------------------------------
 

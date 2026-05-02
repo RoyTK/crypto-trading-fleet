@@ -198,6 +198,41 @@ def panic_close_all_open() -> int:
     return n
 
 
+def find_open_shadow_for_paper(paper_trade_id: int) -> Optional[int]:
+    """Look up the shadow Trade paired with a paper Trade via calibration_records.
+
+    Returns the shadow_trade_id if there's an open shadow trade paired with
+    this paper trade, else None.
+    """
+    from framework.models import CalibrationRecord
+    with session_scope() as s:
+        q = (
+            select(Trade)
+            .join(CalibrationRecord, CalibrationRecord.shadow_trade_id == Trade.id)
+            .where(
+                CalibrationRecord.paper_trade_id == paper_trade_id,
+                Trade.fill_status == "open",
+                Trade.mode == "shadow",
+            )
+        )
+        t = s.execute(q).scalar_one_or_none()
+        return t.id if t else None
+
+
+def paper_id_for_shadow(shadow_trade_id: int) -> Optional[int]:
+    """Inverse of find_open_shadow_for_paper — given a shadow trade id,
+    return the paired paper trade id (regardless of paper's open/closed state).
+    """
+    from framework.models import CalibrationRecord
+    with session_scope() as s:
+        c = s.execute(
+            select(CalibrationRecord).where(
+                CalibrationRecord.shadow_trade_id == shadow_trade_id,
+            )
+        ).scalar_one_or_none()
+        return c.paper_trade_id if c else None
+
+
 def has_open_position(asset: str, venue: str, signal_type: str) -> bool:
     """True if there's an open paper Trade for this (asset, venue) opened from
     a signal of `signal_type`. Used by main loop to dedupe repeat signals.
