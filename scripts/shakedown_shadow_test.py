@@ -37,7 +37,7 @@ from monitoring.alerting.taxonomy import Severity
 
 BOT_ID = "structure"
 TEST_ASSET = "BTC"           # deepest liquidity; minimal slippage risk
-TEST_NOTIONAL_USD = 5.0      # micro
+TEST_NOTIONAL_USD = 12.0     # above HL ~$10 minimum order with buffer
 N_ITERATIONS = 10
 PAUSE_BETWEEN_SECONDS = 3.0  # let exchange settle between trades
 DIRECTIONS = ["long", "short"] * (N_ITERATIONS // 2 + 1)  # alternate

@@ -73,6 +73,25 @@ class HyperliquidVenue:
         raw = self.info.all_mids()
         return {asset: float(price) for asset, price in raw.items()}
 
+    def sz_decimals(self, asset: str) -> int:
+        """Lookup the szDecimals for an asset from cached meta.
+
+        Hyperliquid rejects orders whose size doesn't round cleanly to the
+        asset's szDecimals precision. Default fallback to 4 if asset unknown.
+        """
+        if not hasattr(self, "_sz_decimals_cache") or not self._sz_decimals_cache:
+            try:
+                meta = self.info.meta()
+                self._sz_decimals_cache = {
+                    a.get("name"): int(a.get("szDecimals", 4))
+                    for a in meta.get("universe", [])
+                    if a.get("name")
+                }
+            except Exception:
+                log.exception("sz_decimals_cache_fetch_failed")
+                self._sz_decimals_cache = {}
+        return self._sz_decimals_cache.get(asset, 4)
+
     def asset_contexts(self) -> list[AssetCtx]:
         """Return per-asset metadata: mid, funding, OI, day volume.
 

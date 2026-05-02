@@ -43,8 +43,9 @@ from framework.models import CalibrationRecord, Trade
 log = get_logger(__name__)
 BOT_ID = "structure"
 
-# Per-shadow notional band (locked Item #1 design)
-SHADOW_NOTIONAL_MIN_USD = 5.0
+# Per-shadow notional band. Locked Item #1 design says $5-20, but Hyperliquid
+# enforces a minimum order notional (~$10 in practice) so the floor is bumped.
+SHADOW_NOTIONAL_MIN_USD = 11.0
 SHADOW_NOTIONAL_MAX_USD = 20.0
 
 # Total open-shadow exposure cap (out of ~$50 HL equity)
@@ -212,9 +213,17 @@ class StructureExecutor(Executor):
             log.warning("shadow_skipped_no_ref_price", asset=candidate.asset)
             return None
 
-        # Size in native units (asset-specific lot rounding handled by SDK)
-        sz_native = shadow_usd / ref_price
+        # Size in native units, rounded to the asset's szDecimals (Hyperliquid
+        # rejects orders with sub-precision sizes via float_to_wire validation).
+        sz_decimals = self.venue.sz_decimals(candidate.asset)
+        raw_sz = shadow_usd / ref_price
+        sz_native = round(raw_sz, sz_decimals)
         if sz_native <= 0:
+            log.warning(
+                "shadow_size_too_small_after_rounding",
+                asset=candidate.asset, raw_sz=raw_sz, sz_decimals=sz_decimals,
+                shadow_usd=shadow_usd, ref_price=ref_price,
+            )
             return None
 
         is_buy = (candidate.direction == "long")
@@ -222,16 +231,16 @@ class StructureExecutor(Executor):
         # fills now or it dies, so we won't leave a resting order on book.
         limit_px = ref_price * (1.0 + SHADOW_SLIPPAGE_TOLERANCE) if is_buy \
             else ref_price * (1.0 - SHADOW_SLIPPAGE_TOLERANCE)
+        # Round limit_px to a sane number of digits to avoid SDK rejection on
+        # asset-specific tick size. Conservative: 5 sig figs.
+        limit_px = float(f"{limit_px:.5g}")
 
         log.info(
             "shadow_place_attempt",
             asset=candidate.asset, is_buy=is_buy,
             sz=sz_native, limit_px=limit_px, notional_usd=shadow_usd,
+            sz_decimals=sz_decimals,
         )
-
-        # Round limit_px to a sane number of digits to avoid SDK rejection on
-        # asset-specific tick size. Conservative: 5 sig figs.
-        limit_px = float(f"{limit_px:.5g}")
 
         result = self.venue.exchange.order(
             candidate.asset, is_buy, sz_native, limit_px, IOC_ORDER_TYPE,
@@ -343,6 +352,16 @@ class StructureExecutor(Executor):
 
         if sz_native <= 0 or not is_exchange_available():
             log.warning("shadow_close_skipped", shadow_trade_id=shadow_trade_id)
+            return
+
+        # Round size to asset's szDecimals (same constraint as open path)
+        sz_decimals = self.venue.sz_decimals(asset)
+        sz_native = round(sz_native, sz_decimals)
+        if sz_native <= 0:
+            log.warning(
+                "shadow_close_size_too_small_after_rounding",
+                shadow_trade_id=shadow_trade_id, asset=asset,
+            )
             return
 
         # Opposite direction, reduce_only

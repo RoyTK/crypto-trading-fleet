@@ -19,7 +19,7 @@ from bots.structure.executor import (
 # ---------------------------------------------------------------------------
 
 def test_shadow_notional_below_floor_clamps_to_min():
-    # Paper $1000 * 0.001 = $1, below min ($5)
+    # Paper $1000 * 0.001 = $1, below min
     assert _shadow_notional_for(1000.0) == SHADOW_NOTIONAL_MIN_USD
 
 
@@ -29,18 +29,18 @@ def test_shadow_notional_above_ceiling_clamps_to_max():
 
 
 def test_shadow_notional_within_band_uses_linear():
-    # Paper $10000 * 0.001 = $10, within band
-    assert _shadow_notional_for(10_000.0) == 10.0
+    # Paper $15000 * 0.001 = $15, within band [11, 20]
+    assert _shadow_notional_for(15_000.0) == 15.0
 
 
 def test_shadow_notional_at_floor_boundary():
-    # $5000 * 0.001 = $5 exactly
-    assert _shadow_notional_for(5_000.0) == 5.0
+    # $11000 * 0.001 = $11 exactly = min
+    assert _shadow_notional_for(11_000.0) == SHADOW_NOTIONAL_MIN_USD
 
 
 def test_shadow_notional_at_ceiling_boundary():
-    # $20000 * 0.001 = $20 exactly
-    assert _shadow_notional_for(20_000.0) == 20.0
+    # $20000 * 0.001 = $20 exactly = max
+    assert _shadow_notional_for(20_000.0) == SHADOW_NOTIONAL_MAX_USD
 
 
 # ---------------------------------------------------------------------------
