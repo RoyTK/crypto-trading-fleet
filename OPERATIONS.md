@@ -82,3 +82,48 @@ Each phase ends with a shakedown gate (see plan file). Block next phase build un
 ## Reference docs
 - Design state snapshot: `design_state_2026-04-26.md`
 - Build plan: `C:\Users\Roy\.claude\plans\logical-scribbling-kernighan.md`
+
+## Quarterly whale-list refresh (server-side cron)
+
+The remote-agent approach failed (Anthropic cloud egress IP receives empty
+responses from the Hyperliquid Info API). Replaced with a local cron on
+Hetzner that runs the same logic from inside the framework container, where
+the API works.
+
+**Crontab entry** (as `fleet` user):
+```
+0 14 1 2,5,8,11 * cd /home/fleet/crypto-fleet && /usr/bin/docker compose exec -T framework python -m scripts.quarterly_whale_refresh >> /home/fleet/logs/whale_refresh.log 2>&1
+```
+
+Fires 14:00 UTC on the 1st of Feb / May / Aug / Nov.
+
+**What the cron does**:
+1. Fetches last-180d fills for every whale in `bots/structure/whale_list.json`
+2. Recomputes win-rate / closed-position count / cumulative notional
+3. Writes a `whale_refresh_completed` audit_log row with the full summary in payload
+4. Emits a P2 Discord alert (or P1 if ALL whales would drop, which is suspicious)
+5. **Does NOT modify whale_list.json** — Roy reviews and applies manually
+
+**Manual review + apply** (after the cron fires):
+1. Read the Discord summary alert, OR query Postgres:
+   ```sql
+   SELECT created_at, payload FROM audit_log
+   WHERE event_type = 'whale_refresh_completed'
+   ORDER BY id DESC LIMIT 5;
+   ```
+2. If kept whales look right and you want to apply changes:
+   - Edit `bots/structure/whale_list.json` to remove dropped addresses (or use the dropped/kept list from audit payload as your guide)
+   - Commit + push
+   - Server `git pull` + `docker compose restart bot_structure`
+3. If ALL whales dropped (P1 case): re-run the cron manually first to confirm it's not transient. Don't act until you see the same drops twice.
+
+**Run manually for testing** (any time):
+```bash
+ssh fleet
+cd ~/crypto-fleet
+docker compose exec -T framework python -m scripts.quarterly_whale_refresh
+```
+
+**Re-discovery (separate flow)** — finding NEW whales beyond the existing
+list — still requires manual SOCKS-proxied browser scrape per the original
+documented procedure (see `project_phase_1_build_a.md` memory).
