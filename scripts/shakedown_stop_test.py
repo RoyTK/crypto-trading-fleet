@@ -109,8 +109,8 @@ def main() -> None:
     print(f"\n[2/5] Place server-side SL trigger at ${sl_trigger_px} (entry - {SL_OFFSET_PCT}%)")
     try:
         sl_response = venue.exchange.order(
-            TEST_ASSET, False, sz_native, sl_trigger_px,
-            {"trigger": {"isMarket": True, "triggerPx": str(sl_trigger_px), "tpsl": "sl"}},
+            TEST_ASSET, False, sz_native, float(sl_trigger_px),
+            {"trigger": {"isMarket": True, "triggerPx": float(sl_trigger_px), "tpsl": "sl"}},
             reduce_only=True,
         )
     except Exception as e:
