@@ -87,7 +87,12 @@ class CopySettings(BaseSettings):
     copy_dd_weekly_pct: float = Field(default=28.0)
     copy_dd_total_pct: float = Field(default=50.0)
     copy_loop_interval_seconds: int = Field(default=5)
+    # Solana polling cadence (Helius — cheap, 10M credits/mo)
     copy_wallet_poll_seconds: int = Field(default=10)
+    # EVM polling cadence (Cielo — only 50k credits/mo on Pro; with 90 EVM wallets
+    # at 60s, that's ~130k req/mo — still over. Default to 120s = ~65k req/mo.
+    # Tune via env var if Cielo's cost-per-call turns out lower than worst-case.)
+    copy_evm_wallet_poll_seconds: int = Field(default=120)
     copy_cluster_window_minutes: int = Field(default=15)
 
 

@@ -64,7 +64,8 @@ class CopyBot(BotLifecycle):
         self._wallets_solana: list[str] = []
         self._wallets_base: list[str] = []
         self._wallets_arbitrum: list[str] = []
-        self._last_wallet_poll_ts: float = 0.0
+        self._last_solana_poll_ts: float = 0.0
+        self._last_evm_poll_ts: float = 0.0
         self._last_reconcile_ts: float = 0.0
         self._sol_price_usd: float = 150.0
         self._session: Optional[aiohttp.ClientSession] = None
@@ -103,12 +104,22 @@ class CopyBot(BotLifecycle):
 
     async def iterate(self) -> None:
         now = time()
+        new_events = False
 
-        # Wallet activity poll
-        if now - self._last_wallet_poll_ts >= self.copy_settings.copy_wallet_poll_seconds:
-            await self._poll_all_wallets()
+        # Solana poll (Helius — cheap, frequent)
+        if now - self._last_solana_poll_ts >= self.copy_settings.copy_wallet_poll_seconds:
+            await self._poll_solana_wallets()
+            self._last_solana_poll_ts = now
+            new_events = True
+
+        # EVM poll (Cielo — expensive credits, slower cadence)
+        if now - self._last_evm_poll_ts >= self.copy_settings.copy_evm_wallet_poll_seconds:
+            await self._poll_evm_wallets()
+            self._last_evm_poll_ts = now
+            new_events = True
+
+        if new_events:
             self._evaluate_clusters()
-            self._last_wallet_poll_ts = now
 
         # Reconciliation cron
         recon_interval = get_framework_settings().reconciliation_interval_seconds
@@ -124,28 +135,29 @@ class CopyBot(BotLifecycle):
 
     # ---- Wallet polling ---------------------------------------------------
 
-    async def _poll_all_wallets(self) -> None:
-        if self._session is None:
+    async def _poll_solana_wallets(self) -> None:
+        if self._session is None or not self._wallets_solana:
             return
-        events = []
         try:
-            if self._wallets_solana:
-                sol_events = await poll_solana_wallets(
-                    self.helius, self._session, self._wallets_solana, self._sol_price_usd,
-                )
-                events.extend(sol_events)
+            events = await poll_solana_wallets(
+                self.helius, self._session, self._wallets_solana, self._sol_price_usd,
+            )
+            for ev in events:
+                self.cluster.observe_buy(ev)
         except Exception:
             self.log.exception("solana_poll_failed")
+
+    async def _poll_evm_wallets(self) -> None:
+        if self._session is None:
+            return
         try:
             for chain, wallets in (("base", self._wallets_base), ("arbitrum", self._wallets_arbitrum)):
                 for w in wallets:
                     evs = await self.cielo.fetch_recent_buys(self._session, w, chain)
-                    events.extend(evs)
+                    for ev in evs:
+                        self.cluster.observe_buy(ev)
         except Exception:
             self.log.exception("evm_poll_failed")
-
-        for ev in events:
-            self.cluster.observe_buy(ev)
 
     def _evaluate_clusters(self) -> None:
         # Build A: no token-meta — gate is skipped per cluster.evaluate signature
