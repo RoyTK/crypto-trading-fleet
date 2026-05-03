@@ -1,14 +1,21 @@
 """Cielo API client.
 
-Two responsibilities:
-1. Wallet curation — pull top-trader leaderboard + per-wallet PnL summaries
-   for `scripts/curate_wallet_pool.py`. Build A blocker.
-2. EVM wallet activity feed — Helius covers Solana; Cielo covers Base +
-   Arbitrum (and gives us a uniform feed shape across wallets).
+Confirmed against developer.cielo.finance/reference (2026-05-03):
+- Base URL: https://feed-api.cielo.finance/api/v1
+- Auth: X-API-KEY header (case-insensitive)
+- /feed endpoint: GET /feed?wallet=X&chains=Y&txTypes=swap&limit=N
+  Cost: 3 credits per call when wallet param is set; 5 credits otherwise.
+- /trading-stats endpoint: GET /{wallet}/trading-stats?days={1d|7d|30d|max}
+  Cost: 30 credits. Returns pnl, winrate, swaps_count, holding distribution, etc.
+  Does NOT include wallet age. No 180d window — longest is 'max'.
+- NO leaderboard / top-traders endpoint exists. Wallet discovery must use
+  hand-seeded inputs (Birdeye, DeBank, X/Twitter, etc.); Cielo is validate-only.
 
-Cielo's API requires the X-API-Key header. All endpoints are REST/JSON.
-We're intentionally building a thin wrapper — the curation script can grow
-its own logic on top of `top_traders()` and `wallet_pnl()`.
+Pro plan ($65/mo): 50k credits/mo, 25 credits/sec, all endpoints.
+Polling cost concern: at 3 credits/call × 90 EVM wallets × every 2 min = ~3.5M
+credits/mo — far over budget. Build A is Solana-only via Helius; Cielo is used
+for one-time curation validation. EVM/Cielo polling joins in Build B (likely
+via webhooks, not polling).
 """
 from __future__ import annotations
 
@@ -18,7 +25,6 @@ from typing import Optional
 import aiohttp
 
 from bots.copy.config import (
-    WALLET_MIN_AGE_DAYS,
     WALLET_MIN_PNL_USD,
     WALLET_MIN_TRADES_90D,
     WALLET_MIN_WIN_RATE,
@@ -33,96 +39,80 @@ log = get_logger(__name__)
 
 @dataclass
 class WalletStats:
+    """Subset of Cielo's /trading-stats response we use for curation filters."""
     address: str
     chain: str
-    pnl_usd_180d: float
-    win_rate: float          # 0..1
+    pnl_usd: float
+    win_rate: float                  # 0..1
     avg_hold_minutes: float
-    trade_count_90d: int
-    wallet_age_days: int
+    swap_count: int
+    consecutive_trading_days: int
+    timeframe: str                   # '1d' | '7d' | '30d' | 'max'
     raw: Optional[dict] = None
 
 
 class CieloClient:
-    """Thin async wrapper around the Cielo Premium API."""
+    """Thin async wrapper around the Cielo API (Pro plan)."""
 
     def __init__(self) -> None:
         self.settings = get_copy_settings()
 
     def _headers(self) -> dict[str, str]:
-        return {"X-API-Key": self.settings.cielo_api_key, "Accept": "application/json"}
+        return {"X-API-KEY": self.settings.cielo_api_key, "Accept": "application/json"}
 
-    # ---- Curation: leaderboard + per-wallet PnL ---------------------------
+    # ---- Curation: per-wallet trading stats -------------------------------
 
-    async def top_traders(
-        self,
-        session: aiohttp.ClientSession,
-        chain: str,
-        limit: int = 200,
-        timeframe: str = "180d",
-    ) -> list[str]:
-        """Return wallet addresses from Cielo's top-trader leaderboard for a chain."""
-        if not self.settings.cielo_api_key:
-            log.warning("cielo_no_api_key")
-            return []
-        url = f"{self.settings.cielo_api_base}/leaderboard/top-traders"
-        params = {"chain": chain, "limit": str(limit), "timeframe": timeframe}
-        try:
-            async with session.get(url, params=params, headers=self._headers(),
-                                    timeout=aiohttp.ClientTimeout(total=20)) as r:
-                if r.status != 200:
-                    log.warning("cielo_top_traders_failed", chain=chain, status=r.status)
-                    return []
-                data = await r.json()
-        except Exception:
-            log.exception("cielo_top_traders_exception", chain=chain)
-            return []
-        addrs = []
-        for item in data.get("data", []) or []:
-            a = item.get("wallet_address") or item.get("address")
-            if a:
-                addrs.append(a)
-        return addrs
-
-    async def wallet_stats(
+    async def wallet_trading_stats(
         self,
         session: aiohttp.ClientSession,
         address: str,
         chain: str,
+        days: str = "max",
     ) -> Optional[WalletStats]:
-        """Pull aggregate PnL/winrate/holding stats for one wallet."""
+        """Fetch /trading-stats for one wallet. 30 credits per call.
+
+        days ∈ {'1d', '7d', '30d', 'max'}. 'max' is longest available.
+        """
         if not self.settings.cielo_api_key:
+            log.warning("cielo_no_api_key")
             return None
-        url = f"{self.settings.cielo_api_base}/wallet/{address}/pnl-summary"
-        params = {"chain": chain, "timeframe": "180d"}
+        url = f"{self.settings.cielo_api_base}/{address}/trading-stats"
+        params = {"days": days}
         try:
-            async with session.get(url, params=params, headers=self._headers(),
-                                    timeout=aiohttp.ClientTimeout(total=20)) as r:
+            async with session.get(
+                url, params=params, headers=self._headers(),
+                timeout=aiohttp.ClientTimeout(total=20),
+            ) as r:
+                if r.status == 202:
+                    log.info("cielo_stats_computing_retry_later", address=address)
+                    return None
                 if r.status != 200:
-                    log.warning("cielo_wallet_stats_failed", address=address, status=r.status)
+                    log.warning("cielo_trading_stats_failed", address=address, status=r.status)
                     return None
                 data = await r.json()
         except Exception:
-            log.exception("cielo_wallet_stats_exception", address=address)
+            log.exception("cielo_trading_stats_exception", address=address)
             return None
 
         d = data.get("data") or {}
         try:
+            avg_hold_sec = float(d.get("average_holding_time_sec", 0) or 0)
             return WalletStats(
                 address=address,
                 chain=chain,
-                pnl_usd_180d=float(d.get("realized_pnl_usd", 0) or 0),
+                pnl_usd=float(d.get("pnl", 0) or 0),
                 win_rate=float(d.get("winrate", 0) or 0),
-                avg_hold_minutes=float(d.get("avg_holding_time_minutes", 0) or 0),
-                trade_count_90d=int(d.get("trades_count_90d", 0) or 0),
-                wallet_age_days=int(d.get("wallet_age_days", 0) or 0),
+                avg_hold_minutes=avg_hold_sec / 60.0,
+                swap_count=int(d.get("swaps_count", 0) or 0),
+                consecutive_trading_days=int(d.get("consecutive_trading_days", 0) or 0),
+                timeframe=days,
                 raw=d,
             )
         except Exception:
-            log.exception("cielo_wallet_stats_parse_failed", address=address)
+            log.exception("cielo_trading_stats_parse_failed", address=address)
             return None
 
-    # ---- Activity feed (EVM Base/Arbitrum) ---------------------------------
+    # ---- Activity feed (single endpoint, multi-chain) ---------------------
 
     async def fetch_recent_buys(
         self,
@@ -131,17 +121,28 @@ class CieloClient:
         chain: str,
         limit: int = 25,
     ) -> list[WalletBuyEvent]:
-        """Return WalletBuyEvent objects for an EVM wallet's recent token buys."""
+        """Return WalletBuyEvent objects for a wallet's recent token buys.
+
+        3 credits per call (when wallet param is set). Single endpoint covers
+        all chains via the chains query param — pass 'base' or 'arbitrum'.
+        """
         if not self.settings.cielo_api_key:
             return []
-        if chain not in ("base", "arbitrum"):
+        if chain not in ("base", "arbitrum", "ethereum", "polygon"):
             log.warning("cielo_unsupported_chain", chain=chain)
             return []
-        url = f"{self.settings.cielo_api_base}/wallet/{address}/feed"
-        params = {"chain": chain, "limit": str(limit), "tx_types": "swap"}
+        url = f"{self.settings.cielo_api_base}/feed"
+        params = {
+            "wallet": address,
+            "chains": chain,
+            "txTypes": "swap",
+            "limit": str(limit),
+        }
         try:
-            async with session.get(url, params=params, headers=self._headers(),
-                                    timeout=aiohttp.ClientTimeout(total=15)) as r:
+            async with session.get(
+                url, params=params, headers=self._headers(),
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as r:
                 if r.status != 200:
                     log.warning("cielo_feed_failed", address=address, chain=chain, status=r.status)
                     return []
@@ -150,8 +151,10 @@ class CieloClient:
             log.exception("cielo_feed_exception", address=address, chain=chain)
             return []
 
+        # Cielo /feed shape: {"status":"ok","data":{"items":[...], "paging":{...}}}
+        items = (data.get("data") or {}).get("items") or []
         events: list[WalletBuyEvent] = []
-        for item in data.get("data", []) or []:
+        for item in items:
             ev = self._parse_buy(item, address, chain)
             if ev is not None:
                 events.append(ev)
@@ -160,24 +163,27 @@ class CieloClient:
     def _parse_buy(self, item: dict, wallet: str, chain: str) -> Optional[WalletBuyEvent]:
         if (item.get("tx_type") or "").lower() != "swap":
             return None
+        # /feed swap items expose token bought + token sold + USD amount
         bought_token = (
-            item.get("token_bought_address")
+            item.get("token1_address")
+            or item.get("token_bought_address")
             or item.get("token_out_address")
-            or item.get("token_to")
+            or item.get("contract_address")
         )
         if not bought_token:
             return None
         notional = float(
-            item.get("usd_value")
-            or item.get("amount_usd")
-            or item.get("token_sold_usd")
+            item.get("amount_usd")
+            or item.get("usd_value")
+            or item.get("token0_amount_usd")
             or 0
         )
         if notional <= 0:
             return None
         ts = item.get("timestamp") or item.get("block_time") or 0
         try:
-            ts_ms = int(ts) * 1000 if int(ts) < 10**12 else int(ts)
+            ts_int = int(ts)
+            ts_ms = ts_int * 1000 if ts_int < 10**12 else ts_int
         except Exception:
             return None
         return WalletBuyEvent(
@@ -186,23 +192,30 @@ class CieloClient:
             token_mint=bought_token,
             notional_usd=notional,
             timestamp_ms=ts_ms,
-            tx_signature=item.get("tx_hash", "") or item.get("hash", ""),
+            tx_signature=item.get("tx_hash") or item.get("hash") or "",
             raw=item,
         )
 
 
 def passes_curation_filters(stats: WalletStats) -> tuple[bool, list[str]]:
-    """Apply locked Item #7 wallet curation criteria. Returns (passed, reasons_failed)."""
+    """Apply Item #7 wallet curation criteria adapted to Cielo's actual fields.
+
+    Note: wallet_age_days from the original spec isn't exposed by /trading-stats.
+    We use `consecutive_trading_days` (active streak) as a proxy + per-call PnL
+    over 'max' window as a proxy for sustained profitability. Returns
+    (passed, reasons_failed).
+    """
     reasons: list[str] = []
-    if stats.pnl_usd_180d < WALLET_MIN_PNL_USD:
+    if stats.pnl_usd < WALLET_MIN_PNL_USD:
         reasons.append(f"pnl_below_${WALLET_MIN_PNL_USD:.0f}")
     if stats.win_rate < WALLET_MIN_WIN_RATE:
         reasons.append(f"winrate_below_{WALLET_MIN_WIN_RATE:.2f}")
-    if stats.trade_count_90d < WALLET_MIN_TRADES_90D:
-        reasons.append(f"trades_90d_below_{WALLET_MIN_TRADES_90D}")
-    if stats.wallet_age_days < WALLET_MIN_AGE_DAYS:
-        reasons.append(f"age_below_{WALLET_MIN_AGE_DAYS}d")
-    # Hold time: 30 min ≤ avg ≤ 7 days
+    if stats.swap_count < WALLET_MIN_TRADES_90D:
+        reasons.append(f"swap_count_below_{WALLET_MIN_TRADES_90D}")
+    # Hold time: 30 min ≤ avg ≤ 7 days (= 10080 min)
     if stats.avg_hold_minutes < 30 or stats.avg_hold_minutes > 7 * 24 * 60:
         reasons.append("hold_time_out_of_band")
+    # Active streak as wallet-maturity proxy. ≥30 days of trading days = mature.
+    if stats.consecutive_trading_days < 30:
+        reasons.append(f"consecutive_days_below_30")
     return len(reasons) == 0, reasons

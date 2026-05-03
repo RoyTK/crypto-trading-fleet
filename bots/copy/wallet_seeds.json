@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "purpose": "Hand-curated candidate wallets for the COPY bot. Validated by scripts/curate_wallet_pool.py against Cielo's /trading-stats endpoint, then filtered into wallet_pool.json.",
+    "build": "A_solana_only",
+    "discovery_sources": [
+      "Birdeye smart-money pages (https://birdeye.so/leaderboard)",
+      "DeBank top profiles (https://debank.com/profile)",
+      "Solscan token holder leaderboards",
+      "X/Twitter alpha accounts public wallet posts",
+      "Hyperliquid leaderboard (we already curated for STRUCTURE)"
+    ],
+    "format": "Each entry: { address, chain ('solana'|'base'|'arbitrum'), note (free-form, e.g. source attribution) }",
+    "validate_cost": "30 Cielo credits per wallet via /trading-stats",
+    "instructions": [
+      "1. Add 30-50 candidate wallets to the seeds array",
+      "2. Run: docker compose exec framework python -m scripts.curate_wallet_pool --dry-run",
+      "3. Review the pass/reject breakdown",
+      "4. If satisfied: --apply to overwrite wallet_pool.json",
+      "5. Commit + push wallet_pool.json so Hetzner picks it up on next pull"
+    ]
+  },
+  "seeds": []
+}

@@ -43,12 +43,15 @@ PER_TRADE_NOTIONAL_CAP_PCT = 8.0
 ALLOCATION_CAP_PCT = 50.0
 
 # Wallet curation criteria
+# Note: validated against Cielo's /trading-stats response (Build A reality).
+# Cielo doesn't expose wallet age directly — `consecutive_trading_days` is
+# used as a maturity proxy in the validator (see venue/cielo.py).
 WALLET_MIN_PNL_USD = 50_000.0
 WALLET_MIN_WIN_RATE = 0.55
 WALLET_MIN_HOLD_MINUTES = 30
 WALLET_MAX_HOLD_DAYS = 7
 WALLET_MIN_TRADES_90D = 20
-WALLET_MIN_AGE_DAYS = 60
+WALLET_MIN_CONSECUTIVE_TRADING_DAYS = 30
 WALLET_POOL_TARGET_MIN = 200
 WALLET_POOL_TARGET_MAX = 300
 
