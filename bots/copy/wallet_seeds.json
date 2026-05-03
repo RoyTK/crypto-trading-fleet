@@ -12,11 +12,14 @@
     "format": "Each entry: { address, chain ('solana'|'base'|'arbitrum'), note (free-form, e.g. source attribution) }",
     "validate_cost": "30 Cielo credits per wallet via /trading-stats",
     "instructions": [
-      "1. Add 30-50 candidate wallets to the seeds array",
-      "2. Run: docker compose exec framework python -m scripts.curate_wallet_pool --dry-run",
-      "3. Review the pass/reject breakdown",
-      "4. If satisfied: --apply to overwrite wallet_pool.json",
-      "5. Commit + push wallet_pool.json so Hetzner picks it up on next pull"
+      "Two ways to populate the candidate set:",
+      "A) Hand-seed: add wallets to the seeds array below, then:",
+      "   docker compose exec framework python -m scripts.curate_wallet_pool --dry-run",
+      "B) Birdeye discovery + hand-seeds (recommended for quarterly refresh):",
+      "   docker compose exec framework python -m scripts.curate_wallet_pool --from-birdeye 100 --dry-run",
+      "Both candidate sources merge + dedup before validation.",
+      "Review pass/reject. If satisfied: --apply to overwrite wallet_pool.json.",
+      "Commit + push wallet_pool.json so Hetzner picks it up on next pull."
     ]
   },
   "seeds": []

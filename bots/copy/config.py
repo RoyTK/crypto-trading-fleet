@@ -79,6 +79,9 @@ class CopySettings(BaseSettings):
     cielo_api_key: str = Field(default="")
     cielo_api_base: str = Field(default="https://feed-api.cielo.finance/api/v1")
 
+    # Birdeye (wallet discovery for curation)
+    birdeye_api_key: str = Field(default="")
+
     # DEX quoters
     jupiter_quote_url: str = Field(default="https://quote-api.jup.ag/v6/quote")
     zeroex_api_base: str = Field(default="https://api.0x.org")
