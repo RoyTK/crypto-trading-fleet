@@ -1,33 +1,27 @@
 """Curate the COPY bot's wallet pool: Birdeye discovery + hand-seed → Cielo validation.
 
-Two complementary input sources:
-1. **Birdeye** (`--from-birdeye N`) — pull top N Solana traders from
-   /trader/gainers-losers (free Standard tier endpoint). Quarterly automated
-   discovery. Roy can opt in/out.
-2. **Hand-seeds** (always loaded if `bots/copy/wallet_seeds.json` has entries) —
-   wallets Roy adds manually from Twitter alpha accounts, Birdeye paywalled
-   pages, alpha groups, DeBank, etc. Sources Birdeye's API can't reach or
-   that benefit from Roy's judgment.
+Three complementary input sources, all merge + dedup before validation:
 
-Both sets are merged + dedup'd, then EACH wallet is validated via Cielo's
-`/{wallet}/trading-stats` endpoint (30 credits each). Only candidates that
-pass all locked Item #7 filters are written to wallet_pool.json.
+1. **Hand-seeds** (always loaded from `bots/copy/wallet_seeds.json`) — wallets
+   added manually from sources Birdeye's API can't reach or that benefit from
+   judgment (alpha groups, Twitter, etc.).
+
+2. **Birdeye gainers/losers leaderboard** (`--from-birdeye N`) — top N Solana
+   traders globally by 1W PnL via /trader/gainers-losers (free Standard tier).
+
+3. **Birdeye per-token top traders** (`--from-birdeye-tokens ADDR1,ADDR2,...`)
+   — top traders for specific hot Solana tokens via /defi/v2/tokens/top_traders
+   (free Standard tier). Surfaces the *traders* of a token, not just *holders*.
+   Use --per-token-count to control how many per token (default 50).
+
+Each candidate is validated via Cielo's `/{wallet}/trading-stats` (30 credits).
+Only candidates passing locked Item #7 filters write to wallet_pool.json.
 
 Build A is Solana-only. EVM joins in Build B.
 
-Usage:
-    # Hand-seeds only:
-    python -m scripts.curate_wallet_pool --dry-run
-
-    # Birdeye discovery + hand-seeds:
-    python -m scripts.curate_wallet_pool --from-birdeye 100 --dry-run
-
-    # Apply (writes wallet_pool.json):
-    python -m scripts.curate_wallet_pool --from-birdeye 100 --apply
-
-Cost preview:
-    Birdeye discovery: ~10-20 free Standard CUs for 100 wallets
-    Cielo validation: 30 credits × N wallets (e.g. 100 wallets = 3,000 credits = 6% of monthly budget)
+Cost preview (Cielo Pro 50k credits/mo):
+    100 candidates  =  3,000 credits  =  6% of monthly budget
+    300 candidates  =  9,000 credits  =  18% of monthly budget
 """
 from __future__ import annotations
 
@@ -56,7 +50,14 @@ WALLET_SEEDS_PATH = REPO_ROOT / "bots" / "copy" / "wallet_seeds.json"
 BUILD_A_CHAINS = {"solana"}
 
 
-async def curate(*, dry_run: bool, from_birdeye: int, log) -> int:
+async def curate(
+    *,
+    dry_run: bool,
+    from_birdeye: int,
+    from_birdeye_tokens: list[str],
+    per_token_count: int,
+    log,
+) -> int:
     cielo = CieloClient()
     if not cielo.settings.cielo_api_key:
         print("ERROR: CIELO_API_KEY not configured. Aborting.", file=sys.stderr)
@@ -70,26 +71,53 @@ async def curate(*, dry_run: bool, from_birdeye: int, log) -> int:
     if out_of_scope:
         print(f"  skipped non-Solana chains: {sorted({s.get('chain') for s in out_of_scope})}")
 
-    # ---- Source 2: Birdeye top traders ----------------------------------
+    # ---- Source 2 & 3: Birdeye discovery --------------------------------
     discovered: list[dict] = []
-    if from_birdeye > 0:
+    need_birdeye = from_birdeye > 0 or from_birdeye_tokens
+    birdeye: Optional[BirdeyeClient] = None
+    if need_birdeye:
         birdeye = BirdeyeClient()
         if not birdeye.settings.birdeye_api_key:
             print("WARNING: BIRDEYE_API_KEY not set; skipping Birdeye discovery",
                   file=sys.stderr)
-        else:
-            print(f"Birdeye discovery: fetching top {from_birdeye} Solana traders...")
-            async with aiohttp.ClientSession() as session:
+            birdeye = None
+
+    if birdeye is not None:
+        async with aiohttp.ClientSession() as session:
+            # Source 2: global gainers/losers leaderboard
+            if from_birdeye > 0:
+                print(f"Birdeye gainers/losers: fetching top {from_birdeye} Solana traders...")
                 traders = await birdeye.gainers_losers(
                     session, chain="solana", target_count=from_birdeye,
                 )
-            print(f"  Birdeye returned {len(traders)} candidates")
-            for t in traders:
-                discovered.append({
-                    "address": t.address,
-                    "chain": "solana",
-                    "note": f"birdeye gainers_losers 1W (pnl=${t.pnl_usd or 0:.0f})",
-                })
+                print(f"  returned {len(traders)} candidates")
+                for t in traders:
+                    discovered.append({
+                        "address": t.address,
+                        "chain": "solana",
+                        "note": f"birdeye gainers_losers 1W (pnl=${t.pnl_usd or 0:.0f})",
+                    })
+
+            # Source 3: per-token top traders for hot tokens
+            if from_birdeye_tokens:
+                print(f"Birdeye per-token: fetching top {per_token_count} traders for "
+                      f"{len(from_birdeye_tokens)} token(s)...")
+                for token_addr in from_birdeye_tokens:
+                    token_short = f"{token_addr[:6]}...{token_addr[-4:]}"
+                    print(f"  [{token_short}] ", end="", flush=True)
+                    traders = await birdeye.token_top_traders(
+                        session, token_address=token_addr, chain="solana",
+                        time_frame="24h", sort_by="total_pnl",
+                        target_count=per_token_count,
+                    )
+                    print(f"returned {len(traders)} traders")
+                    for t in traders:
+                        discovered.append({
+                            "address": t.address,
+                            "chain": "solana",
+                            "note": f"birdeye top_traders {token_short} 24h_pnl "
+                                    f"(pnl=${t.pnl_usd or 0:.0f})",
+                        })
 
     # ---- Merge + dedup ---------------------------------------------------
     seen: set[tuple[str, str]] = set()
@@ -109,8 +137,8 @@ async def curate(*, dry_run: bool, from_birdeye: int, log) -> int:
           f"({len(merged) * 30 / 50_000 * 100:.1f}% of monthly Pro budget)\n")
 
     if not merged:
-        print("ERROR: no candidates to validate. Add hand-seeds OR use --from-birdeye N.",
-              file=sys.stderr)
+        print("ERROR: no candidates to validate. Add hand-seeds OR use --from-birdeye N "
+              "OR --from-birdeye-tokens TOKEN1,TOKEN2,...", file=sys.stderr)
         return 2
 
     # ---- Validate each via Cielo /trading-stats -------------------------
@@ -170,6 +198,8 @@ async def curate(*, dry_run: bool, from_birdeye: int, log) -> int:
         bot_id="copy",
         payload={
             "from_birdeye": from_birdeye,
+            "from_birdeye_tokens": from_birdeye_tokens,
+            "per_token_count": per_token_count,
             "hand_seed_count": len(in_scope_seeds),
             "discovered_count": len(discovered),
             "validated_count": len(merged),
@@ -193,6 +223,8 @@ async def curate(*, dry_run: bool, from_birdeye: int, log) -> int:
             "build": "A_solana_only",
             "inputs": {
                 "from_birdeye": from_birdeye,
+                "from_birdeye_tokens": from_birdeye_tokens,
+                "per_token_count": per_token_count,
                 "hand_seed_count": len(in_scope_seeds),
             },
             "criteria": {
@@ -243,20 +275,50 @@ def _to_entry(stats: WalletStats, note: str = "") -> dict:
 def main() -> None:
     configure_logging()
     log = get_logger("scripts.curate_wallet_pool")
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(
+        description="Curate the COPY bot's wallet pool from hand-seeds + Birdeye discovery.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Hand-seeds only (no Birdeye)
+  python -m scripts.curate_wallet_pool --dry-run
+
+  # Add 100 global gainers/losers
+  python -m scripts.curate_wallet_pool --from-birdeye 100 --dry-run
+
+  # Add top traders for specific hot tokens (50 per token by default)
+  python -m scripts.curate_wallet_pool --from-birdeye-tokens \\
+    25hAyBQfoDhfWx9ay6rarbgvWGwDdNqcHsXS3jQ3mTDJ,\\
+    9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump --dry-run
+
+  # Combined: leaderboard + per-token + hand-seeds
+  python -m scripts.curate_wallet_pool \\
+    --from-birdeye 50 \\
+    --from-birdeye-tokens TOKEN1,TOKEN2 \\
+    --per-token-count 30 --apply
+        """)
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--dry-run", action="store_true",
                    help="Validate candidates and print summary; do NOT write wallet_pool.json")
     g.add_argument("--apply", action="store_true",
                    help="Validate candidates and overwrite wallet_pool.json")
-    p.add_argument("--from-birdeye", type=int, default=0,
-                   metavar="N",
-                   help="Discover top N Solana traders from Birdeye (free Standard tier endpoint). "
-                        "Default 0 = hand-seeds only.")
+    p.add_argument("--from-birdeye", type=int, default=0, metavar="N",
+                   help="Discover top N Solana traders from Birdeye gainers/losers leaderboard. "
+                        "Default 0 = skip leaderboard.")
+    p.add_argument("--from-birdeye-tokens", type=str, default="",
+                   metavar="ADDR1,ADDR2,...",
+                   help="Comma-separated list of Solana token mint addresses. For each token, "
+                        "fetches top traders by 24h total_pnl from Birdeye's /defi/v2/tokens/top_traders. "
+                        "Use --per-token-count to control how many per token (default 50).")
+    p.add_argument("--per-token-count", type=int, default=50, metavar="N",
+                   help="Top N traders to fetch per token (used with --from-birdeye-tokens). Default 50.")
     args = p.parse_args()
+    tokens = [t.strip() for t in args.from_birdeye_tokens.split(",") if t.strip()]
     rc = asyncio.run(curate(
         dry_run=args.dry_run,
         from_birdeye=args.from_birdeye,
+        from_birdeye_tokens=tokens,
+        per_token_count=args.per_token_count,
         log=log,
     ))
     sys.exit(rc)

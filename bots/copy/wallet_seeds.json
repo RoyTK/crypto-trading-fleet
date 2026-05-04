@@ -12,14 +12,19 @@
     "format": "Each entry: { address, chain ('solana'|'base'|'arbitrum'), note (free-form, e.g. source attribution) }",
     "validate_cost": "30 Cielo credits per wallet via /trading-stats",
     "instructions": [
-      "Two ways to populate the candidate set:",
-      "A) Hand-seed: add wallets to the seeds array below, then:",
-      "   docker compose exec framework python -m scripts.curate_wallet_pool --dry-run",
-      "B) Birdeye discovery + hand-seeds (recommended for quarterly refresh):",
-      "   docker compose exec framework python -m scripts.curate_wallet_pool --from-birdeye 100 --dry-run",
-      "Both candidate sources merge + dedup before validation.",
-      "Review pass/reject. If satisfied: --apply to overwrite wallet_pool.json.",
-      "Commit + push wallet_pool.json so Hetzner picks it up on next pull."
+      "Three candidate sources (use any combo, all merge + dedup):",
+      "A) Hand-seed: add wallets to the seeds array below.",
+      "B) Birdeye gainers/losers leaderboard: --from-birdeye 100",
+      "C) Birdeye per-token top traders for specific hot tokens: --from-birdeye-tokens ADDR1,ADDR2,...",
+      "Find hot Solana token addresses from:",
+      "   - https://birdeye.so/solana (Trending tab)",
+      "   - https://www.coingecko.com/categories/solana-meme-coin (top by 24h volume)",
+      "   - https://www.geckoterminal.com/solana/pools (top pools by volume)",
+      "Workflow:",
+      "   1. docker compose exec framework python -m scripts.curate_wallet_pool [flags] --dry-run",
+      "   2. Review pass/reject. If satisfied: --apply",
+      "   3. git add bots/copy/wallet_pool.json && git commit && git push",
+      "   4. Hetzner: git pull && docker compose restart bot_copy"
     ]
   },
   "seeds": []
