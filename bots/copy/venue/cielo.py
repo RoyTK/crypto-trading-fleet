@@ -225,25 +225,23 @@ class CieloClient:
 
 
 def passes_curation_filters(stats: WalletStats) -> tuple[bool, list[str]]:
-    """Apply Item #7 wallet curation criteria — tuned 2026-05-04 for Solana
-    memecoin reality (rotates in minutes, not hours like HL futures).
+    """Apply curation filters tuned 2026-05-04 for Cielo's Solana data.
 
-    Filters: pnl ≥ $50k, winrate ≥ 0.55, swap_count ≥ 20, 1 min ≤ avg hold ≤ 7d.
-    Dropped: consecutive_trading_days proxy (poor maturity signal on Solana).
+    Path A1 (after empirical run): keep only winrate + swap_count.
+    Dropped:
+    - hold_time bounds: doesn't matter for cluster detection (we follow BUYS,
+      not exits). Mixed populations (holders + HFT bots + swingers) all
+      contribute usable cluster-buy signal as long as they're picking winners.
+    - pnl filter: Cielo's `pnl` is realized only; Birdeye's PnL is realized +
+      unrealized. Top traders sitting on $4M unrealized bags show $0 realized
+      and were unfairly rejected. Winrate captures profitability per-trade
+      regardless of bag composition.
 
     Returns (passed, reasons_failed).
     """
     reasons: list[str] = []
-    if stats.pnl_usd < WALLET_MIN_PNL_USD:
-        reasons.append(f"pnl_below_${WALLET_MIN_PNL_USD:.0f}")
     if stats.win_rate < WALLET_MIN_WIN_RATE:
         reasons.append(f"winrate_below_{WALLET_MIN_WIN_RATE:.2f}")
     if stats.swap_count < WALLET_MIN_TRADES_90D:
         reasons.append(f"swap_count_below_{WALLET_MIN_TRADES_90D}")
-    # Hold time: 1 min ≤ avg ≤ 7 days. Lower bound only excludes true HFT/MM
-    # bots; upper bound excludes pure long-term holders.
-    if stats.avg_hold_minutes < WALLET_MIN_HOLD_MINUTES:
-        reasons.append("hold_time_too_short_hft_bot")
-    if stats.avg_hold_minutes > WALLET_MAX_HOLD_DAYS * 24 * 60:
-        reasons.append("hold_time_too_long_holder")
     return len(reasons) == 0, reasons
