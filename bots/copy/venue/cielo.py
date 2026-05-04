@@ -19,6 +19,7 @@ via webhooks, not polling).
 """
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from typing import Optional
 
@@ -68,31 +69,52 @@ class CieloClient:
         address: str,
         chain: str,
         days: str = "max",
+        max_retries: int = 3,
     ) -> Optional[WalletStats]:
         """Fetch /trading-stats for one wallet. 30 credits per call.
 
         days ∈ {'1d', '7d', '30d', 'max'}. 'max' is longest available.
+
+        On 429 / 403 (rate-limit) and 202 (still computing), backs off and
+        retries up to max_retries times. On 400 (no data for wallet) returns
+        None immediately — Cielo doesn't track this wallet.
         """
         if not self.settings.cielo_api_key:
             log.warning("cielo_no_api_key")
             return None
         url = f"{self.settings.cielo_api_base}/{address}/trading-stats"
         params = {"days": days}
-        try:
-            async with session.get(
-                url, params=params, headers=self._headers(),
-                timeout=aiohttp.ClientTimeout(total=20),
-            ) as r:
-                if r.status == 202:
-                    log.info("cielo_stats_computing_retry_later", address=address)
-                    return None
-                if r.status != 200:
+        attempt = 0
+        backoff = 2.0
+        while True:
+            attempt += 1
+            try:
+                async with session.get(
+                    url, params=params, headers=self._headers(),
+                    timeout=aiohttp.ClientTimeout(total=20),
+                ) as r:
+                    if r.status == 200:
+                        data = await r.json()
+                        break
+                    if r.status == 400:
+                        # Wallet not tracked by Cielo — terminal, no retry
+                        log.info("cielo_wallet_not_tracked", address=address)
+                        return None
+                    if r.status in (202, 429, 403, 502, 503, 504) and attempt <= max_retries:
+                        log.info("cielo_retry_after_backoff",
+                                 address=address, status=r.status, attempt=attempt, backoff=backoff)
+                        await asyncio.sleep(backoff)
+                        backoff = min(backoff * 2, 30.0)
+                        continue
                     log.warning("cielo_trading_stats_failed", address=address, status=r.status)
                     return None
-                data = await r.json()
-        except Exception:
-            log.exception("cielo_trading_stats_exception", address=address)
-            return None
+            except Exception:
+                if attempt <= max_retries:
+                    await asyncio.sleep(backoff)
+                    backoff = min(backoff * 2, 30.0)
+                    continue
+                log.exception("cielo_trading_stats_exception", address=address)
+                return None
 
         d = data.get("data") or {}
         try:

@@ -142,9 +142,13 @@ async def curate(
         return 2
 
     # ---- Validate each via Cielo /trading-stats -------------------------
+    # Cielo Pro rate limit: 25 credits/sec, /trading-stats = 30 credits/call.
+    # Sleep 1.3s between calls = ~46 calls/min, well under the limit and
+    # under our /trading-stats budget.
     passed: list[dict] = []
     rejected: list[dict] = []
     errors: list[dict] = []
+    CIELO_CALL_INTERVAL_SECONDS = 1.3
     async with aiohttp.ClientSession() as session:
         for i, cand in enumerate(merged, 1):
             address = cand["address"]
@@ -156,17 +160,20 @@ async def curate(
             if stats is None:
                 print("ERROR (no stats)")
                 errors.append({"address": address, "chain": chain, "note": note})
-                continue
-            ok, reasons = passes_curation_filters(stats)
-            entry = _to_entry(stats, note)
-            if ok:
-                passed.append(entry)
-                print(f"OK pnl=${stats.pnl_usd:.0f} wr={stats.win_rate:.2f} "
-                      f"swaps={stats.swap_count} streak={stats.consecutive_trading_days}d")
             else:
-                rejected.append({"address": address, "chain": chain, "note": note,
-                                 "stats": entry, "reasons": reasons})
-                print(f"REJECT {reasons}")
+                ok, reasons = passes_curation_filters(stats)
+                entry = _to_entry(stats, note)
+                if ok:
+                    passed.append(entry)
+                    print(f"OK pnl=${stats.pnl_usd:.0f} wr={stats.win_rate:.2f} "
+                          f"swaps={stats.swap_count} streak={stats.consecutive_trading_days}d")
+                else:
+                    rejected.append({"address": address, "chain": chain, "note": note,
+                                     "stats": entry, "reasons": reasons})
+                    print(f"REJECT {reasons}")
+            # Rate-limit pacing — last iteration doesn't need to wait
+            if i < len(merged):
+                await asyncio.sleep(CIELO_CALL_INTERVAL_SECONDS)
 
     # Sort by pnl × winrate
     passed.sort(key=lambda e: e["pnl_usd"] * e["win_rate"], reverse=True)
