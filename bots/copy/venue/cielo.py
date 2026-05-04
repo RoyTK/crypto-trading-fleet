@@ -26,6 +26,8 @@ from typing import Optional
 import aiohttp
 
 from bots.copy.config import (
+    WALLET_MAX_HOLD_DAYS,
+    WALLET_MIN_HOLD_MINUTES,
     WALLET_MIN_PNL_USD,
     WALLET_MIN_TRADES_90D,
     WALLET_MIN_WIN_RATE,
@@ -223,12 +225,13 @@ class CieloClient:
 
 
 def passes_curation_filters(stats: WalletStats) -> tuple[bool, list[str]]:
-    """Apply Item #7 wallet curation criteria adapted to Cielo's actual fields.
+    """Apply Item #7 wallet curation criteria — tuned 2026-05-04 for Solana
+    memecoin reality (rotates in minutes, not hours like HL futures).
 
-    Note: wallet_age_days from the original spec isn't exposed by /trading-stats.
-    We use `consecutive_trading_days` (active streak) as a proxy + per-call PnL
-    over 'max' window as a proxy for sustained profitability. Returns
-    (passed, reasons_failed).
+    Filters: pnl ≥ $50k, winrate ≥ 0.55, swap_count ≥ 20, 1 min ≤ avg hold ≤ 7d.
+    Dropped: consecutive_trading_days proxy (poor maturity signal on Solana).
+
+    Returns (passed, reasons_failed).
     """
     reasons: list[str] = []
     if stats.pnl_usd < WALLET_MIN_PNL_USD:
@@ -237,10 +240,10 @@ def passes_curation_filters(stats: WalletStats) -> tuple[bool, list[str]]:
         reasons.append(f"winrate_below_{WALLET_MIN_WIN_RATE:.2f}")
     if stats.swap_count < WALLET_MIN_TRADES_90D:
         reasons.append(f"swap_count_below_{WALLET_MIN_TRADES_90D}")
-    # Hold time: 30 min ≤ avg ≤ 7 days (= 10080 min)
-    if stats.avg_hold_minutes < 30 or stats.avg_hold_minutes > 7 * 24 * 60:
-        reasons.append("hold_time_out_of_band")
-    # Active streak as wallet-maturity proxy. ≥30 days of trading days = mature.
-    if stats.consecutive_trading_days < 30:
-        reasons.append(f"consecutive_days_below_30")
+    # Hold time: 1 min ≤ avg ≤ 7 days. Lower bound only excludes true HFT/MM
+    # bots; upper bound excludes pure long-term holders.
+    if stats.avg_hold_minutes < WALLET_MIN_HOLD_MINUTES:
+        reasons.append("hold_time_too_short_hft_bot")
+    if stats.avg_hold_minutes > WALLET_MAX_HOLD_DAYS * 24 * 60:
+        reasons.append("hold_time_too_long_holder")
     return len(reasons) == 0, reasons

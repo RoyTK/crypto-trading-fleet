@@ -42,16 +42,22 @@ PER_TRADE_NOTIONAL_CAP_PCT = 8.0
 # Allocation cap
 ALLOCATION_CAP_PCT = 50.0
 
-# Wallet curation criteria
-# Note: validated against Cielo's /trading-stats response (Build A reality).
-# Cielo doesn't expose wallet age directly — `consecutive_trading_days` is
-# used as a maturity proxy in the validator (see venue/cielo.py).
+# Wallet curation criteria — tuned 2026-05-04 for Solana memecoin reality.
+# Original Item #7 thresholds (30min-7d hold, 60d wallet age) were calibrated
+# for HL futures swing traders. Solana memecoin alpha rotates in MINUTES.
+# Tuning is allowed pre-paper-clock; locked once paper trading begins.
+#
+# Locked rationale:
+# - PnL ≥ $50k: meaningful absolute profit, filters out grinders
+# - WR ≥ 0.55: better-than-coinflip across many trades
+# - swap_count ≥ 20: enough trades to be statistically meaningful
+# - hold ≥ 1 min: only excludes true HFT/MM bots (sub-1-min holds)
+# - hold ≤ 7d: excludes pure long-term holders (we want active rotators)
 WALLET_MIN_PNL_USD = 50_000.0
 WALLET_MIN_WIN_RATE = 0.55
-WALLET_MIN_HOLD_MINUTES = 30
+WALLET_MIN_HOLD_MINUTES = 1
 WALLET_MAX_HOLD_DAYS = 7
 WALLET_MIN_TRADES_90D = 20
-WALLET_MIN_CONSECUTIVE_TRADING_DAYS = 30
 WALLET_POOL_TARGET_MIN = 200
 WALLET_POOL_TARGET_MAX = 300
 
