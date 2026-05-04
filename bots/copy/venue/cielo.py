@@ -96,11 +96,14 @@ class CieloClient:
                     if r.status == 200:
                         data = await r.json()
                         break
-                    if r.status == 400:
-                        # Wallet not tracked by Cielo — terminal, no retry
-                        log.info("cielo_wallet_not_tracked", address=address)
+                    if r.status in (400, 403, 404):
+                        # Wallet not in Cielo's index — terminal, no retry.
+                        # 400/403/404 all mean "no data for this wallet"; the
+                        # difference depends on Cielo's internal classification
+                        # (anonymous, MM-bot-filtered, recently-created, etc.)
+                        log.info("cielo_wallet_not_tracked", address=address, status=r.status)
                         return None
-                    if r.status in (202, 429, 403, 502, 503, 504) and attempt <= max_retries:
+                    if r.status in (202, 429, 502, 503, 504) and attempt <= max_retries:
                         log.info("cielo_retry_after_backoff",
                                  address=address, status=r.status, attempt=attempt, backoff=backoff)
                         await asyncio.sleep(backoff)
