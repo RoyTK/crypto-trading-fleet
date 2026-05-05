@@ -1,17 +1,1045 @@
 {
   "metadata": {
-    "version": 0,
-    "curated_at": null,
+    "version": 2,
+    "curated_at": "2026-05-05T00:38:51.314507+00:00",
     "source": "scripts/curate_wallet_pool.py",
-    "criteria": {
-      "min_pnl_usd_180d": 50000,
-      "min_win_rate": 0.55,
-      "hold_time_minutes": [30, 10080],
-      "min_trades_90d": 20,
-      "min_wallet_age_days": 60,
-      "target_pool_size": [200, 300]
+    "build": "A_solana_only",
+    "validation_mode": "birdeye_only",
+    "inputs": {
+      "from_birdeye": 100,
+      "from_birdeye_tokens": [
+        "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
+        "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp",
+        "8x5VqbHA8D7NkD52uNuS5nnt3PwA8pLD34ymskeSo2Wn",
+        "HmBdm8vbisABUjkxms6ZUnoaXbfwFM6ymxShWfAENaoi",
+        "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv"
+      ],
+      "per_token_count": 50,
+      "hand_seed_count": 0
     },
-    "notes": "Empty seed. Populated by scripts/curate_wallet_pool.py once Helius + Cielo API keys are configured. Bot loads on startup; missing/empty file is a warning not a fatal error."
+    "stats": {
+      "validated": 325,
+      "passed": 127,
+      "rejected": 198,
+      "errors": 0
+    }
   },
-  "wallets": []
+  "wallets": [
+    {
+      "address": "ARu4n5mFdZogZAravu7CcizaojWnS6oqka37gdLT5SZn",
+      "chain": "solana",
+      "birdeye_pnl_usd": 3402175.436358232,
+      "birdeye_volume_usd": 39099119.546871446,
+      "birdeye_trade_count": 139853,
+      "note": "birdeye gainers_losers 1W (pnl=$3402175)"
+    },
+    {
+      "address": "31o3cjq1yr2ssTrAvXHEGa5MUPbViDQChocmwoL8ptWc",
+      "chain": "solana",
+      "birdeye_pnl_usd": 3681066.6634527515,
+      "birdeye_volume_usd": 10050639.194297878,
+      "birdeye_trade_count": 986,
+      "note": "birdeye gainers_losers 1W (pnl=$3681067)"
+    },
+    {
+      "address": "JD38n7ynKYcgPpF7k1BhXEeREu1KqptU93fVGy3S624k",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1697181.3878108084,
+      "birdeye_volume_usd": 21066105.253340825,
+      "birdeye_trade_count": 6985,
+      "note": "birdeye gainers_losers 1W (pnl=$1697181)"
+    },
+    {
+      "address": "JD25qVdtd65FoiXNmR89JjmoJdYk9sjYQeSTZAALFiMy",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1753694.0823149916,
+      "birdeye_volume_usd": 20171496.87723045,
+      "birdeye_trade_count": 6903,
+      "note": "birdeye gainers_losers 1W (pnl=$1753694)"
+    },
+    {
+      "address": "5KJEmUWT474k49ZVZrteFYicZbT22sTvvNRRNk75hBpn",
+      "chain": "solana",
+      "birdeye_pnl_usd": 3576099.871485678,
+      "birdeye_volume_usd": 7623072.397356158,
+      "birdeye_trade_count": 2727,
+      "note": "birdeye gainers_losers 1W (pnl=$3576100)"
+    },
+    {
+      "address": "3XmgTpc3bndpMdksjoN7jtd6nWsCvm6gSoJvTcySxCEP",
+      "chain": "solana",
+      "birdeye_pnl_usd": 950911.142715151,
+      "birdeye_volume_usd": 22673929.46411919,
+      "birdeye_trade_count": 73,
+      "note": "birdeye gainers_losers 1W (pnl=$950911)"
+    },
+    {
+      "address": "Euu7J5JWmvoF4vZ5M2X583jx8c9MgES58xW9SBFKziqq",
+      "chain": "solana",
+      "birdeye_pnl_usd": 2339283.6241117446,
+      "birdeye_volume_usd": 6285780.752153172,
+      "birdeye_trade_count": 10896,
+      "note": "birdeye gainers_losers 1W (pnl=$2339284)"
+    },
+    {
+      "address": "3cmf1r4gMfEkj87PjLSsjkhLsp1o6VXLRWSgaeeDrdan",
+      "chain": "solana",
+      "birdeye_pnl_usd": 597610.0757921047,
+      "birdeye_volume_usd": 18049585.21408415,
+      "birdeye_trade_count": 97,
+      "note": "birdeye gainers_losers 1W (pnl=$597610)"
+    },
+    {
+      "address": "HPZPTbCwN3mRFKCEtcgtGzCCAUpzFzJ4EVdpiqSz7Yic",
+      "chain": "solana",
+      "birdeye_pnl_usd": 741887.5201863325,
+      "birdeye_volume_usd": 13089170.381789971,
+      "birdeye_trade_count": 2002,
+      "note": "birdeye gainers_losers 1W (pnl=$741888)"
+    },
+    {
+      "address": "HFvU7JH5GbWSASkdjrjhtbKKyG2bpx9Rh8ZfNH8PiciX",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1698829.2789657637,
+      "birdeye_volume_usd": 5659565.900053285,
+      "birdeye_trade_count": 18985,
+      "note": "birdeye gainers_losers 1W (pnl=$1698829)"
+    },
+    {
+      "address": "EG8XbqqyNmBLHMP2Y2wyPbMX8c6J12YG8KM4GmvWvUeV",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1946228.0621052096,
+      "birdeye_volume_usd": 4761587.095229695,
+      "birdeye_trade_count": 8730,
+      "note": "birdeye gainers_losers 1W (pnl=$1946228)"
+    },
+    {
+      "address": "2Cq2RNFFxxPXL7teNQAji1beA2vFbBDYW5BGPBFvoN9m",
+      "chain": "solana",
+      "birdeye_pnl_usd": 613505.92737486,
+      "birdeye_volume_usd": 13962972.222127102,
+      "birdeye_trade_count": 22707,
+      "note": "birdeye gainers_losers 1W (pnl=$613506)"
+    },
+    {
+      "address": "2QfBNK2WDwSLoUQRb1zAnp3KM12N9hQ8q6ApwUMnWW2T",
+      "chain": "solana",
+      "birdeye_pnl_usd": 697246.4444646802,
+      "birdeye_volume_usd": 12153218.599173386,
+      "birdeye_trade_count": 91612,
+      "note": "birdeye gainers_losers 1W (pnl=$697246)"
+    },
+    {
+      "address": "HgJ98yGPEQAtTxuHMrUeFeZSBsRU9puiwc3PN3V4Rpii",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1292195.3484270978,
+      "birdeye_volume_usd": 5104645.872691475,
+      "birdeye_trade_count": 16267,
+      "note": "birdeye gainers_losers 1W (pnl=$1292195)"
+    },
+    {
+      "address": "HkFGQsW8mr8DTC2AE2WcC7MzwSnynfEryGMQSht271nf",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1264965.6221927048,
+      "birdeye_volume_usd": 4897085.200475377,
+      "birdeye_trade_count": 13740,
+      "note": "birdeye gainers_losers 1W (pnl=$1264966)"
+    },
+    {
+      "address": "MRiYA4oN3158fCV8evhuCofrDzbHyYvYnGZUDJvoCsa",
+      "chain": "solana",
+      "birdeye_pnl_usd": 372493.5204262246,
+      "birdeye_volume_usd": 14832572.581643455,
+      "birdeye_trade_count": 39351,
+      "note": "birdeye gainers_losers 1W (pnl=$372494)"
+    },
+    {
+      "address": "36RNgbHZE1UeV2r69nmwjT783xKak1g7rLAW3ypinC6x",
+      "chain": "solana",
+      "birdeye_pnl_usd": 759032.7779748265,
+      "birdeye_volume_usd": 5839780.725803042,
+      "birdeye_trade_count": 28,
+      "note": "birdeye gainers_losers 1W (pnl=$759033)"
+    },
+    {
+      "address": "7dGrdJRYtsNR8UYxZ3TnifXGjGc9eRYLq9sELwYpuuUu",
+      "chain": "solana",
+      "birdeye_pnl_usd": 354906.92746572616,
+      "birdeye_volume_usd": 8162188.762836415,
+      "birdeye_trade_count": 30769,
+      "note": "birdeye gainers_losers 1W (pnl=$354907)"
+    },
+    {
+      "address": "5SeiqrxaV6RPqvqge42YTB1XqBV6iFvCrDZMimseL7FB",
+      "chain": "solana",
+      "birdeye_pnl_usd": 859361.6853906298,
+      "birdeye_volume_usd": 3328394.23443611,
+      "birdeye_trade_count": 10044,
+      "note": "birdeye gainers_losers 1W (pnl=$859362)"
+    },
+    {
+      "address": "FX3Lpdwc9UpCd4mYsnZn1etm6G4hXWFjaFxzy5M589ff",
+      "chain": "solana",
+      "birdeye_pnl_usd": 690116.5672292684,
+      "birdeye_volume_usd": 3939751.8570884774,
+      "birdeye_trade_count": 23,
+      "note": "birdeye gainers_losers 1W (pnl=$690117)"
+    },
+    {
+      "address": "DdwfjfVurXwujbADY6r11s63hAdiD3P1MN3MSZCSB9io",
+      "chain": "solana",
+      "birdeye_pnl_usd": 552697.5783252547,
+      "birdeye_volume_usd": 4792347.772249164,
+      "birdeye_trade_count": 20064,
+      "note": "birdeye gainers_losers 1W (pnl=$552698)"
+    },
+    {
+      "address": "bwamJzztZsepfkteWRChggmXuiiCQvpLqPietdNfSXa",
+      "chain": "solana",
+      "birdeye_pnl_usd": 528424.0252142586,
+      "birdeye_volume_usd": 4239955.5090874005,
+      "birdeye_trade_count": 11422,
+      "note": "birdeye gainers_losers 1W (pnl=$528424)"
+    },
+    {
+      "address": "gasBidSWW5zmwXs3gn8TG2ijzKkrwpyM7ucwjgDQst6",
+      "chain": "solana",
+      "birdeye_pnl_usd": 226264.30206850974,
+      "birdeye_volume_usd": 9117076.731443759,
+      "birdeye_trade_count": 11616,
+      "note": "birdeye gainers_losers 1W (pnl=$226264)"
+    },
+    {
+      "address": "EgQX9R3Qph1dPHE1Ysou1auSYqRGomCNmLDC28Yg77aq",
+      "chain": "solana",
+      "birdeye_pnl_usd": 377725.62329883256,
+      "birdeye_volume_usd": 5399976.975349812,
+      "birdeye_trade_count": 47394,
+      "note": "birdeye gainers_losers 1W (pnl=$377726)"
+    },
+    {
+      "address": "2aU9JFxnESiF8RoyP9AdhqULRkJaiPQfBx8d9WWQq2Kz",
+      "chain": "solana",
+      "birdeye_pnl_usd": 503743.4849055479,
+      "birdeye_volume_usd": 4007278.8968925597,
+      "birdeye_trade_count": 16975,
+      "note": "birdeye gainers_losers 1W (pnl=$503743)"
+    },
+    {
+      "address": "3EQ84HbDgx7WBuk85yXJ97x4B7K22sH3AMcZ2iGxMo9J",
+      "chain": "solana",
+      "birdeye_pnl_usd": 820332.0880016305,
+      "birdeye_volume_usd": 2340010.296089715,
+      "birdeye_trade_count": 25,
+      "note": "birdeye gainers_losers 1W (pnl=$820332)"
+    },
+    {
+      "address": "3DuEUG3mcJBQNzZojiE7LmroY4o9xdmMMxDearWDqXWB",
+      "chain": "solana",
+      "birdeye_pnl_usd": 603606.7587761143,
+      "birdeye_volume_usd": 3097586.3028411604,
+      "birdeye_trade_count": 11437,
+      "note": "birdeye gainers_losers 1W (pnl=$603607)"
+    },
+    {
+      "address": "LTSq9cZhQFbJjESAc8nfboqvG5ZHmvX7N4JwAMS4WHx",
+      "chain": "solana",
+      "birdeye_pnl_usd": 708564.9231716815,
+      "birdeye_volume_usd": 2482282.736926273,
+      "birdeye_trade_count": 8543,
+      "note": "birdeye gainers_losers 1W (pnl=$708565)"
+    },
+    {
+      "address": "973vghafz4fQYB3MquWdLZd8dBMzJWcsTyBxH2GAMqcY",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1309903.6078207444,
+      "birdeye_volume_usd": 1304868.8375934996,
+      "birdeye_trade_count": 83,
+      "note": "birdeye gainers_losers 1W (pnl=$1309904)"
+    },
+    {
+      "address": "ESuvjvsQtjuxC4XGsDeMhx8Wp5yjQcCFGncGhupcJbg8",
+      "chain": "solana",
+      "birdeye_pnl_usd": 696954.9900425669,
+      "birdeye_volume_usd": 2319614.76192685,
+      "birdeye_trade_count": 26760,
+      "note": "birdeye gainers_losers 1W (pnl=$696955)"
+    },
+    {
+      "address": "897kAvN6UaXxx7rEdca6LaeBXDJDzXnBUtF62PfB8nnK",
+      "chain": "solana",
+      "birdeye_pnl_usd": 484277.2581086785,
+      "birdeye_volume_usd": 3198068.3766714092,
+      "birdeye_trade_count": 17249,
+      "note": "birdeye gainers_losers 1W (pnl=$484277)"
+    },
+    {
+      "address": "C4dfRxU41P682XUHY37uPNCx6teh7KDQb5w9KpNNWkcg",
+      "chain": "solana",
+      "birdeye_pnl_usd": 286981.9332015611,
+      "birdeye_volume_usd": 4461598.861174419,
+      "birdeye_trade_count": 23548,
+      "note": "birdeye gainers_losers 1W (pnl=$286982)"
+    },
+    {
+      "address": "ByENRM4NDoLcTzJEEvHtJXZ1LxbgC2BNZaHKeASRkNtw",
+      "chain": "solana",
+      "birdeye_pnl_usd": 653244.3498127814,
+      "birdeye_volume_usd": 1956961.4607880171,
+      "birdeye_trade_count": 6290,
+      "note": "birdeye gainers_losers 1W (pnl=$653244)"
+    },
+    {
+      "address": "8ZgAmj7fSo2eTcwidgg4uUYLZRXi8vyeFuywmA8FBQAv",
+      "chain": "solana",
+      "birdeye_pnl_usd": 204617.0253472517,
+      "birdeye_volume_usd": 6072428.196014034,
+      "birdeye_trade_count": 15506,
+      "note": "birdeye gainers_losers 1W (pnl=$204617)"
+    },
+    {
+      "address": "DSqMPMsMAbEJVNuPKv1ZFdzt6YvJaDPDddfeW7ajtqds",
+      "chain": "solana",
+      "birdeye_pnl_usd": 562530.8480705491,
+      "birdeye_volume_usd": 2194197.147223777,
+      "birdeye_trade_count": 322,
+      "note": "birdeye gainers_losers 1W (pnl=$562531)"
+    },
+    {
+      "address": "51ZbbXnbysy4RfKTp29A2aSJ7MB7nvKNe6XasqYKxPvY",
+      "chain": "solana",
+      "birdeye_pnl_usd": 382009.86165987595,
+      "birdeye_volume_usd": 3158415.5171894417,
+      "birdeye_trade_count": 20,
+      "note": "birdeye gainers_losers 1W (pnl=$382010)"
+    },
+    {
+      "address": "GyyCEF3ffyZZcE7f2pBMSBhYu8Cj8nUDie5AKeEKWVuW",
+      "chain": "solana",
+      "birdeye_pnl_usd": 425530.8735019117,
+      "birdeye_volume_usd": 2467327.72907874,
+      "birdeye_trade_count": 12156,
+      "note": "birdeye gainers_losers 1W (pnl=$425531)"
+    },
+    {
+      "address": "AEJZ1tRF5LjEzF6QxJQhoPodhvxfYHcZKxdpnDkSR2Wh",
+      "chain": "solana",
+      "birdeye_pnl_usd": 251004.52325191873,
+      "birdeye_volume_usd": 3350926.2443839563,
+      "birdeye_trade_count": 3840,
+      "note": "birdeye gainers_losers 1W (pnl=$251005)"
+    },
+    {
+      "address": "7UDJvBKv1Z5jE5hMFUywrLhtzmkTiTzSw81WNj5GgCJz",
+      "chain": "solana",
+      "birdeye_pnl_usd": 284032.98849565734,
+      "birdeye_volume_usd": 2612004.430235445,
+      "birdeye_trade_count": 15633,
+      "note": "birdeye gainers_losers 1W (pnl=$284033)"
+    },
+    {
+      "address": "D4KULoD4xxHJaea3yrx2mf5avkSEJVm25KqFW3XUpUkW",
+      "chain": "solana",
+      "birdeye_pnl_usd": 187252.5106396439,
+      "birdeye_volume_usd": 3342820.3033182183,
+      "birdeye_trade_count": 2073,
+      "note": "birdeye gainers_losers 1W (pnl=$187253)"
+    },
+    {
+      "address": "AGgeGJQEM9DtK3D2ne3bRBvdgy9SrTH14zY6mPypEiUz",
+      "chain": "solana",
+      "birdeye_pnl_usd": 195861.65049729464,
+      "birdeye_volume_usd": 3040650.0238462505,
+      "birdeye_trade_count": 19224,
+      "note": "birdeye gainers_losers 1W (pnl=$195862)"
+    },
+    {
+      "address": "FNBYmvedELDzfYbZ61B8HGNJafvRu3MCr9MrHPTmBRpm",
+      "chain": "solana",
+      "birdeye_pnl_usd": 205942.44005020653,
+      "birdeye_volume_usd": 2741732.751989648,
+      "birdeye_trade_count": 15318,
+      "note": "birdeye gainers_losers 1W (pnl=$205942)"
+    },
+    {
+      "address": "7WhVKFLagJosyHGuCqNQfT2uuAU5Ctjk5R1HNRQ6Auxx",
+      "chain": "solana",
+      "birdeye_pnl_usd": 241482.2821105628,
+      "birdeye_volume_usd": 2002483.2011983483,
+      "birdeye_trade_count": 9840,
+      "note": "birdeye gainers_losers 1W (pnl=$241482)"
+    },
+    {
+      "address": "GFHMc9BegxJXLdHJrABxNVoPRdnmVxXiNeoUCEpgXVHw",
+      "chain": "solana",
+      "birdeye_pnl_usd": 457896.7793033433,
+      "birdeye_volume_usd": 996619.5808227544,
+      "birdeye_trade_count": 66,
+      "note": "birdeye gainers_losers 1W (pnl=$457897)"
+    },
+    {
+      "address": "Gbb1ikHBUhjWWpRapSzmdwaWnRbCEfrVCHJzggT8XZRn",
+      "chain": "solana",
+      "birdeye_pnl_usd": 675400.1836313296,
+      "birdeye_volume_usd": 673525.8597992103,
+      "birdeye_trade_count": 321,
+      "note": "birdeye gainers_losers 1W (pnl=$675400)"
+    },
+    {
+      "address": "BR3vXHJx6b1WLkiAyk3Qs8DW4AGWdS5nRTk8vYDKi5ty",
+      "chain": "solana",
+      "birdeye_pnl_usd": 661083.5977239503,
+      "birdeye_volume_usd": 662622.8857624293,
+      "birdeye_trade_count": 4561,
+      "note": "birdeye gainers_losers 1W (pnl=$661084)"
+    },
+    {
+      "address": "6AUZM3tasdcTzWdpiLoFfPTi7cYCQvZUL4EFeVy8poKQ",
+      "chain": "solana",
+      "birdeye_pnl_usd": 190150.69140828104,
+      "birdeye_volume_usd": 2267342.212521118,
+      "birdeye_trade_count": 15843,
+      "note": "birdeye gainers_losers 1W (pnl=$190151)"
+    },
+    {
+      "address": "CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o",
+      "chain": "solana",
+      "birdeye_pnl_usd": 211866.0930532528,
+      "birdeye_volume_usd": 1994034.3611100307,
+      "birdeye_trade_count": 9469,
+      "note": "birdeye gainers_losers 1W (pnl=$211866)"
+    },
+    {
+      "address": "5JJLDJ9d7WeP4sz6KGNRF3ueEF33dtbsihGVC5eyQu9D",
+      "chain": "solana",
+      "birdeye_pnl_usd": 215602.45649924089,
+      "birdeye_volume_usd": 1739394.9962808825,
+      "birdeye_trade_count": 4888,
+      "note": "birdeye gainers_losers 1W (pnl=$215602)"
+    },
+    {
+      "address": "whamNNP9tHoxLg92yHvJPdYhghEoCg1qYTsh5a2oLbx",
+      "chain": "solana",
+      "birdeye_pnl_usd": 266815.7311620113,
+      "birdeye_volume_usd": 1268024.6114613842,
+      "birdeye_trade_count": 3369,
+      "note": "birdeye gainers_losers 1W (pnl=$266816)"
+    },
+    {
+      "address": "AV7PjXHL5JXZ1YoYRoN9Dsstg1x2UciBupMCXcJP8gUz",
+      "chain": "solana",
+      "birdeye_pnl_usd": 213806.1634252146,
+      "birdeye_volume_usd": 1557217.3202940624,
+      "birdeye_trade_count": 4611,
+      "note": "birdeye gainers_losers 1W (pnl=$213806)"
+    },
+    {
+      "address": "FxNLACMwGK3AAprfWsDnASJpFDCKNDtbbUukNbAC7xjN",
+      "chain": "solana",
+      "birdeye_pnl_usd": 573829.2659697095,
+      "birdeye_volume_usd": 571909.1279606493,
+      "birdeye_trade_count": 313,
+      "note": "birdeye gainers_losers 1W (pnl=$573829)"
+    },
+    {
+      "address": "CW7SJ78i4Ug4AvvNbgxaRfBVhmhsft1LU7EYiX1ZhJFa",
+      "chain": "solana",
+      "birdeye_pnl_usd": 556805.3029502191,
+      "birdeye_volume_usd": 554849.2770843976,
+      "birdeye_trade_count": 289,
+      "note": "birdeye gainers_losers 1W (pnl=$556805)"
+    },
+    {
+      "address": "34FtKFFph361iC8f3d5wRKe9hrePX8pE1d8psPgJLTzS",
+      "chain": "solana",
+      "birdeye_pnl_usd": 222275.08450522632,
+      "birdeye_volume_usd": 1293871.4201518286,
+      "birdeye_trade_count": 9514,
+      "note": "birdeye gainers_losers 1W (pnl=$222275)"
+    },
+    {
+      "address": "4m2h5A2hfieCpnTkGcpWoq9tJbTMuswUMPPz2FLqKfGS",
+      "chain": "solana",
+      "birdeye_pnl_usd": 384843.4397375297,
+      "birdeye_volume_usd": 657576.053236,
+      "birdeye_trade_count": 7195,
+      "note": "birdeye gainers_losers 1W (pnl=$384843)"
+    },
+    {
+      "address": "88Md1AAEfdr2iwYHA9pb9okS2fYfiCL8Wu9buaTPbcQM",
+      "chain": "solana",
+      "birdeye_pnl_usd": 324528.5891975719,
+      "birdeye_volume_usd": 740554.8347340543,
+      "birdeye_trade_count": 85,
+      "note": "birdeye gainers_losers 1W (pnl=$324529)"
+    },
+    {
+      "address": "GDf9D7c6pxoPoP5KQJH96oPD4iaSyKeejtciHqomyqEH",
+      "chain": "solana",
+      "birdeye_pnl_usd": 250574.5143448498,
+      "birdeye_volume_usd": 955887.9616628842,
+      "birdeye_trade_count": 1679,
+      "note": "birdeye gainers_losers 1W (pnl=$250575)"
+    },
+    {
+      "address": "CreQJ2t94QK5dsxUZGXfPJ8Nx7wA9LHr5chxjSMkbNft",
+      "chain": "solana",
+      "birdeye_pnl_usd": 3931.176811008576,
+      "birdeye_volume_usd": 53190689.101097,
+      "birdeye_trade_count": 2179,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$3931)"
+    },
+    {
+      "address": "4QWmGTxuJVVApdiSZ36eALdP1NnEGZyb7SVHhsgubyLm",
+      "chain": "solana",
+      "birdeye_pnl_usd": 451629.1148992543,
+      "birdeye_volume_usd": 449783.7992790138,
+      "birdeye_trade_count": 255,
+      "note": "birdeye gainers_losers 1W (pnl=$451629)"
+    },
+    {
+      "address": "DnHbGdhiDyaWtMKs8ysDNuuB6gtg8GqmVvwSqLoL1HiQ",
+      "chain": "solana",
+      "birdeye_pnl_usd": 79593.87159700073,
+      "birdeye_volume_usd": 2452993.862519,
+      "birdeye_trade_count": 159,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$79594)"
+    },
+    {
+      "address": "4mvhY1P3DszLsnbPaumA12XqiC5tVuYeUzYeRTarBv2H",
+      "chain": "solana",
+      "birdeye_pnl_usd": 331174.8022193837,
+      "birdeye_volume_usd": 500987.893461401,
+      "birdeye_trade_count": 6119,
+      "note": "birdeye gainers_losers 1W (pnl=$331175)"
+    },
+    {
+      "address": "MfDuWeqSHEqTFVYZ7LoexgAK9dxk7cy4DFJWjWMGVWa",
+      "chain": "solana",
+      "birdeye_pnl_usd": 4556.26519730788,
+      "birdeye_volume_usd": 30210261.200351015,
+      "birdeye_trade_count": 6829,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$4556)"
+    },
+    {
+      "address": "GJvewfRjqTUPtx6WsBSUnaFbdgXwgXnWfpDyLm65T4YA",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1855.6720665648554,
+      "birdeye_volume_usd": 66873322.170973994,
+      "birdeye_trade_count": 804,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$1856)"
+    },
+    {
+      "address": "BZSRVc1GyQzKA4n9dPV1e8b95JK7Tid5eWuN2ecFEEXh",
+      "chain": "solana",
+      "birdeye_pnl_usd": 269107.1187188523,
+      "birdeye_volume_usd": 379031.54506685265,
+      "birdeye_trade_count": 2367,
+      "note": "birdeye gainers_losers 1W (pnl=$269107)"
+    },
+    {
+      "address": "GxyCaerm38KJxgoT1g5AGnErFrktbA5piFX7u55cPXZg",
+      "chain": "solana",
+      "birdeye_pnl_usd": 227654.33602112965,
+      "birdeye_volume_usd": 370916.68463386176,
+      "birdeye_trade_count": 2894,
+      "note": "birdeye gainers_losers 1W (pnl=$227654)"
+    },
+    {
+      "address": "2Bev4H43NeBuo4wzXS1PYfKSSmEo1TL576Bvd2iPfXDh",
+      "chain": "solana",
+      "birdeye_pnl_usd": 260402.19934877404,
+      "birdeye_volume_usd": 281564.0456593528,
+      "birdeye_trade_count": 1340,
+      "note": "birdeye gainers_losers 1W (pnl=$260402)"
+    },
+    {
+      "address": "FRv6VQv9MeutgZ3Wp3zfVEMyT7ApApQSJBvfxmmXis6o",
+      "chain": "solana",
+      "birdeye_pnl_usd": 221198.39903185196,
+      "birdeye_volume_usd": 228297.9679484886,
+      "birdeye_trade_count": 361,
+      "note": "birdeye gainers_losers 1W (pnl=$221198)"
+    },
+    {
+      "address": "46ojZjmvYCzgikVQ4NZ1rSMz2vURDhW74U1CQm5p6HSM",
+      "chain": "solana",
+      "birdeye_pnl_usd": 202503.43011230225,
+      "birdeye_volume_usd": 216332.14157886128,
+      "birdeye_trade_count": 625,
+      "note": "birdeye gainers_losers 1W (pnl=$202503)"
+    },
+    {
+      "address": "BjXj2ugqWhZ5FwxnuZ2gbcM7r2yniAJsCVBgBvDWzpmi",
+      "chain": "solana",
+      "birdeye_pnl_usd": 192146.98372626575,
+      "birdeye_volume_usd": 218423.87360607405,
+      "birdeye_trade_count": 1080,
+      "note": "birdeye gainers_losers 1W (pnl=$192147)"
+    },
+    {
+      "address": "E6ny3NrW6hEb99qdJLxyaDAuQDSS2Cm2veFJht4jPscg",
+      "chain": "solana",
+      "birdeye_pnl_usd": 182013.0891872132,
+      "birdeye_volume_usd": 213708.89986972584,
+      "birdeye_trade_count": 1229,
+      "note": "birdeye gainers_losers 1W (pnl=$182013)"
+    },
+    {
+      "address": "MGSg73WbcdFNsNYHQqRhXkSfqRSGiZ9pEFn1PF1GQEt",
+      "chain": "solana",
+      "birdeye_pnl_usd": 181032.44718553527,
+      "birdeye_volume_usd": 207512.19154974236,
+      "birdeye_trade_count": 1198,
+      "note": "birdeye gainers_losers 1W (pnl=$181032)"
+    },
+    {
+      "address": "7ebCZ3KJqJKvUfAz3PSn5xkcJ4bSnLuEJgkSHuAYd32F",
+      "chain": "solana",
+      "birdeye_pnl_usd": 2210.755198542954,
+      "birdeye_volume_usd": 13698522.008607,
+      "birdeye_trade_count": 890,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$2211)"
+    },
+    {
+      "address": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51",
+      "chain": "solana",
+      "birdeye_pnl_usd": 12255.574397736746,
+      "birdeye_volume_usd": 1935484.2414459991,
+      "birdeye_trade_count": 422,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$12256)"
+    },
+    {
+      "address": "F7p3dFrjRTbtRp8FRF6qHLomXbKRBzpvBLjtQcfcgmNe",
+      "chain": "solana",
+      "birdeye_pnl_usd": 27222.357629843853,
+      "birdeye_volume_usd": 673169.8659809999,
+      "birdeye_trade_count": 42,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$27222)"
+    },
+    {
+      "address": "gasTzr94Pmp4Gf8vknQnqxeYxdgwFjbgdJa4msYRpnB",
+      "chain": "solana",
+      "birdeye_pnl_usd": 23509.725651747714,
+      "birdeye_volume_usd": 730077.550214,
+      "birdeye_trade_count": 46,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$23510)"
+    },
+    {
+      "address": "93U65rT9tdPCwzpXVp4o6FUax7w4nmxtat44nmZtqV3x",
+      "chain": "solana",
+      "birdeye_pnl_usd": 374.1633705079818,
+      "birdeye_volume_usd": 40702799.735736,
+      "birdeye_trade_count": 31,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$374)"
+    },
+    {
+      "address": "GCvHhEUYQwTJ8jyf8Lc4bv8jBXyZU4LMMsZCobwEPzvM",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1112.7697428443446,
+      "birdeye_volume_usd": 8981902.579784997,
+      "birdeye_trade_count": 1428,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$1113)"
+    },
+    {
+      "address": "JD6rVaerbyz6wjQ433nrw6bFTgFrp46MiYmi8EtUAfsG",
+      "chain": "solana",
+      "birdeye_pnl_usd": 324.3566501199763,
+      "birdeye_volume_usd": 30462466.972496983,
+      "birdeye_trade_count": 12322,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$324)"
+    },
+    {
+      "address": "FNVe6oQYGxWF4kS23idC719q3VsKQdpQnQLHdW3NgQ5d",
+      "chain": "solana",
+      "birdeye_pnl_usd": 10951.194207146935,
+      "birdeye_volume_usd": 382191.188949,
+      "birdeye_trade_count": 155,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$10951)"
+    },
+    {
+      "address": "EmDewJpfQaxWqxthX1FUyBCCPNGt8Ac5ek4M4pnGTgxC",
+      "chain": "solana",
+      "birdeye_pnl_usd": 304.97121042513584,
+      "birdeye_volume_usd": 10910586.231464999,
+      "birdeye_trade_count": 3228,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$305)"
+    },
+    {
+      "address": "CSavADCRWnAvgLr2LHJ6T7dD9mm7iErbTN5L1cadLqbZ",
+      "chain": "solana",
+      "birdeye_pnl_usd": 5418.968456384755,
+      "birdeye_volume_usd": 456497.13977,
+      "birdeye_trade_count": 26,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$5419)"
+    },
+    {
+      "address": "HhP8Kzv64Q5EUCqyrDnoR83Qf49JWxCfRZovvr2g9jng",
+      "chain": "solana",
+      "birdeye_pnl_usd": 10199.709361643718,
+      "birdeye_volume_usd": 234572.72685600002,
+      "birdeye_trade_count": 23,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$10200)"
+    },
+    {
+      "address": "DBp3PZXh5MaoHsqXa4ez3czUFhRf9YxsZW4zf9cgGKj9",
+      "chain": "solana",
+      "birdeye_pnl_usd": 2742.972399309022,
+      "birdeye_volume_usd": 830107.4095679999,
+      "birdeye_trade_count": 28,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$2743)"
+    },
+    {
+      "address": "7X2oVc64cq7SVxUSPw9dndvLm5t2tcAZZA8BBrWBw7ex",
+      "chain": "solana",
+      "birdeye_pnl_usd": 3311.8602867292257,
+      "birdeye_volume_usd": 615569.501473,
+      "birdeye_trade_count": 27,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$3312)"
+    },
+    {
+      "address": "35dszeQQQzkMvjcmyrPWPnN5ZyK9ZjYkNp9kKXZWMvji",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1783.2551864411043,
+      "birdeye_volume_usd": 1071457.637055,
+      "birdeye_trade_count": 112,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$1783)"
+    },
+    {
+      "address": "HYe4vSaEGqQKnDrxWDrk3o5H2gznv7qtij5G6NNG8WHd",
+      "chain": "solana",
+      "birdeye_pnl_usd": 144.89673719957023,
+      "birdeye_volume_usd": 10094433.857826002,
+      "birdeye_trade_count": 313,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$145)"
+    },
+    {
+      "address": "2FxrBzf25oURJPo6qLqLmzVpnvH85dScCPZFEvti7W5o",
+      "chain": "solana",
+      "birdeye_pnl_usd": 5236.995112323283,
+      "birdeye_volume_usd": 264673.157778,
+      "birdeye_trade_count": 27,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$5237)"
+    },
+    {
+      "address": "2vjLTHaYCdtjzzNoWKfmSRhmrYo1FFWa6hoaMdJfKnoo",
+      "chain": "solana",
+      "birdeye_pnl_usd": 1233.8873576350977,
+      "birdeye_volume_usd": 1038758.794667,
+      "birdeye_trade_count": 135,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$1234)"
+    },
+    {
+      "address": "4kDySta6dogdVxH4JrEKpLvckHLnLkVk8Ts3LMX5GzDK",
+      "chain": "solana",
+      "birdeye_pnl_usd": 873.1475924946641,
+      "birdeye_volume_usd": 1377796.272884,
+      "birdeye_trade_count": 38,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$873)"
+    },
+    {
+      "address": "9HzLQ8hGATLdkypz1ziDCpVs5HWxqZJFBHxgUBgTuk8S",
+      "chain": "solana",
+      "birdeye_pnl_usd": 6823.759161092758,
+      "birdeye_volume_usd": 167347.80712399998,
+      "birdeye_trade_count": 24,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$6824)"
+    },
+    {
+      "address": "xm4dC6XCRH4MWUXCNNZ1MqYm8jZjnabV4BHS7Eyoj29",
+      "chain": "solana",
+      "birdeye_pnl_usd": 299.45020597849884,
+      "birdeye_volume_usd": 3703373.7906480003,
+      "birdeye_trade_count": 470,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$299)"
+    },
+    {
+      "address": "Em8J3gBWapfVBGVhVipwQnLrqCvnWBnLajw6XFsFECPF",
+      "chain": "solana",
+      "birdeye_pnl_usd": 5149.095705544671,
+      "birdeye_volume_usd": 189134.93656500004,
+      "birdeye_trade_count": 70,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$5149)"
+    },
+    {
+      "address": "HxjwdF326ZunmUwC1iXhfgL3ku78YsksN6n7Rfxzwr6b",
+      "chain": "solana",
+      "birdeye_pnl_usd": 42.70489673383132,
+      "birdeye_volume_usd": 21292397.746632002,
+      "birdeye_trade_count": 36,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$43)"
+    },
+    {
+      "address": "5e6DYCP4XBQiiPJeKdrWWB8ny3nkoyuR1S5Tk41u4mtb",
+      "chain": "solana",
+      "birdeye_pnl_usd": 5349.127295746302,
+      "birdeye_volume_usd": 149021.162768,
+      "birdeye_trade_count": 22,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$5349)"
+    },
+    {
+      "address": "UUAhspPgUdGuXUnokmxERH1VvNGNh1ouN3mfcbfV8yd",
+      "chain": "solana",
+      "birdeye_pnl_usd": 799.4159098541827,
+      "birdeye_volume_usd": 801720.4429550004,
+      "birdeye_trade_count": 934,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$799)"
+    },
+    {
+      "address": "jJLMDddYi9Zx6FmdREvnawb7dW7NbeWvEdufXBsvWqg",
+      "chain": "solana",
+      "birdeye_pnl_usd": 24.26536586676861,
+      "birdeye_volume_usd": 25154263.520168,
+      "birdeye_trade_count": 986,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$24)"
+    },
+    {
+      "address": "RaVenxw8kykBbW7KGBaBsb7fDkkBYK4uJVDSFun6ZxR",
+      "chain": "solana",
+      "birdeye_pnl_usd": 731.1277825495097,
+      "birdeye_volume_usd": 618149.2779939998,
+      "birdeye_trade_count": 232,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$731)"
+    },
+    {
+      "address": "DtvmxrTACskMG2W8a6KXgSemUfvyNVeQTgfpJoGvMVKx",
+      "chain": "solana",
+      "birdeye_pnl_usd": 406.97941976778543,
+      "birdeye_volume_usd": 904127.3929740003,
+      "birdeye_trade_count": 132,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$407)"
+    },
+    {
+      "address": "B96ivXkFzzwsuWUtBXS3gNHtReMvndhX4uYimgLjLLG9",
+      "chain": "solana",
+      "birdeye_pnl_usd": 3578.763846281894,
+      "birdeye_volume_usd": 102610.88892500004,
+      "birdeye_trade_count": 161,
+      "note": "birdeye top_traders CARDSc...xYjp 24h_pnl (pnl=$3579)"
+    },
+    {
+      "address": "7UhxnKdGnCPia5QEKMkZ3Ck3Vv5GbCHw9VeQKNNvRFLa",
+      "chain": "solana",
+      "birdeye_pnl_usd": 101.51466738834343,
+      "birdeye_volume_usd": 2787877.6673459997,
+      "birdeye_trade_count": 97,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$102)"
+    },
+    {
+      "address": "8UfVkyuAtnh5nwmvwDdjYznpzV6kSrVJcVN4Hx2z8GiX",
+      "chain": "solana",
+      "birdeye_pnl_usd": 137.38447298905692,
+      "birdeye_volume_usd": 2051490.186583,
+      "birdeye_trade_count": 33,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$137)"
+    },
+    {
+      "address": "FrhLfj81LRpMR3EwSSCGPzHmxsnoq8h628ne68vK5oMN",
+      "chain": "solana",
+      "birdeye_pnl_usd": 58.517322837541585,
+      "birdeye_volume_usd": 3783047.639252999,
+      "birdeye_trade_count": 75,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$59)"
+    },
+    {
+      "address": "B9aZH4is2gpNAoCahWfz8rBdRjzjMQNrCLYr37tV3Xi3",
+      "chain": "solana",
+      "birdeye_pnl_usd": 484.673355232077,
+      "birdeye_volume_usd": 436529.959088,
+      "birdeye_trade_count": 41,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$485)"
+    },
+    {
+      "address": "b619EzHShebQRX7oouwUD5fUo72ai8GgcMLAHkcqfG2",
+      "chain": "solana",
+      "birdeye_pnl_usd": 23.16320912563884,
+      "birdeye_volume_usd": 8887622.065428004,
+      "birdeye_trade_count": 596,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$23)"
+    },
+    {
+      "address": "JBVpuKD4cEVUjZ7conFwKZKzdpY92C1hzwCHYr99L54z",
+      "chain": "solana",
+      "birdeye_pnl_usd": 433.81335239348215,
+      "birdeye_volume_usd": 456375.4195709999,
+      "birdeye_trade_count": 94,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$434)"
+    },
+    {
+      "address": "CC6FRpsDoWmzt7KeGhcc2CAR7oUBaBbmjSQC3SsMM8c6",
+      "chain": "solana",
+      "birdeye_pnl_usd": 394.8792267551697,
+      "birdeye_volume_usd": 489896.602235,
+      "birdeye_trade_count": 38,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$395)"
+    },
+    {
+      "address": "CU7qEKgSySPJoFZkC5FDpgJCoQa9uFM6HBYArvdfsiZT",
+      "chain": "solana",
+      "birdeye_pnl_usd": 99.86728898440086,
+      "birdeye_volume_usd": 1537500.624088,
+      "birdeye_trade_count": 29,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$100)"
+    },
+    {
+      "address": "FqJsk25LNvr7Z8GBVLAidDjr8dQS3XFamu5Dn2NdHbrR",
+      "chain": "solana",
+      "birdeye_pnl_usd": 630.7007545156392,
+      "birdeye_volume_usd": 225120.642461,
+      "birdeye_trade_count": 99,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$631)"
+    },
+    {
+      "address": "CWjwDW9GPxTP94QR2xt5zXU2a2TiyUuJTAsxJ4YvpwW2",
+      "chain": "solana",
+      "birdeye_pnl_usd": 239.0297344153222,
+      "birdeye_volume_usd": 577793.914827,
+      "birdeye_trade_count": 21,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$239)"
+    },
+    {
+      "address": "JApBGtbBtsNosE1Z5CiyUkTMhAxATqH1NAuJJenHUceR",
+      "chain": "solana",
+      "birdeye_pnl_usd": 184.47427303731442,
+      "birdeye_volume_usd": 550300.718606,
+      "birdeye_trade_count": 144,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$184)"
+    },
+    {
+      "address": "DXMR7EsE7NbQAvrTiYjiTka3zkjX2pGky2R4JKTeJWzn",
+      "chain": "solana",
+      "birdeye_pnl_usd": 387.2335836515934,
+      "birdeye_volume_usd": 231279.913879,
+      "birdeye_trade_count": 30,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$387)"
+    },
+    {
+      "address": "Fxf7eHuan3QfFhteggoe6bWvPqewDbC4YYTJFaNoV29V",
+      "chain": "solana",
+      "birdeye_pnl_usd": 489.14075148682355,
+      "birdeye_volume_usd": 159110.681161,
+      "birdeye_trade_count": 21,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$489)"
+    },
+    {
+      "address": "2sLPsUUGQ8HKddr3fYg9nLrqKZT2ddHLh8M1P4n5C4dM",
+      "chain": "solana",
+      "birdeye_pnl_usd": 45.35066187558779,
+      "birdeye_volume_usd": 1661000.3927430003,
+      "birdeye_trade_count": 96,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$45)"
+    },
+    {
+      "address": "prUWZMpQAbRzmqnRqcoSh8jqcJ1M1g64uxsR7mq9bmv",
+      "chain": "solana",
+      "birdeye_pnl_usd": 42.365317827474435,
+      "birdeye_volume_usd": 1726527.0734849998,
+      "birdeye_trade_count": 47,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$42)"
+    },
+    {
+      "address": "2zWkRKi5Rw15Kjx9SxhMjPY7LQTfQyr9hQKuTCGSy2FE",
+      "chain": "solana",
+      "birdeye_pnl_usd": 225.65433603418614,
+      "birdeye_volume_usd": 323958.1336269999,
+      "birdeye_trade_count": 60,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$226)"
+    },
+    {
+      "address": "6AGp6zbGNuyZpmzeswv9KCNU15Rf37UQDqDqFAeHmS8d",
+      "chain": "solana",
+      "birdeye_pnl_usd": 257.5090871832547,
+      "birdeye_volume_usd": 225843.29772099998,
+      "birdeye_trade_count": 242,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$258)"
+    },
+    {
+      "address": "7rtiKSUDLBm59b1SBmD9oajcP8xE64vAGSMbAN5CXy1q",
+      "chain": "solana",
+      "birdeye_pnl_usd": 232.61314740259525,
+      "birdeye_volume_usd": 228874.533266,
+      "birdeye_trade_count": 30,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$233)"
+    },
+    {
+      "address": "gtagyESa99t49VmUqnnfsuowYnigSNKuYXdXWyXWNdd",
+      "chain": "solana",
+      "birdeye_pnl_usd": 49.8357974019276,
+      "birdeye_volume_usd": 1053624.8285100001,
+      "birdeye_trade_count": 110,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$50)"
+    },
+    {
+      "address": "7iVCXQn4u6tiTEfNVqbWSEsRdEi69E9oYsSMiepuECwi",
+      "chain": "solana",
+      "birdeye_pnl_usd": 292.05180047068666,
+      "birdeye_volume_usd": 150294.631204,
+      "birdeye_trade_count": 48,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$292)"
+    },
+    {
+      "address": "2ZQmezyhW5kMKxkv7TdKhJ4a7abMURZoTsZnM68pBrQC",
+      "chain": "solana",
+      "birdeye_pnl_usd": 242.80388676478898,
+      "birdeye_volume_usd": 153472.73795700003,
+      "birdeye_trade_count": 63,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$243)"
+    },
+    {
+      "address": "Luckywzbt7nYBhmEZLnzqAsQmRE8bMmgyduxsP5kktR",
+      "chain": "solana",
+      "birdeye_pnl_usd": 247.77281713950703,
+      "birdeye_volume_usd": 86835.81456,
+      "birdeye_trade_count": 100,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$248)"
+    },
+    {
+      "address": "7JCe3GHwkEr3feHgtLXnmuJ1yB3A7coSeyynxTBgdG8k",
+      "chain": "solana",
+      "birdeye_pnl_usd": 39.15286155958761,
+      "birdeye_volume_usd": 523127.858443,
+      "birdeye_trade_count": 33,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$39)"
+    },
+    {
+      "address": "j1opmdubY84LUeidrPCsSGskTCYmeJVzds1UWm6nngb",
+      "chain": "solana",
+      "birdeye_pnl_usd": 36.5565620134028,
+      "birdeye_volume_usd": 472757.938548,
+      "birdeye_trade_count": 29,
+      "note": "birdeye top_traders 2zMMhc...uauv 24h_pnl (pnl=$37)"
+    },
+    {
+      "address": "BLue6985Azdq6By4VGi6m5u1UkvVqN7w7Hcg2VhUw2PE",
+      "chain": "solana",
+      "birdeye_pnl_usd": 240.79203372999146,
+      "birdeye_volume_usd": 70055.398461,
+      "birdeye_trade_count": 40,
+      "note": "birdeye top_traders 5UUH9R...hgH2 24h_pnl (pnl=$241)"
+    },
+    {
+      "address": "5d8tDay1ZDV4XVUBtTvFvQiLxDe8dz2ZCdsrkmTDcbm5",
+      "chain": "solana",
+      "birdeye_pnl_usd": 30.76965947304734,
+      "birdeye_volume_usd": 356857.226236,
+      "birdeye_trade_count": 38,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$31)"
+    },
+    {
+      "address": "K1tChn2NETQd9cCHe1UmUyWP3rDA92gP1dH4nNyEJrx",
+      "chain": "solana",
+      "birdeye_pnl_usd": 18.50874539003763,
+      "birdeye_volume_usd": 216942.902146,
+      "birdeye_trade_count": 20,
+      "note": "birdeye top_traders 8x5Vqb...o2Wn 24h_pnl (pnl=$19)"
+    },
+    {
+      "address": "dmuXAmcXJcdNuK264vsJQNBpVBPAx4JLujBzBMahJ6C",
+      "chain": "solana",
+      "birdeye_pnl_usd": 34.490027211770695,
+      "birdeye_volume_usd": 46531.490373294,
+      "birdeye_trade_count": 22,
+      "note": "birdeye top_traders HmBdm8...Naoi 24h_pnl (pnl=$34)"
+    }
+  ]
 }
