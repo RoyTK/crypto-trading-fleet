@@ -34,19 +34,23 @@ def _run() -> None:
         seconds=30,
         id="scoring_heartbeat",
     )
+    # NOTE: do NOT pass next_run_time=None here — that means "add the job as
+    # paused" in APScheduler, NOT "schedule the next run via the trigger."
+    # The earlier comment "run on schedule, not at boot" was wrong: passing
+    # next_run_time=None silently disabled both jobs for 3 days. The startup
+    # behavior we actually want — run-now-then-on-interval — is achieved by
+    # the explicit calls below.
     scheduler.add_job(
         score_all_bots,
         "interval",
         minutes=SCORING_INTERVAL_MINUTES,
         id="score_all_bots",
-        next_run_time=None,  # run on schedule, not at boot
     )
     scheduler.add_job(
         check_all_bots_dd,
         "interval",
         minutes=DD_CHECK_INTERVAL_MINUTES,
         id="dd_monitor",
-        next_run_time=None,
     )
     scheduler.start()
     score_all_bots()  # one immediate pass
