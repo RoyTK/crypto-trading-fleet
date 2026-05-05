@@ -1,15 +1,21 @@
 """COPY bot — main entry point.
 
 Phase 2 Build A scope (paper-only, no DEX execution):
-- Poll wallet pool every COPY_WALLET_POLL_SECONDS (Helius for Solana, Cielo for EVM)
+- Solana wallet activity arrives via Helius webhooks → webhook_receiver
+  service → Redis pubsub on `copy:buys`. Bot subscribes here, no polling.
 - Feed buy events into the cluster detector
 - On cluster trigger: signal → DEX-quoted sim fill → paper Trade
 - Manage open paper positions (software stops, TP, timeout)
-- Reconcile every COPY_LOOP_INTERVAL × N seconds (no-op until Build B)
+- Reconcile every reconciliation_interval seconds (no-op until Build B)
 - Per-bot DD halts via framework.dd_monitor cron (already wired)
 - /panic listener via base class
 
 Build B will add bots/copy/executor.py and ~10% shadow execution.
+
+Polling-based ingestion (helius_solana.py + cielo.py) is no longer used at
+runtime — webhooks replaced it after Helius polling proved too expensive
+(10M credits/day at 138 wallets × 10s polling). Cielo client is retained
+for one-off curation use; helius_solana for the SOL-price quote helper.
 """
 from __future__ import annotations
 
@@ -21,6 +27,7 @@ from time import time
 from typing import Any, Optional
 
 import aiohttp
+import redis.asyncio as redis_async
 
 from bots.base.bot_lifecycle import BotLifecycle
 from bots.copy.config import get_copy_settings
@@ -38,13 +45,15 @@ from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
 from bots.copy.sizing import size_position
-from bots.copy.venue.cielo import CieloClient
 from bots.copy.venue.dex_quoter import quote
-from bots.copy.venue.helius_solana import HeliusSolanaClient, poll_wallets as poll_solana_wallets
+from bots.copy.venue.helius_solana import WalletBuyEvent
 from framework.alerts import emit_alert
 from framework.config import get_settings as get_framework_settings
 from framework.reconciliation import reconcile_once, register_venue_fetcher
 from monitoring.alerting.taxonomy import Severity
+
+
+REDIS_BUYS_CHANNEL = "copy:buys"
 
 
 WALLET_POOL_PATH = Path(__file__).parent / "wallet_pool.json"
@@ -59,16 +68,13 @@ class CopyBot(BotLifecycle):
         self.loop_interval_seconds = self.copy_settings.copy_loop_interval_seconds
         self.simulator = CopyFillSimulator()
         self.cluster = ClusterDetector()
-        self.helius = HeliusSolanaClient()
-        self.cielo = CieloClient()
         self._wallets_solana: list[str] = []
         self._wallets_base: list[str] = []
         self._wallets_arbitrum: list[str] = []
-        self._last_solana_poll_ts: float = 0.0
-        self._last_evm_poll_ts: float = 0.0
         self._last_reconcile_ts: float = 0.0
-        self._sol_price_usd: float = 150.0
         self._session: Optional[aiohttp.ClientSession] = None
+        self._buys_subscriber_task: Optional[asyncio.Task] = None
+        self._buys_redis: Optional[redis_async.Redis] = None
 
     # ---- Lifecycle hooks ---------------------------------------------------
 
@@ -78,10 +84,9 @@ class CopyBot(BotLifecycle):
         register_venue_fetcher("arbitrum", make_fetcher_evm("arbitrum"))
         self._load_wallet_pool()
         self._session = aiohttp.ClientSession()
-        try:
-            self._sol_price_usd = await self.helius.fetch_sol_price_usd(self._session)
-        except Exception:
-            self.log.warning("sol_price_fetch_failed_using_default", default=self._sol_price_usd)
+        # Subscribe to wallet-buy events on Redis (published by webhook_receiver)
+        self._buys_redis = redis_async.from_url(self.settings.redis_url, decode_responses=True)
+        self._buys_subscriber_task = asyncio.create_task(self._buys_subscriber())
         self.log.info(
             "copy_started",
             paper_capital_usd=self.copy_settings.copy_paper_capital_usd,
@@ -91,6 +96,10 @@ class CopyBot(BotLifecycle):
         )
 
     async def on_stop(self) -> None:
+        if self._buys_subscriber_task:
+            self._buys_subscriber_task.cancel()
+        if self._buys_redis:
+            await self._buys_redis.aclose()
         if self._session:
             await self._session.close()
 
@@ -104,22 +113,11 @@ class CopyBot(BotLifecycle):
 
     async def iterate(self) -> None:
         now = time()
-        new_events = False
 
-        # Solana poll (Helius — cheap, frequent)
-        if now - self._last_solana_poll_ts >= self.copy_settings.copy_wallet_poll_seconds:
-            await self._poll_solana_wallets()
-            self._last_solana_poll_ts = now
-            new_events = True
-
-        # EVM poll (Cielo — expensive credits, slower cadence)
-        if now - self._last_evm_poll_ts >= self.copy_settings.copy_evm_wallet_poll_seconds:
-            await self._poll_evm_wallets()
-            self._last_evm_poll_ts = now
-            new_events = True
-
-        if new_events:
-            self._evaluate_clusters()
+        # Cluster evaluation runs every iteration — the Redis subscriber
+        # populates cluster state asynchronously, so we just need to check
+        # whether any (chain, token) bucket now has 3+ qualifying wallets.
+        self._evaluate_clusters()
 
         # Reconciliation cron
         recon_interval = get_framework_settings().reconciliation_interval_seconds
@@ -133,31 +131,46 @@ class CopyBot(BotLifecycle):
         # Position management every iteration
         await self._manage_open_positions()
 
-    # ---- Wallet polling ---------------------------------------------------
+    # ---- Redis pubsub subscriber (replaces polling) -----------------------
 
-    async def _poll_solana_wallets(self) -> None:
-        if self._session is None or not self._wallets_solana:
-            return
-        try:
-            events = await poll_solana_wallets(
-                self.helius, self._session, self._wallets_solana, self._sol_price_usd,
-            )
-            for ev in events:
-                self.cluster.observe_buy(ev)
-        except Exception:
-            self.log.exception("solana_poll_failed")
+    async def _buys_subscriber(self) -> None:
+        """Long-lived subscriber to `copy:buys`. Reconnects on disconnect.
 
-    async def _poll_evm_wallets(self) -> None:
-        if self._session is None:
+        Webhook receiver service publishes WalletBuyEvent JSON dicts here.
+        We feed each into the cluster detector — cluster firing is decoupled,
+        runs from iterate().
+        """
+        if self._buys_redis is None:
             return
-        try:
-            for chain, wallets in (("base", self._wallets_base), ("arbitrum", self._wallets_arbitrum)):
-                for w in wallets:
-                    evs = await self.cielo.fetch_recent_buys(self._session, w, chain)
-                    for ev in evs:
+        backoff = 1.0
+        while True:
+            try:
+                pubsub = self._buys_redis.pubsub()
+                await pubsub.subscribe(REDIS_BUYS_CHANNEL)
+                self.log.info("buys_subscriber_ready", channel=REDIS_BUYS_CHANNEL)
+                backoff = 1.0
+                async for msg in pubsub.listen():
+                    if msg.get("type") != "message":
+                        continue
+                    try:
+                        payload = json.loads(msg["data"])
+                        ev = WalletBuyEvent(
+                            wallet_address=payload["wallet_address"],
+                            chain=payload["chain"],
+                            token_mint=payload["token_mint"],
+                            notional_usd=float(payload["notional_usd"]),
+                            timestamp_ms=int(payload["timestamp_ms"]),
+                            tx_signature=payload.get("tx_signature", ""),
+                        )
                         self.cluster.observe_buy(ev)
-        except Exception:
-            self.log.exception("evm_poll_failed")
+                    except Exception:
+                        self.log.exception("buys_message_parse_failed")
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                self.log.exception("buys_subscriber_failed", backoff=backoff)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 60.0)
 
     def _evaluate_clusters(self) -> None:
         # Build A: no token-meta — gate is skipped per cluster.evaluate signature

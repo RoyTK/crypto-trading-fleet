@@ -160,6 +160,23 @@ services:
         condition: service_healthy
     command: ["python", "-m", "bots.copy.main"]
 
+  bot_copy_webhook_receiver:
+    build:
+      context: .
+      dockerfile: framework/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./framework:/app/framework
+      - ./bots:/app/bots
+      - ./monitoring:/app/monitoring
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8090:8090"
+    command: ["python", "-m", "monitoring.webhook_receiver.main"]
+
   migrate:
     build:
       context: .
