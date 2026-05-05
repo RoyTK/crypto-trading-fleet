@@ -1,31 +1,29 @@
 {
   "metadata": {
-    "purpose": "Hand-curated candidate wallets for the COPY bot. Validated by scripts/curate_wallet_pool.py against Cielo's /trading-stats endpoint, then filtered into wallet_pool.json.",
+    "purpose": "Hand-curated candidate wallets for COPY bot, sourced from on-chain tracking accounts on X (lookonchain, Sol_WhaleAlerts).",
     "build": "A_solana_only",
-    "discovery_sources": [
-      "Birdeye smart-money pages (https://birdeye.so/leaderboard)",
-      "DeBank top profiles (https://debank.com/profile)",
-      "Solscan token holder leaderboards",
-      "X/Twitter alpha accounts public wallet posts",
-      "Hyperliquid leaderboard (we already curated for STRUCTURE)"
+    "discovery_sources_used": [
+      "X.com smart-money/whale-alert accounts",
+      "Lookonchain Twitter (verified on-chain profit attribution)",
+      "Birdeye trader-board (complemented via --from-birdeye flag)",
+      "GeckoTerminal trending pools (used for --from-birdeye-tokens)"
     ],
-    "format": "Each entry: { address, chain ('solana'|'base'|'arbitrum'), note (free-form, e.g. source attribution) }",
-    "validate_cost": "30 Cielo credits per wallet via /trading-stats",
-    "instructions": [
-      "Three candidate sources (use any combo, all merge + dedup):",
-      "A) Hand-seed: add wallets to the seeds array below.",
-      "B) Birdeye gainers/losers leaderboard: --from-birdeye 100",
-      "C) Birdeye per-token top traders for specific hot tokens: --from-birdeye-tokens ADDR1,ADDR2,...",
-      "Find hot Solana token addresses from:",
-      "   - https://birdeye.so/solana (Trending tab)",
-      "   - https://www.coingecko.com/categories/solana-meme-coin (top by 24h volume)",
-      "   - https://www.geckoterminal.com/solana/pools (top pools by volume)",
-      "Workflow:",
-      "   1. docker compose exec framework python -m scripts.curate_wallet_pool [flags] --dry-run",
-      "   2. Review pass/reject. If satisfied: --apply",
-      "   3. git add bots/copy/wallet_pool.json && git commit && git push",
-      "   4. Hetzner: git pull && docker compose restart bot_copy"
-    ]
+    "verification_workflow": "Each address spot-checked via solscan.io for recent (≤30d) swap activity before inclusion. Cold/dormant wallets dropped to keep cluster-signal pool tight.",
+    "last_updated": "2026-05-05",
+    "verification_pass_rate": "13/41 (32%) — 21 cold (3-12mo idle), 3 dormant, 1 typo, 3 borderline (drop or keep judgment)"
   },
-  "seeds": []
+  "seeds": [
+    {"address": "3cBB2ZyoNy8YEquSSzR2Rpggp9vcrfz4NcbCKHp7BzvT", "chain": "solana", "note": "x:lookonchain $7.45M $WIF + $1.2M $PNUT, multi-token (active sec ago, $411K)"},
+    {"address": "G5nxEXuFMfV74DSnsrSatqCW32F34XUnBeq3PfDS7w5E", "chain": "solana", "note": "x:lookonchain LeBron — $8.9M MELANIA, $4.56M LIBRA, $3.2M TRUMP (active 1d)"},
+    {"address": "8zFZHuSRuDpuAR7J6FzwyF3vKNx4CVW3DFHJerQhc7Zd", "chain": "solana", "note": "x:lookonchain traderpow — $22.7M $TRUMP at launch (active 1d)"},
+    {"address": "2WfeaMXh31wc2kzXDQGuKAYCBrCs8J6vBCwdLjMs8Uzr", "chain": "solana", "note": "x:lookonchain TRUMP+Fartcoin simultaneous swing (active 2d, $1.9M)"},
+    {"address": "J3jfq8o7951raAZ1J1kRUEGzgTgTBDR4hyMhnyuDMqp6", "chain": "solana", "note": "x:lookonchain MOODENG $1K->$3.8M (active 2d)"},
+    {"address": "24BLFjSAcUPPWs8F7nhwthfRPvh5mopNYfu5WXTkLChr", "chain": "solana", "note": "x:lookonchain $8.07M $Fartcoin profit, DCA selling (active 3d, $3.5M)"},
+    {"address": "CLegS2MSiCsBksVazCg4Y7Gz3NqeBK21QyvzK4Q7S168", "chain": "solana", "note": "x:lookonchain $3.8M TRUMP, $704K arc, $558K GOAT (active 5d)"},
+    {"address": "AykJbGJ6e2MVAw4Y9ekPBDQNmVbhBZQayD8XHnA2xmTQ", "chain": "solana", "note": "x:lookonchain mega 5M SOL->FWOG/CHILLGUY/GIGA (active 5d, $177K)"},
+    {"address": "73FtSUqg4sS5Kxha6QKnRBW82frxnkKBPqhhkza2gsVu", "chain": "solana", "note": "x:lookonchain $FARTCOIN, $251K profit (active 5d)"},
+    {"address": "AHdUMwfSsmdoFhq84XQVqnNhUU3iyN2hokkz6pFtqMnj", "chain": "solana", "note": "x:lookonchain $10.26M USDC->121K SOL one shot (active 7d, $10M)"},
+    {"address": "Ah7SnagSabPNPvkcciYwqqyCR1ymMVW3C9tFvJea1kzV", "chain": "solana", "note": "x:lookonchain $1M->$7M $FRED, top $PNUT (active 16d, $1M)"},
+    {"address": "KMhcqNpDomyUVSK9WDr8uve29oeSoA4TZPGV34EA3JB", "chain": "solana", "note": "x:lookonchain $PUMP whale, $20.5M+ unrealized (active 19d, $1.3M)"}
+  ]
 }
