@@ -34,10 +34,24 @@ WSOL_MINT = "So11111111111111111111111111111111111111112"
 USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 USDT_MINT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
 
-# Stablecoins + SOL are the input legs we expect in a "buy" — anything else
-# we treat as a token-to-token swap and ignore (cluster signal is about
-# fresh entries with USD notional).
-INPUT_LEG_MINTS = {WSOL_MINT, USDC_MINT, USDT_MINT}
+# Other Solana stablecoins — buying these is de-risking, not memecoin alpha.
+# Add new stablecoins here as encountered in cluster signals.
+USD1_MINT = "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB"        # USD1 (Trump-family)
+PYUSD_MINT = "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"      # PayPal USD
+
+# Liquid staking tokens — SOL derivatives, also not alpha targets
+JITOSOL_MINT = "J1toSO1tj92gWhpaCftRkhZmDz5G8b8AqfeATfDVfo7"     # Jito staked SOL
+MSOL_MINT = "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So"        # Marinade staked SOL
+BSOL_MINT = "bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1"        # BlazeStake SOL
+
+# Skip-output set: any swap whose OUTPUT is one of these is not alpha signal.
+# Parser uses this to filter "what wallet bought" — bought stables/staking
+# derivatives → skipped (de-risking, not entering memecoin position).
+INPUT_LEG_MINTS = {
+    WSOL_MINT, USDC_MINT, USDT_MINT,
+    USD1_MINT, PYUSD_MINT,
+    JITOSOL_MINT, MSOL_MINT, BSOL_MINT,
+}
 
 
 @dataclass

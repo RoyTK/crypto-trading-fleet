@@ -40,7 +40,18 @@ log = get_logger(__name__)
 WSOL_MINT = "So11111111111111111111111111111111111111112"
 USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 USDT_MINT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
-INPUT_LEG_MINTS = {WSOL_MINT, USDC_MINT, USDT_MINT}
+# Other stablecoins + LST tokens to skip as buy outputs (not alpha signal).
+# Keep in sync with bots/copy/venue/helius_solana.py.
+USD1_MINT = "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB"
+PYUSD_MINT = "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"
+JITOSOL_MINT = "J1toSO1tj92gWhpaCftRkhZmDz5G8b8AqfeATfDVfo7"
+MSOL_MINT = "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So"
+BSOL_MINT = "bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1"
+INPUT_LEG_MINTS = {
+    WSOL_MINT, USDC_MINT, USDT_MINT,
+    USD1_MINT, PYUSD_MINT,
+    JITOSOL_MINT, MSOL_MINT, BSOL_MINT,
+}
 
 REDIS_BUYS_CHANNEL = "copy:buys"
 REDIS_DEDUP_PREFIX = "copy:webhook_dedup:"
