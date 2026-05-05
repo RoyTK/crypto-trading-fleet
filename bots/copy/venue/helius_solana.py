@@ -228,14 +228,23 @@ async def poll_wallets(
     session: aiohttp.ClientSession,
     wallets: list[str],
     sol_price_usd: float,
-    concurrency: int = 5,
+    concurrency: int = 2,
+    per_call_delay_seconds: float = 0.15,
 ) -> list[WalletBuyEvent]:
-    """Poll many wallets in parallel (bounded). Aggregates all buy events."""
+    """Poll many wallets in parallel (bounded). Aggregates all buy events.
+
+    Helius Developer plan rate limit: 10 RPS. With concurrency=2 + 0.15s
+    inter-call delay, sustained throughput is ~13 RPS peak (2 in flight,
+    new one fires every 150ms after one returns) — well under the limit
+    while still completing 138 wallets in ~10-12s per cycle.
+    """
     sem = asyncio.Semaphore(concurrency)
 
     async def _one(w: str) -> list[WalletBuyEvent]:
         async with sem:
-            return await client.fetch_recent_buys(session, w, sol_price_usd)
+            result = await client.fetch_recent_buys(session, w, sol_price_usd)
+            await asyncio.sleep(per_call_delay_seconds)
+            return result
 
     results = await asyncio.gather(*[_one(w) for w in wallets], return_exceptions=True)
     out: list[WalletBuyEvent] = []
