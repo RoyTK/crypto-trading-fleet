@@ -202,7 +202,7 @@ def _parse_via_transfers(
         if sent_non_stable:
             continue
 
-        # Sum SOL outflow from this wallet (lamports → USD)
+        # Sum SOL outflow from this wallet (native lamports → USD)
         lamports_out = 0
         for nt in native_transfers:
             if nt.get("fromUserAccount") == wallet:
@@ -213,17 +213,21 @@ def _parse_via_transfers(
 
         notional_usd = (lamports_out / 1_000_000_000) * sol_price_usd
 
-        # Also count stablecoin outflow (USDC/USDT-funded buys)
+        # Also sum wrapped SOL + stablecoin outflows (DEX aggregators often
+        # wrap SOL into wSOL before swapping, so the spend appears in
+        # tokenTransfers with mint=So11111111... not nativeTransfers).
         for tt in token_transfers:
             if tt.get("fromUserAccount") != wallet:
                 continue
             mint = tt.get("mint")
-            if mint not in (USDC_MINT, USDT_MINT):
-                continue
             try:
-                notional_usd += float(tt.get("tokenAmount") or 0)
+                amt = float(tt.get("tokenAmount") or 0)
             except Exception:
-                pass
+                continue
+            if mint == WSOL_MINT:
+                notional_usd += amt * sol_price_usd
+            elif mint in (USDC_MINT, USDT_MINT):
+                notional_usd += amt
 
         if notional_usd <= 0:
             continue
