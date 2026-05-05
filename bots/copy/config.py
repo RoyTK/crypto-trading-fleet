@@ -54,7 +54,10 @@ ALLOCATION_CAP_PCT = 50.0
 # - hold ≥ 1 min: only excludes true HFT/MM bots (sub-1-min holds)
 # - hold ≤ 7d: excludes pure long-term holders (we want active rotators)
 WALLET_MIN_PNL_USD = 50_000.0
-WALLET_MIN_WIN_RATE = 0.55
+# Cielo's winrate field is on a 0-100 percentage scale, NOT 0-1 ratio.
+# Verified empirically 2026-05-04 — wallets returned wr values like 83.38, 5.26.
+# So 55.0 = "≥55%" not "≥5500%".
+WALLET_MIN_WIN_RATE = 55.0
 WALLET_MIN_HOLD_MINUTES = 1
 WALLET_MAX_HOLD_DAYS = 7
 WALLET_MIN_TRADES_90D = 20
