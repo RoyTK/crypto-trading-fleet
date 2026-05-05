@@ -10,7 +10,7 @@
     ],
     "verification_workflow": "Each address spot-checked via solscan.io for recent (≤30d) swap activity before inclusion. Cold/dormant wallets dropped to keep cluster-signal pool tight.",
     "last_updated": "2026-05-05",
-    "verification_pass_rate": "13/41 (32%) — 21 cold (3-12mo idle), 3 dormant, 1 typo, 3 borderline (drop or keep judgment)"
+    "verification_pass_rate": "13/41 (32%) — 21 cold (3-12mo idle), 3 dormant, 1 typo"
   },
   "seeds": [
     {"address": "3cBB2ZyoNy8YEquSSzR2Rpggp9vcrfz4NcbCKHp7BzvT", "chain": "solana", "note": "x:lookonchain $7.45M $WIF + $1.2M $PNUT, multi-token (active sec ago, $411K)"},
@@ -24,6 +24,7 @@
     {"address": "73FtSUqg4sS5Kxha6QKnRBW82frxnkKBPqhhkza2gsVu", "chain": "solana", "note": "x:lookonchain $FARTCOIN, $251K profit (active 5d)"},
     {"address": "AHdUMwfSsmdoFhq84XQVqnNhUU3iyN2hokkz6pFtqMnj", "chain": "solana", "note": "x:lookonchain $10.26M USDC->121K SOL one shot (active 7d, $10M)"},
     {"address": "Ah7SnagSabPNPvkcciYwqqyCR1ymMVW3C9tFvJea1kzV", "chain": "solana", "note": "x:lookonchain $1M->$7M $FRED, top $PNUT (active 16d, $1M)"},
-    {"address": "KMhcqNpDomyUVSK9WDr8uve29oeSoA4TZPGV34EA3JB", "chain": "solana", "note": "x:lookonchain $PUMP whale, $20.5M+ unrealized (active 19d, $1.3M)"}
+    {"address": "KMhcqNpDomyUVSK9WDr8uve29oeSoA4TZPGV34EA3JB", "chain": "solana", "note": "x:lookonchain $PUMP whale, $20.5M+ unrealized (active 19d, $1.3M)"},
+    {"address": "3DKfZz4iHgu42LGu3ttQxqz6u4m5z9ptuar8pBsRqkKC", "chain": "solana", "note": "x:lookonchain $4.47M $ai16z (+1008%), confirmed active ($265K portfolio)"}
   ]
 }
