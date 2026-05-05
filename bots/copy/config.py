@@ -109,6 +109,11 @@ class CopySettings(BaseSettings):
     copy_dd_weekly_pct: float = Field(default=28.0)
     copy_dd_total_pct: float = Field(default=50.0)
     copy_loop_interval_seconds: int = Field(default=5)
+    # Position management (exit check) cadence. Paper trades don't need
+    # 5-sec resolution on stop/TP triggers; 60s avoids hammering the
+    # price oracle (Birdeye free tier is 1 RPS — 6+ open positions × 5s
+    # iterate burns through the budget instantly).
+    copy_position_check_seconds: int = Field(default=60)
     # Solana polling cadence (Helius — cheap, 10M credits/mo)
     copy_wallet_poll_seconds: int = Field(default=10)
     # EVM polling cadence (Cielo — only 50k credits/mo on Pro; with 90 EVM wallets

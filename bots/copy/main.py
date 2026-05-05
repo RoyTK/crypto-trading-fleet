@@ -72,6 +72,7 @@ class CopyBot(BotLifecycle):
         self._wallets_base: list[str] = []
         self._wallets_arbitrum: list[str] = []
         self._last_reconcile_ts: float = 0.0
+        self._last_position_check_ts: float = 0.0
         self._session: Optional[aiohttp.ClientSession] = None
         self._buys_subscriber_task: Optional[asyncio.Task] = None
         self._buys_redis: Optional[redis_async.Redis] = None
@@ -128,8 +129,11 @@ class CopyBot(BotLifecycle):
                 self.log.exception("reconcile_once_failed")
             self._last_reconcile_ts = now
 
-        # Position management every iteration
-        await self._manage_open_positions()
+        # Position management on its own cadence (Birdeye free-tier is 1 RPS;
+        # 5-sec iterate × N open trades = rate-limit storm).
+        if now - self._last_position_check_ts >= self.copy_settings.copy_position_check_seconds:
+            await self._manage_open_positions()
+            self._last_position_check_ts = now
 
     # ---- Redis pubsub subscriber (replaces polling) -----------------------
 
@@ -225,7 +229,12 @@ class CopyBot(BotLifecycle):
         if not opens or self._session is None:
             return
 
-        for trade in opens:
+        # Pace quote calls — Birdeye free Standard is 1 RPS; Jupiter has
+        # generous limits but errors out if hit too fast. 1.2s between
+        # calls keeps us safely under both.
+        for i, trade in enumerate(opens):
+            if i > 0:
+                await asyncio.sleep(1.2)
             try:
                 q = await quote(self._session, trade.venue, trade.asset, trade.size_usd)
             except Exception:
