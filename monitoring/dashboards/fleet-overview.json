@@ -78,7 +78,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT label, MAX(created_at) AS last_seen, EXTRACT(EPOCH FROM (NOW() - MAX(created_at)))::int AS seconds_ago, CASE WHEN MAX(created_at) >= NOW() - INTERVAL '2 minutes' THEN 'live' ELSE 'stale' END AS status FROM heartbeats WHERE label LIKE 'bot:%' OR label LIKE 'service:%' GROUP BY label ORDER BY label",
+          "rawSql": "SELECT process_name, last_ping_at, EXTRACT(EPOCH FROM (NOW() - last_ping_at))::int AS seconds_ago, CASE WHEN last_ping_at >= NOW() - INTERVAL '2 minutes' THEN 'live' ELSE 'stale' END AS status FROM heartbeats ORDER BY process_name",
           "format": "table"
         }
       ],
