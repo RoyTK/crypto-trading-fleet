@@ -79,22 +79,36 @@ def _parse_swap_event(
 ) -> Optional[dict]:
     """Helius enhanced swap event → WalletBuyEvent dict (Redis-publishable).
 
-    Returns None if no pool wallet was the buyer or the event isn't a buy.
-    """
-    swap = (event.get("events") or {}).get("swap")
-    if not swap:
-        return None
+    Returns None if no pool wallet was the buyer.
 
+    Tries two parsers in order:
+    1. Primary: structured `events.swap` field (Jupiter, Raydium, Orca, etc.)
+    2. Fallback: tokenTransfers + nativeTransfers analysis (PUMP_FUN, and
+       any other DEX where Helius doesn't populate events.swap).
+    """
     ts = event.get("timestamp")
     if not ts or int(ts) <= 0:
         return None
     timestamp_ms = int(ts) * 1000
+    swap = (event.get("events") or {}).get("swap")
+    if swap:
+        out = _parse_via_events_swap(event, swap, pool, sol_price_usd, timestamp_ms)
+        if out is not None:
+            return out
+    return _parse_via_transfers(event, pool, sol_price_usd, timestamp_ms)
 
+
+def _parse_via_events_swap(
+    event: dict,
+    swap: dict,
+    pool: set[str],
+    sol_price_usd: float,
+    timestamp_ms: int,
+) -> Optional[dict]:
     token_inputs = swap.get("tokenInputs") or []
     token_outputs = swap.get("tokenOutputs") or []
     native_input = swap.get("nativeInput") or {}
 
-    # Identify which wallet in our pool spent (input side)
     for wallet in pool:
         notional_usd = 0.0
         for ti in token_inputs:
@@ -123,7 +137,6 @@ def _parse_swap_event(
         if notional_usd <= 0:
             continue
 
-        # Find what THIS wallet received
         bought_mint: Optional[str] = None
         for to in token_outputs:
             user = to.get("userAccount") or to.get("toUserAccount")
@@ -146,7 +159,83 @@ def _parse_swap_event(
             "timestamp_ms": timestamp_ms,
             "tx_signature": event.get("signature", ""),
         }
+    return None
 
+
+def _parse_via_transfers(
+    event: dict,
+    pool: set[str],
+    sol_price_usd: float,
+    timestamp_ms: int,
+) -> Optional[dict]:
+    """Fallback for sources that don't populate events.swap (e.g. PUMP_FUN).
+
+    BUY pattern observed empirically on PUMP_FUN bonding-curve buys:
+    - tokenTransfers: wallet receives 1 non-stable token (toUserAccount=wallet)
+    - nativeTransfers: wallet sends multiple SOL outflows (fees + cost)
+    SELL pattern (we skip): wallet sends a non-stable token AND/OR doesn't
+    receive a non-stable token.
+    """
+    token_transfers = event.get("tokenTransfers") or []
+    native_transfers = event.get("nativeTransfers") or []
+
+    for wallet in pool:
+        # Did this wallet RECEIVE a non-stable token?
+        bought_mint: Optional[str] = None
+        for tt in token_transfers:
+            if tt.get("toUserAccount") != wallet:
+                continue
+            mint = tt.get("mint")
+            if not mint or mint in INPUT_LEG_MINTS:
+                continue
+            bought_mint = mint
+            break
+        if not bought_mint:
+            continue
+
+        # If they ALSO sent a non-stable token, this is a token-for-token
+        # swap (not a "smart-money buying with cash") — skip.
+        sent_non_stable = any(
+            tt.get("fromUserAccount") == wallet and tt.get("mint") not in INPUT_LEG_MINTS
+            for tt in token_transfers
+        )
+        if sent_non_stable:
+            continue
+
+        # Sum SOL outflow from this wallet (lamports → USD)
+        lamports_out = 0
+        for nt in native_transfers:
+            if nt.get("fromUserAccount") == wallet:
+                try:
+                    lamports_out += int(nt.get("amount", 0))
+                except Exception:
+                    pass
+
+        notional_usd = (lamports_out / 1_000_000_000) * sol_price_usd
+
+        # Also count stablecoin outflow (USDC/USDT-funded buys)
+        for tt in token_transfers:
+            if tt.get("fromUserAccount") != wallet:
+                continue
+            mint = tt.get("mint")
+            if mint not in (USDC_MINT, USDT_MINT):
+                continue
+            try:
+                notional_usd += float(tt.get("tokenAmount") or 0)
+            except Exception:
+                pass
+
+        if notional_usd <= 0:
+            continue
+
+        return {
+            "wallet_address": wallet,
+            "chain": "solana",
+            "token_mint": bought_mint,
+            "notional_usd": notional_usd,
+            "timestamp_ms": timestamp_ms,
+            "tx_signature": event.get("signature", ""),
+        }
     return None
 
 
