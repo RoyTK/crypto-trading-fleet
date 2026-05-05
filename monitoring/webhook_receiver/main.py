@@ -299,6 +299,7 @@ async def helius_webhook_handler(request: web.Request) -> web.Response:
     matched = 0
     skipped_dup = 0
     skipped_unmatched = 0
+    debug_unmatched = os.environ.get("COPY_RECEIVER_DEBUG_UNMATCHED", "0") == "1"
     for event in events:
         try:
             buy = _parse_swap_event(event, pool, sol_price_usd)
@@ -307,6 +308,26 @@ async def helius_webhook_handler(request: web.Request) -> web.Response:
             continue
         if buy is None:
             skipped_unmatched += 1
+            if debug_unmatched:
+                # Log enough structure to diagnose why it didn't match
+                tts = event.get("tokenTransfers") or []
+                nts = event.get("nativeTransfers") or []
+                tt_summary = [
+                    {"to": (t.get("toUserAccount") or "")[:10], "from": (t.get("fromUserAccount") or "")[:10],
+                     "mint": (t.get("mint") or "")[:10], "amt": t.get("tokenAmount")}
+                    for t in tts[:6]
+                ]
+                nt_summary = [
+                    {"to": (n.get("toUserAccount") or "")[:10], "from": (n.get("fromUserAccount") or "")[:10],
+                     "amt": n.get("amount")}
+                    for n in nts[:6]
+                ]
+                log.info("unmatched_event",
+                         sig=(event.get("signature") or "")[:12],
+                         src=event.get("source"),
+                         type=event.get("type"),
+                         has_swap=bool((event.get("events") or {}).get("swap")),
+                         tts=tt_summary, nts=nt_summary)
             continue
 
         # Dedup by tx_signature — Helius may retry on prior failures
