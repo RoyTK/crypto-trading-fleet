@@ -2,17 +2,21 @@
   "uid": "per-bot-detail",
   "title": "Per-Bot Detail",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "1m",
   "tags": ["bot"],
   "templating": {
     "list": [
       {
         "name": "bot",
+        "label": "Bot",
         "type": "query",
         "datasource": {"type": "postgres", "uid": "fleet-postgres"},
         "query": "SELECT bot_id FROM bot_state ORDER BY bot_id",
-        "refresh": 1
+        "refresh": 1,
+        "includeAll": false,
+        "multi": false,
+        "current": {"selected": true, "text": "structure", "value": "structure"}
       }
     ]
   },
@@ -20,96 +24,174 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "PromotionScore",
-      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "title": "State",
+      "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
       "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT promotion_score FROM bot_state WHERE bot_id = '$bot'",
-          "format": "table"
-        }
+        {"refId": "A", "rawSql": "SELECT state FROM bot_state WHERE bot_id = '$bot'", "format": "table"}
       ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {"type": "value", "options": {"initializing": {"text": "initializing", "color": "yellow"}}},
+            {"type": "value", "options": {"shakedown": {"text": "shakedown", "color": "blue"}}},
+            {"type": "value", "options": {"paper": {"text": "paper", "color": "green"}}},
+            {"type": "value", "options": {"halted": {"text": "halted", "color": "red"}}},
+            {"type": "value", "options": {"killed": {"text": "killed", "color": "dark-red"}}}
+          ]
+        }
+      },
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "/^state$/", "values": false},
+        "textMode": "value", "colorMode": "value", "graphMode": "none"
+      }
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "Paper clock day",
-      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "title": "Paper day",
+      "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
       "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT CASE WHEN paper_clock_started_at IS NULL THEN NULL ELSE GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (NOW() - paper_clock_started_at)) / 86400)::int) END AS paper_clock_day FROM bot_state WHERE bot_id = '$bot'",
-          "format": "table"
-        }
+        {"refId": "A", "rawSql": "SELECT CASE WHEN paper_clock_started_at IS NULL THEN NULL ELSE GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (NOW() - paper_clock_started_at)) / 86400)::int) END AS paper_clock_day FROM bot_state WHERE bot_id = '$bot'", "format": "table"}
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
     {
       "id": 3,
       "type": "stat",
-      "title": "State",
-      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "title": "PromotionScore",
+      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
       "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT state FROM bot_state WHERE bot_id = '$bot'",
-          "format": "table"
-        }
+        {"refId": "A", "rawSql": "SELECT ROUND(promotion_score::numeric, 4) FROM bot_state WHERE bot_id = '$bot'", "format": "table"}
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
     {
       "id": 4,
       "type": "stat",
-      "title": "Allocation %",
-      "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+      "title": "Open positions",
+      "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='open'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Closed (paper)",
+      "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Halts 24h",
+      "gridPos": {"x": 20, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM halts WHERE bot_id = '$bot' AND halted_at >= NOW() - INTERVAL '24 hours'", "format": "table"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Cumulative paper PnL (USD)",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 9},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT allocation_pct FROM bot_state WHERE bot_id = '$bot'",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL ORDER BY exit_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "PnL per trade (%)",
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 9},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT exit_at AS time, pnl_pct AS value FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL ORDER BY exit_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Score components over time",
+      "gridPos": {"x": 0, "y": 13, "w": 12, "h": 9},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT computed_at AS time, return_score AS \"return\", risk_score AS risk, confidence_score AS confidence, regime_score AS regime, calibration_score AS calibration, promotion_score AS promotion FROM scores WHERE bot_id = '$bot' ORDER BY computed_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 13,
+      "type": "barchart",
+      "title": "Trades by signal type (last 7d)",
+      "gridPos": {"x": 12, "y": 13, "w": 12, "h": 9},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT signal_type, COUNT(*) AS count FROM signals WHERE bot_id = '$bot' AND created_at >= NOW() - INTERVAL '7 days' GROUP BY 1 ORDER BY 2 DESC",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 20,
+      "type": "table",
+      "title": "Open paper trades",
+      "gridPos": {"x": 0, "y": 22, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT id, asset, venue, direction, entry_price, size_usd, leverage, entry_at, sim_metadata->>'cluster_size' AS cluster_size, sim_metadata->>'slippage_bps' AS slippage_bps FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='open' ORDER BY entry_at DESC",
           "format": "table"
         }
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
     {
-      "id": 5,
-      "type": "timeseries",
-      "title": "PnL by trade (paper)",
-      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 9},
+      "id": 21,
+      "type": "table",
+      "title": "Closed paper trades (last 50)",
+      "gridPos": {"x": 0, "y": 30, "w": 24, "h": 10},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, pnl_pct AS value FROM trades WHERE bot_id = '$bot' AND mode = 'paper' AND fill_status = 'closed' ORDER BY exit_at",
-          "format": "time_series"
+          "rawSql": "SELECT id, asset, direction, entry_price, exit_price, size_usd, leverage, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, entry_at, exit_at FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' ORDER BY exit_at DESC NULLS LAST LIMIT 50",
+          "format": "table"
         }
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
     {
-      "id": 6,
-      "type": "timeseries",
-      "title": "Score components",
-      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 9},
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT computed_at AS time, return_score AS \"return\", risk_score AS risk, confidence_score AS confidence, regime_score AS regime, calibration_score AS calibration FROM scores WHERE bot_id = '$bot' ORDER BY computed_at",
-          "format": "time_series"
-        }
-      ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
-    },
-    {
-      "id": 7,
+      "id": 22,
       "type": "table",
       "title": "Halts (last 14d)",
-      "gridPos": {"x": 0, "y": 13, "w": 24, "h": 9},
+      "gridPos": {"x": 0, "y": 40, "w": 24, "h": 8},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT halted_at, halt_type, severity, reason, resumed_at FROM halts WHERE bot_id = '$bot' AND halted_at >= NOW() - INTERVAL '14 days' ORDER BY halted_at DESC",
+          "rawSql": "SELECT halted_at, halt_type, severity, LEFT(reason, 100) AS reason, resumed_at, resumed_by FROM halts WHERE bot_id = '$bot' AND halted_at >= NOW() - INTERVAL '14 days' ORDER BY halted_at DESC",
           "format": "table"
         }
       ],
