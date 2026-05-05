@@ -45,13 +45,29 @@ async def quote_solana(
     input_usd: float,
     slippage_bps_tolerance: int = 200,
 ) -> Optional[DexQuote]:
-    """Get a Jupiter quote for swapping USDC → output_mint on Solana.
+    """Solana token quote: try Jupiter first, fall back to Birdeye price.
 
-    Returns None on failure. Slippage is read from priceImpactPct.
+    Jupiter has accurate route + price-impact for tokens with established
+    DEX pools (Raydium, Orca, etc.) — but doesn't cover pre-graduation
+    Pump.fun bonding-curve tokens. Birdeye covers virtually all Solana
+    tokens via their price oracle.
+
+    Returns None only when neither has data.
     """
+    q = await _quote_solana_jupiter(session, output_mint, input_usd, slippage_bps_tolerance)
+    if q is not None:
+        return q
+    return await _quote_solana_birdeye(session, output_mint, input_usd)
+
+
+async def _quote_solana_jupiter(
+    session: aiohttp.ClientSession,
+    output_mint: str,
+    input_usd: float,
+    slippage_bps_tolerance: int,
+) -> Optional[DexQuote]:
     settings = get_copy_settings()
-    # USDC has 6 decimals on Solana
-    amount_in = int(input_usd * 1_000_000)
+    amount_in = int(input_usd * 1_000_000)  # USDC has 6 decimals
     params = {
         "inputMint": USDC_SOLANA_MINT,
         "outputMint": output_mint,
@@ -59,26 +75,20 @@ async def quote_solana(
         "slippageBps": str(slippage_bps_tolerance),
     }
     try:
-        async with session.get(settings.jupiter_quote_url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as r:
+        async with session.get(settings.jupiter_quote_url, params=params,
+                                timeout=aiohttp.ClientTimeout(total=10)) as r:
             if r.status != 200:
-                log.warning("jupiter_quote_failed", status=r.status, mint=output_mint)
                 return None
             data = await r.json()
     except Exception:
-        log.exception("jupiter_quote_exception", mint=output_mint)
         return None
 
     try:
         out_amount = int(data.get("outAmount", 0))
         if out_amount == 0:
             return None
-        # Output token decimals from the quote payload (varies per token)
-        # Jupiter doesn't always include this; fallback to assuming we asked
-        # for raw lamports and reading priceImpactPct directly
         price_impact_pct = float(data.get("priceImpactPct", 0))
         slippage_bps = abs(price_impact_pct) * 100.0
-        # We can't compute expected_price_per_token_usd without knowing decimals;
-        # leave it as raw lamports and let caller normalize
         return DexQuote(
             asset=output_mint,
             chain="solana",
@@ -90,6 +100,58 @@ async def quote_solana(
         )
     except Exception:
         log.exception("jupiter_quote_parse_failed", mint=output_mint)
+        return None
+
+
+async def _quote_solana_birdeye(
+    session: aiohttp.ClientSession,
+    output_mint: str,
+    input_usd: float,
+) -> Optional[DexQuote]:
+    """Birdeye /defi/price fallback. Covers Pump.fun pre-graduation tokens.
+
+    Returns DexQuote with a flat slippage estimate (no liquidity-aware
+    impact calc — Birdeye's price endpoint doesn't expose pool depth).
+    100 bps is a reasonable median for memecoin liquidity.
+    """
+    settings = get_copy_settings()
+    if not settings.birdeye_api_key:
+        log.warning("birdeye_no_api_key", mint=output_mint)
+        return None
+    url = "https://public-api.birdeye.so/defi/price"
+    params = {"address": output_mint}
+    headers = {"X-API-KEY": settings.birdeye_api_key, "x-chain": "solana"}
+    try:
+        async with session.get(url, params=params, headers=headers,
+                                timeout=aiohttp.ClientTimeout(total=10)) as r:
+            if r.status != 200:
+                log.warning("birdeye_price_failed", status=r.status, mint=output_mint)
+                return None
+            data = await r.json()
+    except Exception:
+        log.exception("birdeye_price_exception", mint=output_mint)
+        return None
+
+    try:
+        price_per_token_usd = float(((data.get("data") or {}).get("value")) or 0)
+        if price_per_token_usd <= 0:
+            return None
+        # No liquidity data → flat 100 bps slippage estimate for memecoins
+        ESTIMATED_SLIPPAGE_BPS = 100.0
+        # Output amount in token native units. We don't know token decimals
+        # without an extra call; consumer (sim) only uses price_per_token_usd
+        # so leave expected_out_native as USD/price for downstream logging.
+        return DexQuote(
+            asset=output_mint,
+            chain="solana",
+            input_usd=input_usd,
+            expected_out_native=input_usd / price_per_token_usd,
+            expected_price_per_token_usd=price_per_token_usd,
+            slippage_bps=ESTIMATED_SLIPPAGE_BPS,
+            raw_response=data,
+        )
+    except Exception:
+        log.exception("birdeye_price_parse_failed", mint=output_mint)
         return None
 
 
