@@ -162,9 +162,13 @@ async def curate(
 
     if skip_cielo:
         # ---- Birdeye-only validation (Path 1) --------------------------
-        # Filter solely on Birdeye trade_count to weed out single-trade luck.
+        # Filter on Birdeye trade_count: too few = single-trade luck;
+        # too many = MM bot (no alpha signal, just liquidity provision).
         # Hand-seeds without Birdeye stats pass through (trust the human).
-        from bots.copy.config import WALLET_MIN_TRADES_90D
+        from bots.copy.config import (
+            WALLET_MAX_TRADE_COUNT_FOR_POOL,
+            WALLET_MIN_TRADES_90D,
+        )
         for cand in merged:
             note = cand.get("note", "")
             tc = cand.get("birdeye_trade_count")
@@ -184,6 +188,13 @@ async def curate(
                     "address": cand["address"], "chain": cand["chain"],
                     "note": note,
                     "reasons": [f"birdeye_trade_count_below_{WALLET_MIN_TRADES_90D}"],
+                })
+                continue
+            if tc > WALLET_MAX_TRADE_COUNT_FOR_POOL:
+                rejected.append({
+                    "address": cand["address"], "chain": cand["chain"],
+                    "note": note,
+                    "reasons": [f"birdeye_trade_count_above_{WALLET_MAX_TRADE_COUNT_FOR_POOL}_mm_bot"],
                 })
                 continue
             passed.append({

@@ -23,9 +23,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Cluster trigger
 CLUSTER_MIN_WALLETS = 3                    # ≥ 3 wallets = signal
 CLUSTER_WINDOW_MINUTES = 15                # ±15 min cluster window
-CLUSTER_MIN_NOTIONAL_PER_WALLET_USD = 5_000.0
+# Per-wallet notional floor. Original Item #7 spec was $5,000 (HL futures
+# whale-style). Lowered to $1,000 2026-05-05 for Solana memecoin reality —
+# many real smart-money buys on Pump.fun are $1-5k. Restore to $5k once
+# we observe real cluster signals to validate the architecture.
+CLUSTER_MIN_NOTIONAL_PER_WALLET_USD = 1_000.0
 CLUSTER_TOKEN_MAX_AGE_HOURS = 24           # token age <24h OR vol jumped >5×
 CLUSTER_VOL_JUMP_THRESHOLD = 5.0           # last-hour vol vs prior 24h avg
+# Drop wallets with extreme trade counts from pool — they're MM bots, not
+# alpha. 50k+ trades over 1 year ≈ 137 trades/day ≈ obvious bot.
+WALLET_MAX_TRADE_COUNT_FOR_POOL = 50_000
 
 # Cluster size → position % of paper capital (locked)
 CLUSTER_SIZE_TO_PCT: dict[int, float] = {
