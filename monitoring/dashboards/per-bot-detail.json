@@ -39,7 +39,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT paper_clock_day FROM bot_state WHERE bot_id = '$bot'",
+          "rawSql": "SELECT CASE WHEN paper_clock_started_at IS NULL THEN NULL ELSE GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (NOW() - paper_clock_started_at)) / 86400)::int) END AS paper_clock_day FROM bot_state WHERE bot_id = '$bot'",
           "format": "table"
         }
       ],

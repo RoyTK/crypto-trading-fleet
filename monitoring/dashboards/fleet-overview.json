@@ -64,7 +64,35 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT bot_id, state, paper_clock_day, ROUND(promotion_score::numeric, 3) AS score, allocation_pct, halt_reason, updated_at FROM bot_state ORDER BY bot_id",
+          "rawSql": "SELECT bs.bot_id, bs.state, CASE WHEN bs.paper_clock_started_at IS NULL THEN NULL ELSE GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (NOW() - bs.paper_clock_started_at)) / 86400)::int) END AS paper_day, ROUND(bs.promotion_score::numeric, 3) AS score, bs.allocation_pct, (SELECT COUNT(*) FROM trades t WHERE t.bot_id = bs.bot_id AND t.mode='paper' AND t.fill_status='open') AS open_pos, (SELECT COUNT(*) FROM trades t WHERE t.bot_id = bs.bot_id AND t.created_at >= NOW() - INTERVAL '24 hours') AS trades_24h, bs.halt_reason, bs.updated_at FROM bot_state bs ORDER BY bs.bot_id",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Heartbeat status (live = ≤2 min ago)",
+      "gridPos": {"x": 0, "y": 21, "w": 12, "h": 6},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT label, MAX(created_at) AS last_seen, EXTRACT(EPOCH FROM (NOW() - MAX(created_at)))::int AS seconds_ago, CASE WHEN MAX(created_at) >= NOW() - INTERVAL '2 minutes' THEN 'live' ELSE 'stale' END AS status FROM heartbeats WHERE label LIKE 'bot:%' OR label LIKE 'service:%' GROUP BY label ORDER BY label",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Recent halts (7d)",
+      "gridPos": {"x": 12, "y": 21, "w": 12, "h": 6},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT bot_id, halt_type, severity, halted_at, resumed_at, LEFT(reason, 80) AS reason FROM halts WHERE halted_at >= NOW() - INTERVAL '7 days' ORDER BY halted_at DESC LIMIT 30",
           "format": "table"
         }
       ],
