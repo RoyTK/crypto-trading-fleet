@@ -30,8 +30,9 @@ import aiohttp
 import redis.asyncio as redis_async
 
 from bots.base.bot_lifecycle import BotLifecycle
+from bots.base.fill_simulator_base import SimulatedFill
 from bots.copy.config import get_copy_settings
-from bots.copy.fill_simulator import CopyFillSimulator, CopyMarketSnapshot
+from bots.copy.fill_simulator import DEX_FEE_PCT, CopyFillSimulator, CopyMarketSnapshot
 from bots.copy.loop_helpers import (
     close_paper_trade,
     has_open_position,
@@ -45,12 +46,10 @@ from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
 from bots.copy.sizing import size_position
-from bots.copy.venue.dex_quoter import quote
+from bots.copy.venue.dex_quoter import multi_price_solana, quote
 from bots.copy.venue.helius_solana import WalletBuyEvent
-from framework.alerts import emit_alert
 from framework.config import get_settings as get_framework_settings
 from framework.reconciliation import reconcile_once, register_venue_fetcher
-from monitoring.alerting.taxonomy import Severity
 
 
 REDIS_BUYS_CHANNEL = "copy:buys"
@@ -229,61 +228,90 @@ class CopyBot(BotLifecycle):
         if not opens or self._session is None:
             return
 
-        # Pace quote calls — Birdeye free Standard is 1 RPS; Jupiter has
-        # generous limits but errors out if hit too fast. 1.2s between
-        # calls keeps us safely under both.
-        for i, trade in enumerate(opens):
-            if i > 0:
-                await asyncio.sleep(1.2)
-            try:
-                q = await quote(self._session, trade.venue, trade.asset, trade.size_usd)
-            except Exception:
-                self.log.warning("manage_quote_failed", asset=trade.asset)
-                continue
-            if q is None or q.expected_price_per_token_usd <= 0:
-                continue
-            mid = q.expected_price_per_token_usd
-            pct_move = (mid - trade.entry_price) / trade.entry_price * 100.0
-            if trade.direction == "short":
-                pct_move = -pct_move
-            equity_pct = pct_move * trade.leverage
+        now = datetime.now(timezone.utc)
+
+        # Batch-fetch all Solana mints in ONE Birdeye call. Per-position
+        # /defi/price was burning ~36 CU/min (12 opens × 3 CU × 60s cadence)
+        # and exhausted the free-tier monthly quota in ~14h. /defi/multi_price
+        # returns up to 100 prices in one request.
+        sol_mints = sorted({t.asset for t in opens if t.venue == "solana"})
+        sol_prices = await multi_price_solana(self._session, sol_mints) if sol_mints else {}
+
+        # Flat-mark slippage estimate when we synthesize an exit fill (no
+        # liquidity-aware impact data; matches the entry-side Birdeye estimate).
+        EXIT_SLIPPAGE_BPS = 100.0
+
+        evm_call_count = 0
+        for trade in opens:
+            # Resolve current mid price.
+            mid: Optional[float] = None
+            if trade.venue == "solana":
+                mid = sol_prices.get(trade.asset)
+            else:
+                # EVM: per-trade 0x quote (no shared CU budget with Birdeye).
+                # Pace between calls — first one fires immediately, subsequent
+                # ones wait 1.2s.
+                if evm_call_count > 0:
+                    await asyncio.sleep(1.2)
+                evm_call_count += 1
+                try:
+                    q = await quote(self._session, trade.venue, trade.asset, trade.size_usd)
+                    if q is not None and q.expected_price_per_token_usd > 0:
+                        mid = q.expected_price_per_token_usd
+                except Exception:
+                    self.log.warning("manage_quote_failed", asset=trade.asset)
+
+            # Timeout is age-based — must fire even when pricing is unavailable
+            # (rugged token, oracle gap, quota exhausted). Without this,
+            # un-priceable positions live forever.
+            timed_out = (
+                trade.timeout_hours is not None
+                and (now - trade.entry_at) >= timedelta(hours=trade.timeout_hours)
+            )
 
             exit_reason: Optional[str] = None
-            if trade.stop_pct is not None and equity_pct <= -trade.stop_pct:
-                exit_reason = "stop"
-            elif trade.take_profit_pct is not None and equity_pct >= trade.take_profit_pct:
-                exit_reason = "tp"
-            elif trade.timeout_hours is not None:
-                age = datetime.now(timezone.utc) - trade.entry_at
-                if age >= timedelta(hours=trade.timeout_hours):
+            if mid is not None:
+                pct_move = (mid - trade.entry_price) / trade.entry_price * 100.0
+                if trade.direction == "short":
+                    pct_move = -pct_move
+                equity_pct = pct_move * trade.leverage
+                if trade.stop_pct is not None and equity_pct <= -trade.stop_pct:
+                    exit_reason = "stop"
+                elif trade.take_profit_pct is not None and equity_pct >= trade.take_profit_pct:
+                    exit_reason = "tp"
+                elif timed_out:
                     exit_reason = "timeout"
+            elif timed_out:
+                exit_reason = "timeout_no_quote"
 
             if exit_reason is None:
                 continue
 
-            snapshot = CopyMarketSnapshot(chain=trade.venue, session=self._session)
-            exit_fill = await self.simulator.simulate_exit_async(
-                asset=trade.asset,
-                entry_price=trade.entry_price,
-                exit_target_price=mid,
-                notional_usd=trade.size_usd,
-                leverage=trade.leverage,
-                direction=trade.direction,
-                market_snapshot=snapshot,
-            )
-            if exit_fill.fill_price is None:
-                emit_alert(
-                    severity=Severity.P2,
-                    title="[copy] Could not simulate exit",
-                    body=f"asset={trade.asset} reason={exit_fill.no_fill_reason}",
-                    bot_id=self.bot_id,
-                    event_type="exit_no_fill",
+            # Build the exit fill locally — we already have `mid` from the
+            # batch, no need for the simulator to re-fetch it. When `mid` is
+            # missing, flat-mark at entry_price (pnl=0) so the trade closes.
+            if mid is not None:
+                fees = trade.size_usd * (DEX_FEE_PCT / 100.0)
+                exit_fill = SimulatedFill(
+                    fill_price=mid,
+                    fees_usd=fees,
+                    slippage_bps=EXIT_SLIPPAGE_BPS,
+                    metadata={"side": "exit", "chain": trade.venue,
+                              "input_usd": trade.size_usd},
                 )
-                continue
+                close_price = mid
+            else:
+                exit_fill = SimulatedFill(
+                    fill_price=trade.entry_price,
+                    fees_usd=0.0,
+                    slippage_bps=0.0,
+                    metadata={"side": "exit", "no_price_at_close": True},
+                )
+                close_price = trade.entry_price
 
             close_paper_trade(
                 trade_id=trade.trade_id,
-                exit_price=exit_fill.fill_price,
+                exit_price=close_price,
                 exit_fill=exit_fill,
                 exit_reason=exit_reason,
             )

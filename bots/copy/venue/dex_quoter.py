@@ -103,6 +103,62 @@ async def _quote_solana_jupiter(
         return None
 
 
+async def multi_price_solana(
+    session: aiohttp.ClientSession,
+    mints: list[str],
+) -> dict[str, float]:
+    """Batch price lookup for many Solana mints in one HTTP call.
+
+    The single-token /defi/price endpoint costs 3 CUs per call; managing N
+    open positions every 60s burns the free-tier monthly quota in ~14h at
+    N=12. /defi/multi_price returns prices for up to 100 mints in a single
+    request at much lower amortized CU cost.
+
+    Returns: dict of mint -> price_per_token_usd. Missing/unsupported mints
+    are simply omitted (callers distinguish "no price" from "price = 0").
+    """
+    if not mints:
+        return {}
+    settings = get_copy_settings()
+    if not settings.birdeye_api_key:
+        log.warning("birdeye_no_api_key", n_mints=len(mints))
+        return {}
+    out: dict[str, float] = {}
+    headers = {"X-API-KEY": settings.birdeye_api_key, "x-chain": "solana"}
+    # Birdeye caps each request at 100 addresses; chunk defensively.
+    for i in range(0, len(mints), 100):
+        chunk = mints[i:i + 100]
+        params = {"list_address": ",".join(chunk)}
+        try:
+            async with session.get(
+                "https://public-api.birdeye.so/defi/multi_price",
+                params=params, headers=headers,
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as r:
+                if r.status != 200:
+                    log.warning("birdeye_multi_price_failed",
+                                status=r.status, n_mints=len(chunk))
+                    continue
+                body = await r.json()
+        except Exception:
+            log.exception("birdeye_multi_price_exception", n_mints=len(chunk))
+            continue
+        # Response shape: {"success": true, "data": {"<mint>": {"value": <price>, ...} | null, ...}}
+        data = body.get("data") if isinstance(body, dict) else None
+        if not isinstance(data, dict):
+            continue
+        for mint, entry in data.items():
+            if not isinstance(entry, dict):
+                continue
+            try:
+                price = float(entry.get("value") or 0.0)
+            except (TypeError, ValueError):
+                continue
+            if price > 0:
+                out[mint] = price
+    return out
+
+
 async def _quote_solana_birdeye(
     session: aiohttp.ClientSession,
     output_mint: str,
