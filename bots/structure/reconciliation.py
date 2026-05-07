@@ -55,16 +55,21 @@ def _bot_open_positions() -> dict[tuple[str, str], float]:
 
 
 def fetch_hyperliquid_positions(venue: HyperliquidVenue) -> dict[tuple[str, str], float]:
-    """Return {(venue, asset): hyperliquid_actual_size_native_signed} for the master wallet."""
+    """Return {(venue, asset): hyperliquid_actual_size_native_signed} for the master wallet.
+
+    Raises on transport failure (HL 502, timeout, connection reset, etc.) —
+    DO NOT swallow into an empty dict. An empty dict means "venue has zero
+    positions everywhere," which the caller will then compare against the
+    bot's real tracked positions, producing a phantom 100% drift halt.
+    `framework.reconciliation.reconcile_once` already catches fetcher
+    exceptions, logs `reconcile_fetcher_error`, and skips this cycle —
+    that is the correct behavior for transient venue-API failures.
+    """
     out: dict[tuple[str, str], float] = {}
     settings = venue.settings
     if not settings.hyperliquid_master_address:
         return out
-    try:
-        positions = venue.user_positions(settings.hyperliquid_master_address)
-    except Exception:
-        log.exception("user_positions_fetch_failed")
-        return out
+    positions = venue.user_positions(settings.hyperliquid_master_address)
     for p in positions:
         key = ("hyperliquid", p.asset)
         out[key] = out.get(key, 0.0) + p.size_native
