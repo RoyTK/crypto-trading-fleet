@@ -125,6 +125,49 @@ def collect_candidates_from_ws(
 
 
 # ---------------------------------------------------------------------------
+# Phase 1.5: counterparty expansion
+# ---------------------------------------------------------------------------
+
+def expand_via_counterparties(
+    venue: HyperliquidVenue,
+    seed_addresses: list[str],
+    max_fills_per_seed: int = 100,
+) -> set[str]:
+    """For each seed, fetch recent fills and extract counterparty addresses.
+
+    Counterparties of $500k+ position holders are by definition large traders.
+    This catches periodic whales who didn't trade during the WS sample window
+    but ARE on the other side of trades made by whales who did.
+    """
+    out: set[str] = set()
+    since_ms = int(time.time() * 1000) - 7 * 24 * 60 * 60 * 1000  # last 7 days
+    for i, seed in enumerate(seed_addresses, start=1):
+        try:
+            fn = getattr(venue.info, "user_fills_by_time", None)
+            if fn is None:
+                fn = getattr(venue.info, "user_fills")
+                fills = fn(seed)
+            else:
+                fills = fn(seed, since_ms)
+        except Exception:
+            continue
+        if not fills:
+            continue
+        # Walk fills in reverse-chronological, take up to max_fills_per_seed
+        for f in fills[:max_fills_per_seed]:
+            users = f.get("users") or []
+            for u in users:
+                if isinstance(u, str) and u.startswith("0x"):
+                    addr = u.lower()
+                    if addr != seed.lower():
+                        out.add(addr)
+        if i % 5 == 0:
+            print(f"  [counterparty] {i}/{len(seed_addresses)} seeds processed; "
+                  f"unique counterparties so far: {len(out)}", file=sys.stderr)
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Phase 2: stats + current position filter (lifted from curate_whale_list)
 # ---------------------------------------------------------------------------
 
@@ -252,30 +295,53 @@ def filter_and_rank(
 ) -> list[WhaleStats]:
     since_ms = int(time.time() * 1000) - SIX_MONTHS_MS
     qualified: list[WhaleStats] = []
+    skipped_no_pos = 0
+    skipped_pos_too_small = 0
+    skipped_no_fills = 0
+    skipped_low_wr = 0
+    skipped_low_trades = 0
+    skipped_low_vol = 0
 
     for i, addr in enumerate(candidates, start=1):
         if i % 25 == 0:
-            print(f"  [{i}/{len(candidates)}] qualified={len(qualified)} ...", file=sys.stderr)
-        # Fast-fail: check current position FIRST (cheap call vs expensive fills history)
+            print(f"  [{i}/{len(candidates)}] qualified={len(qualified)} | "
+                  f"skip pos<min={skipped_pos_too_small} no_pos={skipped_no_pos} "
+                  f"no_fills={skipped_no_fills} wr<min={skipped_low_wr} "
+                  f"trades<min={skipped_low_trades} vol<min={skipped_low_vol}",
+                  file=sys.stderr)
         current_max_pos = _max_current_position_usd(venue, addr)
         if current_max_pos < min_current_position_usd:
+            if current_max_pos == 0.0:
+                skipped_no_pos += 1
+            else:
+                skipped_pos_too_small += 1
             continue
         fills = _user_fills(venue, addr, since_ms)
         stats = _stats_from_fills(addr, fills, current_max_pos)
         if stats is None:
+            skipped_no_fills += 1
             continue
-        if (
-            stats.win_rate >= min_win_rate
-            and stats.closed_positions >= min_trades
-            and stats.cumulative_notional_usd >= min_cumulative_notional_usd
-        ):
-            qualified.append(stats)
-            print(
-                f"  OK {addr[:10]}.. trades={stats.closed_positions} wr={stats.win_rate:.2f} "
-                f"vol=${stats.cumulative_notional_usd:,.0f} cur_pos=${stats.current_max_position_usd:,.0f}",
-                file=sys.stderr,
-            )
+        if stats.win_rate < min_win_rate:
+            skipped_low_wr += 1
+            continue
+        if stats.closed_positions < min_trades:
+            skipped_low_trades += 1
+            continue
+        if stats.cumulative_notional_usd < min_cumulative_notional_usd:
+            skipped_low_vol += 1
+            continue
+        qualified.append(stats)
+        print(
+            f"  OK {addr[:10]}.. trades={stats.closed_positions} wr={stats.win_rate:.2f} "
+            f"vol=${stats.cumulative_notional_usd:,.0f} cur_pos=${stats.current_max_position_usd:,.0f}",
+            file=sys.stderr,
+        )
 
+    print(f"\n[final tally] qualified={len(qualified)} | "
+          f"skip pos<min={skipped_pos_too_small} no_pos={skipped_no_pos} "
+          f"no_fills={skipped_no_fills} wr<min={skipped_low_wr} "
+          f"trades<min={skipped_low_trades} vol<min={skipped_low_vol}",
+          file=sys.stderr)
     qualified.sort(key=lambda s: s.score, reverse=True)
     return qualified
 
@@ -297,6 +363,12 @@ def main() -> None:
                         help="Whale must currently hold a position >= this size")
     parser.add_argument("--seed-existing", action="store_true",
                         help="Include addresses from existing whale_list.json")
+    parser.add_argument("--expand-counterparties", action="store_true",
+                        help="After WS sampling, expand pool with counterparties of top-K candidates")
+    parser.add_argument("--counterparty-seeds", type=int, default=30,
+                        help="Use top-N WS candidates as counterparty seeds (default 30)")
+    parser.add_argument("--counterparty-fills-per-seed", type=int, default=100,
+                        help="Pull up to N recent fills per seed (default 100)")
     parser.add_argument("--out", default=str(WL_PATH))
     parser.add_argument("--dry-run", action="store_true",
                         help="Print summary; do not write the file")
@@ -311,19 +383,41 @@ def main() -> None:
         sample_seconds=args.sample_seconds,
     )
 
-    candidates = sorted(user_volume.items(), key=lambda kv: kv[1], reverse=True)
-    candidates = [addr for addr, _ in candidates[: args.candidate_pool]]
+    sorted_by_volume = sorted(user_volume.items(), key=lambda kv: kv[1], reverse=True)
+    candidates = [addr for addr, _ in sorted_by_volume[: args.candidate_pool]]
+    candidate_set = {a.lower() for a in candidates}
 
     if args.seed_existing and WL_PATH.exists():
         try:
             existing = json.loads(WL_PATH.read_text())
+            n_added = 0
             for w in existing.get("whales", []):
                 addr = w.get("address", "").lower()
-                if addr and addr not in candidates:
+                if addr and addr not in candidate_set:
                     candidates.append(addr)
-            print(f"[seed] added {len(existing.get('whales', []))} existing whales to pool", file=sys.stderr)
+                    candidate_set.add(addr)
+                    n_added += 1
+            print(f"[seed] added {n_added} existing whales to pool", file=sys.stderr)
         except Exception:
             print("[seed] failed to load existing whale_list.json, skipping", file=sys.stderr)
+
+    if args.expand_counterparties:
+        venue_for_expand = HyperliquidVenue()
+        seeds = [a for a, _ in sorted_by_volume[: args.counterparty_seeds]]
+        print(f"\n=== Phase 1.5: counterparty expansion from top-{len(seeds)} WS candidates ===",
+              file=sys.stderr)
+        counterparties = expand_via_counterparties(
+            venue_for_expand, seeds,
+            max_fills_per_seed=args.counterparty_fills_per_seed,
+        )
+        n_added = 0
+        for addr in counterparties:
+            if addr not in candidate_set:
+                candidates.append(addr)
+                candidate_set.add(addr)
+                n_added += 1
+        print(f"[counterparty] added {n_added} new addresses (from {len(counterparties)} extracted)",
+              file=sys.stderr)
 
     print(f"[total] evaluating {len(candidates)} unique candidates", file=sys.stderr)
 
