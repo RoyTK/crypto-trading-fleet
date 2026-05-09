@@ -229,6 +229,113 @@
         }
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 30,
+      "type": "table",
+      "title": "Wallet leaderboard — PnL attribution (top by total PnL)",
+      "description": "Equal-share attribution per cluster. Use this to identify which wallets in the pool are predictive vs noise. Bottom-of-leaderboard wallets are pruning candidates after ≥5 attributed trades.",
+      "gridPos": {"x": 0, "y": 44, "w": 24, "h": 12},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT wallet_address, chain, COUNT(*) AS n_trades, ROUND(SUM(attributed_pnl_usd)::numeric, 2) AS total_pnl_usd, ROUND(AVG(attributed_pnl_pct)::numeric, 2) AS avg_pct, ROUND(MAX(attributed_pnl_pct)::numeric, 2) AS best_pct, ROUND(MIN(attributed_pnl_pct)::numeric, 2) AS worst_pct, COUNT(*) FILTER (WHERE attributed_pnl_usd > 0) AS wins, COUNT(*) FILTER (WHERE attributed_pnl_usd <= 0) AS losses, ROUND((COUNT(*) FILTER (WHERE attributed_pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM wallet_attributions WHERE bot_id='copy' GROUP BY wallet_address, chain ORDER BY total_pnl_usd DESC NULLS LAST",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "auto", "displayMode": "auto"},
+          "color": {"mode": "thresholds"}
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "total_pnl_usd"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": -1},
+                {"color": "green", "value": 0}
+              ]}}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "win_rate_pct"},
+            "properties": [
+              {"id": "unit", "value": "percent"},
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 40},
+                {"color": "green", "value": 55}
+              ]}}
+            ]
+          }
+        ]
+      }
+    },
+
+    {
+      "id": 31,
+      "type": "stat",
+      "title": "Active wallets (≥1 attributed trade)",
+      "description": "How many of the 119-wallet pool have actually contributed to a paper trade. Low number = pool curation could be refined.",
+      "gridPos": {"x": 0, "y": 56, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT COUNT(DISTINCT wallet_address) AS active_wallets FROM wallet_attributions WHERE bot_id='copy'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 32,
+      "type": "stat",
+      "title": "Total attributed PnL",
+      "description": "Sum of all per-wallet attributions. Should equal sum of paper trade pnl_usd (sanity check).",
+      "gridPos": {"x": 6, "y": 56, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT ROUND(SUM(attributed_pnl_usd)::numeric, 2) FROM wallet_attributions WHERE bot_id='copy'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 33,
+      "type": "stat",
+      "title": "Avg cluster size (attributed trades)",
+      "gridPos": {"x": 12, "y": 56, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT ROUND(AVG(cluster_size)::numeric, 2) FROM wallet_attributions WHERE bot_id='copy'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 34,
+      "type": "stat",
+      "title": "Wallets with ≥5 trades",
+      "description": "Wallets with enough attributed history to be candidates for pruning decisions.",
+      "gridPos": {"x": 18, "y": 56, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT COUNT(*) FROM (SELECT wallet_address FROM wallet_attributions WHERE bot_id='copy' GROUP BY 1 HAVING COUNT(*) >= 5) sub",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     }
   ]
 }
