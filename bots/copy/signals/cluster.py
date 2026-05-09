@@ -105,10 +105,12 @@ class ClusterDetector:
             distinct_wallets: dict[str, float] = {}
             for wallet, _ts_ms, notional in w.buys:
                 distinct_wallets[wallet] = max(distinct_wallets.get(wallet, 0.0), notional)
-            qualifying = [
-                w_addr for w_addr, n in distinct_wallets.items()
+            qualifying_notionals: dict[str, float] = {
+                w_addr: n
+                for w_addr, n in distinct_wallets.items()
                 if n >= CLUSTER_MIN_NOTIONAL_PER_WALLET_USD
-            ]
+            }
+            qualifying = list(qualifying_notionals.keys())
             cluster_size = len(qualifying)
             if cluster_size < CLUSTER_MIN_WALLETS:
                 continue
@@ -123,7 +125,7 @@ class ClusterDetector:
             if (ts - last) < WINDOW_SECONDS * 1000:
                 continue
 
-            total_notional = sum(distinct_wallets[w] for w in qualifying)
+            total_notional = sum(qualifying_notionals.values())
             avg_notional = total_notional / cluster_size
 
             candidates.append(SignalCandidate(
@@ -137,6 +139,7 @@ class ClusterDetector:
                 timeout_hours=EXIT_TIMEOUT_HOURS,
                 payload={
                     "wallets": qualifying,
+                    "wallet_notionals": qualifying_notionals,
                     "cluster_size": cluster_size,
                     "total_notional_usd": total_notional,
                     "avg_notional_usd": avg_notional,
