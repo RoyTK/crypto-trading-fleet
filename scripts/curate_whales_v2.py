@@ -53,6 +53,7 @@ from bots.structure.venue import HyperliquidVenue
 
 SIX_MONTHS_MS = 180 * 24 * 60 * 60 * 1000
 WL_PATH = Path("bots/structure/whale_list.json")
+CACHE_DIR = Path("bots/structure/whale_ws_cache")
 
 
 @dataclass
@@ -349,7 +350,7 @@ def filter_and_rank(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sample-seconds", type=int, default=1800,
-                        help="WS sampling duration (default 30 min)")
+                        help="WS sampling duration (default 30 min). Set to 0 to skip Phase 1 and load from cache.")
     parser.add_argument("--top-n-assets", type=int, default=15,
                         help="Sample trades on top-N volume assets (default 15)")
     parser.add_argument("--candidate-pool", type=int, default=300,
@@ -359,8 +360,8 @@ def main() -> None:
     parser.add_argument("--min-win-rate", type=float, default=0.60)
     parser.add_argument("--min-trades", type=int, default=20)
     parser.add_argument("--min-cumulative-notional", type=float, default=5_000_000.0)
-    parser.add_argument("--min-current-position-usd", type=float, default=500_000.0,
-                        help="Whale must currently hold a position >= this size")
+    parser.add_argument("--min-current-position-usd", type=float, default=250_000.0,
+                        help="Whale must currently hold a position >= this size (default 250k)")
     parser.add_argument("--seed-existing", action="store_true",
                         help="Include addresses from existing whale_list.json")
     parser.add_argument("--expand-counterparties", action="store_true",
@@ -369,6 +370,10 @@ def main() -> None:
                         help="Use top-N WS candidates as counterparty seeds (default 30)")
     parser.add_argument("--counterparty-fills-per-seed", type=int, default=100,
                         help="Pull up to N recent fills per seed (default 100)")
+    parser.add_argument("--accumulate-from-cache", action="store_true",
+                        help="Load + sum all *.json files in whale_ws_cache/ into the candidate pool")
+    parser.add_argument("--save-cache", action="store_true", default=True,
+                        help="Persist this run's WS sample to whale_ws_cache/ (default true)")
     parser.add_argument("--out", default=str(WL_PATH))
     parser.add_argument("--dry-run", action="store_true",
                         help="Print summary; do not write the file")
@@ -376,12 +381,50 @@ def main() -> None:
 
     settings = get_structure_settings()
 
-    print("=== Phase 1: collecting candidates from trades WS ===", file=sys.stderr)
-    user_volume = collect_candidates_from_ws(
-        api_url=settings.hyperliquid_api_url,
-        top_n_assets=args.top_n_assets,
-        sample_seconds=args.sample_seconds,
-    )
+    user_volume: dict[str, float] = {}
+
+    # Optionally load + sum prior cached samples
+    if args.accumulate_from_cache and CACHE_DIR.exists():
+        cache_files = sorted(CACHE_DIR.glob("*.json"))
+        for cf in cache_files:
+            try:
+                cached = json.loads(cf.read_text())
+                for addr, vol in cached.get("user_volume", {}).items():
+                    user_volume[addr.lower()] = user_volume.get(addr.lower(), 0.0) + float(vol)
+                print(f"[cache] loaded {cf.name}: +{len(cached.get('user_volume', {}))} addresses",
+                      file=sys.stderr)
+            except Exception as e:
+                print(f"[cache] failed to load {cf}: {e}", file=sys.stderr)
+        print(f"[cache] total accumulated: {len(user_volume)} unique addresses", file=sys.stderr)
+
+    # Run a fresh WS sample unless explicitly skipped (sample_seconds=0)
+    if args.sample_seconds > 0:
+        print("\n=== Phase 1: collecting candidates from trades WS ===", file=sys.stderr)
+        fresh_volume = collect_candidates_from_ws(
+            api_url=settings.hyperliquid_api_url,
+            top_n_assets=args.top_n_assets,
+            sample_seconds=args.sample_seconds,
+        )
+        # Save THIS sample as its own cache file
+        if args.save_cache:
+            CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+            cache_path = CACHE_DIR / f"sample_{ts}.json"
+            cache_path.write_text(json.dumps({
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "sample_seconds": args.sample_seconds,
+                "top_n_assets": args.top_n_assets,
+                "user_volume": fresh_volume,
+            }))
+            print(f"[cache] saved this sample to {cache_path}", file=sys.stderr)
+        # Merge into accumulated
+        for addr, vol in fresh_volume.items():
+            user_volume[addr.lower()] = user_volume.get(addr.lower(), 0.0) + vol
+
+    if not user_volume:
+        print("[error] no candidates collected. Either run a sample (--sample-seconds > 0) "
+              "or accumulate from cache (--accumulate-from-cache).", file=sys.stderr)
+        sys.exit(2)
 
     sorted_by_volume = sorted(user_volume.items(), key=lambda kv: kv[1], reverse=True)
     candidates = [addr for addr, _ in sorted_by_volume[: args.candidate_pool]]

@@ -46,7 +46,12 @@ LIQ_STOP_PCT = 4.0
 LIQ_TAKE_PROFIT_PCT = 3.0
 
 # Whale Flip — per-whale poll
-WHALE_FLIP_THRESHOLD_USD = 500_000.0
+# Original Item #7 spec was $500k. Lowered to $250k 2026-05-09 after curation
+# data showed 65% of active HL traders currently hold positions in the
+# $250k-$500k range; $500k threshold made whale_flip a rare-event detector
+# (0 qualifying flips in 9 days of operation). $250k preserves "real skin in
+# the game" while expanding the addressable pool ~50x.
+WHALE_FLIP_THRESHOLD_USD = 250_000.0
 WHALE_MIN_HISTORICAL_WIN_RATE = 0.60
 WHALE_LIST_TARGET_SIZE = 50          # curate up to this many; minimum 10 to ship Build A
 WHALE_LIST_MIN_SIZE = 10
