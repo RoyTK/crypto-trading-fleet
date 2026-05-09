@@ -177,24 +177,63 @@ def close_paper_trade(
         _log.exception("attribution_failed", trade_id=trade_id)
 
 
+def compute_attribution_rows(
+    trade_bot_id: str,
+    trade_fill_status: str,
+    trade_venue: str,
+    trade_pnl_usd: Optional[float],
+    trade_pnl_pct: Optional[float],
+    signal_payload: Optional[dict],
+    signal_venue: Optional[str],
+) -> list[dict]:
+    """Pure function: compute per-wallet attribution dicts from trade + signal data.
+
+    Returns list of dicts ready to be inserted as WalletAttribution rows
+    (without trade_id/signal_id which the DB caller fills in). Returns []
+    on any rejection condition. Equal-share by default; per-wallet
+    notional from signal_payload['wallet_notionals'] is included for
+    future weighted-attribution variants.
+    """
+    if trade_bot_id != BOT_ID:
+        return []
+    if trade_fill_status != "closed":
+        return []
+    if trade_pnl_usd is None or trade_pnl_pct is None:
+        return []
+    if not signal_payload:
+        return []
+    wallets = signal_payload.get("wallets") or []
+    cluster_size = int(signal_payload.get("cluster_size") or len(wallets))
+    if not wallets or cluster_size == 0:
+        return []
+    wallet_notionals = signal_payload.get("wallet_notionals") or {}
+    per_wallet_pnl = float(trade_pnl_usd) / cluster_size
+    per_wallet_pct = float(trade_pnl_pct)
+    chain = signal_venue or trade_venue or "solana"
+    return [
+        {
+            "wallet_address": w,
+            "chain": chain,
+            "cluster_size": cluster_size,
+            "attributed_pnl_usd": per_wallet_pnl,
+            "attributed_pnl_pct": per_wallet_pct,
+            "notional_contribution_usd": wallet_notionals.get(w),
+        }
+        for w in wallets
+        if isinstance(w, str)
+    ]
+
+
 def attribute_closed_trade(trade_id: int) -> int:
     """Write per-wallet PnL attribution rows for a closed paper trade.
 
-    Equal-share attribution: trade.pnl_usd is split evenly across all wallets
-    that participated in the originating cluster signal. Wallet-specific
-    notional contribution from the signal payload is recorded for future
-    weighted-attribution variants.
-
     Idempotent: skips if attribution rows already exist for this trade_id.
-    Returns the number of rows written.
+    Returns the number of rows written. Pure attribution math is in
+    `compute_attribution_rows` for testability.
     """
     with session_scope() as s:
         t = s.get(Trade, trade_id)
-        if t is None or t.fill_status != "closed" or t.bot_id != BOT_ID:
-            return 0
-        if t.pnl_usd is None or t.pnl_pct is None:
-            return 0
-        if t.signal_id is None:
+        if t is None or t.signal_id is None:
             return 0
 
         # Idempotency check
@@ -205,35 +244,25 @@ def attribute_closed_trade(trade_id: int) -> int:
             return 0
 
         sig = s.get(Signal, t.signal_id)
-        if sig is None or not sig.payload:
-            return 0
-        wallets = sig.payload.get("wallets") or []
-        cluster_size = int(sig.payload.get("cluster_size") or len(wallets))
-        if not wallets or cluster_size == 0:
+        if sig is None:
             return 0
 
-        # If the signal payload included per-wallet notional in `wallet_notionals`
-        # (future extension), use it for the contribution field. Otherwise leave null.
-        wallet_notionals = sig.payload.get("wallet_notionals") or {}
-
-        per_wallet_pnl = float(t.pnl_usd) / cluster_size
-        per_wallet_pct = float(t.pnl_pct)  # pct is per-trade, same for every wallet
-        chain = sig.venue or t.venue or "solana"
-
+        rows = compute_attribution_rows(
+            trade_bot_id=t.bot_id,
+            trade_fill_status=t.fill_status,
+            trade_venue=t.venue,
+            trade_pnl_usd=t.pnl_usd,
+            trade_pnl_pct=t.pnl_pct,
+            signal_payload=sig.payload,
+            signal_venue=sig.venue,
+        )
         n = 0
-        for wallet_addr in wallets:
-            if not isinstance(wallet_addr, str):
-                continue
+        for row in rows:
             attr = WalletAttribution(
-                wallet_address=wallet_addr,
-                chain=chain,
                 bot_id=BOT_ID,
                 trade_id=trade_id,
                 signal_id=t.signal_id,
-                cluster_size=cluster_size,
-                attributed_pnl_usd=per_wallet_pnl,
-                attributed_pnl_pct=per_wallet_pct,
-                notional_contribution_usd=wallet_notionals.get(wallet_addr),
+                **row,
             )
             s.add(attr)
             n += 1
