@@ -176,3 +176,32 @@ class Heartbeat(Base):
     process_name = Column(String(64), primary_key=True)
     last_ping_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     metadata_json = Column(JSON, nullable=True)
+
+
+class WalletAttribution(Base):
+    """Per-wallet PnL attribution for cluster-buy paper trades (COPY bot).
+
+    Each closed paper trade that originated from a multi-wallet cluster gets
+    one row per participating wallet, with the trade's PnL attributed
+    equal-share across the cluster. Aggregates of these rows feed the wallet
+    leaderboard used to prune underperforming wallets from the COPY pool.
+    """
+    __tablename__ = "wallet_attributions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    wallet_address = Column(String(64), nullable=False)
+    chain = Column(String(16), nullable=False)
+    bot_id = Column(String(32), nullable=False, default="copy")
+    trade_id = Column(Integer, ForeignKey("trades.id", ondelete="CASCADE"), nullable=False)
+    signal_id = Column(Integer, ForeignKey("signals.id"), nullable=True)
+    cluster_size = Column(Integer, nullable=False)
+    attributed_pnl_usd = Column(Float, nullable=False)
+    attributed_pnl_pct = Column(Float, nullable=False)
+    notional_contribution_usd = Column(Float, nullable=True)  # this wallet's buy size in the cluster
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        Index("ix_wallet_attr_wallet", "wallet_address"),
+        Index("ix_wallet_attr_trade", "trade_id"),
+        Index("ix_wallet_attr_chain_bot", "chain", "bot_id"),
+    )

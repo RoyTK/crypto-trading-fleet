@@ -15,7 +15,11 @@ from bots.base.fill_simulator_base import SimulatedFill
 from bots.copy.signals.base import SignalCandidate
 from framework.audit import write_audit
 from framework.db import session_scope
-from framework.models import Signal, Trade
+from framework.logging_setup import get_logger
+from framework.models import Signal, Trade, WalletAttribution
+
+
+_log = get_logger(__name__)
 
 
 BOT_ID = "copy"
@@ -165,6 +169,75 @@ def close_paper_trade(
             "exit_price": exit_price,
         },
     )
+    # Attribute the closed trade's PnL to the wallets that triggered the cluster.
+    # Best-effort — failure must NOT break the close path.
+    try:
+        attribute_closed_trade(trade_id)
+    except Exception:
+        _log.exception("attribution_failed", trade_id=trade_id)
+
+
+def attribute_closed_trade(trade_id: int) -> int:
+    """Write per-wallet PnL attribution rows for a closed paper trade.
+
+    Equal-share attribution: trade.pnl_usd is split evenly across all wallets
+    that participated in the originating cluster signal. Wallet-specific
+    notional contribution from the signal payload is recorded for future
+    weighted-attribution variants.
+
+    Idempotent: skips if attribution rows already exist for this trade_id.
+    Returns the number of rows written.
+    """
+    with session_scope() as s:
+        t = s.get(Trade, trade_id)
+        if t is None or t.fill_status != "closed" or t.bot_id != BOT_ID:
+            return 0
+        if t.pnl_usd is None or t.pnl_pct is None:
+            return 0
+        if t.signal_id is None:
+            return 0
+
+        # Idempotency check
+        existing = s.execute(
+            select(WalletAttribution.id).where(WalletAttribution.trade_id == trade_id).limit(1)
+        ).first()
+        if existing is not None:
+            return 0
+
+        sig = s.get(Signal, t.signal_id)
+        if sig is None or not sig.payload:
+            return 0
+        wallets = sig.payload.get("wallets") or []
+        cluster_size = int(sig.payload.get("cluster_size") or len(wallets))
+        if not wallets or cluster_size == 0:
+            return 0
+
+        # If the signal payload included per-wallet notional in `wallet_notionals`
+        # (future extension), use it for the contribution field. Otherwise leave null.
+        wallet_notionals = sig.payload.get("wallet_notionals") or {}
+
+        per_wallet_pnl = float(t.pnl_usd) / cluster_size
+        per_wallet_pct = float(t.pnl_pct)  # pct is per-trade, same for every wallet
+        chain = sig.venue or t.venue or "solana"
+
+        n = 0
+        for wallet_addr in wallets:
+            if not isinstance(wallet_addr, str):
+                continue
+            attr = WalletAttribution(
+                wallet_address=wallet_addr,
+                chain=chain,
+                bot_id=BOT_ID,
+                trade_id=trade_id,
+                signal_id=t.signal_id,
+                cluster_size=cluster_size,
+                attributed_pnl_usd=per_wallet_pnl,
+                attributed_pnl_pct=per_wallet_pct,
+                notional_contribution_usd=wallet_notionals.get(wallet_addr),
+            )
+            s.add(attr)
+            n += 1
+        return n
 
 
 def panic_close_all_open() -> int:
