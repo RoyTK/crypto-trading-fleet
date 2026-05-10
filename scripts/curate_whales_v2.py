@@ -359,7 +359,8 @@ def main() -> None:
                         help="Target whale list size (default 50)")
     parser.add_argument("--min-win-rate", type=float, default=0.60)
     parser.add_argument("--min-trades", type=int, default=20)
-    parser.add_argument("--min-cumulative-notional", type=float, default=5_000_000.0)
+    parser.add_argument("--min-cumulative-notional", type=float, default=2_000_000.0,
+                        help="Min 6mo cumulative notional. Default 2M (proportional to $250k position floor at ~8x turnover); raise to 5M for premium tier.")
     parser.add_argument("--min-current-position-usd", type=float, default=250_000.0,
                         help="Whale must currently hold a position >= this size (default 250k)")
     parser.add_argument("--seed-existing", action="store_true",
