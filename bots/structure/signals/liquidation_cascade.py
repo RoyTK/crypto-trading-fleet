@@ -1,16 +1,21 @@
 """Liquidation Cascade signal generator.
 
 Logic (locked v0):
-- Subscribe to Hyperliquid liquidations websocket
-- Maintain 5-min rolling per-asset notional aggregates by side (long-liqs vs short-liqs)
+- Source: Coinglass v4 aggregates (HL has no public liquidation feed)
+- Maintain 5-min rolling per-asset notional aggregates by side
 - Trigger when in-window notional >= $5M AND price moved >= 4% in same window
 - Asset must be top-15 by day volume
 - Direction: COUNTER the cascade (longs being liquidated → enter LONG)
 - Sizing: 5-12% at 3x leverage; stop 4%; take-profit 3%
 
-State: this generator is stateful — it holds an in-memory rolling buffer of
-liquidation events. The bot loop pushes events via observe_liquidation()
-and periodically calls evaluate() to emit candidates.
+State: stateful — in-memory rolling buffer keyed by asset. Two ingestion
+paths supported:
+  - observe_aggregate(asset, long_usd, short_usd, ts) — Coinglass path,
+    feeds a pre-aggregated bucket
+  - observe_liquidation(LiquidationEvent) — legacy per-event path, kept
+    for tests and any future per-event source we wire in
+Both append to the same internal buffer; evaluate() doesn't care which
+shape produced them.
 """
 from __future__ import annotations
 
@@ -52,6 +57,28 @@ class LiquidationCascadeDetector:
         w = self._windows.setdefault(ev.asset, _AssetWindow())
         w.liqs.append((ev.timestamp_ms, ev.side, ev.notional_usd))
         w.prices.append((ev.timestamp_ms, ev.price))
+
+    def observe_aggregate(
+        self,
+        asset: str,
+        bucket_start_ms: int,
+        long_liq_usd: float,
+        short_liq_usd: float,
+    ) -> None:
+        """Coinglass-shaped ingestion: pre-aggregated long/short notional per bucket.
+
+        Internally we synthesize two pseudo-events per bucket (one per side)
+        so downstream evaluate() math (notional sum, side dominance) works
+        unchanged. Idempotent against re-pushed buckets — duplicates of the
+        same (asset, bucket_start_ms, side) are filtered.
+        """
+        w = self._windows.setdefault(asset, _AssetWindow())
+        # Dedup against previously-observed buckets at this timestamp+side
+        existing = {(ts, side) for ts, side, _ in w.liqs}
+        if long_liq_usd > 0 and (bucket_start_ms, "long") not in existing:
+            w.liqs.append((bucket_start_ms, "long", long_liq_usd))
+        if short_liq_usd > 0 and (bucket_start_ms, "short") not in existing:
+            w.liqs.append((bucket_start_ms, "short", short_liq_usd))
 
     def observe_price(self, asset: str, price: float, timestamp_ms: int | None = None) -> None:
         ts = timestamp_ms or int(time() * 1000)

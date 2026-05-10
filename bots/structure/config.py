@@ -110,6 +110,9 @@ class StructureSettings(BaseSettings):
     structure_loop_interval_seconds: int = Field(default=5)
     structure_funding_poll_seconds: int = Field(default=30)
     structure_whale_poll_seconds: int = Field(default=60)
+    # Coinglass Hobbyist tier = 30 req/min. With top-15 assets, 30s cadence
+    # = 30 calls/min — at the limit. Dial up if upgrading tier.
+    structure_coinglass_poll_seconds: int = Field(default=30)
 
 
 @lru_cache(maxsize=1)

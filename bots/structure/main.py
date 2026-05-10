@@ -19,6 +19,7 @@ from time import time
 from typing import Any, Optional
 
 from bots.base.bot_lifecycle import BotLifecycle
+from bots.structure.coinglass import CoinglassClient
 from bots.structure.config import (
     LIQ_TOP_VOL_RANK,
     get_structure_settings,
@@ -70,25 +71,30 @@ class StructureBot(BotLifecycle):
         self._last_funding_poll_ts: float = 0.0
         self._last_whale_poll_ts: float = 0.0
         self._last_reconcile_ts: float = 0.0
-        self._liq_ws_task: Optional[asyncio.Task] = None
+        self._last_coinglass_poll_ts: float = 0.0
+        self._coinglass: Optional[CoinglassClient] = None
 
     # ---- Lifecycle hooks ---------------------------------------------------
 
     async def on_start(self) -> None:
         register_venue_fetcher("hyperliquid", make_fetcher(self.venue))
         self._whale_list = self._load_whale_list()
+        # Coinglass client is constructed lazily; if no API key is set its
+        # first poll attempt logs a warning and the liq_cascade detector
+        # simply receives no aggregates (signal stays dormant).
+        self._coinglass = CoinglassClient()
+        coinglass_configured = bool(self._coinglass.api_key)
         self.log.info(
             "structure_started",
             paper_capital_usd=self.struct_settings.structure_paper_capital_usd,
             whale_count=len(self._whale_list),
+            coinglass_configured=coinglass_configured,
         )
         # Pre-seed the asset context cache so first iterate() has data
         await self._refresh_asset_contexts()
-        self._liq_ws_task = asyncio.create_task(self._liquidation_ws_loop())
 
     async def on_stop(self) -> None:
-        if self._liq_ws_task:
-            self._liq_ws_task.cancel()
+        pass
 
     async def on_panic(self, payload: dict[str, Any]) -> None:
         # 1. Flatten any open shadow positions on Hyperliquid FIRST — these are
@@ -131,6 +137,13 @@ class StructureBot(BotLifecycle):
             self._observe_oi_snapshots()
             self._evaluate_oi_divergence()
             self._last_funding_poll_ts = now
+
+        # Coinglass liquidation poll — separate cadence so we control rate-limit
+        # exposure (Hobbyist tier = 30 req/min). At top-15 assets × 30s = 30/min.
+        cg_interval = self.struct_settings.structure_coinglass_poll_seconds
+        if now - self._last_coinglass_poll_ts >= cg_interval:
+            await self._poll_coinglass_liquidations()
+            self._last_coinglass_poll_ts = now
 
         # Whale poll
         if now - self._last_whale_poll_ts >= self.struct_settings.structure_whale_poll_seconds:
@@ -180,6 +193,35 @@ class StructureBot(BotLifecycle):
         candidates = self.liq_detector.evaluate(self._asset_ctx_cache, now_ms)
         for c in candidates:
             self._consume_candidate(c)
+
+    async def _poll_coinglass_liquidations(self) -> None:
+        """Pull recent liquidation aggregates from Coinglass for top-15 vol assets.
+
+        Feeds aggregates into liquidation_cascade detector via observe_aggregate.
+        No-op if Coinglass key isn't configured (logged at startup).
+        """
+        if self._coinglass is None or not self._coinglass.api_key:
+            return
+        if not self._asset_ctx_cache:
+            return
+        top = sorted(self._asset_ctx_cache, key=lambda c: c.day_volume_usd,
+                     reverse=True)[:LIQ_TOP_VOL_RANK]
+        for ctx in top:
+            try:
+                buckets = await asyncio.to_thread(
+                    self._coinglass.liquidation_history,
+                    ctx.asset, interval="5m", limit=2,
+                )
+            except Exception:
+                self.log.exception("coinglass_poll_failed", asset=ctx.asset)
+                continue
+            for b in buckets:
+                self.liq_detector.observe_aggregate(
+                    asset=b.asset,
+                    bucket_start_ms=b.bucket_start_ms,
+                    long_liq_usd=b.long_liq_usd,
+                    short_liq_usd=b.short_liq_usd,
+                )
 
     def _observe_oi_snapshots(self) -> None:
         """Push current per-asset OI + price into the OI-divergence detector buffer."""
@@ -353,52 +395,6 @@ class StructureBot(BotLifecycle):
                     trade.trade_id,
                     exit_reason,
                 )
-
-    # ---- Liquidation websocket --------------------------------------------
-
-    async def _liquidation_ws_loop(self) -> None:
-        """Subscribe to Hyperliquid liquidations websocket.
-
-        The hyperliquid-python-sdk's WebsocketManager runs synchronously with a
-        callback. We bridge into asyncio by enqueueing events into the
-        detector. Reconnect with exponential backoff on disconnect.
-        """
-        backoff = 1
-        while True:
-            try:
-                from hyperliquid.info import Info
-                # Note: separate Info() with skip_ws=False just for the WS
-                info_ws = Info(self.struct_settings.hyperliquid_api_url, skip_ws=False)
-
-                def on_liquidation(msg: dict[str, Any]) -> None:
-                    try:
-                        data = msg.get("data") or msg
-                        # Hyperliquid liquidations payload shape (approximate):
-                        # {coin, side, sz, price, time, ...}
-                        ev = LiquidationEvent(
-                            asset=str(data.get("coin", "")),
-                            side="long" if data.get("side") in ("B", "buy", "long") else "short",
-                            notional_usd=float(data.get("sz", 0)) * float(data.get("price", 0) or 0),
-                            price=float(data.get("price", 0) or 0),
-                            timestamp_ms=int(data.get("time", time() * 1000)),
-                        )
-                        if ev.asset and ev.notional_usd > 0:
-                            self.liq_detector.observe_liquidation(ev)
-                    except Exception:
-                        self.log.exception("liquidation_event_parse_failed")
-
-                info_ws.subscribe({"type": "liquidations"}, on_liquidation)
-                self.log.info("liq_ws_subscribed")
-                backoff = 1
-                # Keep the task alive until cancelled
-                while True:
-                    await asyncio.sleep(60)
-            except asyncio.CancelledError:
-                return
-            except Exception:
-                self.log.exception("liq_ws_failed", backoff_seconds=backoff)
-                await asyncio.sleep(backoff)
-                backoff = min(backoff * 2, 60)
 
     # ---- Whale list --------------------------------------------------------
 
