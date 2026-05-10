@@ -186,6 +186,82 @@
         }
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 30,
+      "type": "barchart",
+      "title": "Signals by generator (last 7d)",
+      "description": "Healthy STRUCTURE shows multiple generators firing. If only funding_fade appears, the others are starved or broken.",
+      "gridPos": {"x": 0, "y": 36, "w": 12, "h": 9},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT signal_type, direction, COUNT(*) AS count FROM signals WHERE bot_id='structure' AND signal_type IN ('funding_fade','liquidation_cascade','whale_flip','hl_oi_divergence') AND created_at >= NOW() - INTERVAL '7 days' GROUP BY 1,2 ORDER BY 3 DESC",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 31,
+      "type": "table",
+      "title": "Signal generator health (24h fire counts)",
+      "description": "All four generators should be firing during paper trading. Zero firings on a generator after 24h = investigate (data feed broken, thresholds too tight, or pool starved).",
+      "gridPos": {"x": 12, "y": 36, "w": 12, "h": 9},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "WITH expected AS (SELECT unnest(ARRAY['funding_fade','liquidation_cascade','whale_flip','hl_oi_divergence']) AS signal_type), counts AS (SELECT signal_type, COUNT(*) AS n_24h FROM signals WHERE bot_id='structure' AND created_at >= NOW() - INTERVAL '24 hours' GROUP BY 1) SELECT e.signal_type, COALESCE(c.n_24h, 0) AS n_24h, CASE WHEN COALESCE(c.n_24h, 0) > 0 THEN 'firing' ELSE 'silent' END AS status FROM expected e LEFT JOIN counts c USING (signal_type) ORDER BY 2 DESC",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {"custom": {"align": "auto"}},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "status"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "mappings", "value": [
+                {"type": "value", "options": {"firing": {"color": "green", "text": "firing"}}},
+                {"type": "value", "options": {"silent": {"color": "red", "text": "silent"}}}
+              ]}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 32,
+      "type": "stat",
+      "title": "Whales in pool",
+      "description": "Curated whale_list.json size. Target 30-50; below 10 = whale_flip detector starved.",
+      "gridPos": {"x": 0, "y": 45, "w": 6, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT COUNT(DISTINCT (payload->>'whale_address')) AS active_whales FROM signals WHERE bot_id='structure' AND signal_type='whale_flip' AND created_at >= NOW() - INTERVAL '90 days'",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 33,
+      "type": "table",
+      "title": "OI divergence signals (last 7d)",
+      "description": "Each row = one fired signal. oi_delta_pct >= 20 + |price_delta_pct| >= 2 was the trigger.",
+      "gridPos": {"x": 6, "y": 45, "w": 18, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT created_at, asset, direction, payload->>'trigger' AS trigger, ROUND((payload->>'oi_delta_pct')::numeric, 2) AS oi_delta_pct, ROUND((payload->>'price_delta_pct')::numeric, 2) AS price_delta_pct FROM signals WHERE bot_id='structure' AND signal_type='hl_oi_divergence' AND created_at >= NOW() - INTERVAL '7 days' ORDER BY created_at DESC LIMIT 50",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     }
   ]
 }
