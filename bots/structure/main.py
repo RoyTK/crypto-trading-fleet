@@ -79,16 +79,17 @@ class StructureBot(BotLifecycle):
     async def on_start(self) -> None:
         register_venue_fetcher("hyperliquid", make_fetcher(self.venue))
         self._whale_list = self._load_whale_list()
-        # Coinglass client is constructed lazily; if no API key is set its
-        # first poll attempt logs a warning and the liq_cascade detector
-        # simply receives no aggregates (signal stays dormant).
+        # Coinglass client lazily constructed; only actually polled when
+        # structure_liq_cascade_enabled is true (off by default — see config).
         self._coinglass = CoinglassClient()
-        coinglass_configured = bool(self._coinglass.api_key)
         self.log.info(
             "structure_started",
             paper_capital_usd=self.struct_settings.structure_paper_capital_usd,
             whale_count=len(self._whale_list),
-            coinglass_configured=coinglass_configured,
+            coinglass_configured=bool(self._coinglass.api_key),
+            liq_cascade_enabled=self.struct_settings.structure_liq_cascade_enabled,
+            generators=["funding_fade", "whale_flip", "hl_oi_divergence"]
+                       + (["liquidation_cascade"] if self.struct_settings.structure_liq_cascade_enabled else []),
         )
         # Pre-seed the asset context cache so first iterate() has data
         await self._refresh_asset_contexts()
@@ -138,12 +139,15 @@ class StructureBot(BotLifecycle):
             self._evaluate_oi_divergence()
             self._last_funding_poll_ts = now
 
-        # Coinglass liquidation poll — separate cadence so we control rate-limit
-        # exposure (Hobbyist tier = 30 req/min). At top-15 assets × 30s = 30/min.
-        cg_interval = self.struct_settings.structure_coinglass_poll_seconds
-        if now - self._last_coinglass_poll_ts >= cg_interval:
-            await self._poll_coinglass_liquidations()
-            self._last_coinglass_poll_ts = now
+        # Coinglass liquidation poll — gated behind structure_liq_cascade_enabled.
+        # Hobbyist tier ($35/mo) only supports 4h+ intervals which is too coarse
+        # for the cascade detector; flag stays false until/unless upgrading to
+        # Standard tier. Coinalyze covers HL OI/funding but not liquidations.
+        if self.struct_settings.structure_liq_cascade_enabled:
+            cg_interval = self.struct_settings.structure_coinglass_poll_seconds
+            if now - self._last_coinglass_poll_ts >= cg_interval:
+                await self._poll_coinglass_liquidations()
+                self._last_coinglass_poll_ts = now
 
         # Whale poll
         if now - self._last_whale_poll_ts >= self.struct_settings.structure_whale_poll_seconds:

@@ -113,6 +113,10 @@ class StructureSettings(BaseSettings):
     # Coinglass Hobbyist tier = 30 req/min. With top-15 assets, 30s cadence
     # = 30 calls/min — at the limit. Dial up if upgrading tier.
     structure_coinglass_poll_seconds: int = Field(default=30)
+    # Set false (default) when Coinglass is on Hobbyist tier ($35/mo) — that
+    # tier only supports 4h+ intervals, which is too coarse for the 5-min
+    # cascade detector. Re-enable when upgrading to Standard ($379/mo).
+    structure_liq_cascade_enabled: bool = Field(default=False)
 
 
 @lru_cache(maxsize=1)
