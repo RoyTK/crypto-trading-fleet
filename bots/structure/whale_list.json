@@ -1,104 +1,202 @@
 {
-  "version": 1,
-  "generated_at": "2026-04-30T19:21:41.527074+00:00",
-  "source": "curate_from_cache.py over hl_active_traders.json",
-  "notes": "Filters: WR>=0.6 trades>=20 notional>=5000000. Examined 206 active traders; qualified 12; kept top 12.",
+  "version": 2,
+  "generated_at": "2026-05-10T01:55:20.777904+00:00",
+  "source": "curate_whales_v2.py: WS sample 0s on top-15 assets, evaluated 2000 candidates, qualified 21, kept top 21",
+  "filters": {
+    "min_win_rate": 0.6,
+    "min_trades": 20,
+    "min_cumulative_notional_usd": 2000000.0,
+    "min_current_position_usd": 250000.0
+  },
   "whales": [
     {
-      "address": "0x58a1af958aa93b29fda0d7e29182cbf0bee84394",
+      "address": "0x335f45392f8d87745aaae68f5c192849afd9b60e",
       "tag": "",
-      "historical_win_rate": 0.8542,
-      "closed_positions_6mo": 48,
-      "cumulative_notional_usd": 15934326.94,
-      "avg_hold_minutes": 4350.3
+      "historical_win_rate": 0.9032,
+      "closed_positions_6mo": 31,
+      "cumulative_notional_usd": 56299612.24,
+      "avg_hold_minutes": 116.9,
+      "current_max_position_usd": 489617.01
     },
     {
-      "address": "0x68d02ac7f36c9ecd2b6c46dc6bc11847a38fd20f",
+      "address": "0x621c5551678189b9a6c94d929924c225ff1d63ab",
       "tag": "",
-      "historical_win_rate": 0.6719,
+      "historical_win_rate": 0.648,
+      "closed_positions_6mo": 125,
+      "cumulative_notional_usd": 71879151.44,
+      "avg_hold_minutes": 629.4,
+      "current_max_position_usd": 412100.13
+    },
+    {
+      "address": "0x39475d17bcd20adc540e647dae6781b153fbf3b1",
+      "tag": "",
+      "historical_win_rate": 0.7027,
+      "closed_positions_6mo": 74,
+      "cumulative_notional_usd": 59879286.65,
+      "avg_hold_minutes": 132.7,
+      "current_max_position_usd": 1788016.07
+    },
+    {
+      "address": "0x522b92bcc19d01fe7585a9823435fe8204bde0e0",
+      "tag": "",
+      "historical_win_rate": 0.6327,
+      "closed_positions_6mo": 49,
+      "cumulative_notional_usd": 27458307.62,
+      "avg_hold_minutes": 1485.2,
+      "current_max_position_usd": 397524.95
+    },
+    {
+      "address": "0x7b7f72a28fe109fa703eeed7984f2a8a68fedee2",
+      "tag": "",
+      "historical_win_rate": 0.6207,
+      "closed_positions_6mo": 29,
+      "cumulative_notional_usd": 17481777.33,
+      "avg_hold_minutes": 19.1,
+      "current_max_position_usd": 284254.98
+    },
+    {
+      "address": "0x04d5f8a0246f4b5f0936b3f1d6a1a20623111e6b",
+      "tag": "",
+      "historical_win_rate": 0.6078,
+      "closed_positions_6mo": 51,
+      "cumulative_notional_usd": 13273634.81,
+      "avg_hold_minutes": 1220.8,
+      "current_max_position_usd": 351887.61
+    },
+    {
+      "address": "0xe86b057f5eb764c9738d6b0d38170befd0723664",
+      "tag": "",
+      "historical_win_rate": 0.8636,
+      "closed_positions_6mo": 22,
+      "cumulative_notional_usd": 6740511.11,
+      "avg_hold_minutes": 119.0,
+      "current_max_position_usd": 1801238.6
+    },
+    {
+      "address": "0xf9109ada2f73c62e9889b45453065f0d99260a2d",
+      "tag": "",
+      "historical_win_rate": 0.7556,
+      "closed_positions_6mo": 45,
+      "cumulative_notional_usd": 6475246.71,
+      "avg_hold_minutes": 10.6,
+      "current_max_position_usd": 355576.84
+    },
+    {
+      "address": "0xe68132d06baf409eccbf1528e3cb41dfd626cf33",
+      "tag": "",
+      "historical_win_rate": 0.6429,
+      "closed_positions_6mo": 28,
+      "cumulative_notional_usd": 6551910.33,
+      "avg_hold_minutes": 795.4,
+      "current_max_position_usd": 884035.18
+    },
+    {
+      "address": "0x11eee2e0a613af4f636e23ff295e2dac6a191d1d",
+      "tag": "",
+      "historical_win_rate": 0.619,
+      "closed_positions_6mo": 21,
+      "cumulative_notional_usd": 6579464.37,
+      "avg_hold_minutes": 3458.4,
+      "current_max_position_usd": 1012909.5
+    },
+    {
+      "address": "0x0bfd7d7721f4c116e853c18ea7998e1cc2350a7d",
+      "tag": "",
+      "historical_win_rate": 0.7407,
+      "closed_positions_6mo": 27,
+      "cumulative_notional_usd": 4987450.53,
+      "avg_hold_minutes": 31.2,
+      "current_max_position_usd": 341218.0
+    },
+    {
+      "address": "0xff362f53805324725375113a6125ee64746bbf14",
+      "tag": "",
+      "historical_win_rate": 0.7188,
+      "closed_positions_6mo": 32,
+      "cumulative_notional_usd": 5071934.17,
+      "avg_hold_minutes": 8847.5,
+      "current_max_position_usd": 334457.31
+    },
+    {
+      "address": "0xe0a2479c5f1b6025e2737f22bbd2c9a54eef75ef",
+      "tag": "",
+      "historical_win_rate": 0.6176,
+      "closed_positions_6mo": 34,
+      "cumulative_notional_usd": 5645844.96,
+      "avg_hold_minutes": 2193.3,
+      "current_max_position_usd": 271568.89
+    },
+    {
+      "address": "0xbf08565efd792ed8f1ae02d49cb12fe6f3a94dd8",
+      "tag": "",
+      "historical_win_rate": 0.7692,
+      "closed_positions_6mo": 26,
+      "cumulative_notional_usd": 3803963.03,
+      "avg_hold_minutes": 45.2,
+      "current_max_position_usd": 283826.4
+    },
+    {
+      "address": "0xbeccae9ffcb69e9d42a1d4e744abf8056149562d",
+      "tag": "",
+      "historical_win_rate": 0.7313,
+      "closed_positions_6mo": 67,
+      "cumulative_notional_usd": 3465291.66,
+      "avg_hold_minutes": 32.7,
+      "current_max_position_usd": 317134.53
+    },
+    {
+      "address": "0x27c9fa86c91b84ddfa15de58c482ff662498d65d",
+      "tag": "",
+      "historical_win_rate": 0.7097,
+      "closed_positions_6mo": 31,
+      "cumulative_notional_usd": 2779444.97,
+      "avg_hold_minutes": 240.6,
+      "current_max_position_usd": 5454350.68
+    },
+    {
+      "address": "0xac7476e14f768e3e67c195e79c2490dd20c70127",
+      "tag": "",
+      "historical_win_rate": 0.746,
+      "closed_positions_6mo": 63,
+      "cumulative_notional_usd": 2631333.5,
+      "avg_hold_minutes": 81.7,
+      "current_max_position_usd": 274137.2
+    },
+    {
+      "address": "0xcf903fc632733d5453ee12cb92b56dc22fcb5bd1",
+      "tag": "",
+      "historical_win_rate": 0.6667,
+      "closed_positions_6mo": 99,
+      "cumulative_notional_usd": 2847255.77,
+      "avg_hold_minutes": 2130.9,
+      "current_max_position_usd": 315140.0
+    },
+    {
+      "address": "0xecb63caa47c7c4e77f60f1ce858cf28dc2b82b00",
+      "tag": "",
+      "historical_win_rate": 0.746,
+      "closed_positions_6mo": 63,
+      "cumulative_notional_usd": 2254879.86,
+      "avg_hold_minutes": 6.9,
+      "current_max_position_usd": 16230866.16
+    },
+    {
+      "address": "0xbb29e0d7124f61a4af2f133407b2135854592a80",
+      "tag": "",
+      "historical_win_rate": 0.6094,
       "closed_positions_6mo": 64,
-      "cumulative_notional_usd": 17194037.19,
-      "avg_hold_minutes": 1835.0
+      "cumulative_notional_usd": 2467732.53,
+      "avg_hold_minutes": 3659.6,
+      "current_max_position_usd": 360976.93
     },
     {
-      "address": "0x1197b8dc1412892b03f90220e59939af1f88d3be",
+      "address": "0x6e7465acbaa3217bdcc4c17cdbe1dadbb4356377",
       "tag": "",
-      "historical_win_rate": 0.9038,
-      "closed_positions_6mo": 52,
-      "cumulative_notional_usd": 11020896.15,
-      "avg_hold_minutes": 5423.6
-    },
-    {
-      "address": "0x88a6d1f81d65a4e95c0d384fe161f7e87490dc23",
-      "tag": "",
-      "historical_win_rate": 0.6061,
-      "closed_positions_6mo": 33,
-      "cumulative_notional_usd": 15680893.47,
-      "avg_hold_minutes": 647.4
-    },
-    {
-      "address": "0x4638364eb43798ce22d9179580cbf83290f1f9c3",
-      "tag": "",
-      "historical_win_rate": 0.6364,
-      "closed_positions_6mo": 44,
-      "cumulative_notional_usd": 12051879.98,
-      "avg_hold_minutes": 1843.5
-    },
-    {
-      "address": "0x88e46f14c1eb489cff197897f66f78e5cd4826a8",
-      "tag": "",
-      "historical_win_rate": 0.6316,
-      "closed_positions_6mo": 38,
-      "cumulative_notional_usd": 10910695.53,
-      "avg_hold_minutes": 10084.4
-    },
-    {
-      "address": "0xe673d59ed552d6d417ea508233397197daa2645b",
-      "tag": "",
-      "historical_win_rate": 0.7791,
-      "closed_positions_6mo": 86,
-      "cumulative_notional_usd": 8222003.18,
-      "avg_hold_minutes": 355.7
-    },
-    {
-      "address": "0xd63c18745d397c165c3f4b0937483dda71f1a31b",
-      "tag": "",
-      "historical_win_rate": 0.7031,
-      "closed_positions_6mo": 64,
-      "cumulative_notional_usd": 7502642.57,
-      "avg_hold_minutes": 253.0
-    },
-    {
-      "address": "0xf6b39395455e523b6c2e78cf179a1274b405582e",
-      "tag": "",
-      "historical_win_rate": 0.7975,
-      "closed_positions_6mo": 163,
-      "cumulative_notional_usd": 6566559.69,
-      "avg_hold_minutes": 939.7
-    },
-    {
-      "address": "0x829bbc1f94ee2fa7856e17bb7ab2b8fda6f3bd53",
-      "tag": "",
-      "historical_win_rate": 0.7826,
-      "closed_positions_6mo": 23,
-      "cumulative_notional_usd": 5885346.94,
-      "avg_hold_minutes": 2071.7
-    },
-    {
-      "address": "0x3d643dabed5e1675ffc6a4608d095c11943ef551",
-      "tag": "",
-      "historical_win_rate": 0.697,
-      "closed_positions_6mo": 33,
-      "cumulative_notional_usd": 5716442.62,
-      "avg_hold_minutes": 4861.0
-    },
-    {
-      "address": "0x23abb0ff0b1cbfd95b20a0fd72b83a2939f0ba5b",
-      "tag": "",
-      "historical_win_rate": 0.6522,
-      "closed_positions_6mo": 23,
-      "cumulative_notional_usd": 5993871.73,
-      "avg_hold_minutes": 1438.0
+      "historical_win_rate": 0.6429,
+      "closed_positions_6mo": 28,
+      "cumulative_notional_usd": 2188258.61,
+      "avg_hold_minutes": 559.7,
+      "current_max_position_usd": 563207.4
     }
   ]
 }
