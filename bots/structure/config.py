@@ -45,6 +45,24 @@ LIQ_LEVERAGE = 3.0
 LIQ_STOP_PCT = 4.0
 LIQ_TAKE_PROFIT_PCT = 3.0
 
+# OI Divergence — rolling 4h window
+# Counter-trend signal:
+#   LONG when price has fallen and OI has grown (fresh shorts piling in → fade)
+#   SHORT when price has rallied and OI has grown (fresh longs piling in → fade)
+# Symmetric thresholds so both legs trigger at comparable extremes.
+OI_DIV_WINDOW_HOURS = 4
+OI_DIV_OI_DELTA_PCT = 20.0           # OI must grow by this % over the window
+OI_DIV_PRICE_DELTA_PCT = 2.0         # |price move| must reach this %
+OI_DIV_TOP_VOL_RANK = 15
+OI_DIV_OI_FLOOR_USD = 10_000_000.0   # ignore thinly-traded markets
+OI_DIV_SIZE_PCT_MIN = 4.0
+OI_DIV_SIZE_PCT_MAX = 7.0
+OI_DIV_LEVERAGE = 2.0
+OI_DIV_STOP_PCT = 5.0
+OI_DIV_TAKE_PROFIT_PCT = 4.0
+OI_DIV_TIMEOUT_HOURS = 12
+
+
 # Whale Flip — per-whale poll
 # Original Item #7 spec was $500k. Lowered to $250k 2026-05-09 after curation
 # data showed 65% of active HL traders currently hold positions in the
@@ -133,5 +151,12 @@ SIGNAL_SPECS: dict[str, SignalSpec] = {
         size_pct_max=WHALE_SIZE_PCT_MAX,
         leverage=WHALE_LEVERAGE,
         stop_pct=WHALE_STOP_PCT,
+    ),
+    "hl_oi_divergence": SignalSpec(
+        name="hl_oi_divergence",
+        size_pct_min=OI_DIV_SIZE_PCT_MIN,
+        size_pct_max=OI_DIV_SIZE_PCT_MAX,
+        leverage=OI_DIV_LEVERAGE,
+        stop_pct=OI_DIV_STOP_PCT,
     ),
 }

@@ -37,6 +37,7 @@ from bots.structure.loop_helpers import (
 )
 from bots.structure.reconciliation import make_fetcher
 from bots.structure.signals import funding_fade
+from bots.structure.signals.hl_oi_divergence import OIDivergenceDetector
 from bots.structure.signals.liquidation_cascade import LiquidationCascadeDetector
 from bots.structure.signals.whale_flip import WhaleFlipDetector
 from bots.structure.signals.base import SignalCandidate
@@ -63,6 +64,7 @@ class StructureBot(BotLifecycle):
         self.executor = StructureExecutor(self.venue)
         self.liq_detector = LiquidationCascadeDetector()
         self.whale_detector = WhaleFlipDetector()
+        self.oi_div_detector = OIDivergenceDetector()
         self._whale_list: list[dict[str, Any]] = []
         self._asset_ctx_cache: list[AssetCtx] = []
         self._last_funding_poll_ts: float = 0.0
@@ -126,6 +128,8 @@ class StructureBot(BotLifecycle):
             await self._refresh_asset_contexts()
             self._evaluate_funding_fade()
             self._evaluate_liquidation_cascade()
+            self._observe_oi_snapshots()
+            self._evaluate_oi_divergence()
             self._last_funding_poll_ts = now
 
         # Whale poll
@@ -174,6 +178,24 @@ class StructureBot(BotLifecycle):
             if ctx.mid_price > 0:
                 self.liq_detector.observe_price(ctx.asset, ctx.mid_price, now_ms)
         candidates = self.liq_detector.evaluate(self._asset_ctx_cache, now_ms)
+        for c in candidates:
+            self._consume_candidate(c)
+
+    def _observe_oi_snapshots(self) -> None:
+        """Push current per-asset OI + price into the OI-divergence detector buffer."""
+        if not self._asset_ctx_cache:
+            return
+        now_ms = int(time() * 1000)
+        for ctx in self._asset_ctx_cache:
+            if ctx.open_interest_usd > 0 and ctx.mid_price > 0:
+                self.oi_div_detector.observe_snapshot(
+                    ctx.asset, ctx.open_interest_usd, ctx.mid_price, now_ms,
+                )
+
+    def _evaluate_oi_divergence(self) -> None:
+        if not self._asset_ctx_cache:
+            return
+        candidates = self.oi_div_detector.evaluate(self._asset_ctx_cache)
         for c in candidates:
             self._consume_candidate(c)
 
