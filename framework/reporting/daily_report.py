@@ -70,10 +70,19 @@ def _bot_summary(s: Session, bot: BotState, since: datetime) -> BotSummary:
 
     pnl_24h_pct = None  # require equity baseline; skip in Phase 0
 
+    # bot_state.paper_clock_day is a dead column — never written by the
+    # scoring engine even though it's in the schema. Compute live from
+    # paper_clock_started_at (matches what every Grafana panel does).
+    if bot.paper_clock_started_at is not None:
+        elapsed_s = (datetime.now(timezone.utc) - bot.paper_clock_started_at).total_seconds()
+        paper_clock_day = max(0, int(elapsed_s // 86400))
+    else:
+        paper_clock_day = None
+
     return BotSummary(
         bot_id=bot.bot_id,
         state=bot.state,
-        paper_clock_day=bot.paper_clock_day,
+        paper_clock_day=paper_clock_day,
         promotion_score=bot.promotion_score,
         trades_24h=trades_24h,
         pnl_24h_usd=float(pnl_24h_usd),
@@ -84,10 +93,21 @@ def _bot_summary(s: Session, bot: BotState, since: datetime) -> BotSummary:
     )
 
 
+# Deprioritized/inactive states excluded from the daily report. EVENT and
+# SNIPER were deprioritized 2026-05-05 (see decision log) — they still sit
+# in bot_state as 'initializing' but shouldn't pollute the daily check-in.
+_INACTIVE_STATES = {"initializing", "killed"}
+
+
 def build_summary(window_hours: int = 24, deployed_capital_usd: float = 0.0) -> FleetSummary:
     since = datetime.now(timezone.utc) - timedelta(hours=window_hours)
     with session_scope() as s:
-        bots = list(s.query(BotState).order_by(BotState.bot_id).all())
+        bots = list(
+            s.query(BotState)
+            .filter(~BotState.state.in_(_INACTIVE_STATES))
+            .order_by(BotState.bot_id)
+            .all()
+        )
         bot_summaries = [_bot_summary(s, b, since) for b in bots]
         fleet_signals = s.execute(
             select(func.count(Signal.id)).where(Signal.created_at >= since)
