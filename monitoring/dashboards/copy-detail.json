@@ -121,16 +121,38 @@
     {
       "id": 12,
       "type": "timeseries",
-      "title": "Calibration ratio (Build B)",
+      "title": "no_fill rate per day (pipeline health)",
+      "description": "Daily % of paper trade attempts that failed to fill (Pump.fun pre-grad with no Jupiter route + no Birdeye price, Birdeye quota exhaustion, etc.). 0% = healthy. Any spike = investigate the venue/quote layer immediately. (Calibration ratio panel removed — will return when Build B shadow execution ships.)",
       "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT created_at AS time, calibration_ratio AS value FROM calibration_records WHERE bot_id='copy' ORDER BY created_at",
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, ROUND((COUNT(*) FILTER (WHERE fill_status='no_fill')::float / NULLIF(COUNT(*),0) * 100)::numeric, 1) AS no_fill_pct FROM trades WHERE bot_id='copy' AND mode='paper' GROUP BY 1 ORDER BY 1",
           "format": "time_series"
         }
       ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 10},
+              {"color": "red", "value": 25}
+            ]
+          },
+          "custom": {
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "showPoints": "auto"
+          }
+        },
+        "overrides": []
+      }
     },
     {
       "id": 13,
