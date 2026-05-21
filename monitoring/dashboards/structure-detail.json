@@ -105,12 +105,13 @@
     {
       "id": 11,
       "type": "timeseries",
-      "title": "Cumulative paper PnL (USD)",
+      "title": "Cumulative paper PnL (USD) — 14d",
       "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+      "timeFrom": "14d",
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='structure' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='structure' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND exit_at >= NOW() - INTERVAL '14 days' ORDER BY exit_at",
           "format": "time_series"
         }
       ],
