@@ -75,25 +75,34 @@ def check_panic_dispatch() -> tuple[bool, str]:
 @_register("Heartbeat self-restart simulation")
 def check_heartbeat_restart() -> tuple[bool, str]:
     process_name = "shakedown_test_proc"
-    with session_scope() as s:
-        old_ts = datetime.now(timezone.utc) - timedelta(seconds=600)
-        hb = s.get(Heartbeat, process_name)
-        if hb is None:
-            s.add(Heartbeat(process_name=process_name, last_ping_at=old_ts))
-        else:
-            hb.last_ping_at = old_ts
-    from framework.watchdog import watchdog_pass
-    watchdog_pass()
-    with session_scope() as s:
-        recent = (
-            s.query(AuditLog)
-            .filter(AuditLog.event_type == "heartbeat_restart_signal")
-            .order_by(AuditLog.created_at.desc())
-            .first()
-        )
-    if recent is None:
-        return False, "watchdog did not emit restart signal"
-    return True, f"watchdog emitted restart signal (audit id={recent.id})"
+    try:
+        with session_scope() as s:
+            old_ts = datetime.now(timezone.utc) - timedelta(seconds=600)
+            hb = s.get(Heartbeat, process_name)
+            if hb is None:
+                s.add(Heartbeat(process_name=process_name, last_ping_at=old_ts))
+            else:
+                hb.last_ping_at = old_ts
+        from framework.watchdog import watchdog_pass
+        watchdog_pass()
+        with session_scope() as s:
+            recent = (
+                s.query(AuditLog)
+                .filter(AuditLog.event_type == "heartbeat_restart_signal")
+                .order_by(AuditLog.created_at.desc())
+                .first()
+            )
+        if recent is None:
+            return False, "watchdog did not emit restart signal"
+        return True, f"watchdog emitted restart signal (audit id={recent.id})"
+    finally:
+        # CRITICAL CLEANUP: leaving this row in the heartbeats table makes the
+        # watchdog fire a P0 alert every ~30s indefinitely — caused weeks of
+        # Discord/Telegram notification spam after the original Phase 0 run.
+        with session_scope() as s:
+            hb = s.get(Heartbeat, process_name)
+            if hb is not None:
+                s.delete(hb)
 
 
 @_register("P0 alert reaches Twilio (or skipped if no creds)")
