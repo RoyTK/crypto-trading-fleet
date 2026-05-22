@@ -132,3 +132,42 @@ async def sync_webhook(
 
     await update_webhook(session, api_key, webhook_id, cfg)
     return (webhook_id, "updated")
+
+
+async def sync_pool_tiers(
+    session: aiohttp.ClientSession,
+    api_key: str,
+    *,
+    active_addresses: list[str],
+    watch_addresses: list[str],
+    active_url: str,
+    watch_url: str,
+    auth_header: str,
+    transaction_types: tuple[str, ...] = ("SWAP", "SWAP_EXACT_OUT"),
+) -> dict[str, tuple[str, str]]:
+    """Sync BOTH the active and watch webhooks to match the given address lists.
+
+    The two webhooks are matched (and disambiguated) by URL — the active one
+    points at /copy/helius and the watch one at /copy/helius/watch. Same
+    auth header and transaction types for both.
+
+    Returns {'active': (webhook_id, action), 'watch': (webhook_id, action)}
+    where action ∈ {"created", "updated", "noop"}.
+    """
+    active_cfg = WebhookConfig(
+        webhook_url=active_url,
+        auth_header=auth_header,
+        addresses=active_addresses,
+        transaction_types=transaction_types,
+    )
+    watch_cfg = WebhookConfig(
+        webhook_url=watch_url,
+        auth_header=auth_header,
+        addresses=watch_addresses,
+        transaction_types=transaction_types,
+    )
+    # Run sequentially — Helius writes are not atomic and we don't want to
+    # race during list_webhooks. Sequential is cheap (~2 round trips).
+    active_result = await sync_webhook(session, api_key, active_cfg)
+    watch_result = await sync_webhook(session, api_key, watch_cfg)
+    return {"active": active_result, "watch": watch_result}
