@@ -359,6 +359,82 @@
         }
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+
+    {
+      "id": 40,
+      "type": "stat",
+      "title": "Wallet pool by tier",
+      "description": "Active wallets feed cluster detector; watch wallets are monitored but not used. Pruned wallets are unsubscribed.",
+      "gridPos": {"x": 0, "y": 60, "w": 24, "h": 5},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT tier AS metric, COUNT(*) AS value FROM wallet_pool GROUP BY tier ORDER BY CASE tier WHEN 'active' THEN 1 WHEN 'watch' THEN 2 ELSE 3 END",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": true},
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "horizontal"
+      }
+    },
+    {
+      "id": 41,
+      "type": "table",
+      "title": "Active wallets — sorted by events_30d (top of pool)",
+      "description": "Active-tier wallets sorted by recent webhook event volume. Bottom of this list = first candidates for demotion when below 10 events / 30d threshold.",
+      "gridPos": {"x": 0, "y": 65, "w": 24, "h": 10},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT address, events_30d, events_total, last_event_at, last_attribution_at, pinned, source, added_at FROM wallet_pool WHERE tier='active' ORDER BY events_30d DESC NULLS LAST LIMIT 75",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "Daily wallet pool transitions",
+      "description": "Count of promote/demote/drop events from the daily cron. Healthy steady-state = small numbers (1-5/day). Spikes worth investigating.",
+      "gridPos": {"x": 0, "y": 75, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, COALESCE(jsonb_array_length((payload->>'promoted')::jsonb), 0) AS promoted, COALESCE(jsonb_array_length((payload->>'demoted')::jsonb), 0) AS demoted, COALESCE(jsonb_array_length((payload->>'dropped')::jsonb), 0) AS dropped, COALESCE(jsonb_array_length((payload->>'swapped')::jsonb), 0) AS swapped FROM audit_log WHERE event_type='wallet_pool_daily_transitions' ORDER BY 1",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 43,
+      "type": "table",
+      "title": "Top watch-tier candidates (promotion candidates)",
+      "description": "Watch-tier wallets sorted by recent activity. Anything with events_7d ≥ 5 will be promoted by next daily cron (if WR passes / null).",
+      "gridPos": {"x": 12, "y": 75, "w": 12, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "WITH events_7d AS (SELECT wallet_address, COUNT(*) AS n7d FROM wallet_events_log WHERE event_at >= NOW() - INTERVAL '7 days' GROUP BY 1) SELECT wp.address, COALESCE(e.n7d, 0) AS events_7d, wp.events_30d, wp.last_event_at, wp.source, wp.added_at FROM wallet_pool wp LEFT JOIN events_7d e ON e.wallet_address = wp.address WHERE wp.tier='watch' ORDER BY COALESCE(e.n7d, 0) DESC, wp.events_30d DESC LIMIT 25",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     }
   ]
 }
