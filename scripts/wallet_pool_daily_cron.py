@@ -203,15 +203,14 @@ def main() -> int:
     active_url = os.environ.get("COPY_WEBHOOK_URL", "")
     watch_url = os.environ.get("COPY_WEBHOOK_URL_WATCH", "")
 
-    if not api_key or not auth_secret or not active_url or not watch_url:
-        log.error("missing_env",
-                  helius_key=bool(api_key),
-                  auth=bool(auth_secret),
-                  active_url=bool(active_url),
-                  watch_url=bool(watch_url))
-        return 2
+    log.info("daily_cron_start",
+             has_helius_key=bool(api_key),
+             has_auth_secret=bool(auth_secret),
+             has_active_url=bool(active_url),
+             has_watch_url=bool(watch_url))
 
-    log.info("daily_cron_start")
+    # Data accumulation always runs — even without Helius sync configured,
+    # we want events_30d to stay fresh so the dashboard reflects reality.
     _recompute_event_counts()
     _refresh_attribution_timestamps()
     snapshots = _snapshot_wallets()
@@ -225,11 +224,18 @@ def main() -> int:
 
     if (decisions.promote or decisions.demote or decisions.drop or decisions.swap_in):
         _apply_transitions(decisions)
-        try:
-            sync_result = asyncio.run(_sync_helius(api_key, auth_secret, active_url, watch_url))
-            log.info("helius_synced", **{k: v[1] for k, v in sync_result.items()})
-        except Exception:
-            log.exception("helius_sync_failed")
+        # Helius sync requires all four env vars. If watch_url isn't set yet
+        # (initial deploy), skip the sync but keep the DB transitions —
+        # they're still useful for dashboards + the next run will retry.
+        if api_key and auth_secret and active_url and watch_url:
+            try:
+                sync_result = asyncio.run(_sync_helius(api_key, auth_secret, active_url, watch_url))
+                log.info("helius_synced", **{k: v[1] for k, v in sync_result.items()})
+            except Exception:
+                log.exception("helius_sync_failed")
+        else:
+            log.warning("helius_sync_skipped",
+                        reason="missing env (likely COPY_WEBHOOK_URL_WATCH)")
 
         # Active count after transitions
         with session_scope() as s:
