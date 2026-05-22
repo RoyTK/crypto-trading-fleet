@@ -1,20 +1,29 @@
 """COPY bot webhook receiver — Helius enhanced webhooks → Redis pubsub.
 
-aiohttp web service. Single endpoint POST /copy/helius:
-1. Validates `Authorization` header against HELIUS_WEBHOOK_AUTH_SECRET
-2. Parses Helius's enhanced swap payload (array of events)
-3. For each event, identifies which pool wallet participated (input side)
-4. Builds a WalletBuyEvent JSON, dedups by tx_signature, publishes to
+aiohttp web service with TWO endpoints (per wallet tier):
+- POST /copy/helius        → active tier (publishes to copy:buys Redis channel)
+- POST /copy/helius/watch  → watch tier (NO Redis publish; event-log only)
+
+Both endpoints:
+1. Validate `Authorization` header against HELIUS_WEBHOOK_AUTH_SECRET
+2. Parse Helius's enhanced swap payload (array of events)
+3. For each event, identify which pool wallet participated (input side)
+4. Write a wallet_events_log row + update wallet_pool.last_event_at
+5. ACTIVE ONLY: build a WalletBuyEvent JSON, dedup by tx_signature, publish to
    `copy:buys` Redis channel
-5. Returns 200 quickly (Helius retries on >10s response)
+6. Return 200 quickly (Helius retries on >10s response)
+
+The active/watch split exists so we can subscribe to ~500 "watch" wallets
+cheaply (Helius charges per delivered event — dormant wallets cost $0)
+while only the ~75 "active" wallets feed cluster detection. Daily cron
+promotes watch wallets that have shown ≥5 swaps/7d AND demotes active
+wallets with <10 events/30d. See scripts/wallet_pool_daily_cron.py.
 
 Also exposes GET /health for liveness checks.
 
-Background task refreshes Solana SOL price every 5 min via Jupiter quote
-(needed to convert wSOL/native swap amounts to USD).
-
-Pool wallets loaded from bots/copy/wallet_pool.json on startup; receiver
-must be restarted when pool changes (matches bot_copy's behavior).
+Pool tiers loaded from `wallet_pool` table on startup; refreshed every 60s
+in the background so tier changes from the daily cron take effect without
+receiver restart.
 """
 from __future__ import annotations
 
@@ -30,10 +39,16 @@ import aiohttp
 import redis.asyncio as redis_async
 from aiohttp import web
 
+from sqlalchemy import select, text
+
+from framework.db import session_scope
 from framework.logging_setup import configure_logging, get_logger
+from framework.models import WalletEventLog, WalletPool
 
 
 log = get_logger(__name__)
+
+POOL_REFRESH_SECONDS = 60
 
 # ---- Constants ------------------------------------------------------------
 
@@ -66,6 +81,9 @@ SOL_PRICE_FALLBACK_USD = 150.0
 # ---- Helpers --------------------------------------------------------------
 
 def _load_pool_addresses() -> set[str]:
+    """Legacy JSON loader — kept as fallback for bootstrap before the
+    migration script populates the wallet_pool table.
+    """
     if not WALLET_POOL_PATH.exists():
         log.warning("wallet_pool_missing", path=str(WALLET_POOL_PATH))
         return set()
@@ -81,6 +99,85 @@ def _load_pool_addresses() -> set[str]:
         if addr and chain == "solana":
             out.add(addr)
     return out
+
+
+def _load_pool_tiers_from_db() -> tuple[set[str], set[str]]:
+    """Return (active_pool, watch_pool) of Solana addresses from wallet_pool.
+
+    Pruned wallets are NOT subscribed to any webhook so they're excluded.
+    """
+    active: set[str] = set()
+    watch: set[str] = set()
+    try:
+        with session_scope() as s:
+            for w in s.execute(select(WalletPool).where(
+                WalletPool.chain == "solana",
+                WalletPool.tier.in_(("active", "watch")),
+            )).scalars():
+                if w.tier == "active":
+                    active.add(w.address)
+                elif w.tier == "watch":
+                    watch.add(w.address)
+    except Exception:
+        log.exception("wallet_pool_db_load_failed")
+    return active, watch
+
+
+async def _pool_refresher(app: web.Application) -> None:
+    """Background refresh of active/watch pool sets every POOL_REFRESH_SECONDS.
+
+    Lets daily promote/demote cron take effect without receiver restart.
+    """
+    while True:
+        try:
+            active, watch = await asyncio.to_thread(_load_pool_tiers_from_db)
+            # If DB is empty (e.g. pre-migration), keep using the JSON-loaded
+            # legacy pool as active. This is the bootstrap fallback.
+            if active or watch:
+                app["active_pool"] = active
+                app["watch_pool"] = watch
+                log.info("pool_refreshed",
+                         active=len(active), watch=len(watch))
+        except Exception:
+            log.exception("pool_refresh_failed")
+        await asyncio.sleep(POOL_REFRESH_SECONDS)
+
+
+def _persist_event_batch(
+    matched_events: list[tuple[str, str]],
+) -> None:
+    """Write wallet_events_log rows + bump wallet_pool.last_event_at + events_total.
+
+    matched_events: list of (wallet_address, source_webhook_tier).
+    Runs sync; called via asyncio.to_thread from the handler.
+    """
+    if not matched_events:
+        return
+    now = datetime_now_utc()
+    try:
+        with session_scope() as s:
+            # Bulk insert event log rows
+            s.bulk_insert_mappings(WalletEventLog, [
+                {"wallet_address": addr, "event_at": now, "source_webhook": tier}
+                for addr, tier in matched_events
+            ])
+            # Update each affected wallet's last_event_at + events_total.
+            # Aggregate by address first to minimize UPDATE statements.
+            counts: dict[str, int] = {}
+            for addr, _ in matched_events:
+                counts[addr] = counts.get(addr, 0) + 1
+            for addr, n in counts.items():
+                s.execute(text(
+                    "UPDATE wallet_pool SET last_event_at = :now, "
+                    "events_total = events_total + :n WHERE address = :addr"
+                ), {"now": now, "n": n, "addr": addr})
+    except Exception:
+        log.exception("persist_event_batch_failed", n=len(matched_events))
+
+
+def datetime_now_utc():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc)
 
 
 def _parse_swap_event(
@@ -290,14 +387,28 @@ async def _sol_price_refresher(app: web.Application) -> None:
 # ---- HTTP handlers --------------------------------------------------------
 
 async def health_handler(request: web.Request) -> web.Response:
-    return web.json_response({"status": "ok", "pool_size": len(request.app["pool"])})
+    return web.json_response({
+        "status": "ok",
+        "active_pool_size": len(request.app["active_pool"]),
+        "watch_pool_size": len(request.app["watch_pool"]),
+    })
 
 
-async def helius_webhook_handler(request: web.Request) -> web.Response:
+async def _process_webhook(
+    request: web.Request,
+    tier: str,
+) -> web.Response:
+    """Shared handler body for both /copy/helius and /copy/helius/watch.
+
+    tier: 'active' | 'watch'
+      active → uses active_pool; publishes matched buys to copy:buys Redis channel
+      watch  → uses watch_pool;  no Redis publish (event-log only)
+    Both write to wallet_events_log + bump wallet_pool counters.
+    """
     expected_secret: str = request.app["webhook_secret"]
     auth = request.headers.get("Authorization", "")
     if not expected_secret or not hmac.compare_digest(auth, expected_secret):
-        log.warning("webhook_unauthorized", remote=request.remote)
+        log.warning("webhook_unauthorized", tier=tier, remote=request.remote)
         return web.Response(status=401, text="unauthorized")
 
     try:
@@ -308,23 +419,24 @@ async def helius_webhook_handler(request: web.Request) -> web.Response:
         events = [events]
 
     redis_client: redis_async.Redis = request.app["redis"]
-    pool: set[str] = request.app["pool"]
+    pool: set[str] = request.app[f"{tier}_pool"]
     sol_price_usd: float = request.app.get("sol_price_usd") or SOL_PRICE_FALLBACK_USD
 
     matched = 0
     skipped_dup = 0
     skipped_unmatched = 0
+    log_rows: list[tuple[str, str]] = []  # (wallet_address, tier) for batch persist
     debug_unmatched = os.environ.get("COPY_RECEIVER_DEBUG_UNMATCHED", "0") == "1"
+
     for event in events:
         try:
             buy = _parse_swap_event(event, pool, sol_price_usd)
         except Exception:
-            log.exception("event_parse_failed")
+            log.exception("event_parse_failed", tier=tier)
             continue
         if buy is None:
             skipped_unmatched += 1
             if debug_unmatched:
-                # Log enough structure to diagnose why it didn't match
                 tts = event.get("tokenTransfers") or []
                 nts = event.get("nativeTransfers") or []
                 tt_summary = [
@@ -338,6 +450,7 @@ async def helius_webhook_handler(request: web.Request) -> web.Response:
                     for n in nts[:6]
                 ]
                 log.info("unmatched_event",
+                         tier=tier,
                          sig=(event.get("signature") or "")[:12],
                          src=event.get("source"),
                          type=event.get("type"),
@@ -345,25 +458,47 @@ async def helius_webhook_handler(request: web.Request) -> web.Response:
                          tts=tt_summary, nts=nt_summary)
             continue
 
-        # Dedup by tx_signature — Helius may retry on prior failures
-        sig = buy["tx_signature"]
-        if sig:
-            dedup_key = f"{REDIS_DEDUP_PREFIX}{sig}"
-            seen = await redis_client.set(dedup_key, "1", nx=True, ex=DEDUP_TTL_SECONDS)
-            if not seen:  # already processed
-                skipped_dup += 1
-                continue
+        # Every matched event gets logged regardless of tier — promote/demote
+        # cron needs visibility into watch-tier activity.
+        log_rows.append((buy["wallet_address"], tier))
 
+        # Active-tier only: publish to cluster channel (after dedup).
+        if tier == "active":
+            sig = buy["tx_signature"]
+            if sig:
+                dedup_key = f"{REDIS_DEDUP_PREFIX}{sig}"
+                seen = await redis_client.set(dedup_key, "1", nx=True, ex=DEDUP_TTL_SECONDS)
+                if not seen:
+                    skipped_dup += 1
+                    continue
+            try:
+                await redis_client.publish(REDIS_BUYS_CHANNEL, json.dumps(buy))
+                matched += 1
+            except Exception:
+                log.exception("redis_publish_failed", tier=tier)
+        else:
+            matched += 1  # watch-tier "match" = event logged
+
+    # Persist event log + bump counters in one batched DB roundtrip
+    if log_rows:
         try:
-            await redis_client.publish(REDIS_BUYS_CHANNEL, json.dumps(buy))
-            matched += 1
+            await asyncio.to_thread(_persist_event_batch, log_rows)
         except Exception:
-            log.exception("redis_publish_failed")
+            log.exception("event_log_persist_failed", tier=tier, n=len(log_rows))
 
     log.info("webhook_batch",
+             tier=tier,
              total=len(events), matched=matched,
              skipped_dup=skipped_dup, skipped_unmatched=skipped_unmatched)
     return web.Response(status=200, text="ok")
+
+
+async def helius_webhook_handler(request: web.Request) -> web.Response:
+    return await _process_webhook(request, tier="active")
+
+
+async def helius_watch_webhook_handler(request: web.Request) -> web.Response:
+    return await _process_webhook(request, tier="watch")
 
 
 # ---- App lifecycle --------------------------------------------------------
@@ -384,23 +519,35 @@ async def init_app() -> web.Application:
     app["redis"] = redis_async.from_url(redis_url, decode_responses=True)
 
     app["http"] = aiohttp.ClientSession()
-    app["pool"] = _load_pool_addresses()
+    # Bootstrap: try DB first, fall back to JSON if empty (pre-migration state).
+    active, watch = _load_pool_tiers_from_db()
+    if not active and not watch:
+        legacy = _load_pool_addresses()
+        log.info("wallet_pool_db_empty_fallback_json", n=len(legacy))
+        active = legacy
+        watch = set()
+    app["active_pool"] = active
+    app["watch_pool"] = watch
     app["sol_price_usd"] = SOL_PRICE_FALLBACK_USD
 
     log.info("webhook_receiver_starting",
-             pool_size=len(app["pool"]),
+             active_pool=len(active),
+             watch_pool=len(watch),
              auth_configured=bool(secret))
 
     app.router.add_get("/health", health_handler)
     app.router.add_post("/copy/helius", helius_webhook_handler)
+    app.router.add_post("/copy/helius/watch", helius_watch_webhook_handler)
 
     async def _start_bg(_app: web.Application) -> None:
         _app["sol_price_task"] = asyncio.create_task(_sol_price_refresher(_app))
+        _app["pool_refresh_task"] = asyncio.create_task(_pool_refresher(_app))
 
     async def _cleanup(_app: web.Application) -> None:
-        task = _app.get("sol_price_task")
-        if task:
-            task.cancel()
+        for k in ("sol_price_task", "pool_refresh_task"):
+            task = _app.get(k)
+            if task:
+                task.cancel()
         await _app["http"].close()
         await _app["redis"].aclose()
 

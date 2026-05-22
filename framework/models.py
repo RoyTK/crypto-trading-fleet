@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, DateTime, JSON, Text,
+    Column, String, Integer, BigInteger, Float, Boolean, DateTime, JSON, Text,
     Index, ForeignKey,
 )
 from sqlalchemy.orm import declarative_base, relationship
@@ -176,6 +176,63 @@ class Heartbeat(Base):
     process_name = Column(String(64), primary_key=True)
     last_ping_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     metadata_json = Column(JSON, nullable=True)
+
+
+class WalletPool(Base):
+    """COPY bot's wallet pool with active/watch/pruned tier state.
+
+    Active wallets are subscribed to the primary Helius webhook and their
+    swap events feed the cluster detector. Watch wallets are subscribed to
+    a secondary webhook and their events update event-count metadata only —
+    they do NOT feed the cluster detector. Pruned wallets are unsubscribed
+    entirely but the row is kept so re-discovery can reactivate them.
+
+    Daily cron promotes/demotes/drops based on event counts + attribution
+    history. See scripts/wallet_pool_daily_cron.py.
+    """
+    __tablename__ = "wallet_pool"
+
+    address = Column(String(64), primary_key=True)
+    chain = Column(String(16), nullable=False)
+    tier = Column(String(16), nullable=False, default="watch")  # 'active' | 'watch' | 'pruned'
+    added_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    last_event_at = Column(DateTime(timezone=True), nullable=True)
+    events_30d = Column(Integer, nullable=False, default=0)
+    events_total = Column(BigInteger, nullable=False, default=0)
+    source = Column(String(64), nullable=True)
+    promoted_at = Column(DateTime(timezone=True), nullable=True)
+    demoted_at = Column(DateTime(timezone=True), nullable=True)
+    cielo_pnl_90d_usd = Column(Float, nullable=True)
+    cielo_winrate_90d = Column(Float, nullable=True)
+    cielo_refreshed_at = Column(DateTime(timezone=True), nullable=True)
+    last_attribution_at = Column(DateTime(timezone=True), nullable=True)
+    pinned = Column(Boolean, nullable=False, default=False)
+    pinned_at = Column(DateTime(timezone=True), nullable=True)
+    pinned_reason = Column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("ix_wallet_pool_tier", "tier"),
+        Index("ix_wallet_pool_last_event", "last_event_at"),
+    )
+
+
+class WalletEventLog(Base):
+    """Lightweight log of every webhook event seen for any pool wallet.
+
+    Used to compute rolling 30d event counts in the daily cron. Older rows
+    are truncated to keep the table bounded.
+    """
+    __tablename__ = "wallet_events_log"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    wallet_address = Column(String(64), nullable=False)
+    event_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    source_webhook = Column(String(16), nullable=False)  # 'active' | 'watch'
+
+    __table_args__ = (
+        Index("ix_wallet_events_wallet_time", "wallet_address", "event_at"),
+        Index("ix_wallet_events_time", "event_at"),
+    )
 
 
 class WalletAttribution(Base):
