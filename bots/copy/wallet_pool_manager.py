@@ -24,6 +24,11 @@ PROMOTE_MIN_WIN_RATE = 0.55  # Cielo 90d winrate (0-1 ratio)
 DROP_DAYS_SILENT = 90
 ATTRIBUTION_PROTECTION_DAYS = 365
 TARGETED_SWAP_IN_EVENTS_48H = 10
+# New wallets get a 30d grace period before demotion can fire. Otherwise
+# wallets added < 30 days ago are unfairly punished — their events_30d
+# can't have accumulated yet. Same logic protects against demoting the
+# entire pool on day 1 of the Phase A migration.
+DEMOTE_GRACE_DAYS = 30
 
 
 @dataclass
@@ -60,6 +65,7 @@ def decide_tier_changes(
     drop_days_silent: int = DROP_DAYS_SILENT,
     attribution_protection_days: int = ATTRIBUTION_PROTECTION_DAYS,
     targeted_swap_in_events_48h: int = TARGETED_SWAP_IN_EVENTS_48H,
+    demote_grace_days: int = DEMOTE_GRACE_DAYS,
 ) -> TierDecisions:
     """Decide the daily tier transitions.
 
@@ -99,10 +105,15 @@ def decide_tier_changes(
             drop.append(w.address)
 
     # ---- Step 2: demote underperforming active wallets -------------------
+    grace_cutoff = now - timedelta(days=demote_grace_days)
     for w in actives:
         if w.pinned:
             continue
         if w.events_30d >= demote_events_30d_below:
+            continue
+        # Grace period: newly-added wallets can't have accumulated 30d of
+        # events yet. Skip them until they've had a fair shot.
+        if w.added_at > grace_cutoff:
             continue
         # Attribution-protected? Only if last_attribution_at is recent.
         if w.last_attribution_at is not None:

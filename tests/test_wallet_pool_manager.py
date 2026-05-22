@@ -117,6 +117,25 @@ def test_dont_demote_active_meeting_bar():
     assert "a1" not in d.demote
 
 
+def test_dont_demote_active_within_grace_window():
+    """Newly-added active wallets (<30d ago) can't have 30d of events.
+    Don't demote them — they need time to prove themselves."""
+    wallets = [
+        _w("a1", tier="active", added_days_ago=10, events_30d=0),
+    ]
+    d = decide_tier_changes(wallets, now=NOW)
+    assert "a1" not in d.demote
+
+
+def test_demote_active_past_grace_with_no_events():
+    """After grace expires, low-events_30d → demote (no protection)."""
+    wallets = [
+        _w("a1", tier="active", added_days_ago=45, events_30d=0),
+    ]
+    d = decide_tier_changes(wallets, now=NOW)
+    assert "a1" in d.demote
+
+
 def test_attribution_protection_within_1yr_blocks_demotion():
     wallets = [
         _w("a1", tier="active", events_30d=2, last_attribution_days_ago=100),
