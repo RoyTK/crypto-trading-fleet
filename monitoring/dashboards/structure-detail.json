@@ -97,11 +97,19 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT date_trunc('day', created_at) AS time, signal_type, COUNT(*) AS count FROM signals WHERE bot_id='structure' AND created_at >= NOW() - INTERVAL '7 days' GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT signal_type, COUNT(*) AS count FROM signals WHERE bot_id='structure' AND created_at >= NOW() - INTERVAL '7 days' GROUP BY 1 ORDER BY 2 DESC",
           "format": "table"
         }
       ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "options": {
+        "xField": "signal_type",
+        "orientation": "auto",
+        "xTickLabelRotation": -90,
+        "xTickLabelSpacing": 0,
+        "showValue": "auto",
+        "legend": {"showLegend": false}
+      }
     },
     {
       "id": 11,
