@@ -50,8 +50,8 @@ def test_below_per_wallet_floor_does_not_count():
     d = ClusterDetector()
     d.observe_buy(_ev("w1", 6000))
     d.observe_buy(_ev("w2", 6000))
-    # w3 spent only $1k — should not qualify
-    d.observe_buy(_ev("w3", 1000))
+    # w3 spent only $500 — well below the $1k floor — should not qualify
+    d.observe_buy(_ev("w3", 500))
     candidates = d.evaluate(now_ms=NOW_MS)
     assert candidates == []
 
@@ -129,4 +129,6 @@ def test_no_refire_within_window():
 
 def test_below_per_wallet_floor_constant_check():
     """Sanity that the threshold is what we expect."""
-    assert CLUSTER_MIN_NOTIONAL_PER_WALLET_USD == 5000.0
+    # Re-lowered to $1k 2026-05-24 — live data showed $5k floor too tight
+    # for 2026 memecoin buy-size distribution. See config.py comment.
+    assert CLUSTER_MIN_NOTIONAL_PER_WALLET_USD == 1000.0

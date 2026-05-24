@@ -25,7 +25,9 @@ def test_locked_thresholds_match_design():
     """Item #7 thresholds — lock these in a test so a refactor can't silently shift them."""
     assert CLUSTER_MIN_WALLETS == 3
     assert CLUSTER_WINDOW_MINUTES == 15
-    assert CLUSTER_MIN_NOTIONAL_PER_WALLET_USD == 5_000.0
+    # Re-lowered to $1k 2026-05-24 — live data showed $5k floor was too tight
+    # for 2026 memecoin buy-size distribution. See config.py comment.
+    assert CLUSTER_MIN_NOTIONAL_PER_WALLET_USD == 1_000.0
     assert PER_TRADE_NOTIONAL_CAP_PCT == 8.0
     assert ALLOCATION_CAP_PCT == 50.0
 

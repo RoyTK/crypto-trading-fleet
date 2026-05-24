@@ -130,42 +130,45 @@ def _insert_new(addresses: list[str], source: str, chain: str = "solana") -> int
 # Discovery modes
 # ----------------------------------------------------------------------
 
-async def _mode_birdeye_gainers(client: BirdeyeClient) -> list[str]:
-    """Top gainers + top losers in last 24h, deduped."""
+async def _mode_birdeye_gainers(session: aiohttp.ClientSession, client: BirdeyeClient) -> list[str]:
+    """Top traders by PnL (gainers + losers), deduped."""
     out: set[str] = set()
     try:
-        for direction in ("gainers", "losers"):
-            top = await client.gainers_losers(direction=direction, time_frame="24h", limit=50)
+        # Gainers: sort_type=desc; Losers: sort_type=asc
+        for sort_type in ("desc", "asc"):
+            top = await client.gainers_losers(
+                session=session, sort_by="PnL", sort_type=sort_type,
+                target_count=50, timeframe="1W",
+            )
             for t in top:
-                addr = t.get("address") or t.get("owner") or t.get("wallet")
-                if addr and isinstance(addr, str):
-                    out.add(addr)
+                if t.address:
+                    out.add(t.address)
     except Exception:
         log.exception("birdeye_gainers_fetch_failed")
     return list(out)
 
 
-async def _mode_hot_token_traders(client: BirdeyeClient) -> list[str]:
-    """For each currently-trending token, fetch its top traders.
+async def _mode_hot_token_traders(session: aiohttp.ClientSession, client: BirdeyeClient) -> list[str]:
+    """For each top-gainer wallet's recent buys (proxy for hot tokens), fetch top traders.
 
-    Uses Birdeye's `defi/v2/tokens/top_traders` (already wired in BirdeyeClient).
-    Hot tokens chosen via gainers feed for simplicity (no separate trending API).
+    Note: BirdeyeClient currently exposes `gainers_losers` (wallets) and
+    `token_top_traders` (per-token wallets). We use the gainers list as a
+    seed of "wallets currently active" and pull THEIR counterparties is not
+    implemented yet. For now, top traders of any wallet's most-traded
+    tokens stays deferred — we just return the top gainers themselves
+    (same as birdeye_gainers but a smaller set, captured at a different
+    time of day). Real "hot token discovery" needs a token-volume API
+    we'd have to add to BirdeyeClient.
     """
     out: set[str] = set()
     try:
-        gainers = await client.gainers_losers(direction="gainers", time_frame="24h", limit=5)
-        for g in gainers:
-            mint = g.get("address") or g.get("mint")
-            if not isinstance(mint, str):
-                continue
-            try:
-                traders = await client.token_top_traders(mint=mint, limit=20)
-                for t in traders:
-                    addr = t.get("owner") or t.get("address")
-                    if addr and isinstance(addr, str):
-                        out.add(addr)
-            except Exception:
-                log.warning("token_top_traders_failed", mint=mint)
+        top = await client.gainers_losers(
+            session=session, sort_by="volume", sort_type="desc",
+            target_count=30, timeframe="today",
+        )
+        for t in top:
+            if t.address:
+                out.add(t.address)
     except Exception:
         log.exception("hot_token_traders_fetch_failed")
     return list(out)
@@ -194,13 +197,13 @@ async def _run(mode: str) -> int:
 
     if mode == "birdeye-gainers":
         async with aiohttp.ClientSession() as session:
-            client = BirdeyeClient(session=session, api_key=settings.birdeye_api_key)
-            candidates = await _mode_birdeye_gainers(client)
+            client = BirdeyeClient()
+            candidates = await _mode_birdeye_gainers(session, client)
         source = "birdeye_gainers"
     elif mode == "hot-token-traders":
         async with aiohttp.ClientSession() as session:
-            client = BirdeyeClient(session=session, api_key=settings.birdeye_api_key)
-            candidates = await _mode_hot_token_traders(client)
+            client = BirdeyeClient()
+            candidates = await _mode_hot_token_traders(session, client)
         source = "hot_token_traders"
     elif mode == "counterparties":
         candidates = await _mode_counterparties()
