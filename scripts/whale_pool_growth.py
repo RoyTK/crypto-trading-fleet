@@ -79,19 +79,19 @@ def main() -> int:
     print(f"\n=== Whale pool growth — "
           f"{datetime.now(timezone.utc).isoformat()} ===\n", file=sys.stderr)
 
-    # Load existing whale_list.json
-    existing: dict = {"whales": []}
-    if WL_PATH.exists():
-        try:
-            existing = json.loads(WL_PATH.read_text())
-        except Exception as e:
-            print(f"[error] failed to read {WL_PATH}: {e}", file=sys.stderr)
-            return 1
-    existing_whales = existing.get("whales", []) or []
-    existing_addrs = {(w.get("address") or "").lower() for w in existing_whales}
-    print(f"[state] existing pool: {len(existing_whales)} whales", file=sys.stderr)
+    # Load existing pool from structure_whale_pool DB table
+    from sqlalchemy import select
+    from framework.db import session_scope
+    from framework.models import StructureWhalePool
+    with session_scope() as s:
+        existing_rows = list(s.execute(
+            select(StructureWhalePool).where(StructureWhalePool.pruned_at.is_(None))
+        ).scalars())
+    existing_count = len(existing_rows)
+    existing_addrs = {r.address.lower() for r in existing_rows}
+    print(f"[state] existing pool: {existing_count} whales (DB)", file=sys.stderr)
 
-    if len(existing_whales) >= args.target:
+    if existing_count >= args.target:
         print(f"[no-op] pool already at target ({args.target}); skipping sample.",
               file=sys.stderr)
         return 0
@@ -170,59 +170,60 @@ def main() -> int:
     )
 
     # Cap at add_per_run + remaining headroom to target
-    headroom = max(0, args.target - len(existing_whales))
+    headroom = max(0, args.target - existing_count)
     n_to_add = min(args.add_per_run, headroom, len(qualified))
     new_whales = qualified[:n_to_add]
     print(f"\n[adds] qualified={len(qualified)}, headroom={headroom}, "
           f"add_per_run={args.add_per_run} → adding {len(new_whales)}", file=sys.stderr)
 
     if not new_whales:
-        print(f"[done] no new whales added; pool stays at {len(existing_whales)}",
+        print(f"[done] no new whales added; pool stays at {existing_count}",
               file=sys.stderr)
         return 0
 
-    # Phase 4: append to whale_list.json
-    additions = []
-    for s in new_whales:
-        additions.append({
-            "address": s.address,
-            "tag": s.tag,
-            "tier": _classify_tier(s),
-            "added_at": datetime.now(timezone.utc).isoformat(),
-            "historical_win_rate": round(s.win_rate, 4),
-            "closed_positions_6mo": s.closed_positions,
-            "cumulative_notional_usd": round(s.cumulative_notional_usd, 2),
-            "avg_hold_minutes": round(s.avg_hold_minutes, 1),
-            "current_max_position_usd": round(s.current_max_position_usd, 2),
-        })
+    # Phase 4: insert into structure_whale_pool table
+    now = datetime.now(timezone.utc)
+    inserted = 0
+    with session_scope() as s:
+        for stat in new_whales:
+            tier_label = _classify_tier(stat)
+            # Map legacy tag → simplified DB tier
+            tier_db = "premium" if tier_label == PREMIUM_TIER_LABEL else "working"
+            # If row exists (e.g. previously pruned), reactivate; else insert
+            existing_row = s.get(StructureWhalePool, stat.address)
+            if existing_row is not None:
+                existing_row.pruned_at = None
+                existing_row.pruned_reason = None
+                existing_row.tier = tier_db
+                existing_row.tag = stat.tag or None
+                existing_row.historical_win_rate = round(stat.win_rate, 4)
+                existing_row.closed_positions_6mo = stat.closed_positions
+                existing_row.cumulative_notional_usd = round(stat.cumulative_notional_usd, 2)
+                existing_row.avg_hold_minutes = round(stat.avg_hold_minutes, 1)
+                existing_row.current_max_position_usd = round(stat.current_max_position_usd, 2)
+                existing_row.metrics_refreshed_at = now
+            else:
+                s.add(StructureWhalePool(
+                    address=stat.address,
+                    added_at=now,
+                    source="pool_growth_cron",
+                    tier=tier_db,
+                    tag=stat.tag or None,
+                    historical_win_rate=round(stat.win_rate, 4),
+                    closed_positions_6mo=stat.closed_positions,
+                    cumulative_notional_usd=round(stat.cumulative_notional_usd, 2),
+                    avg_hold_minutes=round(stat.avg_hold_minutes, 1),
+                    current_max_position_usd=round(stat.current_max_position_usd, 2),
+                    metrics_refreshed_at=now,
+                ))
+            inserted += 1
 
-    existing_whales.extend(additions)
-    out_obj = {
-        **existing,
-        "version": 2,
-        "last_growth_run_at": datetime.now(timezone.utc).isoformat(),
-        "filters": {
-            "working_tier": {
-                "min_win_rate": WORKING_MIN_WIN_RATE,
-                "min_trades": WORKING_MIN_TRADES,
-                "min_cumulative_notional_usd": WORKING_MIN_CUMULATIVE_NOTIONAL_USD,
-                "min_current_position_usd": WORKING_MIN_CURRENT_POSITION_USD,
-            },
-            "premium_tier": {
-                "min_cumulative_notional_usd": PREMIUM_MIN_CUMULATIVE_NOTIONAL_USD,
-                "min_current_position_usd": PREMIUM_MIN_CURRENT_POSITION_USD,
-            },
-        },
-        "whales": existing_whales,
-    }
-    WL_PATH.write_text(json.dumps(out_obj, indent=2))
-
-    print(f"\n[done] added {len(additions)} new whales — pool now at "
-          f"{len(existing_whales)}/{args.target}", file=sys.stderr)
-    for w in additions:
-        print(f"  + {w['address'][:10]}.. tier={w['tier']} "
-              f"wr={w['historical_win_rate']:.2f} "
-              f"vol=${w['cumulative_notional_usd']:,.0f}", file=sys.stderr)
+    print(f"\n[done] added {inserted} new whales — pool now at "
+          f"{existing_count + inserted}/{args.target}", file=sys.stderr)
+    for stat in new_whales:
+        print(f"  + {stat.address[:10]}.. tier={_classify_tier(stat)} "
+              f"wr={stat.win_rate:.2f} "
+              f"vol=${stat.cumulative_notional_usd:,.0f}", file=sys.stderr)
     return 0
 
 

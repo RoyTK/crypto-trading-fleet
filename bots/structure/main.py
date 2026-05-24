@@ -403,6 +403,38 @@ class StructureBot(BotLifecycle):
     # ---- Whale list --------------------------------------------------------
 
     def _load_whale_list(self) -> list[dict[str, Any]]:
+        """Load active whale pool from structure_whale_pool DB table.
+
+        Reads rows where pruned_at IS NULL — soft-deleted whales are excluded.
+        Returns a list of dicts compatible with the previous JSON-based
+        whale_flip caller (only `address`, `tag` are read by the detector;
+        other curation metrics are kept for completeness).
+
+        Falls back to JSON if the table is empty (pre-migration bootstrap) so
+        a botched alembic upgrade doesn't strand the bot with zero whales.
+        """
+        from sqlalchemy import select
+        from framework.db import session_scope
+        from framework.models import StructureWhalePool
+        try:
+            with session_scope() as s:
+                rows = list(s.execute(
+                    select(StructureWhalePool).where(
+                        StructureWhalePool.pruned_at.is_(None)
+                    )
+                ).scalars())
+            if rows:
+                return [{
+                    "address": r.address,
+                    "tag": r.tag,
+                    "tier": r.tier,
+                    "historical_win_rate": r.historical_win_rate,
+                } for r in rows]
+            self.log.warning("structure_whale_pool_empty_falling_back_to_json")
+        except Exception:
+            self.log.exception("structure_whale_pool_load_failed_falling_back")
+
+        # JSON fallback (pre-migration bootstrap)
         if not WHALE_LIST_PATH.exists():
             self.log.warning("whale_list_missing", path=str(WHALE_LIST_PATH))
             return []
