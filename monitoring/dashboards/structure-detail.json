@@ -271,6 +271,38 @@
         }
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Cumulative paper PnL by signal type (USD)",
+      "description": "Per-generator PnL accumulation. One line per signal_type so you can see which strategies are profitable vs bleeding. A flat line = generator hasn't fired (or all trades cancelled out). A rising line = net positive PnL contribution.",
+      "gridPos": {"x": 0, "y": 53, "w": 24, "h": 10},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT t.exit_at AS time, SUM(CASE WHEN s.signal_type='funding_fade' THEN t.pnl_usd ELSE 0 END) OVER (ORDER BY t.exit_at) AS funding_fade, SUM(CASE WHEN s.signal_type='whale_flip' THEN t.pnl_usd ELSE 0 END) OVER (ORDER BY t.exit_at) AS whale_flip, SUM(CASE WHEN s.signal_type='hl_oi_divergence' THEN t.pnl_usd ELSE 0 END) OVER (ORDER BY t.exit_at) AS hl_oi_divergence, SUM(CASE WHEN s.signal_type='liquidation_cascade' THEN t.pnl_usd ELSE 0 END) OVER (ORDER BY t.exit_at) AS liquidation_cascade FROM trades t JOIN signals s ON s.id = t.signal_id WHERE t.bot_id='structure' AND t.mode='paper' AND t.fill_status='closed' AND t.exit_at IS NOT NULL ORDER BY t.exit_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {"showLegend": true, "displayMode": "table", "placement": "right", "calcs": ["last", "min", "max"]},
+        "tooltip": {"mode": "multi", "sort": "desc"}
+      }
     }
   ]
 }
