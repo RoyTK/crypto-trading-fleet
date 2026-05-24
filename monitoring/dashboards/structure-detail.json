@@ -245,13 +245,13 @@
     {
       "id": 32,
       "type": "stat",
-      "title": "Whales in pool",
-      "description": "Curated whale_list.json size. Target 30-50; below 10 = whale_flip detector starved.",
+      "title": "Whales that flipped (last 90d)",
+      "description": "Distinct whale addresses that fired a whale_flip signal in the last 90d. NOT the same as 'whales in pool' — pool size is in whale_list.json (read via shell). A low number here means even subscribed whales aren't flipping positions enough.",
       "gridPos": {"x": 0, "y": 45, "w": 6, "h": 4},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT COUNT(DISTINCT (payload->>'whale_address')) AS active_whales FROM signals WHERE bot_id='structure' AND signal_type='whale_flip' AND created_at >= NOW() - INTERVAL '90 days'",
+          "rawSql": "SELECT COUNT(DISTINCT (payload->>'whale_address')) AS whales_flipped_90d FROM signals WHERE bot_id='structure' AND signal_type='whale_flip' AND created_at >= NOW() - INTERVAL '90 days'",
           "format": "table"
         }
       ],
