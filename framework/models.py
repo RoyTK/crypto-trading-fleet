@@ -178,6 +178,35 @@ class Heartbeat(Base):
     metadata_json = Column(JSON, nullable=True)
 
 
+class StructureWhalePool(Base):
+    """STRUCTURE bot's whale pool — replaces bots/structure/whale_list.json.
+
+    Simpler than COPY's wallet_pool because STRUCTURE polls position state
+    every 60s via HL Info API (no webhooks → no event-count tracking needed).
+    Tier just distinguishes working ($2M/$250k) from premium ($5M/$500k)
+    quality bars. Soft-delete via pruned_at so re-discovery can clear the
+    flag instead of duplicating.
+    """
+    __tablename__ = "structure_whale_pool"
+
+    address = Column(String(64), primary_key=True)
+    added_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    source = Column(String(64), nullable=True)
+    tier = Column(String(16), nullable=False, default="working")  # 'working' | 'premium'
+    tag = Column(String(128), nullable=True)
+    historical_win_rate = Column(Float, nullable=True)
+    closed_positions_6mo = Column(Integer, nullable=True)
+    cumulative_notional_usd = Column(Float, nullable=True)
+    avg_hold_minutes = Column(Float, nullable=True)
+    current_max_position_usd = Column(Float, nullable=True)
+    metrics_refreshed_at = Column(DateTime(timezone=True), nullable=True)
+    pinned = Column(Boolean, nullable=False, default=False)
+    pinned_at = Column(DateTime(timezone=True), nullable=True)
+    pinned_reason = Column(Text, nullable=True)
+    pruned_at = Column(DateTime(timezone=True), nullable=True)
+    pruned_reason = Column(Text, nullable=True)
+
+
 class WalletPool(Base):
     """COPY bot's wallet pool with active/watch/pruned tier state.
 
