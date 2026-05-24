@@ -111,19 +111,25 @@ def main() -> int:
     candidates = [a for a, _ in sorted_by_volume[: args.candidate_pool]]
     candidate_set = {a.lower() for a in candidates}
 
-    # Always include addresses already in the live whale_list (so demotions
-    # are visible — a live whale that no longer meets premium bars will
-    # show up as not in the graduation candidates list)
-    if WL_PATH.exists():
-        try:
-            existing = json.loads(WL_PATH.read_text())
-            for w in existing.get("whales", []):
-                addr = (w.get("address") or "").lower()
+    # Always include addresses already in the live structure_whale_pool table
+    # (so demotions are visible — a live whale that no longer meets premium
+    # bars will show up as not in the graduation candidates list).
+    from sqlalchemy import select
+    from framework.db import session_scope
+    from framework.models import StructureWhalePool
+    try:
+        with session_scope() as s:
+            for row in s.execute(
+                select(StructureWhalePool.address).where(
+                    StructureWhalePool.pruned_at.is_(None)
+                )
+            ).all():
+                addr = (row[0] or "").lower()
                 if addr and addr not in candidate_set:
                     candidates.append(addr)
                     candidate_set.add(addr)
-        except Exception:
-            pass
+    except Exception:
+        pass
 
     # Optional counterparty expansion (off by default to keep cron fast)
     if not args.no_counterparty:
