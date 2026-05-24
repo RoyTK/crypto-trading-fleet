@@ -2,7 +2,7 @@
   "uid": "structure-detail",
   "title": "STRUCTURE Bot Detail",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
   "time": {"from": "now-14d", "to": "now"},
   "tags": ["bot", "structure"],
