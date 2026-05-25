@@ -204,7 +204,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ROUND((COALESCE(SUM(size_usd), 0) / 1000.0 * 100)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open'",
+          "rawSql": "SELECT ROUND((COALESCE(SUM(size_usd), 0) / 10000.0 * 100)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open'",
           "format": "table"
         }
       ],
