@@ -64,6 +64,56 @@ roy@generalaisystems.ai
 | Shadow execution real orders (Phase 1+) | $50-100 |
 | **Total at full paper (4 bots)** | **~$280-340** |
 
+## Deploy (auto-pull, 2026-05-25+)
+
+Every push to `main` deploys to Hetzner within ~60s via `scripts/hetzner_autopull.sh`
+running as a per-minute cron on the server. The script compares local
+HEAD vs origin/main, `git reset --hard` on change, runs alembic if any
+new migration files appear, and restarts only services whose code
+actually changed.
+
+**One-time setup on Hetzner** (already done if you see autopull.log on the server):
+```
+chmod +x ~/crypto-fleet/scripts/hetzner_autopull.sh
+crontab -e
+# add:
+* * * * * /home/fleet/crypto-fleet/scripts/hetzner_autopull.sh >> ~/autopull.log 2>&1
+```
+
+**Pause auto-deploy** (e.g. during investigation):
+```
+touch ~/crypto-fleet/.autopull_paused
+# (resume)
+rm ~/crypto-fleet/.autopull_paused
+```
+
+**Manual-action flag** — set by the script when a docker-compose.yml,
+Dockerfile, or requirements.txt change requires a rebuild:
+```
+ls ~/crypto-fleet/.autopull_manual_needed  # exists → manual rebuild pending
+# After running rebuild:
+docker compose build && docker compose up -d --force-recreate
+rm ~/crypto-fleet/.autopull_manual_needed
+```
+
+**Restart-mapping** (which services restart for which path changes):
+- `framework/scoring/`, `dd_monitor.py`, `kill_criteria_monitor.py`, `heartbeat.py` → `scoring`
+- `framework/alembic/versions/` → run `migrate` then restart `scoring`
+- `framework/{db,models,alerts,audit,config,...}.py` (shared) → restart everything
+- `bots/structure/` → `bot_structure`
+- `bots/copy/` → `bot_copy` + `bot_copy_webhook_receiver`
+- `bots/base/` → both bots
+- `monitoring/alerting/` → `alerting`
+- `monitoring/dashboards/` → no restart (Grafana provisioning auto-reloads)
+- `scripts/`, `tests/`, `memory/`, `*.md` → no restart
+- `docker-compose.yml`, `Dockerfile`, `requirements.txt` → flag manual action
+
+**Log**: `~/autopull.log`. Idle minutes produce no output; only deploys
+write to it. To watch:
+```
+tail -f ~/autopull.log
+```
+
 ## Service Reserve
 - Initial seed: ~$2,520 (9 months runway) from Coinbase at deployment
 - Steady-state target: ~$1,680 (6 months) refilled from bot profits
