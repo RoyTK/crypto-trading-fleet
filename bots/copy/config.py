@@ -6,6 +6,24 @@ Runtime knobs come from .env via pydantic-settings.
 Do NOT change locked thresholds during the paper window — anti-gaming armor
 requires signal logic to be frozen. Tuning happens during shakedown debug
 (before paper clock starts) and during quarterly ops review.
+
+======================================================================
+KILL CRITERIA WINDOW LOCK — 2026-05-25 through 2026-07-24 (primary)
+======================================================================
+The constants in the "Locked v0 thresholds" section below are part of the
+kill-criteria reset rule (see memory/project_decision_log.md, entry dated
+2026-05-25). Any change to a constant in that section RESETS the kill-criteria
+window day-counter UNLESS:
+  1. You write a justification in audit_log BEFORE making the change
+  2. The justification names which observation forced the change
+  3. The change SHRINKS the bot's behavior space (tighter threshold,
+     more conservative sizing) — not expands it
+  4. No data-driven correction is allowed more than once per parameter
+     per window
+
+Wallet pool churn through the EXISTING active/watch tier rules does NOT
+reset (that's the system working as designed). Logging / dashboards /
+monitoring / bug fixes do NOT reset.
 """
 from __future__ import annotations
 

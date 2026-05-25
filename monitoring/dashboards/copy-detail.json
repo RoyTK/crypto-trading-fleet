@@ -435,6 +435,60 @@
         }
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 60,
+      "type": "row",
+      "title": "Kill / promotion criteria (window 2026-05-25 → 2026-07-24)",
+      "collapsed": false,
+      "gridPos": {"x": 0, "y": 80, "w": 24, "h": 1}
+    },
+    {
+      "id": 61,
+      "type": "stat",
+      "title": "Days remaining in primary window",
+      "description": "Auto-extends to 90d total if N target not reached.",
+      "gridPos": {"x": 0, "y": 81, "w": 4, "h": 4},
+      "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->'window'->>'days_remaining_primary')::int FROM bot_state WHERE bot_id='copy'", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {"defaults": {"unit": "d", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 5}, {"color": "green", "value": 15}]}}}
+    },
+    {
+      "id": 62,
+      "type": "stat",
+      "title": "Active-tier N closed (need 60)",
+      "gridPos": {"x": 4, "y": 81, "w": 4, "h": 4},
+      "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'n')::int FROM bot_state WHERE bot_id='copy'", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 30}, {"color": "green", "value": 60}]}}}
+    },
+    {
+      "id": 63,
+      "type": "stat",
+      "title": "Active-tier WR (kill <0.47 / promote ≥0.55)",
+      "gridPos": {"x": 8, "y": 81, "w": 4, "h": 4},
+      "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'wr')::float FROM bot_state WHERE bot_id='copy'", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.47}, {"color": "green", "value": 0.55}]}}}
+    },
+    {
+      "id": 64,
+      "type": "stat",
+      "title": "Net PnL % (kill <2% / promote ≥5%)",
+      "gridPos": {"x": 12, "y": 81, "w": 4, "h": 4},
+      "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'net_pnl_pct')::float FROM bot_state WHERE bot_id='copy'", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {"defaults": {"unit": "percent", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 2}, {"color": "green", "value": 5}]}}}
+    },
+    {
+      "id": 65,
+      "type": "stat",
+      "title": "Active kill triggers",
+      "description": "Empty = no criteria fired. Each entry = one alert that fired this window.",
+      "gridPos": {"x": 16, "y": 81, "w": 8, "h": 4},
+      "targets": [{"refId": "A", "rawSql": "SELECT COALESCE(kill_criteria_status->>'kill_triggers', '[]') FROM bot_state WHERE bot_id='copy'", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "options": {"textMode": "value", "graphMode": "none"}
     }
   ]
 }

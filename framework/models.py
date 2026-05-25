@@ -29,6 +29,7 @@ class BotState(Base):
     halted_until = Column(DateTime(timezone=True), nullable=True)
     halt_reason = Column(Text, nullable=True)
     metadata_json = Column(JSON, nullable=True)
+    kill_criteria_status = Column(JSON, nullable=True)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
 
 

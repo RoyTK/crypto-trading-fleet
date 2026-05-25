@@ -14,12 +14,14 @@ from framework.logging_setup import configure_logging, get_logger
 from framework.heartbeat import ping
 from framework.scoring.engine import score_all_bots
 from framework.dd_monitor import check_all_bots_dd
+from framework.kill_criteria_monitor import check_all_bots_kill_criteria
 from framework.audit import write_audit
 
 
 PROCESS_NAME = "scoring"
 SCORING_INTERVAL_MINUTES = 15
 DD_CHECK_INTERVAL_MINUTES = 5  # tighter cadence than scoring; halts respond fast
+KILL_CRITERIA_INTERVAL_MINUTES = 60  # hourly is fine — WR doesn't move in 15min
 
 
 def _run() -> None:
@@ -52,9 +54,16 @@ def _run() -> None:
         minutes=DD_CHECK_INTERVAL_MINUTES,
         id="dd_monitor",
     )
+    scheduler.add_job(
+        check_all_bots_kill_criteria,
+        "interval",
+        minutes=KILL_CRITERIA_INTERVAL_MINUTES,
+        id="kill_criteria_monitor",
+    )
     scheduler.start()
     score_all_bots()  # one immediate pass
     check_all_bots_dd()  # one immediate DD check
+    check_all_bots_kill_criteria()  # one immediate kill-criteria check
 
     stop = False
 
