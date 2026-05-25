@@ -137,13 +137,25 @@ BOT_DD_THRESHOLDS: dict[str, dict[str, float]] = {
     "sniper": {"daily": 8.0, "weekly": 20.0, "total": 40.0},
 }
 
-# Per-bot paper capital (read from settings). For now hardcoded; later extract.
-_PAPER_CAPITAL_DEFAULTS = {
-    "structure": 1000.0,
-    "copy": 1000.0,
-    "event": 1000.0,
-    "sniper": 1000.0,
-}
+# Per-bot paper capital — read from each bot's settings module.
+# Hardcoded fallback only if the bot's settings import fails (defensive).
+_PAPER_CAPITAL_FALLBACK = 1000.0
+
+
+def _paper_capital_for(bot_id: str) -> float:
+    """Read paper_capital_usd from each bot's settings. Falls back to a
+    safe default if the bot's settings module is unavailable (e.g. test).
+    """
+    try:
+        if bot_id == "structure":
+            from bots.structure.config import get_structure_settings
+            return float(get_structure_settings().structure_paper_capital_usd)
+        if bot_id == "copy":
+            from bots.copy.config import get_copy_settings
+            return float(get_copy_settings().copy_paper_capital_usd)
+    except Exception:
+        log.exception("paper_capital_lookup_failed", bot_id=bot_id)
+    return _PAPER_CAPITAL_FALLBACK
 
 
 def check_all_bots_dd() -> None:
@@ -152,14 +164,7 @@ def check_all_bots_dd() -> None:
     """
     for bot_id, th in BOT_DD_THRESHOLDS.items():
         try:
-            paper_cap = _PAPER_CAPITAL_DEFAULTS.get(bot_id, 1000.0)
-            # STRUCTURE-specific: pull from its settings if available
-            if bot_id == "structure":
-                try:
-                    from bots.structure.config import get_structure_settings
-                    paper_cap = get_structure_settings().structure_paper_capital_usd
-                except Exception:
-                    pass
+            paper_cap = _paper_capital_for(bot_id)
             result = check_dd_breaches(
                 bot_id=bot_id,
                 paper_capital_usd=paper_cap,
