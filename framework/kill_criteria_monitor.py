@@ -95,16 +95,26 @@ def _window_metadata() -> dict[str, Any]:
 
 
 def _paper_capital_for(bot_id: str) -> float:
-    """Same pattern as dd_monitor — read from each bot's settings."""
-    try:
-        if bot_id == "structure":
-            from bots.structure.config import get_structure_settings
-            return float(get_structure_settings().structure_paper_capital_usd)
-        if bot_id == "copy":
-            from bots.copy.config import get_copy_settings
-            return float(get_copy_settings().copy_paper_capital_usd)
-    except Exception:
-        log.exception("kill_criteria_paper_capital_lookup_failed", bot_id=bot_id)
+    """Read paper_capital from env vars directly.
+
+    NOTE 2026-05-25: do NOT import from bots.*.config here. The scoring
+    container only mounts ./framework — `bots/` is not on its path. The
+    previous import-based version (and dd_monitor's parallel one) silently
+    fell back to a hardcoded default in production for that reason. Env
+    vars are loaded into every container via .env, so this is reliable.
+    """
+    import os
+    env_key = {
+        "structure": "STRUCTURE_PAPER_CAPITAL_USD",
+        "copy": "COPY_PAPER_CAPITAL_USD",
+    }.get(bot_id)
+    if env_key:
+        raw = os.environ.get(env_key)
+        if raw:
+            try:
+                return float(raw)
+            except ValueError:
+                log.warning("kill_criteria_paper_capital_invalid", bot_id=bot_id, raw=raw)
     return 10_000.0  # fallback matches current $10k both bots
 
 

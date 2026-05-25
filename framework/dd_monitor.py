@@ -143,18 +143,27 @@ _PAPER_CAPITAL_FALLBACK = 1000.0
 
 
 def _paper_capital_for(bot_id: str) -> float:
-    """Read paper_capital_usd from each bot's settings. Falls back to a
-    safe default if the bot's settings module is unavailable (e.g. test).
+    """Read paper_capital_usd from env vars directly.
+
+    NOTE 2026-05-25: do NOT import from bots.*.config here. The scoring
+    container only mounts ./framework — `bots/` is not on its path, so the
+    import would ModuleNotFoundError and we'd silently fall back to the
+    default. (This bug was present from 2026-05-24 commit 1dac39d through
+    2026-05-25 when the kill_criteria_monitor exposed it.) Env vars are
+    loaded into every container via .env, so this is reliable.
     """
-    try:
-        if bot_id == "structure":
-            from bots.structure.config import get_structure_settings
-            return float(get_structure_settings().structure_paper_capital_usd)
-        if bot_id == "copy":
-            from bots.copy.config import get_copy_settings
-            return float(get_copy_settings().copy_paper_capital_usd)
-    except Exception:
-        log.exception("paper_capital_lookup_failed", bot_id=bot_id)
+    import os
+    env_key = {
+        "structure": "STRUCTURE_PAPER_CAPITAL_USD",
+        "copy": "COPY_PAPER_CAPITAL_USD",
+    }.get(bot_id)
+    if env_key:
+        raw = os.environ.get(env_key)
+        if raw:
+            try:
+                return float(raw)
+            except ValueError:
+                log.warning("paper_capital_invalid", bot_id=bot_id, raw=raw)
     return _PAPER_CAPITAL_FALLBACK
 
 
