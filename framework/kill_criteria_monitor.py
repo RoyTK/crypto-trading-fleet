@@ -173,12 +173,17 @@ def _compute_structure_status() -> dict[str, Any]:
     window_start = WINDOW_START
 
     with session_scope() as s:
-        # Closed paper trades — WR + PnL
+        # Closed paper trades — WR + PnL.
+        # Window filter is exit_at, not entry_at (fixed 2026-05-26): a trade
+        # that entered before the window but closed during it IS part of the
+        # window's realized outcome. The original entry_at filter undercounted
+        # — masked by the env-var bug at first, then exposed when dd_monitor
+        # caught a real loss but kill_criteria showed only 4 trades.
         rows = s.execute(text(
             """
             SELECT pnl_usd FROM trades
             WHERE bot_id='structure' AND mode='paper'
-              AND fill_status='closed' AND entry_at >= :ws
+              AND fill_status='closed' AND exit_at >= :ws
               AND pnl_usd IS NOT NULL
             """
         ), {"ws": window_start}).all()
@@ -210,7 +215,7 @@ def _compute_structure_status() -> dict[str, Any]:
                 break
         avg_rate = (sum(weekly_counts) / len(weekly_counts)) if weekly_counts else 0.0
 
-        # Slippage — Build B shadow trades only
+        # Slippage — Build B shadow trades only. Same exit_at semantic.
         slip_row = s.execute(text(
             """
             SELECT
@@ -220,7 +225,7 @@ def _compute_structure_status() -> dict[str, Any]:
               COUNT(*) AS n
             FROM trades
             WHERE bot_id='structure' AND mode='shadow' AND fill_status='closed'
-              AND entry_at >= :ws
+              AND exit_at >= :ws
               AND sim_metadata->>'realized_slippage_bps' IS NOT NULL
             """
         ), {"ws": window_start}).first()
@@ -288,12 +293,14 @@ def _compute_copy_status() -> dict[str, Any]:
     tier = COPY_CRITERIA["wallet_tier_filter"]
 
     with session_scope() as s:
-        # Active-tier closed trades only — that's the validation set
+        # Active-tier closed trades only — that's the validation set.
+        # Window filter is exit_at (fixed 2026-05-26): trades closing during
+        # the window count regardless of when they entered.
         rows = s.execute(text(
             """
             SELECT pnl_usd FROM trades
             WHERE bot_id='copy' AND mode='paper'
-              AND fill_status='closed' AND entry_at >= :ws
+              AND fill_status='closed' AND exit_at >= :ws
               AND pnl_usd IS NOT NULL
               AND sim_metadata->>'wallet_tier' = :tier
             """

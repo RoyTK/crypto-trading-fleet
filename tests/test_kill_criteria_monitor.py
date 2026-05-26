@@ -173,6 +173,76 @@ def test_copy_promotion_eligible_when_all_met():
 
 
 # ---------------------------------------------------------------------------
+# Regression: SQL queries must filter by exit_at, not entry_at
+# ---------------------------------------------------------------------------
+# 2026-05-26: original code used entry_at >= window_start which undercounted
+# trades that entered before the window but closed during it. dd_monitor uses
+# trailing-24h on exit_at; kill_criteria must use the same semantic for
+# consistency. This test locks the behavior so it can't silently regress.
+
+def test_structure_query_filters_by_exit_at_not_entry_at():
+    captured_sql: list[str] = []
+
+    class _CapturingSession:
+        def execute(self, sql, *args, **kwargs):
+            captured_sql.append(str(sql))
+            r = MagicMock()
+            r.all.return_value = []
+            r.first.return_value = None
+            return r
+
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = _CapturingSession()
+    session_cm.__exit__.return_value = False
+    with patch.object(kcm, "session_scope", return_value=session_cm), \
+         patch.object(kcm, "_paper_capital_for", return_value=10_000.0):
+        kcm._compute_structure_status()
+
+    trade_queries = [s for s in captured_sql if "from trades" in s.lower()]
+    assert trade_queries, "expected at least one query against trades"
+    for q in trade_queries:
+        ql = q.lower()
+        # The WHERE clause must use exit_at as the window boundary.
+        assert "exit_at >= :ws" in ql, (
+            f"trade query must filter by exit_at (was: {q})"
+        )
+        # The original buggy pattern.
+        assert "entry_at >= :ws" not in ql, (
+            f"trade query must NOT filter by entry_at (was: {q})"
+        )
+
+
+def test_copy_query_filters_by_exit_at_not_entry_at():
+    captured_sql: list[str] = []
+
+    class _CapturingSession:
+        def execute(self, sql, *args, **kwargs):
+            captured_sql.append(str(sql))
+            r = MagicMock()
+            r.all.return_value = []
+            r.first.return_value = None
+            return r
+
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = _CapturingSession()
+    session_cm.__exit__.return_value = False
+    with patch.object(kcm, "session_scope", return_value=session_cm), \
+         patch.object(kcm, "_paper_capital_for", return_value=10_000.0):
+        kcm._compute_copy_status()
+
+    trade_queries = [s for s in captured_sql if "from trades" in s.lower()]
+    assert trade_queries, "expected at least one query against trades"
+    for q in trade_queries:
+        ql = q.lower()
+        assert "exit_at >= :ws" in ql, (
+            f"copy trade query must filter by exit_at (was: {q})"
+        )
+        assert "entry_at >= :ws" not in ql, (
+            f"copy trade query must NOT filter by entry_at (was: {q})"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Transition alerting
 # ---------------------------------------------------------------------------
 
