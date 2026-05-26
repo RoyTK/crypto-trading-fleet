@@ -15,6 +15,7 @@ from framework.heartbeat import ping
 from framework.scoring.engine import score_all_bots
 from framework.dd_monitor import check_all_bots_dd
 from framework.kill_criteria_monitor import check_all_bots_kill_criteria
+from framework.cross_bot_outcome_cron import run_outcome_evaluation as run_cross_bot_outcomes
 from framework.audit import write_audit
 
 
@@ -22,6 +23,7 @@ PROCESS_NAME = "scoring"
 SCORING_INTERVAL_MINUTES = 15
 DD_CHECK_INTERVAL_MINUTES = 5  # tighter cadence than scoring; halts respond fast
 KILL_CRITERIA_INTERVAL_MINUTES = 60  # hourly is fine — WR doesn't move in 15min
+CROSS_BOT_OUTCOME_INTERVAL_MINUTES = 240  # every 4h aligns with 4h horizon
 
 
 def _run() -> None:
@@ -60,10 +62,17 @@ def _run() -> None:
         minutes=KILL_CRITERIA_INTERVAL_MINUTES,
         id="kill_criteria_monitor",
     )
+    scheduler.add_job(
+        run_cross_bot_outcomes,
+        "interval",
+        minutes=CROSS_BOT_OUTCOME_INTERVAL_MINUTES,
+        id="cross_bot_outcome_cron",
+    )
     scheduler.start()
     score_all_bots()  # one immediate pass
     check_all_bots_dd()  # one immediate DD check
     check_all_bots_kill_criteria()  # one immediate kill-criteria check
+    run_cross_bot_outcomes()  # one immediate cross-bot outcome pass (no-op until first row)
 
     stop = False
 

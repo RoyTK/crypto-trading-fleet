@@ -82,6 +82,15 @@ class StructureBot(BotLifecycle):
         # Coinglass client lazily constructed; only actually polled when
         # structure_liq_cascade_enabled is true (off by default — see config).
         self._coinglass = CoinglassClient()
+        # Cross-bot bridge experiment (2026-05-25 — see decision log).
+        # Passive subscriber that logs COPY macro cluster events for
+        # directional outcome research. Does NOT generate signals or
+        # affect STRUCTURE paper trading. Self-restarts on errors.
+        from bots.structure.signals.cross_bot_subscriber import CrossBotSubscriber
+        self._cross_bot_sub: Optional[CrossBotSubscriber] = CrossBotSubscriber(
+            self.settings.redis_url
+        )
+        self._cross_bot_sub.start()
         self.log.info(
             "structure_started",
             paper_capital_usd=self.struct_settings.structure_paper_capital_usd,
@@ -90,12 +99,14 @@ class StructureBot(BotLifecycle):
             liq_cascade_enabled=self.struct_settings.structure_liq_cascade_enabled,
             generators=["funding_fade", "whale_flip", "hl_oi_divergence"]
                        + (["liquidation_cascade"] if self.struct_settings.structure_liq_cascade_enabled else []),
+            cross_bot_subscriber="active",
         )
         # Pre-seed the asset context cache so first iterate() has data
         await self._refresh_asset_contexts()
 
     async def on_stop(self) -> None:
-        pass
+        if getattr(self, "_cross_bot_sub", None) is not None:
+            self._cross_bot_sub.stop()
 
     async def on_panic(self, payload: dict[str, Any]) -> None:
         # 1. Flatten any open shadow positions on Hyperliquid FIRST — these are

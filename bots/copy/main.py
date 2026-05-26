@@ -53,6 +53,22 @@ from framework.reconciliation import reconcile_once, register_venue_fetcher
 
 
 REDIS_BUYS_CHANNEL = "copy:buys"
+REDIS_MACRO_CLUSTER_CHANNEL = "copy:macro_cluster"
+
+# Solana mint addresses → HL ticker for macro perp assets only.
+# When a cluster signal fires on one of these mints, COPY publishes to
+# copy:macro_cluster for STRUCTURE's passive subscriber. Engineer's audit
+# 2026-05-25 — verify these mints actually appear in production webhook
+# stream within 8 hours of deploy; if no cross_bot_signal_log rows
+# appear by then, the dict needs updating with whatever mint Helius
+# actually emits for the underlying swap.
+MACRO_MINT_TO_HL_ASSET: dict[str, str] = {
+    "So11111111111111111111111111111111111111112": "SOL",   # native SOL (wrapped form)
+    "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh": "BTC",  # Wormhole WBTC
+    "9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E": "BTC",  # Allbridge WBTC
+    "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs": "ETH",  # Wormhole ETH
+    "2FPyTwcZLUgr5Th81UT8LsjFoGBTHLSYc6M2zHjFMfN": "ETH",   # Allbridge ETH
+}
 
 
 WALLET_POOL_PATH = Path(__file__).parent / "wallet_pool.json"
@@ -180,6 +196,34 @@ class CopyBot(BotLifecycle):
         candidates = self.cluster.evaluate()
         for c in candidates:
             asyncio.create_task(self._consume_candidate(c))
+            # Cross-bot bridge experiment (2026-05-25): if cluster is on a
+            # macro asset (SOL/BTC/ETH) that has an HL perp market, publish
+            # to copy:macro_cluster for STRUCTURE's passive subscriber.
+            # Passive logging only — does not affect COPY's trading logic.
+            hl_asset = MACRO_MINT_TO_HL_ASSET.get(c.asset)
+            if hl_asset and self._buys_redis is not None:
+                asyncio.create_task(self._publish_macro_cluster(c, hl_asset))
+
+    async def _publish_macro_cluster(self, c: SignalCandidate, hl_asset: str) -> None:
+        """Publish a macro cluster event for STRUCTURE to observe (experiment only)."""
+        import uuid
+        payload = json.dumps({
+            "asset": hl_asset,
+            "direction": c.direction,
+            "wallet_count": c.cluster_size,
+            "cluster_size_usd": c.payload.get("total_notional_usd", 0.0),
+            "timestamp_ms": int(time() * 1000),
+            "cluster_id": str(uuid.uuid4()),
+        })
+        try:
+            await self._buys_redis.publish(REDIS_MACRO_CLUSTER_CHANNEL, payload)
+            self.log.info(
+                "macro_cluster_published",
+                hl_asset=hl_asset,
+                wallet_count=c.cluster_size,
+            )
+        except Exception:
+            self.log.exception("macro_cluster_publish_failed")
 
     # ---- Signal handling ---------------------------------------------------
 

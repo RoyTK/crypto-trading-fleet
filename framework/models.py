@@ -83,6 +83,41 @@ class Trade(Base):
     )
 
 
+class CrossBotSignalLog(Base):
+    """COPY macro cluster events logged by STRUCTURE for directional outcome research.
+
+    Written by bots/structure/signals/cross_bot_subscriber.py (passive subscriber).
+    Outcome columns back-filled by framework/cross_bot_outcome_cron.py via APScheduler
+    every 4h. No FK to signals or trades — this is research log, not live signal path.
+    """
+    __tablename__ = "cross_bot_signal_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cluster_id = Column(String(64), nullable=False, unique=True)
+    hl_asset = Column(String(16), nullable=False)
+    direction = Column(String(8), nullable=False)
+    wallet_count = Column(Integer, nullable=False)
+    cluster_size_usd = Column(Float, nullable=False)
+    event_timestamp_ms = Column(BigInteger, nullable=False)
+    entry_price_usd = Column(Float, nullable=True)
+    price_at_4h = Column(Float, nullable=True)
+    price_at_12h = Column(Float, nullable=True)
+    price_at_24h = Column(Float, nullable=True)
+    pnl_at_4h_pct = Column(Float, nullable=True)
+    pnl_at_12h_pct = Column(Float, nullable=True)
+    pnl_at_24h_pct = Column(Float, nullable=True)
+    direction_correct_4h = Column(Boolean, nullable=True)
+    direction_correct_12h = Column(Boolean, nullable=True)
+    direction_correct_24h = Column(Boolean, nullable=True)
+    outcome_evaluated_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        Index("ix_cross_bot_signal_log_asset_ts", "hl_asset", "event_timestamp_ms"),
+        Index("ix_cross_bot_signal_log_unevaluated", "outcome_evaluated_at"),
+    )
+
+
 class CalibrationRecord(Base):
     """Pairs simulated fill vs actual shadow fill for calibration ratio."""
     __tablename__ = "calibration_records"

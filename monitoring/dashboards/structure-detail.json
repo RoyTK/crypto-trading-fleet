@@ -357,6 +357,43 @@
       "targets": [{"refId": "A", "rawSql": "SELECT COALESCE(kill_criteria_status->>'kill_triggers', '[]') FROM bot_state WHERE bot_id='structure'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "options": {"textMode": "value", "graphMode": "none"}
+    },
+    {
+      "id": 70,
+      "type": "row",
+      "title": "Cross-bot bridge experiment (COPY macro cluster → HL perp outcome)",
+      "collapsed": false,
+      "gridPos": {"x": 0, "y": 62, "w": 24, "h": 1}
+    },
+    {
+      "id": 71,
+      "type": "stat",
+      "title": "Cross-bot events logged (all time)",
+      "description": "COPY clusters on SOL/BTC/ETH passively logged by STRUCTURE. If this stays at 0 for 8+ hours after deploy with COPY active, the MACRO_MINT_TO_HL_ASSET dict needs updating (run redis-cli subscribe copy:buys to inspect actual mint addresses).",
+      "gridPos": {"x": 0, "y": 63, "w": 4, "h": 4},
+      "targets": [{"refId": "A", "rawSql": "SELECT COUNT(*) FROM cross_bot_signal_log", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}, {"color": "green", "value": 5}]}}}
+    },
+    {
+      "id": 72,
+      "type": "table",
+      "title": "Directional accuracy by asset + horizon",
+      "description": "Acceptance: 4h directional accuracy >= 55% with N >= 15 graduates the bridge to a real STRUCTURE signal type.",
+      "gridPos": {"x": 4, "y": 63, "w": 12, "h": 8},
+      "targets": [{"refId": "A", "rawSql": "SELECT hl_asset, COUNT(*) FILTER (WHERE direction_correct_4h IS NOT NULL) AS n_4h, ROUND(100.0 * AVG(direction_correct_4h::int) FILTER (WHERE direction_correct_4h IS NOT NULL), 1) AS acc_4h_pct, ROUND(100.0 * AVG(direction_correct_12h::int) FILTER (WHERE direction_correct_12h IS NOT NULL), 1) AS acc_12h_pct, ROUND(100.0 * AVG(direction_correct_24h::int) FILTER (WHERE direction_correct_24h IS NOT NULL), 1) AS acc_24h_pct FROM cross_bot_signal_log GROUP BY hl_asset ORDER BY n_4h DESC NULLS LAST", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
+      "id": 73,
+      "type": "timeseries",
+      "title": "Cross-bot cluster → HL outcome PnL% (4h vs 24h)",
+      "gridPos": {"x": 16, "y": 63, "w": 8, "h": 8},
+      "targets": [
+        {"refId": "A", "rawSql": "SELECT to_timestamp(event_timestamp_ms / 1000.0) AS time, pnl_at_4h_pct AS \"4h PnL%\" FROM cross_bot_signal_log WHERE pnl_at_4h_pct IS NOT NULL ORDER BY time", "format": "time_series"},
+        {"refId": "B", "rawSql": "SELECT to_timestamp(event_timestamp_ms / 1000.0) AS time, pnl_at_24h_pct AS \"24h PnL%\" FROM cross_bot_signal_log WHERE pnl_at_24h_pct IS NOT NULL ORDER BY time", "format": "time_series"}
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     }
   ]
 }
