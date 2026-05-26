@@ -94,14 +94,46 @@ def _window_metadata() -> dict[str, Any]:
     }
 
 
-def _paper_capital_for(bot_id: str) -> float:
-    """Read paper_capital from env vars directly.
+_PAPER_CAPITAL_FALLBACK = 10_000.0
+_last_fallback_alert_ts: dict[str, float] = {}
 
-    NOTE 2026-05-25: do NOT import from bots.*.config here. The scoring
-    container only mounts ./framework — `bots/` is not on its path. The
-    previous import-based version (and dd_monitor's parallel one) silently
-    fell back to a hardcoded default in production for that reason. Env
-    vars are loaded into every container via .env, so this is reliable.
+
+def _alert_fallback(bot_id: str, env_key: str, why: str) -> None:
+    """Loud P1 alert when paper_capital falls back to default. Throttled
+    to once per hour per bot. Prevents silent compute on wrong base —
+    same pattern + same root cause as dd_monitor's parallel guard."""
+    import time
+    from framework.alerts import emit_alert
+    from monitoring.alerting.taxonomy import Severity
+    now = time.time()
+    last = _last_fallback_alert_ts.get(bot_id, 0.0)
+    if now - last < 3600:
+        return
+    _last_fallback_alert_ts[bot_id] = now
+    try:
+        emit_alert(
+            severity=Severity.P1,
+            title=f"[{bot_id}] kill_criteria paper_capital fallback — env var missing",
+            body=(
+                f"kill_criteria_monitor fell back to ${_PAPER_CAPITAL_FALLBACK:.0f} "
+                f"for {bot_id} because {env_key} is {why}.\n\n"
+                f"Fix: docker compose up -d --force-recreate scoring\n"
+                f"Verify: docker compose exec scoring printenv | grep PAPER_CAPITAL"
+            ),
+            bot_id=bot_id,
+            event_type="kill_criteria_paper_capital_env_var_missing",
+            metadata={"env_key": env_key, "reason": why},
+        )
+    except Exception:
+        log.exception("kill_criteria_fallback_alert_failed", bot_id=bot_id)
+
+
+def _paper_capital_for(bot_id: str) -> float:
+    """Read paper_capital from env vars directly. Loud-fallback on miss.
+
+    Same gotcha as dd_monitor: `docker compose restart` does NOT reload
+    env_file. If you see env-var-missing alerts, run:
+        docker compose up -d --force-recreate scoring
     """
     import os
     env_key = {
@@ -115,7 +147,10 @@ def _paper_capital_for(bot_id: str) -> float:
                 return float(raw)
             except ValueError:
                 log.warning("kill_criteria_paper_capital_invalid", bot_id=bot_id, raw=raw)
-    return 10_000.0  # fallback matches current $10k both bots
+                _alert_fallback(bot_id, env_key, f"invalid value: {raw}")
+        else:
+            _alert_fallback(bot_id, env_key, "env var missing in container")
+    return _PAPER_CAPITAL_FALLBACK
 
 
 def _sharpe(pnls: list[float]) -> Optional[float]:

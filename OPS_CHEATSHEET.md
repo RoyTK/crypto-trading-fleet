@@ -89,11 +89,32 @@ docker compose run --rm migrate
 
 ---
 
+## .env edits — REQUIRES force-recreate, not restart
+
+`docker compose restart <service>` does NOT reload `env_file`. The
+container keeps whatever env was loaded at its original creation.
+2026-05-25 lesson: STRUCTURE was halted by a false-positive dd_monitor
+because scoring container still had stale env from a prior recreate.
+
+**After every .env edit:**
+```bash
+docker compose up -d --force-recreate scoring
+# (and any other service whose env you depend on)
+docker compose exec scoring printenv | grep <YOUR_VAR>   # verify
+```
+
+The autopull script cannot detect .env changes (it's gitignored). This
+is a manual step you OWN every time you edit .env.
+
+Loud-fallback alerts (P1) now fire if dd_monitor or kill_criteria_monitor
+falls back to default paper_capital because the env var is missing. If
+you see one, force-recreate is the fix.
+
 ## Important files on Hetzner
 
 | File | Why it matters |
 |---|---|
-| `~/crypto-fleet/.env` | Capital, API keys, secrets. Not in git. Edit carefully. |
+| `~/crypto-fleet/.env` | Capital, API keys, secrets. Not in git. Edit carefully. Force-recreate any service that reads it (see section above). |
 | `~/crypto-fleet/.autopull_paused` | Touch to halt auto-deploy. |
 | `~/crypto-fleet/.autopull_manual_needed` | Script touched this; rebuild required. |
 | `~/autopull.log` | Auto-deploy log. Idle minutes = no output. |

@@ -145,12 +145,20 @@ _PAPER_CAPITAL_FALLBACK = 1000.0
 def _paper_capital_for(bot_id: str) -> float:
     """Read paper_capital_usd from env vars directly.
 
-    NOTE 2026-05-25: do NOT import from bots.*.config here. The scoring
-    container only mounts ./framework — `bots/` is not on its path, so the
-    import would ModuleNotFoundError and we'd silently fall back to the
-    default. (This bug was present from 2026-05-24 commit 1dac39d through
-    2026-05-25 when the kill_criteria_monitor exposed it.) Env vars are
-    loaded into every container via .env, so this is reliable.
+    NOTE 2026-05-26: `docker compose restart` does NOT reload env_file —
+    you need `docker compose up -d --force-recreate <service>`. This
+    bit STRUCTURE on 2026-05-25: scoring container had stale env
+    (STRUCTURE_PAPER_CAPITAL_USD missing entirely, COPY at $1000),
+    silently fell back to $1000, dd_monitor computed -17.52% on the
+    wrong base, fired a false-positive halt.
+
+    Any fallback path now emits a P1 alert (loud, not silent). If you
+    see "paper_capital_env_var_missing" in alerts, run:
+        docker compose up -d --force-recreate scoring
+
+    Env vars are loaded into every container via .env, so this IS
+    reliable once the container has been force-recreated since the .env
+    was last edited.
     """
     import os
     env_key = {
@@ -164,7 +172,46 @@ def _paper_capital_for(bot_id: str) -> float:
                 return float(raw)
             except ValueError:
                 log.warning("paper_capital_invalid", bot_id=bot_id, raw=raw)
+                _alert_fallback(bot_id, env_key, f"invalid value: {raw}")
+        else:
+            _alert_fallback(bot_id, env_key, "env var missing in container")
     return _PAPER_CAPITAL_FALLBACK
+
+
+# De-duplicate the fallback alert so it doesn't fire every 5 min.
+_last_fallback_alert_ts: dict[str, float] = {}
+
+
+def _alert_fallback(bot_id: str, env_key: str, why: str) -> None:
+    """Loud P1 alert when paper_capital falls back to default — prevents
+    silent compute on wrong base (see 2026-05-25 STRUCTURE false-halt).
+    Throttled to once per hour per bot.
+    """
+    import time
+    now = time.time()
+    last = _last_fallback_alert_ts.get(bot_id, 0.0)
+    if now - last < 3600:
+        return  # already alerted within the hour
+    _last_fallback_alert_ts[bot_id] = now
+    try:
+        emit_alert(
+            severity=Severity.P1,
+            title=f"[{bot_id}] paper_capital fallback — env var missing or invalid",
+            body=(
+                f"dd_monitor / kill_criteria_monitor fell back to "
+                f"${_PAPER_CAPITAL_FALLBACK:.0f} for {bot_id} because "
+                f"{env_key} is {why}. Computations against the wrong "
+                f"base risk false-positive halts (this hit STRUCTURE "
+                f"on 2026-05-25).\n\n"
+                f"Fix: docker compose up -d --force-recreate scoring\n"
+                f"Verify: docker compose exec scoring printenv | grep PAPER_CAPITAL"
+            ),
+            bot_id=bot_id,
+            event_type="paper_capital_env_var_missing",
+            metadata={"env_key": env_key, "reason": why, "fallback_value": _PAPER_CAPITAL_FALLBACK},
+        )
+    except Exception:
+        log.exception("paper_capital_fallback_alert_failed", bot_id=bot_id)
 
 
 def check_all_bots_dd() -> None:
