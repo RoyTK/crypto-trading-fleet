@@ -38,9 +38,10 @@ THRESHOLDS_USD = [50_000, 75_000, 100_000, 150_000, 200_000, 250_000, 350_000, 5
 
 
 def _fetch_whale_addresses() -> list[str]:
+    """Active (non-pruned) whales from structure_whale_pool."""
     with session_scope() as s:
         rows = s.execute(text(
-            "SELECT address FROM structure_whale_pool WHERE deleted_at IS NULL"
+            "SELECT address FROM structure_whale_pool WHERE pruned_at IS NULL"
         )).all()
     return [r.address for r in rows]
 
