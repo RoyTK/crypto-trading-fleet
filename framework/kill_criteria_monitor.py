@@ -233,6 +233,52 @@ def _compute_structure_status() -> dict[str, Any]:
         slippage_abs = float(slip_row.abs_bps) if slip_row and slip_row.abs_bps else None
         slippage_n = int(slip_row.n) if slip_row and slip_row.n else 0
 
+        # Per-generator breakdown (added 2026-05-26 — diagnosed funding_fade
+        # was dominating contribution by 13-30x, masking other generators'
+        # actual performance). No window reset — this is monitoring only.
+        gen_rows = s.execute(text(
+            """
+            SELECT s.signal_type AS sig,
+                   COUNT(*) AS n,
+                   SUM(CASE WHEN t.pnl_usd > 0 THEN 1 ELSE 0 END) AS wins,
+                   COALESCE(SUM(t.pnl_usd), 0) AS net_pnl
+            FROM trades t JOIN signals s ON s.id = t.signal_id
+            WHERE t.bot_id='structure' AND t.mode='paper'
+              AND t.fill_status='closed' AND t.exit_at >= :ws
+              AND t.pnl_usd IS NOT NULL
+            GROUP BY s.signal_type
+            """
+        ), {"ws": window_start}).all()
+        per_generator: dict[str, Any] = {}
+        for row in gen_rows:
+            gn = int(row.n)
+            gwins = int(row.wins or 0)
+            gnet = float(row.net_pnl or 0.0)
+            per_generator[row.sig] = {
+                "n": gn,
+                "wins": gwins,
+                "wr": round(gwins / gn, 4) if gn > 0 else 0.0,
+                "net_pnl_usd": round(gnet, 2),
+                "net_pnl_pct": round((gnet / paper_capital * 100.0) if paper_capital > 0 else 0.0, 3),
+            }
+        # Also count signals fired per generator (regardless of trade outcome)
+        # so we can see "rate" not just "outcome" in the panel.
+        sig_rate_rows = s.execute(text(
+            """
+            SELECT signal_type AS sig, COUNT(*) AS n,
+                   MAX(created_at) AS last_fired
+            FROM signals
+            WHERE bot_id='structure' AND created_at >= :ws
+            GROUP BY signal_type
+            """
+        ), {"ws": window_start}).all()
+        for row in sig_rate_rows:
+            entry = per_generator.setdefault(row.sig, {
+                "n": 0, "wins": 0, "wr": 0.0, "net_pnl_usd": 0.0, "net_pnl_pct": 0.0,
+            })
+            entry["signals_fired_in_window"] = int(row.n)
+            entry["last_signal_at"] = row.last_fired.isoformat() if row.last_fired else None
+
     # Evaluate kill criteria
     kill_triggers: list[str] = []
     warning_triggers: list[str] = []
@@ -280,6 +326,7 @@ def _compute_structure_status() -> dict[str, Any]:
         "slippage_ratio": round(slippage_ratio, 3) if slippage_ratio is not None else None,
         "slippage_abs_bps": round(slippage_abs, 2) if slippage_abs is not None else None,
         "slippage_n": slippage_n,
+        "per_generator": per_generator,
         "kill_triggers": kill_triggers,
         "warning_triggers": warning_triggers,
         "promote_eligible": promote_eligible,

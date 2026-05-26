@@ -359,6 +359,21 @@
       "options": {"textMode": "value", "graphMode": "none"}
     },
     {
+      "id": 56,
+      "type": "table",
+      "title": "Per-generator breakdown (window)",
+      "description": "Each generator's signals fired + closed trade outcomes in the kill-criteria window. Funding_fade dominates by signal frequency (15-30x); this panel makes whale_flip + hl_oi_divergence visible independently of the aggregate WR. Read 'signals_fired' for cadence, 'n' for closed-trade sample size.",
+      "gridPos": {"x": 0, "y": 61, "w": 24, "h": 6},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT s.key AS signal_type, COALESCE((s.value->>'signals_fired_in_window')::int, 0) AS signals_fired, COALESCE((s.value->>'n')::int, 0) AS closed_n, ROUND(100.0 * COALESCE((s.value->>'wr')::float, 0), 1) AS wr_pct, ROUND(COALESCE((s.value->>'net_pnl_usd')::numeric, 0), 2) AS net_pnl_usd, ROUND(COALESCE((s.value->>'net_pnl_pct')::numeric, 0), 3) AS net_pnl_pct_of_capital, s.value->>'last_signal_at' AS last_signal_at FROM bot_state b, json_each(b.kill_criteria_status -> 'per_generator') s WHERE b.bot_id = 'structure' ORDER BY signals_fired DESC NULLS LAST",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+    },
+    {
       "id": 70,
       "type": "row",
       "title": "Cross-bot bridge experiment (COPY macro cluster → HL perp outcome)",
