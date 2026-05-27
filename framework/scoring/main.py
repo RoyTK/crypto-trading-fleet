@@ -16,6 +16,7 @@ from framework.scoring.engine import score_all_bots
 from framework.dd_monitor import check_all_bots_dd
 from framework.kill_criteria_monitor import check_all_bots_kill_criteria
 from framework.cross_bot_outcome_cron import run_outcome_evaluation as run_cross_bot_outcomes
+from framework.macro_monitor import check_macro_kill_switch, check_geo_shock_alert
 from framework.audit import write_audit
 
 
@@ -24,6 +25,8 @@ SCORING_INTERVAL_MINUTES = 15
 DD_CHECK_INTERVAL_MINUTES = 5  # tighter cadence than scoring; halts respond fast
 KILL_CRITERIA_INTERVAL_MINUTES = 60  # hourly is fine — WR doesn't move in 15min
 CROSS_BOT_OUTCOME_INTERVAL_MINUTES = 240  # every 4h aligns with 4h horizon
+MACRO_KILL_SWITCH_INTERVAL_MINUTES = 5   # high-urgency — same cadence as dd_monitor
+GEO_SHOCK_ALERT_INTERVAL_MINUTES = 60    # research-grade, slower changes
 
 
 def _run() -> None:
@@ -68,11 +71,25 @@ def _run() -> None:
         minutes=CROSS_BOT_OUTCOME_INTERVAL_MINUTES,
         id="cross_bot_outcome_cron",
     )
+    scheduler.add_job(
+        check_macro_kill_switch,
+        "interval",
+        minutes=MACRO_KILL_SWITCH_INTERVAL_MINUTES,
+        id="macro_kill_switch",
+    )
+    scheduler.add_job(
+        check_geo_shock_alert,
+        "interval",
+        minutes=GEO_SHOCK_ALERT_INTERVAL_MINUTES,
+        id="geo_shock_alert",
+    )
     scheduler.start()
     score_all_bots()  # one immediate pass
     check_all_bots_dd()  # one immediate DD check
     check_all_bots_kill_criteria()  # one immediate kill-criteria check
     run_cross_bot_outcomes()  # one immediate cross-bot outcome pass (no-op until first row)
+    check_macro_kill_switch()  # one immediate macro shock check
+    check_geo_shock_alert()  # one immediate geo-shock alert check
 
     stop = False
 
