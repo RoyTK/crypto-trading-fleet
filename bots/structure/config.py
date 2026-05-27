@@ -88,7 +88,12 @@ OI_DIV_TIMEOUT_HOURS = 12
 # the game" while expanding the addressable pool ~50x.
 WHALE_FLIP_THRESHOLD_USD = 250_000.0
 WHALE_MIN_HISTORICAL_WIN_RATE = 0.60
-WHALE_LIST_TARGET_SIZE = 50          # curate up to this many; minimum 10 to ship Build A
+# Bumped from 50 → 150 on 2026-05-27 per decision-log entry 2026-05-26 (Framing
+# A operational pool growth, no kill-criteria window reset). The whale-position
+# distribution showed lowering WHALE_FLIP_THRESHOLD_USD is structurally
+# ineffective; pool expansion is the only viable path to raise whale_flip
+# signal rate while preserving quality. Quality filters unchanged.
+WHALE_LIST_TARGET_SIZE = 150         # curate up to this many; minimum 10 to ship Build A
 WHALE_LIST_MIN_SIZE = 10
 WHALE_SIZE_PCT_MIN = 4.0
 WHALE_SIZE_PCT_MAX = 8.0
