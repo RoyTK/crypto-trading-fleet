@@ -91,6 +91,17 @@ class StructureBot(BotLifecycle):
             self.settings.redis_url
         )
         self._cross_bot_sub.start()
+        # Cluster-observations subscriber (added 2026-05-28 — adversarial
+        # team meeting on COPY). Writes EVERY COPY cluster event to
+        # cluster_observations table for research. Pure logging — does
+        # NOT influence STRUCTURE trading. Does NOT reset kill window.
+        from bots.structure.signals.cluster_observations_subscriber import (
+            ClusterObservationsSubscriber,
+        )
+        self._cluster_obs_sub: Optional[ClusterObservationsSubscriber] = ClusterObservationsSubscriber(
+            self.settings.redis_url
+        )
+        self._cluster_obs_sub.start()
         self.log.info(
             "structure_started",
             paper_capital_usd=self.struct_settings.structure_paper_capital_usd,
@@ -111,6 +122,8 @@ class StructureBot(BotLifecycle):
     async def on_stop(self) -> None:
         if getattr(self, "_cross_bot_sub", None) is not None:
             self._cross_bot_sub.stop()
+        if getattr(self, "_cluster_obs_sub", None) is not None:
+            self._cluster_obs_sub.stop()
 
     async def on_panic(self, payload: dict[str, Any]) -> None:
         # 1. Flatten any open shadow positions on Hyperliquid FIRST — these are

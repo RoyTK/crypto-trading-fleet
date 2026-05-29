@@ -45,6 +45,8 @@ from bots.copy.loop_helpers import (
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
+from bots.copy import shadow_log
+from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import size_position
 from bots.copy.venue.dex_quoter import multi_price_solana, quote
 from bots.copy.venue.helius_solana import WalletBuyEvent
@@ -54,6 +56,10 @@ from framework.reconciliation import reconcile_once, register_venue_fetcher
 
 REDIS_BUYS_CHANNEL = "copy:buys"
 REDIS_MACRO_CLUSTER_CHANNEL = "copy:macro_cluster"
+# 2026-05-28: every cluster (regardless of asset / HL listing) is published
+# to copy:all_clusters for STRUCTURE's read-only cluster_observations journal.
+# Pure logging — does NOT reset STRUCTURE's kill-criteria window.
+REDIS_ALL_CLUSTERS_CHANNEL = "copy:all_clusters"
 
 # Solana mint addresses → HL ticker for macro perp assets only.
 # When a cluster signal fires on one of these mints, COPY publishes to
@@ -74,6 +80,18 @@ MACRO_MINT_TO_HL_ASSET: dict[str, str] = {
 WALLET_POOL_PATH = Path(__file__).parent / "wallet_pool.json"
 
 
+def _cluster_wallet_tier(c: SignalCandidate) -> str:
+    """Extract wallets from candidate.payload + classify via wallet_pool tier."""
+    wallets_payload = (c.payload or {}).get("wallets") or {}
+    if isinstance(wallets_payload, dict):
+        wallets = list(wallets_payload.keys())
+    elif isinstance(wallets_payload, list):
+        wallets = wallets_payload
+    else:
+        wallets = []
+    return _classify_cluster_wallet_tier(wallets)
+
+
 class CopyBot(BotLifecycle):
     bot_id = "copy"
 
@@ -88,6 +106,7 @@ class CopyBot(BotLifecycle):
         self._wallets_arbitrum: list[str] = []
         self._last_reconcile_ts: float = 0.0
         self._last_position_check_ts: float = 0.0
+        self._last_shadow_log_poll_ts: float = 0.0
         self._session: Optional[aiohttp.ClientSession] = None
         self._buys_subscriber_task: Optional[asyncio.Task] = None
         self._buys_redis: Optional[redis_async.Redis] = None
@@ -134,6 +153,14 @@ class CopyBot(BotLifecycle):
         # populates cluster state asynchronously, so we just need to check
         # whether any (chain, token) bucket now has 3+ qualifying wallets.
         self._evaluate_clusters()
+
+        # Shadow log poller — update pending rows on the configured cadence
+        if now - self._last_shadow_log_poll_ts >= self.copy_settings.copy_shadow_log_poll_seconds:
+            try:
+                await self._poll_shadow_log()
+            except Exception:
+                self.log.exception("shadow_log_poll_failed")
+            self._last_shadow_log_poll_ts = now
 
         # Reconciliation cron
         recon_interval = get_framework_settings().reconciliation_interval_seconds
@@ -195,25 +222,39 @@ class CopyBot(BotLifecycle):
         # Build A: no token-meta — gate is skipped per cluster.evaluate signature
         candidates = self.cluster.evaluate()
         for c in candidates:
-            asyncio.create_task(self._consume_candidate(c))
-            # Cross-bot bridge experiment (2026-05-25): if cluster is on a
-            # macro asset (SOL/BTC/ETH) that has an HL perp market, publish
-            # to copy:macro_cluster for STRUCTURE's passive subscriber.
-            # Passive logging only — does not affect COPY's trading logic.
+            # Always: shadow log every fire (H1/H2 diagnostic). Independent
+            # of whether bot actually trades. Caller injects the cluster_uuid
+            # so the same id is shared with downstream Redis publishes.
+            cluster_uuid = shadow_log.make_cluster_uuid()
+            asyncio.create_task(self._write_shadow_log(c, cluster_uuid))
+
+            # Always: publish to copy:all_clusters for STRUCTURE journal
+            if self._buys_redis is not None:
+                asyncio.create_task(self._publish_all_cluster(c, cluster_uuid))
+
+            # Cross-bot bridge: macro subset for backward compat
             hl_asset = MACRO_MINT_TO_HL_ASSET.get(c.asset)
             if hl_asset and self._buys_redis is not None:
-                asyncio.create_task(self._publish_macro_cluster(c, hl_asset))
+                asyncio.create_task(self._publish_macro_cluster(c, hl_asset, cluster_uuid))
 
-    async def _publish_macro_cluster(self, c: SignalCandidate, hl_asset: str) -> None:
+            # Trade only if cluster_buy is enabled (paused 2026-05-28 by
+            # the data-driven correction carve-out — adverse signal H2
+            # confirmed by statistician's H3 rejection).
+            if self.copy_settings.copy_cluster_buy_enabled:
+                asyncio.create_task(self._consume_candidate(c))
+            else:
+                self.log.info("cluster_buy_paused_skip_trade",
+                              asset=c.asset, cluster_size=c.cluster_size)
+
+    async def _publish_macro_cluster(self, c: SignalCandidate, hl_asset: str, cluster_uuid: str) -> None:
         """Publish a macro cluster event for STRUCTURE to observe (experiment only)."""
-        import uuid
         payload = json.dumps({
             "asset": hl_asset,
             "direction": c.direction,
             "wallet_count": c.cluster_size,
             "cluster_size_usd": c.payload.get("total_notional_usd", 0.0),
             "timestamp_ms": int(time() * 1000),
-            "cluster_id": str(uuid.uuid4()),
+            "cluster_id": cluster_uuid,
         })
         try:
             await self._buys_redis.publish(REDIS_MACRO_CLUSTER_CHANNEL, payload)
@@ -224,6 +265,69 @@ class CopyBot(BotLifecycle):
             )
         except Exception:
             self.log.exception("macro_cluster_publish_failed")
+
+    async def _publish_all_cluster(self, c: SignalCandidate, cluster_uuid: str) -> None:
+        """Publish EVERY cluster (not just macro) to copy:all_clusters.
+        STRUCTURE journals these to cluster_observations — read-only research.
+        """
+        hl_asset = MACRO_MINT_TO_HL_ASSET.get(c.asset)
+        payload = json.dumps({
+            "cluster_uuid": cluster_uuid,
+            "token_mint": c.asset,
+            "hl_asset_if_any": hl_asset,
+            "cluster_size": c.cluster_size,
+            "cluster_size_usd": c.payload.get("total_notional_usd", 0.0),
+            "wallet_tier": _cluster_wallet_tier(c),
+            "timestamp_ms": int(time() * 1000),
+        })
+        try:
+            await self._buys_redis.publish(REDIS_ALL_CLUSTERS_CHANNEL, payload)
+        except Exception:
+            self.log.exception("all_cluster_publish_failed")
+
+    async def _write_shadow_log(self, c: SignalCandidate, cluster_uuid: str) -> None:
+        """Fire-time shadow log entry. entry_price fetched async via existing
+        Birdeye batch endpoint."""
+        hl_asset = MACRO_MINT_TO_HL_ASSET.get(c.asset)
+        # Attempt an entry-price quote via multi_price_solana (existing batch).
+        entry_price: Optional[float] = None
+        try:
+            if self._session is not None:
+                prices = await multi_price_solana(self._session, [c.asset])
+                entry_price = prices.get(c.asset)
+        except Exception:
+            self.log.warning("shadow_log_entry_price_fetch_failed", asset=c.asset)
+        await asyncio.to_thread(
+            shadow_log.write_fire,
+            cluster_uuid=cluster_uuid,
+            signal_id=None,  # signals.id is set in _consume_candidate path; not available here when paused
+            token_mint=c.asset,
+            hl_asset_if_any=hl_asset,
+            cluster_size=c.cluster_size,
+            cluster_total_notional_usd=float(c.payload.get("total_notional_usd", 0.0)),
+            wallet_tier=_cluster_wallet_tier(c),
+            entry_price=entry_price,
+        )
+
+    async def _poll_shadow_log(self) -> None:
+        """Update pending shadow_log rows with current prices + MFE/MAE."""
+        if self._session is None:
+            return
+        rows = await asyncio.to_thread(shadow_log._select_pending)
+        if not rows:
+            return
+        # Batch Birdeye price fetch for all distinct mints
+        mints = list({r["token_mint"] for r in rows})
+        try:
+            prices = await multi_price_solana(self._session, mints)
+        except Exception:
+            self.log.warning("shadow_log_poll_price_batch_failed", n_mints=len(mints))
+            return
+        for r in rows:
+            cur = prices.get(r["token_mint"])
+            updates = shadow_log.update_one(r, cur)
+            if updates:
+                await asyncio.to_thread(shadow_log.write_updates, r["id"], updates)
 
     # ---- Signal handling ---------------------------------------------------
 

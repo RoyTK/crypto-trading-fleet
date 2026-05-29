@@ -142,6 +142,15 @@ class CopySettings(BaseSettings):
     # Tune via env var if Cielo's cost-per-call turns out lower than worst-case.)
     copy_evm_wallet_poll_seconds: int = Field(default=120)
     copy_cluster_window_minutes: int = Field(default=15)
+    # Pause flag for cluster_buy trading (default true for backwards compat).
+    # Set false to stop DEX trades while keeping wallet pool, Helius webhooks,
+    # cluster detector, and shadow log all running. Signed 2026-05-28 per
+    # adversarial team meeting on COPY's strategic future.
+    copy_cluster_buy_enabled: bool = Field(default=True)
+    # Shadow log poll cadence — how often to fetch updated prices for
+    # pending shadow_log rows + compute MFE/MAE. 5min matches Birdeye
+    # historical candle resolution.
+    copy_shadow_log_poll_seconds: int = Field(default=300)
 
 
 @lru_cache(maxsize=1)

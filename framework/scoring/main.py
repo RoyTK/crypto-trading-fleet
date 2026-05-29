@@ -17,6 +17,7 @@ from framework.dd_monitor import check_all_bots_dd
 from framework.kill_criteria_monitor import check_all_bots_kill_criteria
 from framework.cross_bot_outcome_cron import run_outcome_evaluation as run_cross_bot_outcomes
 from framework.macro_monitor import check_macro_kill_switch, check_geo_shock_alert
+from framework.stale_position_cleanup import check_and_close_stale_positions
 from framework.audit import write_audit
 
 
@@ -27,6 +28,7 @@ KILL_CRITERIA_INTERVAL_MINUTES = 60  # hourly is fine — WR doesn't move in 15m
 CROSS_BOT_OUTCOME_INTERVAL_MINUTES = 240  # every 4h aligns with 4h horizon
 MACRO_KILL_SWITCH_INTERVAL_MINUTES = 5   # high-urgency — same cadence as dd_monitor
 GEO_SHOCK_ALERT_INTERVAL_MINUTES = 60    # research-grade, slower changes
+STALE_POSITION_CLEANUP_INTERVAL_MINUTES = 30  # half-hourly — prevents drift halt bug
 
 
 def _run() -> None:
@@ -82,6 +84,12 @@ def _run() -> None:
         "interval",
         minutes=GEO_SHOCK_ALERT_INTERVAL_MINUTES,
         id="geo_shock_alert",
+    )
+    scheduler.add_job(
+        check_and_close_stale_positions,
+        "interval",
+        minutes=STALE_POSITION_CLEANUP_INTERVAL_MINUTES,
+        id="stale_position_cleanup",
     )
     scheduler.start()
     score_all_bots()  # one immediate pass

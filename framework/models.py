@@ -118,6 +118,68 @@ class CrossBotSignalLog(Base):
     )
 
 
+class CopySignalShadowLog(Base):
+    """Shadow log of every COPY cluster signal — H1/H2 diagnostic.
+
+    Populated at signal fire-site; price columns + MFE/MAE filled by
+    APScheduler poller. status='complete' once the 12h window elapses.
+    Signed 2026-05-28 per adversarial team meeting.
+    """
+    __tablename__ = "copy_signal_shadow_log"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    signal_id = Column(Integer, nullable=True)
+    cluster_uuid = Column(String(64), nullable=False, unique=True)
+    token_mint = Column(String(128), nullable=False)
+    hl_asset_if_any = Column(String(16), nullable=True)
+    cluster_size = Column(Integer, nullable=False)
+    cluster_total_notional_usd = Column(Float, nullable=False)
+    wallet_tier = Column(String(16), nullable=False)
+    fired_at = Column(DateTime(timezone=True), nullable=False)
+    entry_price = Column(Float, nullable=True)  # Postgres NUMERIC → float on read
+    price_30m = Column(Float, nullable=True)
+    price_1h = Column(Float, nullable=True)
+    price_4h = Column(Float, nullable=True)
+    price_12h = Column(Float, nullable=True)
+    mfe_pct = Column(Float, nullable=True)
+    mae_pct = Column(Float, nullable=True)
+    mfe_at = Column(DateTime(timezone=True), nullable=True)
+    mae_at = Column(DateTime(timezone=True), nullable=True)
+    sample_count = Column(Integer, nullable=False, default=0)
+    status = Column(String(24), nullable=False, default="pending")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    __table_args__ = (
+        Index("ix_copy_shadow_fired_at", "fired_at"),
+    )
+
+
+class ClusterObservation(Base):
+    """STRUCTURE's read-only journal of every COPY cluster event.
+
+    Subscribed from Redis `copy:all_clusters` channel. NOT gated by
+    STRUCTURE — pure observation for future research. Per engineer R2
+    verdict: pure logging, does NOT reset STRUCTURE's kill window.
+    """
+    __tablename__ = "cluster_observations"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    cluster_uuid = Column(String(64), nullable=False, unique=True)
+    observed_at = Column(DateTime(timezone=True), nullable=False)
+    token_mint = Column(String(128), nullable=False)
+    hl_asset_if_any = Column(String(16), nullable=True)
+    cluster_size = Column(Integer, nullable=False)
+    cluster_total_notional_usd = Column(Float, nullable=False)
+    wallet_tier = Column(String(16), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        Index("ix_cluster_obs_observed_at", "observed_at"),
+        Index("ix_cluster_obs_hl_asset", "hl_asset_if_any", "observed_at"),
+    )
+
+
 class CalibrationRecord(Base):
     """Pairs simulated fill vs actual shadow fill for calibration ratio."""
     __tablename__ = "calibration_records"
