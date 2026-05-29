@@ -97,8 +97,12 @@ class StructureBot(BotLifecycle):
             whale_count=len(self._whale_list),
             coinglass_configured=bool(self._coinglass.api_key),
             liq_cascade_enabled=self.struct_settings.structure_liq_cascade_enabled,
-            generators=["funding_fade", "whale_flip", "hl_oi_divergence"]
-                       + (["liquidation_cascade"] if self.struct_settings.structure_liq_cascade_enabled else []),
+            funding_fade_enabled=self.struct_settings.structure_funding_fade_enabled,
+            generators=(
+                (["funding_fade"] if self.struct_settings.structure_funding_fade_enabled else [])
+                + ["whale_flip", "hl_oi_divergence"]
+                + (["liquidation_cascade"] if self.struct_settings.structure_liq_cascade_enabled else [])
+            ),
             cross_bot_subscriber="active",
         )
         # Pre-seed the asset context cache so first iterate() has data
@@ -141,10 +145,14 @@ class StructureBot(BotLifecycle):
     async def iterate(self) -> None:
         now = time()
 
-        # Funding rate poll (also refreshes asset_ctxs which the liq detector uses)
+        # Funding rate poll (also refreshes asset_ctxs which the liq detector uses).
+        # funding_fade is gated by structure_funding_fade_enabled (env flag).
+        # Default True. Set false 2026-05-29 per the data-driven correction
+        # carve-out — statistician p=0.72, N=47 paper WR=21%, -$1,103 loss.
         if now - self._last_funding_poll_ts >= self.struct_settings.structure_funding_poll_seconds:
             await self._refresh_asset_contexts()
-            self._evaluate_funding_fade()
+            if self.struct_settings.structure_funding_fade_enabled:
+                self._evaluate_funding_fade()
             self._evaluate_liquidation_cascade()
             self._observe_oi_snapshots()
             self._evaluate_oi_divergence()

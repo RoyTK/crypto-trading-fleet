@@ -139,6 +139,15 @@ class StructureSettings(BaseSettings):
     # tier only supports 4h+ intervals, which is too coarse for the 5-min
     # cascade detector. Re-enable when upgrading to Standard ($379/mo).
     structure_liq_cascade_enabled: bool = Field(default=False)
+    # funding_fade kill-switch via data-driven correction (signed 2026-05-29
+    # per the carve-out rule). Statistician verdict 2026-05-26: p=0.72 at
+    # N=198 (essentially no edge). Confirmed 2026-05-29 with N=47 in window,
+    # WR=21%, -$1,103 actual paper loss, 77% stop rate. The signal is the
+    # entirety of the kill-criteria WR collapse. Disable via env to stop the
+    # bleed while preserving whale_flip + hl_oi_divergence as the active
+    # generators. Default true for backwards compat — flip to false on
+    # Hetzner via .env.
+    structure_funding_fade_enabled: bool = Field(default=True)
 
 
 @lru_cache(maxsize=1)
