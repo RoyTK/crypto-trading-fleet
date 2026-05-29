@@ -56,6 +56,30 @@ def persist_signal(candidate: SignalCandidate) -> int:
         return sig.id
 
 
+def _classify_cluster_wallet_tier(wallets: list[str]) -> str:
+    """Classify cluster's wallet tier for kill_criteria filtering.
+
+    Returns 'active' iff ALL wallets in the cluster are tier='active' and
+    non-pruned in wallet_pool. Otherwise 'mixed' (some watch-tier or unknown).
+
+    Bug context (2026-05-29): persist_paper_trade was not setting wallet_tier
+    in sim_metadata, so the kill_criteria_monitor's filter
+    `sim_metadata->>'wallet_tier' = 'active'` never matched. Result: COPY
+    silently bled ~$1k while N=0 in kill_criteria view. Fix: tag every trade.
+    """
+    if not wallets:
+        return "unknown"
+    from sqlalchemy import text
+    with session_scope() as s:
+        rows = s.execute(
+            text("SELECT address, tier FROM wallet_pool WHERE address = ANY(:addrs)"),
+            {"addrs": list(wallets)},
+        ).all()
+    if len(rows) < len(wallets):
+        return "mixed"
+    return "active" if all(r.tier == "active" for r in rows) else "mixed"
+
+
 def persist_paper_trade(
     *,
     signal_id: int,
@@ -64,6 +88,15 @@ def persist_paper_trade(
     notional_usd: float,
     leverage: float = 1.0,
 ) -> Optional[int]:
+    wallets_payload = (candidate.payload or {}).get("wallets") or {}
+    if isinstance(wallets_payload, dict):
+        cluster_wallets = list(wallets_payload.keys())
+    elif isinstance(wallets_payload, list):
+        cluster_wallets = wallets_payload
+    else:
+        cluster_wallets = []
+    wallet_tier = _classify_cluster_wallet_tier(cluster_wallets)
+
     with session_scope() as s:
         trade = Trade(
             bot_id=BOT_ID,
@@ -86,6 +119,8 @@ def persist_paper_trade(
                 "take_profit_pct": candidate.take_profit_pct,
                 "timeout_hours": candidate.timeout_hours,
                 "cluster_size": candidate.cluster_size,
+                "wallet_tier": wallet_tier,
+                "cluster_wallets": cluster_wallets,
             },
         )
         s.add(trade)
