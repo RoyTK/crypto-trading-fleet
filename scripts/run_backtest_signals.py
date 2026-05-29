@@ -188,6 +188,9 @@ def main() -> int:
     parser.add_argument("--slippage-bps", type=float, default=0.0)
     parser.add_argument("--notional", type=float, default=1_000.0)
     parser.add_argument("--csv", default=None, help="Output per-trade CSV path")
+    parser.add_argument("--flip-direction", action="store_true",
+                        help="Treat every signal as the OPPOSITE direction (H2 inversion test). "
+                             "When set, signals.direction='long' is simulated as 'short' and vice versa.")
     args = parser.parse_args()
 
     config = ExitConfig(
@@ -204,6 +207,12 @@ def main() -> int:
     print(f"[load] {len(signals)} signals matching filter", file=sys.stderr)
     if not signals:
         return 0
+
+    if args.flip_direction:
+        for s in signals:
+            s.direction = "short" if s.direction == "long" else "long"
+        print(f"[flip-direction] inverted every signal's direction (H2 inversion test)",
+              file=sys.stderr)
 
     fetcher = (
         _hl_price_fetcher_factory()
