@@ -46,34 +46,64 @@ def _parse_dt(arg: Optional[str]) -> Optional[datetime]:
         return datetime.strptime(arg, "%Y-%m-%d").replace(tzinfo=timezone.utc)
 
 
-def _hl_price_fetcher_factory():
-    """Returns a price fetcher backed by Hyperliquid's candle API."""
+def _hl_price_fetcher_factory(min_interval_sec: float = 0.4, max_retries: int = 5):
+    """Returns a price fetcher backed by Hyperliquid's candle API.
+
+    Throttles + retries because the bot process is also polling HL on the same
+    IP. Default 0.4s between calls = 2.5/sec; 5 retries with exponential backoff
+    on HTTP 429 (the typical rate-limit response).
+    """
+    import time as _time
     from bots.structure.venue import HyperliquidVenue
     venue = HyperliquidVenue()
+    last_call_ts = [0.0]  # mutable cell
 
-    def fetch(asset: str, start_ts: datetime, hours: float) -> list[tuple[datetime, float]]:
-        end_ts = start_ts + timedelta(hours=hours)
-        # HL SDK 0.6+: positional kwargs are (name, interval, startTime, endTime).
-        # Older SDK names: candles_snapshot OR candle_snapshot (singular). Try both.
+    def _throttle() -> None:
+        elapsed = _time.time() - last_call_ts[0]
+        if elapsed < min_interval_sec:
+            _time.sleep(min_interval_sec - elapsed)
+        last_call_ts[0] = _time.time()
+
+    def _call_once(asset: str, start_ms: int, end_ms: int):
         info = venue.info
-        start_ms = int(start_ts.timestamp() * 1000)
-        end_ms = int(end_ts.timestamp() * 1000)
         method = getattr(info, "candles_snapshot", None) or getattr(info, "candle_snapshot", None)
         if method is None:
-            # Fall back to raw POST on /info
-            raw = info.post("/info", {
+            return info.post("/info", {
                 "type": "candleSnapshot",
                 "req": {"coin": asset, "interval": "5m",
                         "startTime": start_ms, "endTime": end_ms},
             })
-            candles = raw
-        else:
+        try:
+            return method(asset, "5m", start_ms, end_ms)
+        except TypeError:
+            return method(name=asset, interval="5m",
+                          startTime=start_ms, endTime=end_ms)
+
+    def fetch(asset: str, start_ts: datetime, hours: float) -> list[tuple[datetime, float]]:
+        end_ts = start_ts + timedelta(hours=hours)
+        start_ms = int(start_ts.timestamp() * 1000)
+        end_ms = int(end_ts.timestamp() * 1000)
+        last_exc: Optional[Exception] = None
+        for attempt in range(max_retries):
+            _throttle()
             try:
-                candles = method(asset, "5m", start_ms, end_ms)
-            except TypeError:
-                # Some SDK versions take keyword args
-                candles = method(name=asset, interval="5m",
-                                 startTime=start_ms, endTime=end_ms)
+                candles = _call_once(asset, start_ms, end_ms)
+                break
+            except Exception as e:
+                msg = str(e)
+                last_exc = e
+                # 429 in either ClientError tuple or message text
+                is_rate_limit = "429" in msg
+                if not is_rate_limit or attempt == max_retries - 1:
+                    raise
+                # Exponential backoff: 1s, 2s, 4s, 8s, 16s
+                backoff = 2 ** attempt
+                _time.sleep(backoff)
+        else:
+            # Loop exhausted without break — re-raise last exc
+            if last_exc:
+                raise last_exc
+            return []
         out: list[tuple[datetime, float]] = []
         for c in candles or []:
             # Each candle: {"t": startTime_ms, "T": endTime_ms, "c": "close", ...}
