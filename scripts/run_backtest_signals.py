@@ -53,12 +53,27 @@ def _hl_price_fetcher_factory():
 
     def fetch(asset: str, start_ts: datetime, hours: float) -> list[tuple[datetime, float]]:
         end_ts = start_ts + timedelta(hours=hours)
-        # HL info.candles_snapshot signature: (asset, interval, startTime_ms, endTime_ms)
-        candles = venue.info.candles_snapshot(
-            asset, "5m",
-            int(start_ts.timestamp() * 1000),
-            int(end_ts.timestamp() * 1000),
-        )
+        # HL SDK 0.6+: positional kwargs are (name, interval, startTime, endTime).
+        # Older SDK names: candles_snapshot OR candle_snapshot (singular). Try both.
+        info = venue.info
+        start_ms = int(start_ts.timestamp() * 1000)
+        end_ms = int(end_ts.timestamp() * 1000)
+        method = getattr(info, "candles_snapshot", None) or getattr(info, "candle_snapshot", None)
+        if method is None:
+            # Fall back to raw POST on /info
+            raw = info.post("/info", {
+                "type": "candleSnapshot",
+                "req": {"coin": asset, "interval": "5m",
+                        "startTime": start_ms, "endTime": end_ms},
+            })
+            candles = raw
+        else:
+            try:
+                candles = method(asset, "5m", start_ms, end_ms)
+            except TypeError:
+                # Some SDK versions take keyword args
+                candles = method(name=asset, interval="5m",
+                                 startTime=start_ms, endTime=end_ms)
         out: list[tuple[datetime, float]] = []
         for c in candles or []:
             # Each candle: {"t": startTime_ms, "T": endTime_ms, "c": "close", ...}

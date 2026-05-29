@@ -301,8 +301,10 @@ def replay(
         try:
             series = fetcher(sig.asset, sig.created_at,
                              max(fetch_hours, config.timeout_hours + 1.0))
-        except Exception:
-            log.warning("backtest_fetch_failed", asset=sig.asset, signal_id=sig.id)
+        except Exception as e:
+            log.warning("backtest_fetch_failed", asset=sig.asset,
+                        signal_id=sig.id,
+                        err_type=type(e).__name__, err_msg=str(e)[:300])
             excluded += 1
             continue
         out = simulate_one(sig, series, config, notional_usd)
