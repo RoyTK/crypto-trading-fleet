@@ -148,38 +148,42 @@ def _http_get_json(url: str, headers: Optional[dict] = None, timeout: int = 20) 
 def discover_via_pumpfun_api(
     from_dt: datetime, to_dt: datetime, target_count: int,
     graduated_only: bool = True,
+    sort_order: str = "DESC",
 ) -> list[TokenMeta]:
     """pump.fun v3 coins endpoint discovery.
 
-    Probe verdict 2026-05-31:
+    Probe verdict 2026-05-31 + first-run 2026-05-31:
     - v3 base URL: https://frontend-api-v3.pump.fun (original DNS dead)
     - Date-range filter params (start_time, before_timestamp, created_after)
-      are SILENTLY IGNORED — confirmed all returned identical responses
-    - sort=created_timestamp&order=DESC|ASC works
-    - complete=true filters to graduated tokens (made it to PumpSwap)
-    - offset cap at ~10000 — beyond returns []
+      are SILENTLY IGNORED
+    - sort=created_timestamp&order=ASC|DESC works
+    - complete=true filters to graduated tokens; effective cap is ~1050
+      (lower than the ~10000 default cap because the filter pool is smaller)
+    - DESC + complete=true reaches ~7-14 days back from today
+    - ASC + complete=true starts from earliest graduates (~Jan 2024)
+      and covers ~3-6 months forward of pump.fun's earliest era
 
-    Strategy: paginate DESC from newest (or from newest-graduate when
-    graduated_only=True). Stop when token timestamps fall BELOW the window
-    start. Skip tokens that are still ABOVE the window end (between now and
-    window end). This works as long as the window is reachable within the
-    offset cap.
+    Strategy: paginate in the chosen sort direction. Track timestamps of
+    skipped tokens so we can tell the user what window was actually reachable
+    if the requested window misses.
 
-    graduated_only=True is the practical default because (1) ~98% of pump.fun
-    tokens never graduate and just die on the bonding curve at near-zero
-    (uninteresting tails), and (2) graduated tokens are at most ~60/day vs
-    ~3000 total/day, so the 10k offset cap reaches ~6 months back instead of
-    ~3 days. The trade-off is we MISS the long tail of bonding-curve-only
-    tokens that briefly pumped before dying — but those are unobservable in
-    Birdeye history anyway (no off-curve trades to index).
+    Use DESC for "recent tokens" research (last ~14 days).
+    Use ASC for "first 60 days of pump.fun's earliest graduates" research
+    (gives the cleanest long-window lifecycle data since those tokens have
+    years of post-mint price history).
     """
+    sort_order = sort_order.upper()
+    assert sort_order in ("ASC", "DESC")
+
     out: list[TokenMeta] = []
     seen_mints: set[str] = set()
     offset = 0
     page_size = 50
     pages_tried = 0
-    too_new_skipped = 0
-    too_old_seen = False
+    skipped_count = 0
+    earliest_seen: Optional[datetime] = None
+    latest_seen: Optional[datetime] = None
+    boundary_hit = False
 
     headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
 
@@ -188,21 +192,23 @@ def discover_via_pumpfun_api(
             "offset": str(offset),
             "limit": str(page_size),
             "sort": "created_timestamp",
-            "order": "DESC",
+            "order": sort_order,
         }
         if graduated_only:
             params["complete"] = "true"
         url = f"{PUMPFUN_FRONTEND_BASE}/coins?{urllib.parse.urlencode(params)}"
         data = _http_get_json(url, headers=headers)
         pages_tried += 1
-        if not data:
-            print(f"  [discover] page {pages_tried} (offset {offset}): empty/error response",
-                  file=sys.stderr)
+
+        # Distinguish API-error (None) from end-of-data (empty list).
+        if data is None:
+            print(f"  [discover] page {pages_tried} (offset {offset}): "
+                  f"HTTP error / non-JSON response", file=sys.stderr)
             break
-        # v3 returns a bare list at top level
         items = data if isinstance(data, list) else (data.get("data") or [])
         if not items:
-            print(f"  [discover] page {pages_tried} (offset {offset}): no more items",
+            print(f"  [discover] page {pages_tried} (offset {offset}): "
+                  f"API returned empty list (effective cap for this filter)",
                   file=sys.stderr)
             break
 
@@ -215,17 +221,41 @@ def discover_via_pumpfun_api(
                 created_at = datetime.fromtimestamp(int(ts_ms) / 1000, tz=timezone.utc)
             except (ValueError, TypeError, OSError):
                 continue
-            # DESC order: too_new (above window end) → skip and keep going
-            if created_at > to_dt:
-                too_new_skipped += 1
-                continue
-            # DESC order: too_old (below window start) → we've gone past, stop
-            if created_at < from_dt:
-                too_old_seen = True
-                print(f"  [discover] hit token older than window "
-                      f"({created_at.date()} < {from_dt.date()}); stopping pagination",
-                      file=sys.stderr)
-                break
+
+            # Track range of timestamps the API exposed (for diagnostics)
+            if earliest_seen is None or created_at < earliest_seen:
+                earliest_seen = created_at
+            if latest_seen is None or created_at > latest_seen:
+                latest_seen = created_at
+
+            in_window = (from_dt <= created_at <= to_dt)
+
+            if sort_order == "DESC":
+                # Newest-first: above window → skip; below window → stop
+                if created_at > to_dt:
+                    skipped_count += 1
+                    continue
+                if created_at < from_dt:
+                    boundary_hit = True
+                    print(f"  [discover] hit token older than window "
+                          f"({created_at.date()} < {from_dt.date()}); stopping pagination",
+                          file=sys.stderr)
+                    break
+            else:
+                # ASC (oldest-first): below window → skip; above window → stop
+                if created_at < from_dt:
+                    skipped_count += 1
+                    continue
+                if created_at > to_dt:
+                    boundary_hit = True
+                    print(f"  [discover] hit token newer than window "
+                          f"({created_at.date()} > {to_dt.date()}); stopping pagination",
+                          file=sys.stderr)
+                    break
+
+            if not in_window:
+                continue  # defensive (shouldn't reach here)
+
             seen_mints.add(mint)
             out.append(TokenMeta(
                 mint=mint,
@@ -244,20 +274,29 @@ def discover_via_pumpfun_api(
             if len(out) >= target_count:
                 return out
 
-        if too_old_seen:
+        if boundary_hit:
             break
-        if pages_tried % 10 == 0:
+        if pages_tried % 5 == 0:
             print(f"  [discover] page {pages_tried} (offset {offset}): "
-                  f"{len(out)} in window, {too_new_skipped} skipped (too new)",
+                  f"{len(out)} in window, {skipped_count} skipped, "
+                  f"current ts: {created_at.date() if 'created_at' in locals() else '?'}",
                   file=sys.stderr)
         offset += page_size
         time.sleep(PUMPFUN_SLEEP_SECONDS)
 
-    if offset >= PUMPFUN_OFFSET_CAP:
-        print(f"  [discover] hit offset cap ({PUMPFUN_OFFSET_CAP}) before reaching window. "
-              f"Got {len(out)} tokens — try a more recent window or run with "
-              f"--graduated-only=true if not already set.",
+    # End-of-loop diagnostic — always print the range so user knows what's reachable
+    if earliest_seen and latest_seen:
+        print(f"  [discover] API range seen this run: "
+              f"{earliest_seen.date()} → {latest_seen.date()} "
+              f"({pages_tried} pages, {offset} offset reached)",
               file=sys.stderr)
+        if not out:
+            direction_word = "more recent" if sort_order == "DESC" else "earlier"
+            print(f"  [discover] HINT: requested window {from_dt.date()} → {to_dt.date()} "
+                  f"was not reached. Try a window within the API-exposed range, "
+                  f"or use a {direction_word} window. "
+                  f"E.g.: --from {earliest_seen.date()} --to {latest_seen.date()}",
+                  file=sys.stderr)
     return out
 
 
@@ -316,13 +355,16 @@ def discover_via_birdeye_tokenlist(
 
 def discover_tokens(
     from_dt: datetime, to_dt: datetime, target_count: int,
-    graduated_only: bool = True,
+    graduated_only: bool = True, sort_order: str = "DESC",
 ) -> list[TokenMeta]:
     """Try pumpfun_v3 discovery; fall back to Birdeye if it yields too few."""
     grad_str = "graduated only" if graduated_only else "ALL (incl. non-graduated)"
     print(f"[discover] pumpfun_v3 ({from_dt.date()} → {to_dt.date()}, "
-          f"{grad_str}, target {target_count})...", file=sys.stderr)
-    tokens = discover_via_pumpfun_api(from_dt, to_dt, target_count, graduated_only=graduated_only)
+          f"{grad_str}, sort={sort_order}, target {target_count})...", file=sys.stderr)
+    tokens = discover_via_pumpfun_api(
+        from_dt, to_dt, target_count,
+        graduated_only=graduated_only, sort_order=sort_order,
+    )
     if len(tokens) >= max(5, target_count // 4):
         print(f"[discover] pumpfun_v3 yielded {len(tokens)} tokens "
               f"({sum(1 for t in tokens if t.graduated)} graduated)", file=sys.stderr)
@@ -743,10 +785,20 @@ def write_csv(path: Path, features: list[TokenFeatures]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--from", dest="from_str", default="2026-03-01",
+    # Default window: pump.fun's earliest graduate era (Jan-Feb 2024).
+    # Those tokens have ~2 YEARS of post-mint price history, giving the
+    # cleanest 60-day lifecycle observation. The v3 API's ASC sort reaches
+    # this era; DESC sort + graduated filter only reaches ~7-14 days back
+    # from today which gives shorter observation windows.
+    parser.add_argument("--from", dest="from_str", default="2024-01-25",
                         help="Mint window start (UTC date, inclusive)")
-    parser.add_argument("--to", dest="to_str", default="2026-03-15",
+    parser.add_argument("--to", dest="to_str", default="2024-02-29",
                         help="Mint window end (UTC date, exclusive)")
+    parser.add_argument("--sort", choices=("ASC", "DESC"), default="ASC",
+                        help="ASC walks from earliest graduates forward in time "
+                             "(best for old-token deep lifecycle research). "
+                             "DESC walks from newest backward (best for recent "
+                             "tokens, ~14d reachable).")
     parser.add_argument("--sample-size", type=int, default=20,
                         help="Target number of tokens to analyze")
     parser.add_argument("--clusters", type=int, default=5,
@@ -776,6 +828,7 @@ def main() -> int:
     tokens = discover_tokens(
         from_dt, to_dt, target_discovery,
         graduated_only=not args.include_non_graduated,
+        sort_order=args.sort,
     )
     if not tokens:
         print("ERROR: no tokens discovered. Check pump.fun API + Birdeye API key.", file=sys.stderr)
