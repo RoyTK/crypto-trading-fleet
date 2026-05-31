@@ -1,0 +1,50 @@
+{
+  "_comment": "Three Grafana panels to paste into copy-detail.json (or any dashboard with datasource uid 'fleet-postgres'). IDs 70/71/72 are unused in copy-detail.json as of 2026-05-30. Adjust gridPos.y to fit your dashboard.",
+  "panels": [
+    {
+      "id": 70,
+      "type": "table",
+      "title": "Cluster detections — N_unique under dedup-hours hypotheses (last 30d)",
+      "description": "Per-row: a hypothesized COPY_CLUSTER_DEDUP_HOURS value, and the N_unique buckets it would have produced ON THE SAME RAW DETECTIONS. unique_pct = N_unique / N_total. Statistician's ship rule: do NOT ship exit redesign on a dataset where unique_pct < 50%.",
+      "gridPos": { "x": 0, "y": 60, "w": 24, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH hypotheses(dedup_hours) AS (VALUES (1), (4), (12), (24), (72)), src AS (SELECT chain, token_mint, signal_type, direction, detected_at FROM cluster_detections WHERE detected_at >= NOW() - INTERVAL '30 days'), total AS (SELECT COUNT(*) AS n FROM src) SELECT h.dedup_hours, COUNT(DISTINCT (s.chain, s.token_mint, s.signal_type, s.direction, date_bin(make_interval(hours => h.dedup_hours), s.detected_at, TIMESTAMP '2026-01-01 00:00:00+00'))) AS n_unique, ROUND(100.0 * COUNT(DISTINCT (s.chain, s.token_mint, s.signal_type, s.direction, date_bin(make_interval(hours => h.dedup_hours), s.detected_at, TIMESTAMP '2026-01-01 00:00:00+00')))::numeric / NULLIF((SELECT n FROM total), 0)::numeric, 1) AS unique_pct FROM hypotheses h, src s GROUP BY h.dedup_hours ORDER BY h.dedup_hours"
+        }
+      ]
+    },
+    {
+      "id": 71,
+      "type": "timeseries",
+      "title": "Cluster detections — fired vs suppressed per day (last 30d)",
+      "description": "Daily count of fired (passed dedup) vs suppressed (re-detected within the dedup_hours window) cluster events. A high suppressed/fired ratio means the bot is re-detecting the same setups repeatedly — confirming the data-independence problem the 2026-05-30 brainstorm identified.",
+      "gridPos": { "x": 0, "y": 68, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('day', detected_at) AS time, COUNT(*) FILTER (WHERE fired) AS fired, COUNT(*) FILTER (WHERE NOT fired) AS suppressed FROM cluster_detections WHERE detected_at >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 72,
+      "type": "table",
+      "title": "Top tokens by re-detection (suppressed within dedup window)",
+      "description": "Tokens with the most cluster-detection re-fires within their dedup_hours window. Token mints showing many repeats are the ones inflating the apparent signal count — exactly what the 2026-05-30 diagnostic surfaced (7m96tz fired 6x).",
+      "gridPos": { "x": 12, "y": 68, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT token_mint, COUNT(*) FILTER (WHERE fired) AS n_fired, COUNT(*) FILTER (WHERE NOT fired) AS n_suppressed, MIN(detected_at) AS first_seen, MAX(detected_at) AS last_seen FROM cluster_detections WHERE detected_at >= NOW() - INTERVAL '30 days' GROUP BY token_mint HAVING COUNT(*) > 1 ORDER BY n_suppressed DESC, n_fired DESC LIMIT 20"
+        }
+      ]
+    }
+  ]
+}

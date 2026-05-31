@@ -180,6 +180,45 @@ class ClusterObservation(Base):
     )
 
 
+class ClusterDetection(Base):
+    """Persistent dedup primitive for cluster signals.
+
+    One row per (chain, token, signal_type, direction, window_bucket).
+    Window bucket size = COPY_CLUSTER_DEDUP_HOURS (default 24h).
+    Suppressed re-detects also persisted (fired=false) so a Grafana panel
+    can compare N_unique under different dedup-hour assumptions on the
+    same dataset. Shipped 2026-05-30 after diagnostic showed shadow log
+    N=64 collapses to N_unique=24 (37.5%, below Statistician's 50% kill
+    threshold for shipping exit redesign).
+    """
+    __tablename__ = "cluster_detections"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    cluster_uuid = Column(String(64), nullable=False, unique=True)
+    chain = Column(String(16), nullable=False)
+    token_mint = Column(String(128), nullable=False)
+    signal_type = Column(String(32), nullable=False)
+    direction = Column(String(8), nullable=False)
+    cluster_size = Column(Integer, nullable=False)
+    cluster_total_notional_usd = Column(Float, nullable=False)
+    wallet_tier = Column(String(16), nullable=False)
+    window_bucket = Column(DateTime(timezone=True), nullable=False)
+    dedup_hours = Column(Integer, nullable=False)
+    # dedup_key uniqueness is enforced via partial unique index
+    # (fired=true only) — see migration 0008.
+    dedup_key = Column(String(128), nullable=False)
+    detected_at = Column(DateTime(timezone=True), nullable=False)
+    fired = Column(Boolean, nullable=False, default=True)
+    suppressed_reason = Column(String(64), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        Index("ix_cluster_detections_token_time", "token_mint", "detected_at"),
+        Index("ix_cluster_detections_window_bucket", "window_bucket"),
+        Index("ix_cluster_detections_fired", "fired", "detected_at"),
+    )
+
+
 class CalibrationRecord(Base):
     """Pairs simulated fill vs actual shadow fill for calibration ratio."""
     __tablename__ = "calibration_records"

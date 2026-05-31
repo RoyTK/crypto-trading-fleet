@@ -5,11 +5,12 @@ Bots write to `signals` and `trades` only — never `scores`.
 """
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from bots.base.fill_simulator_base import SimulatedFill
 from bots.copy.signals.base import SignalCandidate
@@ -333,6 +334,145 @@ def has_open_position(asset: str, venue: str) -> bool:
             Trade.venue == venue,
         )
         return s.execute(q).first() is not None
+
+
+@dataclass(frozen=True)
+class DedupResult:
+    """Outcome of write_cluster_detection.
+
+    fired=True means this is the first detection for the (chain, token,
+    signal_type, direction, window_bucket) tuple within the dedup_hours
+    window — caller should proceed with downstream actions (shadow_log,
+    Redis publishes, paper trade). fired=False means the cluster was
+    suppressed; a separate audit row was written with suppressed_reason.
+    """
+    fired: bool
+    cluster_detection_id: Optional[int] = None
+    reason: Optional[str] = None
+    dedup_key: Optional[str] = None
+    window_bucket: Optional[datetime] = None
+
+
+def compute_window_bucket(detected_at: datetime, dedup_hours: int) -> datetime:
+    """Floor detected_at to a dedup_hours-aligned UTC boundary.
+
+    Pure function — no DB. 24h dedup_hours buckets to midnight UTC; 4h
+    dedup_hours buckets to 00/04/08/12/16/20 UTC; 1h to the hour mark.
+    Negative or zero dedup_hours degenerates to per-second bucket (no dedup).
+    """
+    if dedup_hours <= 0:
+        return detected_at.replace(microsecond=0)
+    ts_utc = detected_at.astimezone(timezone.utc) if detected_at.tzinfo else detected_at.replace(tzinfo=timezone.utc)
+    # Anchor at midnight UTC of the same date, then add the floored hour offset.
+    midnight = ts_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+    hour_offset = (ts_utc.hour // dedup_hours) * dedup_hours
+    return midnight.replace(hour=hour_offset)
+
+
+def compute_dedup_key(
+    *,
+    chain: str,
+    token_mint: str,
+    signal_type: str,
+    direction: str,
+    window_bucket: datetime,
+) -> str:
+    """sha256(chain|token|signal_type|direction|window_bucket.isoformat())."""
+    raw = f"{chain}|{token_mint}|{signal_type}|{direction}|{window_bucket.isoformat()}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def write_cluster_detection(
+    *,
+    candidate: SignalCandidate,
+    cluster_uuid: str,
+    wallet_tier: str,
+    dedup_hours: int,
+    detected_at: Optional[datetime] = None,
+) -> DedupResult:
+    """Persist a cluster detection with atomic dedup.
+
+    Writes one row with fired=true if no prior row exists for the same
+    (chain, token, signal_type, direction, window_bucket). If a prior
+    fired=true row exists, writes a fired=false row with
+    suppressed_reason='dedup_window' instead, so we still have an audit
+    trail of how many times the cluster re-detected within the window.
+
+    Atomic: uses ON CONFLICT on the partial unique index
+    uq_cluster_detections_dedup_key_fired (fired=true). The suppressed row
+    is inserted unconditionally afterwards (the partial index does not
+    constrain fired=false rows).
+
+    Idempotent on cluster_uuid: if the same UUID is replayed (e.g., bot
+    restart re-processes a stale event), the cluster_uuid UNIQUE constraint
+    will reject the second write — caller treats that as fired=False.
+    """
+    detected_at = detected_at or datetime.now(timezone.utc)
+    window_bucket = compute_window_bucket(detected_at, dedup_hours)
+    dedup_key = compute_dedup_key(
+        chain=candidate.chain,
+        token_mint=candidate.asset,
+        signal_type=candidate.signal_type,
+        direction=candidate.direction,
+        window_bucket=window_bucket,
+    )
+    total_notional = float((candidate.payload or {}).get("total_notional_usd", 0.0))
+
+    insert_sql = text("""
+        INSERT INTO cluster_detections (
+            cluster_uuid, chain, token_mint, signal_type, direction,
+            cluster_size, cluster_total_notional_usd, wallet_tier,
+            window_bucket, dedup_hours, dedup_key,
+            detected_at, fired, suppressed_reason
+        ) VALUES (
+            :cluster_uuid, :chain, :token_mint, :signal_type, :direction,
+            :cluster_size, :cluster_total_notional_usd, :wallet_tier,
+            :window_bucket, :dedup_hours, :dedup_key,
+            :detected_at, :fired, :suppressed_reason
+        )
+        ON CONFLICT DO NOTHING
+        RETURNING id
+    """)
+    base_params = {
+        "chain": candidate.chain,
+        "token_mint": candidate.asset,
+        "signal_type": candidate.signal_type,
+        "direction": candidate.direction,
+        "cluster_size": int(candidate.cluster_size),
+        "cluster_total_notional_usd": total_notional,
+        "wallet_tier": wallet_tier,
+        "window_bucket": window_bucket,
+        "dedup_hours": int(dedup_hours),
+        "dedup_key": dedup_key,
+        "detected_at": detected_at,
+    }
+
+    with session_scope() as s:
+        fire_params = {**base_params, "cluster_uuid": cluster_uuid, "fired": True, "suppressed_reason": None}
+        row = s.execute(insert_sql, fire_params).first()
+        if row is not None:
+            return DedupResult(
+                fired=True,
+                cluster_detection_id=int(row.id),
+                dedup_key=dedup_key,
+                window_bucket=window_bucket,
+            )
+
+        suppressed_uuid = f"{cluster_uuid}.s"
+        suppress_params = {
+            **base_params,
+            "cluster_uuid": suppressed_uuid,
+            "fired": False,
+            "suppressed_reason": "dedup_window",
+        }
+        s.execute(insert_sql, suppress_params)
+
+    return DedupResult(
+        fired=False,
+        reason="dedup_window",
+        dedup_key=dedup_key,
+        window_bucket=window_bucket,
+    )
 
 
 def open_allocation_pct(paper_capital_usd: float) -> float:

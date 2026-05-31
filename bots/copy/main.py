@@ -41,6 +41,7 @@ from bots.copy.loop_helpers import (
     panic_close_all_open,
     persist_paper_trade,
     persist_signal,
+    write_cluster_detection,
 )
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
@@ -222,10 +223,46 @@ class CopyBot(BotLifecycle):
         # Build A: no token-meta — gate is skipped per cluster.evaluate signature
         candidates = self.cluster.evaluate()
         for c in candidates:
+            cluster_uuid = shadow_log.make_cluster_uuid()
+            wallet_tier = _cluster_wallet_tier(c)
+
+            # Persistent dedup gate (2026-05-30). Atomic upsert keyed on
+            # (chain, token, signal_type, direction, window_bucket). Replaces
+            # what the cluster detector's 15-min in-memory _already_fired
+            # only partially handled — bot restarts cleared that state and
+            # cross-day re-fires on the same token slipped through. See
+            # decision log entry 2026-05-30 (unique_pct=37.5% diagnostic).
+            try:
+                dedup = write_cluster_detection(
+                    candidate=c,
+                    cluster_uuid=cluster_uuid,
+                    wallet_tier=wallet_tier,
+                    dedup_hours=self.copy_settings.copy_cluster_dedup_hours,
+                )
+            except Exception:
+                self.log.exception(
+                    "cluster_detection_write_failed",
+                    asset=c.asset, chain=c.chain,
+                )
+                # Fail-open: if the dedup primitive crashes, prefer to emit
+                # the signal rather than silently swallow it. The data-quality
+                # cost of one duplicate is lower than the cost of dropping a
+                # real signal during a DB hiccup.
+                dedup = None
+
+            if dedup is not None and not dedup.fired:
+                self.log.info(
+                    "cluster_dedup_suppressed",
+                    asset=c.asset, chain=c.chain,
+                    cluster_size=c.cluster_size,
+                    reason=dedup.reason,
+                    dedup_hours=self.copy_settings.copy_cluster_dedup_hours,
+                )
+                continue
+
             # Always: shadow log every fire (H1/H2 diagnostic). Independent
             # of whether bot actually trades. Caller injects the cluster_uuid
             # so the same id is shared with downstream Redis publishes.
-            cluster_uuid = shadow_log.make_cluster_uuid()
             asyncio.create_task(self._write_shadow_log(c, cluster_uuid))
 
             # Always: publish to copy:all_clusters for STRUCTURE journal

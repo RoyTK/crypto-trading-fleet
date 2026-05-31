@@ -151,6 +151,15 @@ class CopySettings(BaseSettings):
     # pending shadow_log rows + compute MFE/MAE. 5min matches Birdeye
     # historical candle resolution.
     copy_shadow_log_poll_seconds: int = Field(default=300)
+    # Persistent dedup window for cluster_detections (2026-05-30). Default
+    # 24h aligns with the Statistician's data-independence requirement —
+    # token 7m96tz fired 6 times across 16 days in shadow_log under the
+    # in-memory 15-min suppression. 24h dedup collapses those to 1 obs/day.
+    # Configurable so we can sweep (24/12/4/1) via the Grafana comparison
+    # panel without code changes. NOT in the LOCKED v0 thresholds list —
+    # this is data-hygiene infra, not signal logic, so changing it does
+    # NOT reset the kill-criteria window per the operational-fix carve-out.
+    copy_cluster_dedup_hours: int = Field(default=24)
 
 
 @lru_cache(maxsize=1)
