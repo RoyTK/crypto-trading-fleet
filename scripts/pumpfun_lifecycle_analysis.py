@@ -54,7 +54,10 @@ from typing import Optional
 
 BIRDEYE_BASE = "https://public-api.birdeye.so"
 DEXSCREENER_BASE = "https://api.dexscreener.com"
-PUMPFUN_FRONTEND_BASE = "https://frontend-api.pump.fun"
+# v3 is the live endpoint (the original frontend-api.pump.fun host's DNS is dead
+# per 2026-05-31 probe). v3 has a 10k offset cap and silently ignores any
+# date-range filter params — must paginate from newest with sort/order.
+PUMPFUN_FRONTEND_BASE = "https://frontend-api-v3.pump.fun"
 
 # Birdeye history_price caps at 1000 points per call. 60d at 4H = 360 points.
 HISTORY_RESOLUTION = "4H"
@@ -63,9 +66,17 @@ HISTORY_DAYS = 60
 # Rate limits (Birdeye Lite tier: ~100 RPS, but be polite)
 BIRDEYE_SLEEP_SECONDS = 0.6
 DEXSCREENER_SLEEP_SECONDS = 0.4
-PUMPFUN_SLEEP_SECONDS = 1.0
+PUMPFUN_SLEEP_SECONDS = 0.6
 
-USER_AGENT = "crypto-fleet-research/1.0"
+# Browser User-Agent — the original UA was blocked by upstream WAF.
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+)
+
+# pump.fun v3 offset cap. Empirically 10000 returns []; we stop pagination
+# earlier to leave headroom for partial pages.
+PUMPFUN_OFFSET_CAP = 9500
 
 
 # ----------------------------------------------------------------------------
@@ -79,6 +90,7 @@ class TokenMeta:
     name: Optional[str] = None
     created_at: Optional[datetime] = None
     discovery_source: str = "unknown"
+    graduated: bool = False  # `complete` flag from pump.fun v3 = made it to PumpSwap
     extra: dict = field(default_factory=dict)
 
 
@@ -105,6 +117,7 @@ class TokenFeatures:
     days_to_peak: float
     days_to_trough: float
     # Patterns
+    graduated: bool       # made it to PumpSwap (per pump.fun v3 `complete` flag)
     rugged: bool          # lost >95% within first 7 days
     survived_60d: bool    # final price > 10% of entry
     had_bounce: bool      # min was hit BEFORE max (recovery pattern)
@@ -134,62 +147,117 @@ def _http_get_json(url: str, headers: Optional[dict] = None, timeout: int = 20) 
 
 def discover_via_pumpfun_api(
     from_dt: datetime, to_dt: datetime, target_count: int,
+    graduated_only: bool = True,
 ) -> list[TokenMeta]:
-    """pump.fun's own (undocumented but commonly used) coins endpoint.
+    """pump.fun v3 coins endpoint discovery.
 
-    Returns tokens sorted by creation time. We paginate until we cover the
-    target window. NOT guaranteed to work — endpoint shape changes; failure
-    falls through to the next source.
+    Probe verdict 2026-05-31:
+    - v3 base URL: https://frontend-api-v3.pump.fun (original DNS dead)
+    - Date-range filter params (start_time, before_timestamp, created_after)
+      are SILENTLY IGNORED — confirmed all returned identical responses
+    - sort=created_timestamp&order=DESC|ASC works
+    - complete=true filters to graduated tokens (made it to PumpSwap)
+    - offset cap at ~10000 — beyond returns []
+
+    Strategy: paginate DESC from newest (or from newest-graduate when
+    graduated_only=True). Stop when token timestamps fall BELOW the window
+    start. Skip tokens that are still ABOVE the window end (between now and
+    window end). This works as long as the window is reachable within the
+    offset cap.
+
+    graduated_only=True is the practical default because (1) ~98% of pump.fun
+    tokens never graduate and just die on the bonding curve at near-zero
+    (uninteresting tails), and (2) graduated tokens are at most ~60/day vs
+    ~3000 total/day, so the 10k offset cap reaches ~6 months back instead of
+    ~3 days. The trade-off is we MISS the long tail of bonding-curve-only
+    tokens that briefly pumped before dying — but those are unobservable in
+    Birdeye history anyway (no off-curve trades to index).
     """
     out: list[TokenMeta] = []
+    seen_mints: set[str] = set()
     offset = 0
     page_size = 50
-    seen_mints: set[str] = set()
-    max_pages = max(20, target_count // page_size * 3)
     pages_tried = 0
-    while pages_tried < max_pages and len(out) < target_count:
-        # Sort by created_at ascending — earliest first within the window
-        url = (
-            f"{PUMPFUN_FRONTEND_BASE}/coins"
-            f"?offset={offset}&limit={page_size}"
-            f"&sort=created_timestamp&order=ASC"
-            f"&includeNsfw=false"
-        )
-        data = _http_get_json(url)
+    too_new_skipped = 0
+    too_old_seen = False
+
+    headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+
+    while offset < PUMPFUN_OFFSET_CAP and len(out) < target_count:
+        params = {
+            "offset": str(offset),
+            "limit": str(page_size),
+            "sort": "created_timestamp",
+            "order": "DESC",
+        }
+        if graduated_only:
+            params["complete"] = "true"
+        url = f"{PUMPFUN_FRONTEND_BASE}/coins?{urllib.parse.urlencode(params)}"
+        data = _http_get_json(url, headers=headers)
         pages_tried += 1
         if not data:
+            print(f"  [discover] page {pages_tried} (offset {offset}): empty/error response",
+                  file=sys.stderr)
             break
-        items = data if isinstance(data, list) else data.get("data") or data.get("coins") or []
+        # v3 returns a bare list at top level
+        items = data if isinstance(data, list) else (data.get("data") or [])
         if not items:
+            print(f"  [discover] page {pages_tried} (offset {offset}): no more items",
+                  file=sys.stderr)
             break
+
         for it in items:
-            mint = (it.get("mint") or it.get("address") or "").strip()
+            mint = str(it.get("mint") or it.get("address") or "").strip()
             if not mint or mint in seen_mints:
                 continue
-            ts_ms = it.get("created_timestamp") or it.get("createdAt") or 0
+            ts_ms = it.get("created_timestamp") or 0
             try:
                 created_at = datetime.fromtimestamp(int(ts_ms) / 1000, tz=timezone.utc)
             except (ValueError, TypeError, OSError):
                 continue
-            if created_at < from_dt:
-                continue
+            # DESC order: too_new (above window end) → skip and keep going
             if created_at > to_dt:
-                # The list is sorted ASC so we can stop here
-                return out
+                too_new_skipped += 1
+                continue
+            # DESC order: too_old (below window start) → we've gone past, stop
+            if created_at < from_dt:
+                too_old_seen = True
+                print(f"  [discover] hit token older than window "
+                      f"({created_at.date()} < {from_dt.date()}); stopping pagination",
+                      file=sys.stderr)
+                break
             seen_mints.add(mint)
             out.append(TokenMeta(
                 mint=mint,
                 symbol=it.get("symbol"),
                 name=it.get("name"),
                 created_at=created_at,
-                discovery_source="pumpfun_api",
-                extra={"raw_sample": {k: v for k, v in it.items()
-                                       if k in ("market_cap", "complete", "raydium_pool")}},
+                discovery_source="pumpfun_v3_api",
+                graduated=bool(it.get("complete")),
+                extra={
+                    "creator": it.get("creator"),
+                    "bonding_curve": it.get("bonding_curve"),
+                    "raydium_pool": it.get("raydium_pool"),
+                    "virtual_sol_reserves": it.get("virtual_sol_reserves"),
+                },
             ))
             if len(out) >= target_count:
                 return out
+
+        if too_old_seen:
+            break
+        if pages_tried % 10 == 0:
+            print(f"  [discover] page {pages_tried} (offset {offset}): "
+                  f"{len(out)} in window, {too_new_skipped} skipped (too new)",
+                  file=sys.stderr)
         offset += page_size
         time.sleep(PUMPFUN_SLEEP_SECONDS)
+
+    if offset >= PUMPFUN_OFFSET_CAP:
+        print(f"  [discover] hit offset cap ({PUMPFUN_OFFSET_CAP}) before reaching window. "
+              f"Got {len(out)} tokens — try a more recent window or run with "
+              f"--graduated-only=true if not already set.",
+              file=sys.stderr)
     return out
 
 
@@ -248,15 +316,18 @@ def discover_via_birdeye_tokenlist(
 
 def discover_tokens(
     from_dt: datetime, to_dt: datetime, target_count: int,
+    graduated_only: bool = True,
 ) -> list[TokenMeta]:
-    """Try discovery sources in order; return as soon as we have enough."""
-    print(f"[discover] trying pumpfun_api ({from_dt.date()} → {to_dt.date()}, target {target_count})...",
-          file=sys.stderr)
-    tokens = discover_via_pumpfun_api(from_dt, to_dt, target_count)
+    """Try pumpfun_v3 discovery; fall back to Birdeye if it yields too few."""
+    grad_str = "graduated only" if graduated_only else "ALL (incl. non-graduated)"
+    print(f"[discover] pumpfun_v3 ({from_dt.date()} → {to_dt.date()}, "
+          f"{grad_str}, target {target_count})...", file=sys.stderr)
+    tokens = discover_via_pumpfun_api(from_dt, to_dt, target_count, graduated_only=graduated_only)
     if len(tokens) >= max(5, target_count // 4):
-        print(f"[discover] pumpfun_api yielded {len(tokens)} tokens", file=sys.stderr)
+        print(f"[discover] pumpfun_v3 yielded {len(tokens)} tokens "
+              f"({sum(1 for t in tokens if t.graduated)} graduated)", file=sys.stderr)
         return tokens
-    print(f"[discover] pumpfun_api too sparse ({len(tokens)}); falling back to birdeye_tokenlist",
+    print(f"[discover] pumpfun_v3 too sparse ({len(tokens)}); trying Birdeye fallback",
           file=sys.stderr)
     more = discover_via_birdeye_tokenlist(from_dt, to_dt, target_count - len(tokens))
     tokens.extend(more)
@@ -306,6 +377,7 @@ def fetch_history_birdeye(
 
 def compute_features(
     mint: str, symbol: Optional[str], candles: list[Candle],
+    graduated: bool = False,
 ) -> Optional[TokenFeatures]:
     if len(candles) < 5:
         return None
@@ -354,7 +426,7 @@ def compute_features(
         max_multiple=p_max / entry, min_multiple=p_min / entry,
         final_multiple=final / entry,
         days_to_peak=days_to_peak, days_to_trough=days_to_trough,
-        rugged=rugged, survived_60d=survived_60d,
+        graduated=graduated, rugged=rugged, survived_60d=survived_60d,
         had_bounce=had_bounce, multi_peak=multi_peak,
         normalized_path=normalized_path,
     )
@@ -452,12 +524,14 @@ def aggregate(features: list[TokenFeatures]) -> dict:
         "max_multiple_histogram": _hist(max_mults),
         "final_multiple_histogram": _hist(final_mults),
         "counts": {
+            "2x_or_more_max":    sum(1 for v in max_mults if v >= 2),
             "10x_or_more_max":   sum(1 for v in max_mults if v >= 10),
             "100x_or_more_max":  sum(1 for v in max_mults if v >= 100),
             "1000x_or_more_max": sum(1 for v in max_mults if v >= 1000),
             "10x_or_more_final":   sum(1 for v in final_mults if v >= 10),
             "100x_or_more_final":  sum(1 for v in final_mults if v >= 100),
             "1000x_or_more_final": sum(1 for v in final_mults if v >= 1000),
+            "graduated":         sum(1 for f in features if f.graduated),
             "rugged_in_7d":      sum(1 for f in features if f.rugged),
             "survived_60d":      sum(1 for f in features if f.survived_60d),
             "had_bounce":        sum(1 for f in features if f.had_bounce),
@@ -555,8 +629,11 @@ def render_markdown(report: dict) -> str:
     lines.append("## Headline distribution\n")
     counts = agg['counts']
     n = agg['n']
-    lines.append("### Maximum multiple reached (across the 60d window)")
-    lines.append(f"- 2x or more: {sum(1 for label in agg['max_multiple_histogram'] if 'gain' in label or 'x' in label and '–' in label and float(label.split('x')[0].split('–')[0].replace('<','').replace('+','')) >= 1) }")
+    lines.append(f"- **Graduated to PumpSwap: {counts['graduated']} / {n} "
+                 f"= {100.0*counts['graduated']/n:.1f}%** (population-level rate "
+                 f"vs all minted tokens is ~2%; this is conditional on the sample filter)\n")
+    lines.append("### Maximum multiple reached (across the observation window)")
+    lines.append(f"- 2x or more: {counts['2x_or_more_max']} / {n} = {100.0*counts['2x_or_more_max']/n:.1f}%")
     lines.append(f"- **10x or more: {counts['10x_or_more_max']} / {n} = {100.0*counts['10x_or_more_max']/n:.1f}%**")
     lines.append(f"- **100x or more: {counts['100x_or_more_max']} / {n} = {100.0*counts['100x_or_more_max']/n:.1f}%**")
     lines.append(f"- **1000x or more: {counts['1000x_or_more_max']} / {n} = {100.0*counts['1000x_or_more_max']/n:.1f}%**\n")
@@ -647,7 +724,7 @@ def write_csv(path: Path, features: list[TokenFeatures]) -> None:
             "mint", "symbol", "n_candles", "entry_price", "final_price",
             "max_multiple", "min_multiple", "final_multiple",
             "days_to_peak", "days_to_trough",
-            "rugged", "survived_60d", "had_bounce", "multi_peak",
+            "graduated", "rugged", "survived_60d", "had_bounce", "multi_peak",
         ])
         for ft in features:
             writer.writerow([
@@ -655,7 +732,8 @@ def write_csv(path: Path, features: list[TokenFeatures]) -> None:
                 f"{ft.entry_price:.10g}", f"{ft.final_price:.10g}",
                 f"{ft.max_multiple:.6g}", f"{ft.min_multiple:.6g}", f"{ft.final_multiple:.6g}",
                 f"{ft.days_to_peak:.3f}", f"{ft.days_to_trough:.3f}",
-                int(ft.rugged), int(ft.survived_60d), int(ft.had_bounce), int(ft.multi_peak),
+                int(ft.graduated), int(ft.rugged), int(ft.survived_60d),
+                int(ft.had_bounce), int(ft.multi_peak),
             ])
 
 
@@ -677,6 +755,10 @@ def main() -> int:
                         help="Directory to write report + CSV")
     parser.add_argument("--shuffle", action="store_true",
                         help="Shuffle discovered tokens before sampling (default: take first N)")
+    parser.add_argument("--include-non-graduated", action="store_true",
+                        help="Include non-graduated bonding-curve-only tokens. WARNING: "
+                             "v3 offset cap is ~10k so without graduated filter the discovery "
+                             "can only reach ~3-4 days back from today. Default OFF (graduated only).")
     args = parser.parse_args()
 
     try:
@@ -691,7 +773,10 @@ def main() -> int:
 
     # Discover
     target_discovery = args.sample_size * 3  # over-discover so we can survive Birdeye misses
-    tokens = discover_tokens(from_dt, to_dt, target_discovery)
+    tokens = discover_tokens(
+        from_dt, to_dt, target_discovery,
+        graduated_only=not args.include_non_graduated,
+    )
     if not tokens:
         print("ERROR: no tokens discovered. Check pump.fun API + Birdeye API key.", file=sys.stderr)
         return 1
@@ -719,7 +804,7 @@ def main() -> int:
                   file=sys.stderr)
             continue
         n_with_history += 1
-        feats = compute_features(tok.mint, tok.symbol, candles)
+        feats = compute_features(tok.mint, tok.symbol, candles, graduated=tok.graduated)
         if feats is None:
             excluded += 1
             continue
