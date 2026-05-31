@@ -62,6 +62,36 @@ def _probe(label: str, url: str, headers: dict | None = None,
 def main() -> int:
     print("Probing pump.fun + Solana token discovery endpoints...", file=sys.stderr)
 
+    # ----- pump.fun v3 with various TIME FILTER params (the load-bearing question) -----
+    # The default sort returns newest-first. To reach a historical window we
+    # either need: (a) an API time filter, or (b) deep pagination. Probe (a).
+    target_ms_start = 1740787200000   # 2025-03-01
+    target_ms_end = 1742083200000     # 2025-03-16
+    _probe(
+        "v3 + offset (deep pagination test, page 200)",
+        "https://frontend-api-v3.pump.fun/coins?offset=10000&limit=5",
+    )
+    _probe(
+        "v3 + sort=created_timestamp&order=ASC",
+        "https://frontend-api-v3.pump.fun/coins?offset=0&limit=5&sort=created_timestamp&order=ASC",
+    )
+    _probe(
+        "v3 + before_timestamp (target window param trial)",
+        f"https://frontend-api-v3.pump.fun/coins?offset=0&limit=5&before_timestamp={target_ms_end}",
+    )
+    _probe(
+        "v3 + start_time / end_time (alternative names)",
+        f"https://frontend-api-v3.pump.fun/coins?offset=0&limit=5&start_time={target_ms_start}&end_time={target_ms_end}",
+    )
+    _probe(
+        "v3 + created_after / created_before",
+        f"https://frontend-api-v3.pump.fun/coins?offset=0&limit=5&created_after={target_ms_start}&created_before={target_ms_end}",
+    )
+    _probe(
+        "v3 + complete=true (only graduated)",
+        "https://frontend-api-v3.pump.fun/coins?offset=0&limit=5&complete=true",
+    )
+
     # ----- pump.fun frontend API (current) -----
     _probe(
         "pumpfun frontend-api /coins (no params)",
