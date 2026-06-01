@@ -421,7 +421,11 @@ def compute_features(
     mint: str, symbol: Optional[str], candles: list[Candle],
     graduated: bool = False,
 ) -> Optional[TokenFeatures]:
-    if len(candles) < 5:
+    # Lowered from 5 to 3 — for very-recent-mint analyses we still want some
+    # signal even if the token is only days old. Patterns like bounce/multi-peak
+    # need more candles to be meaningful but max/final multiples are computable
+    # at 3+ candles.
+    if len(candles) < 3:
         return None
     entry = candles[0].price_usd
     final = candles[-1].price_usd
@@ -834,6 +838,12 @@ def main() -> int:
         print("ERROR: no tokens discovered. Check pump.fun API + Birdeye API key.", file=sys.stderr)
         return 1
 
+    # Bias the sample toward tokens with the MOST observable history. Without
+    # this, DESC discovery puts newest-mint tokens first — and Birdeye returns
+    # <5 candles for tokens that are only a few hours old (excluded by feature
+    # extraction). Sorting ascending here means we pick the oldest-in-window
+    # tokens first, which have a full history horizon up to today.
+    tokens.sort(key=lambda t: t.created_at or datetime(2000, 1, 1, tzinfo=timezone.utc))
     if args.shuffle:
         random.seed(42)
         random.shuffle(tokens)
