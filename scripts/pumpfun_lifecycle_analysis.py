@@ -590,6 +590,71 @@ def aggregate(features: list[TokenFeatures]) -> dict:
 # Path clustering (lightweight k-means without numpy dependency on fail)
 # ----------------------------------------------------------------------------
 
+SHAPE_CATEGORIES = (
+    "pump_dump_quick",      # peak day <1 AND final <50% of entry
+    "pump_dump_slow",       # peak day 1-7 AND final <50% of entry
+    "early_peak_holds",     # peak day <7 AND final >=50% of entry
+    "phoenix",              # had bounce (min→max recovery) AND survived 60d
+    "late_bloomer",         # peak day >30
+    "multi_peak",           # ≥2 distinct local peaks
+    "slow_grind",           # everything else (sideways, no dominant pattern)
+)
+
+
+def classify_shape(f: TokenFeatures) -> str:
+    """Rule-based shape category — no sklearn needed.
+
+    Mutually exclusive: each token gets exactly one label. Order matters:
+    multi-peak takes precedence over phoenix, phoenix over the time-based
+    buckets, etc. — chosen so the more-specific pattern wins.
+    """
+    if f.multi_peak:
+        return "multi_peak"
+    if f.had_bounce and f.survived_60d:
+        return "phoenix"
+    if f.days_to_peak > 30:
+        return "late_bloomer"
+    if f.days_to_peak < 1.0:
+        return "pump_dump_quick" if f.final_multiple < 0.5 else "early_peak_holds"
+    if f.days_to_peak < 7.0:
+        return "pump_dump_slow" if f.final_multiple < 0.5 else "early_peak_holds"
+    return "slow_grind"
+
+
+def shape_distribution(features: list[TokenFeatures]) -> dict:
+    """Return per-category counts + representative members + median outcomes."""
+    if not features:
+        return {}
+    buckets: dict[str, dict] = {c: {"count": 0, "members": [],
+                                     "final_mults": [], "max_mults": []}
+                                 for c in SHAPE_CATEGORIES}
+    for f in features:
+        cat = classify_shape(f)
+        b = buckets[cat]
+        b["count"] += 1
+        b["final_mults"].append(f.final_multiple)
+        b["max_mults"].append(f.max_multiple)
+        if len(b["members"]) < 5:
+            b["members"].append({
+                "symbol": f.symbol, "mint": f.mint,
+                "max": f.max_multiple, "final": f.final_multiple,
+                "days_to_peak": f.days_to_peak,
+            })
+    # Compute medians
+    out: dict[str, dict] = {}
+    for cat, b in buckets.items():
+        if b["count"] == 0:
+            continue
+        out[cat] = {
+            "count": b["count"],
+            "pct_of_total": 100.0 * b["count"] / len(features),
+            "median_max_multiple": statistics.median(b["max_mults"]),
+            "median_final_multiple": statistics.median(b["final_mults"]),
+            "sample_members": b["members"],
+        }
+    return out
+
+
 def cluster_paths(features: list[TokenFeatures], k: int = 5, max_iter: int = 50) -> dict:
     """Cluster normalized paths into k shapes; return centroid + member tokens."""
     try:
@@ -737,6 +802,29 @@ def render_markdown(report: dict) -> str:
             lines.append(f"- % with bounce: {data['pct_with_bounce']:.1f}%")
             lines.append(f"- % multi-peak: {data['pct_multi_peak']:.1f}%\n")
 
+    shapes = report.get('shape_distribution', {})
+    if shapes:
+        lines.append("## Shape categories (rule-based, no ML deps)\n")
+        lines.append("Each token assigned to exactly one category. Categories ordered "
+                     "by specificity (multi-peak wins over phoenix wins over time-bucket).\n")
+        lines.append("| Category | Count | % of N | Median max | Median final |")
+        lines.append("|---|---|---|---|---|")
+        for cat, info in sorted(shapes.items(), key=lambda kv: -kv[1]['count']):
+            lines.append(f"| {cat} | {info['count']} | {info['pct_of_total']:.1f}% "
+                         f"| {info['median_max_multiple']:.2f}x "
+                         f"| {info['median_final_multiple']:.3f}x |")
+        lines.append("")
+        for cat, info in sorted(shapes.items(), key=lambda kv: -kv[1]['count']):
+            if info['count'] == 0:
+                continue
+            members_str = ", ".join(
+                f"{m['symbol'] or m['mint'][:8]}({m['max']:.1f}x→{m['final']:.2f}x"
+                f", peak d{m['days_to_peak']:.1f})"
+                for m in info['sample_members']
+            )
+            lines.append(f"- **{cat}** sample: {members_str}")
+        lines.append("")
+
     clust = report.get('clusters', {})
     if clust.get('available'):
         lines.append(f"## Path-shape clusters (k-means, k={clust['k']})\n")
@@ -877,10 +965,11 @@ def main() -> int:
                   f"max={feats.max_multiple:.2f}x, final={feats.final_multiple:.3f}x",
                   file=sys.stderr)
 
-    # Aggregate + cluster
+    # Aggregate + cluster + shape categorize
     agg = aggregate(features)
     clusters = cluster_paths(features, k=args.clusters) if features else {"available": False, "reason": "no features"}
     survivor_rug = compare_survivor_vs_rug(features) if features else {}
+    shapes = shape_distribution(features) if features else {}
 
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -892,6 +981,7 @@ def main() -> int:
         "n_excluded": excluded,
         "discovery_sources": sources_used,
         "aggregate": agg,
+        "shape_distribution": shapes,
         "clusters": clusters,
         "survivor_vs_rug": survivor_rug,
     }
