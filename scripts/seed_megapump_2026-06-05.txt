@@ -1,0 +1,19 @@
+# Cross-token whale recurrence seed list from browser-Opus 2026-06-05
+# 10 tokens analyzed: GOAT, ai16z, Fartcoin, ACT, Zerebro, Melania, Swarms, Pippin, Griffain, Useless
+# Wallets sorted by recurrence count (# of mega-pump tokens touched)
+
+# 9 NEW candidates (not yet in our active pool)
+2Ejnns2Fd5gsZdFJbnkZmQEwbrgoiMc2ikKcS2z2Ps3e
+9ZPsRWGkukYeWg2Z7eZ8NaTBZ1DSuBUVzLcGQWZgE4Y4
+28RWPC6XPxSxUVjd27KiNRtcHVxKtd6cjms7eBcxiqdV
+DSFWxvJjgvLbVqoQ1Zwoe1iVHhwFgrfSiF3ZK1h7nd1K
+7w2UAHpFGfuDysgyS6oVarevXMLy5mDPSQgmJ7oWZdaf
+AgnaNYcNXDL5Kzjptxb4tLF4NRs1GunRh2SdVCdLST3T
+AGiAVqZiQrz32m1zKC5T4UfQKcDoGNG34sqSHSVNgwtv
+9FMUjZHCJEeoz1Au9RB7RsgCEeaDfQ164TToKfixCSHi
+C4B4XFxWrhsedA2TTcwZDVqa4vZ3f4jigySkvPbn5qMA
+
+# 3 ALREADY in our pool (verify_seed_wallets will dedupe + show their tier)
+CreQJ2t94QK5dsxUZGXfPJ8Nx7wA9LHr5chxjSMkbNft
+FrhLfj81LRpMR3EwSSCGPzHmxsnoq8h628ne68vK5oMN
+FkaLnX17cXZGyeu3kZGdHCNdFMJJzBrPPYVvd18B3MZp
