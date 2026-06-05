@@ -312,14 +312,25 @@ async def main_async(args) -> int:
     if not seeds:
         print(f"ERROR: 0 seed wallets parsed from input", file=sys.stderr)
         return 1
-    print(f"[load] {len(seeds)} seed wallets", file=sys.stderr)
+    print(f"[load] {len(seeds)} seed wallets parsed", file=sys.stderr)
+
+    # Apply min-recurrence filter (skip long-tail single-appearance wallets)
+    if args.min_recurrence > 1:
+        kept = [s for s in seeds if s.recurrence_count >= args.min_recurrence]
+        dropped = len(seeds) - len(kept)
+        print(f"  -> applying --min-recurrence {args.min_recurrence}: "
+              f"kept {len(kept)}, dropped {dropped}", file=sys.stderr)
+        seeds = kept
 
     pool = get_pool_wallets()
     new_seeds = [s for s in seeds if s.wallet_address not in pool]
     in_pool_seeds = [s for s in seeds if s.wallet_address in pool]
-    print(f"  -> {len(in_pool_seeds)} already in wallet_pool (skip verification)",
+    print(f"  -> {len(in_pool_seeds)} already in wallet_pool (skip Cielo, surface tier)",
           file=sys.stderr)
     print(f"  -> {len(new_seeds)} NEW candidates to verify via Cielo + Helius",
+          file=sys.stderr)
+    print(f"  -> Cielo budget: ~{len(new_seeds) * 30} credits "
+          f"({100 * len(new_seeds) * 30 / 50000:.1f}% of monthly 50k Pro quota)",
           file=sys.stderr)
 
     helius_key = os.environ.get("HELIUS_API_KEY", "")
@@ -368,6 +379,12 @@ def main() -> int:
                         help="Seed CSV path (or '-' to use --addresses)")
     parser.add_argument("--addresses", default=None,
                         help="Text file with one Solana address per line (alternative to CSV)")
+    parser.add_argument("--min-recurrence", type=int, default=1,
+                        help="Only verify wallets touching >= N seed tokens. Use 2+ to skip the "
+                             "long tail of single-appearance wallets on large CSVs (saves Cielo "
+                             "credits). Already-in-pool wallets are dedup'd regardless.")
+    parser.add_argument("--solscan-tag-column", default="solscan_tag",
+                        help="CSV column with Solscan whale tag (informational, passed through)")
     parser.add_argument("--out-dir", default="/tmp")
     args = parser.parse_args()
 
