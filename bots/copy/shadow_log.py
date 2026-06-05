@@ -32,7 +32,7 @@ from sqlalchemy import text
 
 from framework.db import session_scope
 from framework.logging_setup import get_logger
-from framework.models import CopySignalShadowLog
+from framework.models import CopySignalShadowLog, ShadowSignal
 
 
 log = get_logger(__name__)
@@ -55,6 +55,7 @@ def write_fire(
     wallet_tier: str,
     entry_price: Optional[float],
     fired_at: Optional[datetime] = None,
+    cluster_wallets: Optional[list[str]] = None,
 ) -> Optional[int]:
     """Insert one fire-time row. Returns id, or None if write fails."""
     fired_at = fired_at or datetime.now(timezone.utc)
@@ -71,6 +72,7 @@ def write_fire(
                 fired_at=fired_at,
                 entry_price=entry_price,
                 status="pending" if entry_price is not None else "token_dead",
+                cluster_wallets=cluster_wallets,
             )
             s.add(row)
             s.flush()
@@ -81,6 +83,49 @@ def write_fire(
         # but don't propagate — shadow log is observability, not
         # load-bearing.
         log.warning("shadow_log_write_fire_failed", cluster_uuid=cluster_uuid)
+        return None
+
+
+def write_shadow_signal(
+    *,
+    cluster_uuid: str,
+    bot_id: str,
+    signal_type: str,
+    asset: str,
+    chain: str,
+    direction: str,
+    cluster_size: int,
+    cluster_wallets: list[str],
+    payload: dict,
+    fired_at: Optional[datetime] = None,
+) -> Optional[int]:
+    """Persist the full signal payload at fire time (paused or not).
+
+    Mirrors the live signals table but is written even when COPY_CLUSTER_BUY_ENABLED=false.
+    Closes the data gap that obscured the ABGVN mega-pump's wallet list (the
+    bot was paused so signals rows were never created and the wallet info
+    that cluster.py knew at fire time was lost when the deque ticked).
+    """
+    fired_at = fired_at or datetime.now(timezone.utc)
+    try:
+        with session_scope() as s:
+            row = ShadowSignal(
+                cluster_uuid=cluster_uuid,
+                bot_id=bot_id,
+                signal_type=signal_type,
+                asset=asset,
+                chain=chain,
+                direction=direction,
+                cluster_size=cluster_size,
+                cluster_wallets=cluster_wallets,
+                payload=payload,
+                fired_at=fired_at,
+            )
+            s.add(row)
+            s.flush()
+            return int(row.id)
+    except Exception:
+        log.warning("shadow_signal_write_failed", cluster_uuid=cluster_uuid)
         return None
 
 

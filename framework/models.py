@@ -147,11 +147,48 @@ class CopySignalShadowLog(Base):
     mae_at = Column(DateTime(timezone=True), nullable=True)
     sample_count = Column(Integer, nullable=False, default=0)
     status = Column(String(24), nullable=False, default="pending")
+    # cluster_wallets: list of wallet addresses that triggered this cluster.
+    # Populated at fire time so wallet attribution survives bot pause (when
+    # no Signal row is written). Added 2026-06-04 after ABGVN investigation
+    # showed all 4 mega-winner signals had NULL wallet info.
+    cluster_wallets = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
 
     __table_args__ = (
         Index("ix_copy_shadow_fired_at", "fired_at"),
+    )
+
+
+class ShadowSignal(Base):
+    """Persistent signal payload — written REGARDLESS of cluster_buy_enabled.
+
+    The existing `signals` table is only written when the bot actually trades.
+    When paused (COPY_CLUSTER_BUY_ENABLED=false since 2026-05-28), cluster
+    fires still happen but the signal payload (incl wallets + wallet_notionals)
+    is lost. ShadowSignal preserves that payload so future analyses can
+    reconstruct fire-time state for any past signal.
+
+    1-to-1 with CopySignalShadowLog by cluster_uuid.
+    """
+    __tablename__ = "shadow_signals"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    bot_id = Column(String(32), nullable=False)
+    signal_type = Column(String(64), nullable=False)
+    asset = Column(String(128), nullable=False)
+    chain = Column(String(16), nullable=False)
+    direction = Column(String(8), nullable=False)
+    cluster_size = Column(Integer, nullable=True)
+    cluster_wallets = Column(JSON, nullable=True)
+    payload = Column(JSON, nullable=False)
+    cluster_uuid = Column(String(64), nullable=False, unique=True)
+    fired_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        Index("ix_shadow_signals_bot_fired", "bot_id", "fired_at"),
+        Index("ix_shadow_signals_asset", "asset", "fired_at"),
     )
 
 

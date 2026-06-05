@@ -81,16 +81,24 @@ MACRO_MINT_TO_HL_ASSET: dict[str, str] = {
 WALLET_POOL_PATH = Path(__file__).parent / "wallet_pool.json"
 
 
-def _cluster_wallet_tier(c: SignalCandidate) -> str:
-    """Extract wallets from candidate.payload + classify via wallet_pool tier."""
+def _extract_wallet_list(c: SignalCandidate) -> list[str]:
+    """Normalize the wallets payload to a flat list of address strings.
+
+    Cluster.evaluate emits payload["wallets"] sometimes as dict keyed by
+    address (with notional values) and sometimes as a list. This helper
+    returns a list either way.
+    """
     wallets_payload = (c.payload or {}).get("wallets") or {}
     if isinstance(wallets_payload, dict):
-        wallets = list(wallets_payload.keys())
-    elif isinstance(wallets_payload, list):
-        wallets = wallets_payload
-    else:
-        wallets = []
-    return _classify_cluster_wallet_tier(wallets)
+        return list(wallets_payload.keys())
+    if isinstance(wallets_payload, list):
+        return list(wallets_payload)
+    return []
+
+
+def _cluster_wallet_tier(c: SignalCandidate) -> str:
+    """Extract wallets from candidate.payload + classify via wallet_pool tier."""
+    return _classify_cluster_wallet_tier(_extract_wallet_list(c))
 
 
 class CopyBot(BotLifecycle):
@@ -260,10 +268,29 @@ class CopyBot(BotLifecycle):
                 )
                 continue
 
+            # Persist the full signal payload to shadow_signals so the
+            # wallet list survives even when COPY_CLUSTER_BUY_ENABLED=false
+            # (the live `signals` table is only written when the bot trades).
+            # Shipped 2026-06-04 after the ABGVN investigation revealed all 4
+            # mega-winner signals had NULL wallet info.
+            wallet_list = _extract_wallet_list(c)
+            asyncio.create_task(asyncio.to_thread(
+                shadow_log.write_shadow_signal,
+                cluster_uuid=cluster_uuid,
+                bot_id="copy",
+                signal_type=c.signal_type,
+                asset=c.asset,
+                chain=c.chain,
+                direction=c.direction,
+                cluster_size=c.cluster_size,
+                cluster_wallets=wallet_list,
+                payload=dict(c.payload or {}),
+            ))
+
             # Always: shadow log every fire (H1/H2 diagnostic). Independent
             # of whether bot actually trades. Caller injects the cluster_uuid
             # so the same id is shared with downstream Redis publishes.
-            asyncio.create_task(self._write_shadow_log(c, cluster_uuid))
+            asyncio.create_task(self._write_shadow_log(c, cluster_uuid, wallet_list))
 
             # Always: publish to copy:all_clusters for STRUCTURE journal
             if self._buys_redis is not None:
@@ -322,9 +349,13 @@ class CopyBot(BotLifecycle):
         except Exception:
             self.log.exception("all_cluster_publish_failed")
 
-    async def _write_shadow_log(self, c: SignalCandidate, cluster_uuid: str) -> None:
+    async def _write_shadow_log(
+        self, c: SignalCandidate, cluster_uuid: str,
+        cluster_wallets: Optional[list[str]] = None,
+    ) -> None:
         """Fire-time shadow log entry. entry_price fetched async via existing
-        Birdeye batch endpoint."""
+        Birdeye batch endpoint. cluster_wallets stored for post-hoc wallet
+        attribution even while bot is paused."""
         hl_asset = MACRO_MINT_TO_HL_ASSET.get(c.asset)
         # Attempt an entry-price quote via multi_price_solana (existing batch).
         entry_price: Optional[float] = None
@@ -344,6 +375,7 @@ class CopyBot(BotLifecycle):
             cluster_total_notional_usd=float(c.payload.get("total_notional_usd", 0.0)),
             wallet_tier=_cluster_wallet_tier(c),
             entry_price=entry_price,
+            cluster_wallets=cluster_wallets if cluster_wallets is not None else _extract_wallet_list(c),
         )
 
     async def _poll_shadow_log(self) -> None:
