@@ -89,15 +89,14 @@ def _safe_int(v) -> Optional[int]:
         return None
 
 
-def fetch_top_traders_birdeye(
-    mint: str,
-    target_count: int = 50,
-    time_frame: str = "alltime",
+def _fetch_top_traders_one_timeframe(
+    mint: str, target_count: int, time_frame: str,
 ) -> list[TopTrader]:
-    """Synchronous Birdeye top-traders fetch for a Solana token.
+    """One pass at fetching top traders with a specific time_frame.
 
-    Paginates 10 at a time (Birdeye's per-call cap on this endpoint).
-    Stops on empty page or target_count reached.
+    Matches the param names used in bots/copy/venue/birdeye.py (which works
+    in production for wallet curation). The earlier 'sort_by=PnL' /
+    'time_frame=alltime' combo was silently rejected.
     """
     api_key = os.environ.get("BIRDEYE_API_KEY")
     if not api_key:
@@ -115,7 +114,7 @@ def fetch_top_traders_birdeye(
         params = {
             "address": mint,
             "time_frame": time_frame,
-            "sort_by": "PnL",
+            "sort_by": "total_pnl",
             "sort_type": "desc",
             "offset": str(offset),
             "limit": str(page_size),
@@ -146,6 +145,26 @@ def fetch_top_traders_birdeye(
         offset += page_size
         time.sleep(BIRDEYE_SLEEP_SECONDS)
     return out
+
+
+def fetch_top_traders_birdeye(
+    mint: str,
+    target_count: int = 50,
+) -> tuple[list[TopTrader], str]:
+    """Fetch top traders with a time_frame fallback chain.
+
+    Recent tokens may have <24h of trader activity by index time; old tokens
+    may have lost their early-pump traders from the 24h window. Try the most
+    inclusive windows first ("30d"), fall back to shorter ones if those
+    return nothing.
+
+    Returns (traders, time_frame_used).
+    """
+    for tf in ("30d", "7d", "24h"):
+        traders = _fetch_top_traders_one_timeframe(mint, target_count, tf)
+        if traders:
+            return traders, tf
+    return [], "none"
 
 
 def get_pool_active_wallets() -> set[str]:
@@ -375,13 +394,14 @@ def main() -> int:
           file=sys.stderr)
     all_traders: list[TopTrader] = []
     for i, mp in enumerate(mega_pumps, 1):
-        traders = fetch_top_traders_birdeye(mp.mint, target_count=args.traders_per_token)
+        traders, tf_used = fetch_top_traders_birdeye(mp.mint, target_count=args.traders_per_token)
         # Attach symbol for nicer reporting
         for t in traders:
             t.token_symbol = mp.symbol
         all_traders.extend(traders)
         print(f"  [{i:>3}/{len(mega_pumps)}] {mp.symbol or mp.mint[:8]} "
-              f"({mp.max_multiple:.0f}x): {len(traders)} traders", file=sys.stderr)
+              f"({mp.max_multiple:.0f}x): {len(traders)} traders [tf={tf_used}]",
+              file=sys.stderr)
 
     # Step 4: wallet → tokens map
     print(f"\n[step 4/5] Aggregating wallet → tokens map ({len(all_traders)} trader rows)...",
