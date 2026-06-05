@@ -64,6 +64,7 @@ class TopTrader:
     pnl_usd: Optional[float]
     volume_usd: Optional[float]
     trade_count: Optional[int]
+    source: str = "top_pnl"  # 'top_pnl' (top_traders endpoint) | 'early_buy' (txs endpoint)
 
 
 @dataclass
@@ -165,6 +166,85 @@ def fetch_top_traders_birdeye(
         if traders:
             return traders, tf
     return [], "none"
+
+
+def fetch_early_buyers_birdeye(
+    mint: str,
+    token_created_at: Optional[datetime] = None,
+    target_count: int = 50,
+    first_n_hours: int = 24,
+) -> list[TopTrader]:
+    """Get the EARLIEST N unique BUYERS of a token from the txs endpoint.
+
+    Different from top_traders (which ranks by PnL — biased to late-stage
+    high-PnL exiters). Early buyers are the accumulators who positioned
+    BEFORE the pump. If smart money exists, it should show up here.
+
+    Sorts the token's swap history ASCENDING by time, dedupes by wallet,
+    keeps the first target_count unique buyers.
+    """
+    api_key = os.environ.get("BIRDEYE_API_KEY")
+    if not api_key:
+        return []
+    headers = {
+        "X-API-KEY": api_key,
+        "x-chain": "solana",
+        "Accept": "application/json",
+        "User-Agent": USER_AGENT,
+    }
+    seen: set[str] = set()
+    out: list[TopTrader] = []
+    offset = 0
+    page_size = 50
+    while len(out) < target_count and offset < 1000:
+        params = {
+            "address": mint,
+            "offset": str(offset),
+            "limit": str(page_size),
+            "sort_type": "asc",
+            "tx_type": "swap",
+        }
+        url = f"{BIRDEYE_BASE}/defi/txs/token?{urllib.parse.urlencode(params)}"
+        data = _http_get_json(url, headers=headers)
+        if not data:
+            break
+        items = (data.get("data") or {}).get("items") or []
+        if not items:
+            break
+        for it in items:
+            side = (it.get("side") or it.get("type") or "").lower()
+            if side and side != "buy":
+                continue
+            owner = (it.get("owner") or it.get("source")
+                     or it.get("from") or it.get("from_address"))
+            if not owner or owner in seen:
+                continue
+            # Time-bound: ignore txs beyond first_n_hours past mint
+            if token_created_at is not None:
+                ts = it.get("block_unix_time") or it.get("blockUnixTime")
+                if ts is not None:
+                    tx_time = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+                    cutoff = token_created_at + timedelta(hours=first_n_hours)
+                    if tx_time > cutoff:
+                        # Returned txs are sorted ASC — past cutoff means done
+                        return out
+            seen.add(str(owner))
+            out.append(TopTrader(
+                wallet_address=str(owner),
+                token_mint=mint,
+                token_symbol=None,
+                pnl_usd=None,
+                volume_usd=_safe_float(it.get("volume") or it.get("volumeUsd") or it.get("volume_usd")),
+                trade_count=None,
+                source="early_buy",
+            ))
+            if len(out) >= target_count:
+                return out
+        if len(items) < page_size:
+            break
+        offset += page_size
+        time.sleep(BIRDEYE_SLEEP_SECONDS)
+    return out
 
 
 def get_pool_active_wallets() -> set[str]:
@@ -322,6 +402,12 @@ def main() -> int:
     parser.add_argument("--traders-per-token", type=int, default=50)
     parser.add_argument("--repeat-threshold", type=int, default=3,
                         help="Wallet must appear in >= this many mega-pumps")
+    parser.add_argument("--no-early-buyers", action="store_true",
+                        help="Skip the early-buyers endpoint (top_traders only). "
+                             "Top_traders ranks by PnL = late-exiter bias. "
+                             "Early buyers catch the accumulators we actually want.")
+    parser.add_argument("--early-buyer-hours", type=int, default=24,
+                        help="Only count buyers within first N hours of mint")
     parser.add_argument("--out-dir", default="/tmp")
     args = parser.parse_args()
 
@@ -394,20 +480,40 @@ def main() -> int:
           file=sys.stderr)
     all_traders: list[TopTrader] = []
     for i, mp in enumerate(mega_pumps, 1):
-        traders, tf_used = fetch_top_traders_birdeye(mp.mint, target_count=args.traders_per_token)
-        # Attach symbol for nicer reporting
-        for t in traders:
+        # 1. Top traders by PnL (late-exiter bias)
+        top, tf_used = fetch_top_traders_birdeye(mp.mint, target_count=args.traders_per_token)
+        for t in top:
             t.token_symbol = mp.symbol
-        all_traders.extend(traders)
-        print(f"  [{i:>3}/{len(mega_pumps)}] {mp.symbol or mp.mint[:8]} "
-              f"({mp.max_multiple:.0f}x): {len(traders)} traders [tf={tf_used}]",
-              file=sys.stderr)
+        all_traders.extend(top)
 
-    # Step 4: wallet → tokens map
+        # 2. Earliest buyers within first N hours (accumulator-biased)
+        early: list[TopTrader] = []
+        if not args.no_early_buyers:
+            early = fetch_early_buyers_birdeye(
+                mp.mint,
+                token_created_at=mp.created_at,
+                target_count=args.traders_per_token,
+                first_n_hours=args.early_buyer_hours,
+            )
+            for t in early:
+                t.token_symbol = mp.symbol
+            all_traders.extend(early)
+            time.sleep(BIRDEYE_SLEEP_SECONDS)
+
+        print(f"  [{i:>3}/{len(mega_pumps)}] {mp.symbol or mp.mint[:8]} "
+              f"({mp.max_multiple:.0f}x): {len(top)} top_pnl [tf={tf_used}] + "
+              f"{len(early)} early_buy", file=sys.stderr)
+
+    # Step 4: wallet → tokens map (dedup'd by mint so per-endpoint duplicates
+    # on the same token only count once toward "tokens-touched").
     print(f"\n[step 4/5] Aggregating wallet → tokens map ({len(all_traders)} trader rows)...",
           file=sys.stderr)
     wallet_tokens: dict[str, list[TopTrader]] = defaultdict(list)
+    wallet_mints_seen: dict[str, set[str]] = defaultdict(set)
     for t in all_traders:
+        if t.token_mint in wallet_mints_seen[t.wallet_address]:
+            continue
+        wallet_mints_seen[t.wallet_address].add(t.token_mint)
         wallet_tokens[t.wallet_address].append(t)
 
     # Step 5: repeat winners + pool gap
