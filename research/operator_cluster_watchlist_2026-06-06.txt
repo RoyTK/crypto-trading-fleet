@@ -1,0 +1,33 @@
+OPERATOR-CLUSTER WATCHLIST (SEPARATE from 80x+ master seed set)
+Snapshot 2026-06-06 | top-40 holders each, exchange/AMM/MM/treasury rows excluded.
+These are operator-cluster PROBES, tracked for promotion. Promote to master seed retroactively if a token confirms 80x+ from a real low.
+
+=== TOKENS (5) ===
+  PYTHIA  CreiuhfwdWCN5mJbMJtA9bBpYQrQF2tCBuZwSPWfpump  mult=~30x  peak=2025-08-27  mint=2024-12-26  (38 holders)
+  arc  61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump  mult=~63x*  peak=2025-01-22  mint=2024-12-10  (25 holders) (*ATL post-dates ATH; round-tripped)
+  ALCH  HNg5PYJmtqcmzXrv6S9zP1CDKk5BgDuyFBxbvNApump  mult=~17x  peak=2025-12-18  mint=2024-11-27  (30 holders)
+  jellyjelly  FeR8VBqNRSUD5NtXAj2n3j1dAHkZHfyDktKuLXD4pump  mult=~127x  peak=2025-11-04  mint=2025-01-29  (26 holders) <-- CLEARS 80x BAR (127x, Nov'25). PROMOTED TO MASTER 2026-06-06.
+  WhiteWhale  a3W4qutoEJA4232T2gwZUfgYJTetr96pU4SJMwppump  mult=~60x*  peak=2026-01-10  mint=2025-10-13  (32 holders) (*ATL=today; currently near floor ~$0.0035, crashed from $0.198 Jan'26 peak)
+
+=== WATCHLIST RECURRENCE (wallets in 2+ of the 5 watchlist tokens): 8 ===
+wallet | count | tokens | master_seed_tags
+  9ZPsRWGkukYeWg2Z7eZ8NaTBZ1DSuBUVzLcGQWZgE4Y4  [4]  PYTHIA,arc,ALCH,jellyjelly  {MASTER-RECUR(6)+DEEP5}
+  4GQeEya6ZTwvXre4Br6ZfDyfe2WQMkcDz2QbkJZazVqS  [3]  arc,ALCH,jellyjelly  {HFT}
+  A9PzVmoBvTMLSh8VcaPQfYc3qwH63pmLuMxRmWraqGYk  [3]  arc,ALCH,jellyjelly
+  AgnaNYcNXDL5Kzjptxb4tLF4NRs1GunRh2SdVCdLST3T  [2]  arc,ALCH  {MASTER-RECUR(4)}
+  g848qLVXs2rQcRXBcK3nSEHCdhW5rUyBkX4Loh7p2ma  [2]  arc,ALCH
+  FPXq2NmXuSA1G2dGd8znUjT5G14zvmjoGFFfo7GKUm7k  [2]  ALCH,WhiteWhale
+  GJvewfRjqTUPtx6WsBSUnaFbdgXwgXnWfpDyLm65T4YA  [2]  ALCH,jellyjelly  {HFT}
+  28RWPC6XPxSxUVjd27KiNRtcHVxKtd6cjms7eBcxiqdV  [2]  jellyjelly,WhiteWhale  {MASTER-RECUR(6)+DEEP5}
+
+=== READING ===
+  9ZPsRWG anchors 4/5 (all but WhiteWhale) - confirmed operator-cluster vehicle.
+  4GQeEya6(HFT) + A9PzVmoB co-occur with 9ZPsRWG in arc/ALCH/jellyjelly = tight 2024-25-AI-meme sub-cluster.
+  28RWPC6X bridges the NEWER tokens (jellyjelly Nov'25 + WhiteWhale Jan'26) - the cohort's current-regime footprint.
+  jellyjelly (127x) is a genuine miss from the original sweep - PROMOTED TO MASTER 2026-06-06.
+  WhiteWhale: thin cluster (only 28RWPC6X + a few HFT), #1 holder=52.65% single wallet (deployer/insider). Lower-quality signal, has round-tripped to floor.
+
+=== MASTER RECURRENCE MAP UPDATE (watch tier) ===
+  + g848qLVXs2rQcRXBcK3nSEHCdhW5rUyBkX4Loh7p2ma  | 2-token (arc,ALCH) | watch tier | no exchange/protocol/MM flag - INCLUDED
+  + A9PzVmoBvTMLSh8VcaPQfYc3qwH63pmLuMxRmWraqGYk | now 3-token in watchlist (arc,ALCH,jellyjelly) | watch tier | INCLUDED
+  (Both cleared the bar: cross-token, no exchange/protocol/MM flag. Honesty caveat: first_buy_ts/at-peak% = NULL, need Helius.)
