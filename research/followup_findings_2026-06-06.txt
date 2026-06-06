@@ -1,0 +1,31 @@
+FOLLOW-UP FINDINGS - 2026-06-06
+
+=== 1. jellyjelly PROMOTED TO MASTER SEED ===
+  Contract: FeR8VBqNRSUD5NtXAj2n3j1dAHkZHfyDktKuLXD4pump
+  127x (ATL $0.00373 Mar'25 -> ATH $0.473 Nov'25). Mint Jan 29 2025. 26 trader-holders (top-40, CEX/AMM/treasury excluded).
+  CORRECTED master token count: 17 -> 18 (the original 15 + WOULD + TROLL + jellyjelly).
+  Append block 'jellyjelly_master_append_2026-06-06.csv' has 26 rows in master schema, NULL honesty fields.
+
+=== 2. A9PzVmoB / g848qLVX DISCREPANCY: RESOLVED - Solscan is CORRECT ===
+  A9PzVmoB ($2.0M wallet, funded 141d ago, HFT swapper): CURRENTLY HOLDS ALCH $32,719 (564,955.8 ALCH, token-acct 3egj5d4z = matches ALCH holder page). Also arc $151K, jellyjelly $101K.
+  g848qLVX ($202K wallet, Binance-funded 320d ago, 99.99% meme): CURRENTLY HOLDS ALCH $61,510 (1,062,074 ALCH, token-acct 4uQQqMCb = matches). Did NOT fully exit. Also arc $127K (62.9%), swarms.
+
+  >> ROOT CAUSE: Both acquire via SWAPS, not transfers. Helius transfer-only queries (which is what /v0/addresses/{addr}/transactions tokenTransfers returns) MISS swap-acquired holdings entirely.
+  >> METHODOLOGY FIX for verify pipeline: query Helius getTokenAccountsByOwner (balance snapshot) - not transfer history - to confirm holdings for swap-based wallets.
+  >> Both wallets STAY in master map as 2-3 token watch-tier. Data is real.
+
+=== 3. 9ZPsRWG NEXT-BET SCAN (last ~7 days activity) ===
+  Activity: EXTREMELY active (swaps every few min, 85,956 lifetime defi activities). 94.6% meme book.
+  Top holdings UNCHANGED, all already tracked: PYTHIA(29%), arc(11%), TROLL(10%), Fartcoin(9%), pippin(8.6%), ALCH(3.9%), PENGUIN, swarms, GRASS, POPCAT.
+  Fresh tickers TOUCHED but NOT held as positions (all small $1-$932 routing/probe swaps, absent from top holdings): SKR, PIPE, SAROS, PLAY, BIRB, WET, BUZZ, Shoggoth, G, FWOG, AVA.
+  >> VERDICT: NO new conviction bet in last 7d. Capital still concentrated in tokens we already track.
+  >> Mild watch: SKR had the largest fresh flow (~$932 out + $149 in) but is not a held position.
+  >> Implication: cohort's current high-conviction names ARE PYTHIA/arc/ALCH/TROLL/jellyjelly - already captured.
+
+=== 4. BROWSER-OPUS SUGGESTION: forward signal via portfolio-poll cron ===
+  Since this wallet's book is fully captured, the forward signal won't come from watching its
+  holdings - it'll come from watching its swap feed for a small position that starts growing day
+  over day. Implementation: Helius cron job (poll its token balances daily via getTokenAccountsByOwner,
+  alert on any new mint crossing $50K held).
+  >> Filed as future build candidate. Not urgent given the current cluster-detector + active-pinned
+     wallet pool will catch their cluster-level signals via webhook anyway.
