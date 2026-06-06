@@ -2,13 +2,19 @@
 # 10 tokens analyzed: GOAT, ai16z, Fartcoin, ACT, Zerebro, Melania, Swarms, Pippin, Griffain, Useless
 # Wallets sorted by recurrence count (# of mega-pump tokens touched)
 
-# 9 NEW candidates (not yet in our active pool)
+# 11 NEW candidates (≥3 recurrence, not yet in our active pool)
+# Updated 2026-06-05 with full 15-token analysis from browser-Opus
+# - 7w2UAHpF confirmed at 5 tokens (added memecoin Apr 2026 = PERSISTS into current regime)
+# - M2St7Gra (3 tokens: GOAT, ACT, MELANIA) NEW
+# - 8Czzjeh2 (3 tokens: ACT, ZEREBRO, SWARMS) NEW
 2Ejnns2Fd5gsZdFJbnkZmQEwbrgoiMc2ikKcS2z2Ps3e
 9ZPsRWGkukYeWg2Z7eZ8NaTBZ1DSuBUVzLcGQWZgE4Y4
 28RWPC6XPxSxUVjd27KiNRtcHVxKtd6cjms7eBcxiqdV
 DSFWxvJjgvLbVqoQ1Zwoe1iVHhwFgrfSiF3ZK1h7nd1K
 7w2UAHpFGfuDysgyS6oVarevXMLy5mDPSQgmJ7oWZdaf
 AgnaNYcNXDL5Kzjptxb4tLF4NRs1GunRh2SdVCdLST3T
+M2St7Gra11AKvk3tC4fJPkxviWYKpLZSMmKcHNoDtxp
+8Czzjeh2igeE7gSsbuuXVZUmZZ42yZTCNUZoZcCGRKdr
 AGiAVqZiQrz32m1zKC5T4UfQKcDoGNG34sqSHSVNgwtv
 9FMUjZHCJEeoz1Au9RB7RsgCEeaDfQ164TToKfixCSHi
 C4B4XFxWrhsedA2TTcwZDVqa4vZ3f4jigySkvPbn5qMA

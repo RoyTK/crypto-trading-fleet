@@ -111,6 +111,25 @@ def load_addresses_txt(path: Path) -> list[SeedRow]:
     return out
 
 
+def load_recurring_tsv(path: Path) -> list[SeedRow]:
+    """Browser-Opus recurring-wallets TSV format.
+
+    Expected columns: count, wallet_address, tokens_touched
+    tokens_touched is pipe-separated (e.g. "GOAT|ACT|MELANIA").
+    """
+    out: list[SeedRow] = []
+    with open(path, encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for r in reader:
+            w = (r.get("wallet_address") or "").strip()
+            if not w:
+                continue
+            toks_field = (r.get("tokens_touched") or "").strip()
+            toks = [t.strip() for t in toks_field.split("|") if t.strip()]
+            out.append(SeedRow(wallet_address=w, tokens=toks))
+    return out
+
+
 def get_pool_wallets() -> dict[str, str]:
     """Returns {address: tier} for ALL wallet_pool entries (active/watch/pruned)."""
     try:
@@ -302,6 +321,12 @@ async def main_async(args) -> int:
             print(f"ERROR: CSV not found: {args.csv}", file=sys.stderr)
             return 2
         seeds = load_seed_csv(seed_path)
+    elif args.mode == "tsv":
+        tsv_path = Path(args.tsv) if args.tsv else None
+        if tsv_path is None or not tsv_path.exists():
+            print(f"ERROR: --tsv file not found", file=sys.stderr)
+            return 2
+        seeds = load_recurring_tsv(tsv_path)
     else:  # addresses mode
         addr_path = Path(args.addresses) if args.addresses else None
         if addr_path is None or not addr_path.exists():
@@ -376,9 +401,12 @@ async def main_async(args) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("csv", nargs="?", default="-",
-                        help="Seed CSV path (or '-' to use --addresses)")
+                        help="Seed CSV path (or '-' to use --addresses or --tsv)")
     parser.add_argument("--addresses", default=None,
-                        help="Text file with one Solana address per line (alternative to CSV)")
+                        help="Text file with one Solana address per line")
+    parser.add_argument("--tsv", default=None,
+                        help="Browser-Opus recurring-wallets TSV (columns: count, "
+                             "wallet_address, tokens_touched pipe-separated)")
     parser.add_argument("--min-recurrence", type=int, default=1,
                         help="Only verify wallets touching >= N seed tokens. Use 2+ to skip the "
                              "long tail of single-appearance wallets on large CSVs (saves Cielo "
@@ -388,12 +416,14 @@ def main() -> int:
     parser.add_argument("--out-dir", default="/tmp")
     args = parser.parse_args()
 
-    if args.csv == "-" and args.addresses:
+    if args.csv == "-" and args.tsv:
+        args.mode = "tsv"
+    elif args.csv == "-" and args.addresses:
         args.mode = "addresses"
     elif args.csv != "-":
         args.mode = "csv"
     else:
-        print("ERROR: provide either a CSV path or --addresses <file>", file=sys.stderr)
+        print("ERROR: provide CSV path, --tsv <file>, or --addresses <file>", file=sys.stderr)
         return 2
 
     if not os.environ.get("CIELO_API_KEY"):
