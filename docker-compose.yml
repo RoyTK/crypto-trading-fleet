@@ -153,6 +153,7 @@ services:
       - ./bots:/app/bots
       - ./monitoring:/app/monitoring
       - ./scripts:/app/scripts
+      - ./research:/app/research:ro
     depends_on:
       postgres:
         condition: service_healthy
