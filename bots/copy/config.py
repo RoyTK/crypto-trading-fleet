@@ -64,6 +64,17 @@ CLUSTER_SIZE_TO_PCT: dict[int, float] = {
 }
 CLUSTER_SIZE_LARGE_PCT = 8.0
 
+# Sell-cluster — exit-side detector (brainstorm 2026-05-30: "sell-cluster
+# as LONG-SIDE STOPS first"). Lower wallet threshold than the buy side
+# (2 vs 3) because we want exits to fire BEFORE the slide accelerates,
+# and the false-positive cost is bounded (worst case is exiting too early
+# on a paper-hands wallet, not opening a bad position). Per-wallet
+# notional floor matches the buy side ($1k) — anything smaller is noise
+# that would otherwise produce constant exit churn.
+SELL_CLUSTER_MIN_WALLETS = 2
+SELL_CLUSTER_MIN_NOTIONAL_PER_WALLET_USD = 1_000.0
+SELL_CLUSTER_WINDOW_MINUTES = 15
+
 # Per-trade cap
 PER_TRADE_NOTIONAL_CAP_PCT = 8.0
 
@@ -151,6 +162,14 @@ class CopySettings(BaseSettings):
     # pending shadow_log rows + compute MFE/MAE. 5min matches Birdeye
     # historical candle resolution.
     copy_shadow_log_poll_seconds: int = Field(default=300)
+    # Sell-cluster detector enabled flag. Default TRUE because it's a
+    # defensive exit signal — even with COPY_LIVE_ENABLED=false (no
+    # signing path active), the sell detector should observe and write
+    # shadow_signals rows so we collect data on how often it would have
+    # fired. The actual trade-close action only fires when a real
+    # shadow/live position exists in the same token.
+    copy_sell_cluster_enabled: bool = Field(default=True)
+
     # Persistent dedup window for cluster_detections (2026-05-30). Default
     # 24h aligns with the Statistician's data-independence requirement —
     # token 7m96tz fired 6 times across 16 days in shadow_log under the

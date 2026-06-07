@@ -66,6 +66,24 @@ class WalletBuyEvent:
     raw: Optional[dict] = None
 
 
+@dataclass
+class WalletSellEvent:
+    """Normalized 'wallet sold token X for SOL/USDC' event.
+
+    Mirror of WalletBuyEvent — fields are deliberately the same shape so
+    the sell-cluster detector + Redis pubsub serialization can reuse the
+    BuyEvent JSON contract with only signal_type differing. notional_usd
+    is the USDC/SOL VALUE RECEIVED (not the token amount sold).
+    """
+    wallet_address: str
+    chain: str
+    token_mint: str             # the token being sold
+    notional_usd: float         # USD value of SOL/USDC received
+    timestamp_ms: int
+    tx_signature: str
+    raw: Optional[dict] = None
+
+
 class HeliusSolanaClient:
     """Polls a set of Solana wallet addresses for new swap activity."""
 

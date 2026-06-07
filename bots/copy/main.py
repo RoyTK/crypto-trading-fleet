@@ -48,17 +48,19 @@ from bots.copy.executor import CopyExecutor
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
+from bots.copy.signals.sell_cluster import SellClusterDetector
 from bots.copy import shadow_log
 from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import size_position
 from bots.copy.venue.dex_quoter import multi_price_solana, quote
-from bots.copy.venue.helius_solana import WalletBuyEvent
+from bots.copy.venue.helius_solana import WalletBuyEvent, WalletSellEvent
 from bots.copy.venue.solana_wallet import is_wallet_available, public_key_b58
 from framework.config import get_settings as get_framework_settings
 from framework.reconciliation import reconcile_once, register_venue_fetcher
 
 
 REDIS_BUYS_CHANNEL = "copy:buys"
+REDIS_SELLS_CHANNEL = "copy:sells"
 REDIS_MACRO_CLUSTER_CHANNEL = "copy:macro_cluster"
 # 2026-05-28: every cluster (regardless of asset / HL listing) is published
 # to copy:all_clusters for STRUCTURE's read-only cluster_observations journal.
@@ -113,6 +115,7 @@ class CopyBot(BotLifecycle):
         self.loop_interval_seconds = self.copy_settings.copy_loop_interval_seconds
         self.simulator = CopyFillSimulator()
         self.cluster = ClusterDetector()
+        self.sell_cluster = SellClusterDetector()
         self.executor = CopyExecutor()
         self._wallets_solana: list[str] = []
         self._wallets_base: list[str] = []
@@ -122,6 +125,7 @@ class CopyBot(BotLifecycle):
         self._last_shadow_log_poll_ts: float = 0.0
         self._session: Optional[aiohttp.ClientSession] = None
         self._buys_subscriber_task: Optional[asyncio.Task] = None
+        self._sells_subscriber_task: Optional[asyncio.Task] = None
         self._buys_redis: Optional[redis_async.Redis] = None
 
     # ---- Lifecycle hooks ---------------------------------------------------
@@ -135,6 +139,11 @@ class CopyBot(BotLifecycle):
         # Subscribe to wallet-buy events on Redis (published by webhook_receiver)
         self._buys_redis = redis_async.from_url(self.settings.redis_url, decode_responses=True)
         self._buys_subscriber_task = asyncio.create_task(self._buys_subscriber())
+        # Sell-cluster subscriber — shares the same Redis connection. Pubsub
+        # objects are created per-subscriber so they coexist without
+        # interfering. Gated by copy_sell_cluster_enabled (default true).
+        if self.copy_settings.copy_sell_cluster_enabled:
+            self._sells_subscriber_task = asyncio.create_task(self._sells_subscriber())
         # Visibility on executor configuration at startup. Paper-only is the
         # default state; flipping copy_live_enabled (with a wallet present)
         # is what graduates to shadow execution.
@@ -153,6 +162,8 @@ class CopyBot(BotLifecycle):
     async def on_stop(self) -> None:
         if self._buys_subscriber_task:
             self._buys_subscriber_task.cancel()
+        if self._sells_subscriber_task:
+            self._sells_subscriber_task.cancel()
         if self._buys_redis:
             await self._buys_redis.aclose()
         if self._session:
@@ -173,6 +184,11 @@ class CopyBot(BotLifecycle):
         # populates cluster state asynchronously, so we just need to check
         # whether any (chain, token) bucket now has 3+ qualifying wallets.
         self._evaluate_clusters()
+        # Sell-cluster: defensive exit signal. Fires when 2+ active wallets
+        # sell the same token in 15 min → close any open positions in that
+        # token. Per brainstorm 2026-05-30: "sell-cluster as LONG-SIDE STOPS
+        # first." Independent state from buy cluster; same dedup primitive.
+        self._evaluate_sell_clusters()
 
         # Shadow log poller — update pending rows on the configured cadence
         if now - self._last_shadow_log_poll_ts >= self.copy_settings.copy_shadow_log_poll_seconds:
@@ -235,6 +251,45 @@ class CopyBot(BotLifecycle):
                 return
             except Exception:
                 self.log.exception("buys_subscriber_failed", backoff=backoff)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 60.0)
+
+    async def _sells_subscriber(self) -> None:
+        """Long-lived subscriber to `copy:sells`. Mirrors `_buys_subscriber`.
+
+        Webhook receiver publishes WalletSellEvent JSON dicts on this channel.
+        We feed each into the sell-cluster detector — firing is decoupled and
+        runs from iterate() via _evaluate_sell_clusters.
+        """
+        if self._buys_redis is None:
+            return
+        backoff = 1.0
+        while True:
+            try:
+                pubsub = self._buys_redis.pubsub()
+                await pubsub.subscribe(REDIS_SELLS_CHANNEL)
+                self.log.info("sells_subscriber_ready", channel=REDIS_SELLS_CHANNEL)
+                backoff = 1.0
+                async for msg in pubsub.listen():
+                    if msg.get("type") != "message":
+                        continue
+                    try:
+                        payload = json.loads(msg["data"])
+                        ev = WalletSellEvent(
+                            wallet_address=payload["wallet_address"],
+                            chain=payload["chain"],
+                            token_mint=payload["token_mint"],
+                            notional_usd=float(payload["notional_usd"]),
+                            timestamp_ms=int(payload["timestamp_ms"]),
+                            tx_signature=payload.get("tx_signature", ""),
+                        )
+                        self.sell_cluster.observe_sell(ev)
+                    except Exception:
+                        self.log.exception("sells_message_parse_failed")
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                self.log.exception("sells_subscriber_failed", backoff=backoff)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 60.0)
 
@@ -576,6 +631,135 @@ class CopyBot(BotLifecycle):
                 exit_fill=exit_fill,
                 exit_reason=exit_reason,
             )
+
+    # ---- Sell-cluster evaluation + position close --------------------------
+
+    def _evaluate_sell_clusters(self) -> None:
+        """Drain candidates from the sell-cluster detector and act on each.
+
+        For each fired sell-cluster (post-dedup), kick off a background
+        coroutine to close any open positions in the candidate's token —
+        paper trades via the simulator, shadow/live via the executor.
+        Like the buy-cluster path, the dedup primitive prevents duplicate
+        fires across the configured window.
+        """
+        if not self.copy_settings.copy_sell_cluster_enabled:
+            return
+        candidates = self.sell_cluster.evaluate()
+        for c in candidates:
+            cluster_uuid = shadow_log.make_cluster_uuid()
+            wallet_tier = _cluster_wallet_tier(c)
+
+            try:
+                dedup = write_cluster_detection(
+                    candidate=c,
+                    cluster_uuid=cluster_uuid,
+                    wallet_tier=wallet_tier,
+                    dedup_hours=self.copy_settings.copy_cluster_dedup_hours,
+                )
+            except Exception:
+                self.log.exception("sell_cluster_detection_write_failed",
+                                   asset=c.asset, chain=c.chain)
+                dedup = None
+
+            if dedup is not None and not dedup.fired:
+                self.log.info(
+                    "sell_cluster_dedup_suppressed",
+                    asset=c.asset, chain=c.chain,
+                    cluster_size=c.cluster_size,
+                    reason=dedup.reason,
+                )
+                continue
+
+            # Persist shadow signal so we have a record even when no
+            # position exists to close (most fires will land here —
+            # the cohort sells lots of tokens we don't hold).
+            wallet_list = _extract_wallet_list(c)
+            asyncio.create_task(asyncio.to_thread(
+                shadow_log.write_shadow_signal,
+                cluster_uuid=cluster_uuid,
+                bot_id="copy",
+                signal_type=c.signal_type,
+                asset=c.asset,
+                chain=c.chain,
+                direction=c.direction,
+                cluster_size=c.cluster_size,
+                cluster_wallets=wallet_list,
+                payload=dict(c.payload or {}),
+            ))
+
+            # Action: close any open positions in this token.
+            asyncio.create_task(self._close_positions_on_sell_cluster(c))
+
+    async def _close_positions_on_sell_cluster(self, c: SignalCandidate) -> None:
+        """Close all open paper + shadow + live positions matching the
+        sell-cluster's asset. Best-effort: individual close failures are
+        logged but don't block the other positions.
+        """
+        paper_trades = [t for t in list_open_paper_trades()
+                        if t.asset == c.asset and t.venue == c.venue]
+        real_trades = [t for t in list_open_real_trades()
+                       if t.asset == c.asset and t.venue == c.venue]
+        if not paper_trades and not real_trades:
+            self.log.info(
+                "sell_cluster_no_open_positions",
+                asset=c.asset, cluster_size=c.cluster_size,
+            )
+            return
+        self.log.warning(
+            "sell_cluster_close_triggered",
+            asset=c.asset, cluster_size=c.cluster_size,
+            paper_count=len(paper_trades), real_count=len(real_trades),
+        )
+        # Resolve current mid for paper close PnL math. If unavailable,
+        # mark at entry_price (pnl=0) — better than holding indefinitely
+        # when the cohort is rotating out.
+        mid: Optional[float] = None
+        if paper_trades and self._session is not None and c.chain == "solana":
+            try:
+                prices = await multi_price_solana(self._session, [c.asset])
+                mid = prices.get(c.asset)
+            except Exception:
+                self.log.warning("sell_cluster_paper_price_fetch_failed",
+                                 asset=c.asset)
+
+        # Constant for the synthesized paper exit. Matches the
+        # _manage_open_positions cadence — DEX-paper world is fee-only.
+        EXIT_SLIPPAGE_BPS_PAPER = 100.0
+        for t in paper_trades:
+            close_price = mid if mid is not None else t.entry_price
+            fees = float(t.size_usd) * (DEX_FEE_PCT / 100.0)
+            exit_fill = SimulatedFill(
+                fill_price=close_price,
+                fees_usd=fees,
+                slippage_bps=EXIT_SLIPPAGE_BPS_PAPER,
+                metadata={"side": "exit", "exit_reason": "sell_cluster",
+                          "no_price_at_close": mid is None},
+            )
+            try:
+                close_paper_trade(
+                    trade_id=t.trade_id,
+                    exit_price=close_price,
+                    exit_fill=exit_fill,
+                    exit_reason="sell_cluster",
+                )
+            except Exception:
+                self.log.exception("sell_cluster_paper_close_failed",
+                                   trade_id=t.trade_id, asset=c.asset)
+
+        # Close shadow + live via real on-chain swap.
+        if real_trades and self._session is not None:
+            for t in real_trades:
+                try:
+                    await self.executor.close_real_trade(
+                        session=self._session,
+                        trade_id=t.trade_id,
+                        exit_reason="sell_cluster",
+                    )
+                except Exception:
+                    self.log.exception("sell_cluster_real_close_failed",
+                                       trade_id=t.trade_id, mode=t.mode,
+                                       asset=c.asset)
 
     # ---- Real-trade (shadow/live) exit loop --------------------------------
 

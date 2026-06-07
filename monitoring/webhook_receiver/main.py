@@ -69,6 +69,7 @@ INPUT_LEG_MINTS = {
 }
 
 REDIS_BUYS_CHANNEL = "copy:buys"
+REDIS_SELLS_CHANNEL = "copy:sells"
 REDIS_DEDUP_PREFIX = "copy:webhook_dedup:"
 DEDUP_TTL_SECONDS = 600  # 10 min — Helius retries within this window
 
@@ -204,6 +205,171 @@ def _parse_swap_event(
         if out is not None:
             return out
     return _parse_via_transfers(event, pool, sol_price_usd, timestamp_ms)
+
+
+def _parse_sell_event(
+    event: dict,
+    pool: set[str],
+    sol_price_usd: float,
+) -> Optional[dict]:
+    """Helius enhanced swap event → WalletSellEvent dict (sell side).
+
+    Mirror of _parse_swap_event but identifies the opposite swap leg:
+    pool wallet SENDS a non-stable token and RECEIVES SOL/USDC/USDT.
+
+    Returns None if no pool wallet was the seller. Same two-parser
+    fallback structure (events.swap primary, transfers fallback).
+    """
+    ts = event.get("timestamp")
+    if not ts or int(ts) <= 0:
+        return None
+    timestamp_ms = int(ts) * 1000
+    swap = (event.get("events") or {}).get("swap")
+    if swap:
+        out = _parse_sell_via_events_swap(event, swap, pool, sol_price_usd, timestamp_ms)
+        if out is not None:
+            return out
+    return _parse_sell_via_transfers(event, pool, sol_price_usd, timestamp_ms)
+
+
+def _parse_sell_via_events_swap(
+    event: dict,
+    swap: dict,
+    pool: set[str],
+    sol_price_usd: float,
+    timestamp_ms: int,
+) -> Optional[dict]:
+    token_inputs = swap.get("tokenInputs") or []
+    token_outputs = swap.get("tokenOutputs") or []
+    native_output = swap.get("nativeOutput") or {}
+
+    for wallet in pool:
+        # Did this wallet SEND a non-stable token? That's the "sold" leg.
+        sold_mint: Optional[str] = None
+        for ti in token_inputs:
+            user = ti.get("userAccount") or ti.get("fromUserAccount")
+            if user != wallet:
+                continue
+            mint = ti.get("mint")
+            if not mint or mint in INPUT_LEG_MINTS:
+                continue
+            sold_mint = mint
+            break
+        if not sold_mint:
+            continue
+
+        # Sum USDC/USDT/SOL OUTFLOW to this wallet (the proceeds).
+        proceeds_usd = 0.0
+        for to in token_outputs:
+            user = to.get("userAccount") or to.get("toUserAccount")
+            if user != wallet:
+                continue
+            mint = to.get("mint")
+            amt_str = (to.get("rawTokenAmount") or {}).get("tokenAmount") or "0"
+            decimals = (to.get("rawTokenAmount") or {}).get("decimals") or 0
+            try:
+                ui_amount = float(amt_str) / (10 ** int(decimals))
+            except Exception:
+                continue
+            if mint in (USDC_MINT, USDT_MINT):
+                proceeds_usd += ui_amount
+            elif mint == WSOL_MINT:
+                proceeds_usd += ui_amount * sol_price_usd
+
+        if native_output.get("account") == wallet:
+            try:
+                lamports = int(native_output.get("amount", 0))
+                proceeds_usd += (lamports / 1_000_000_000) * sol_price_usd
+            except Exception:
+                pass
+
+        if proceeds_usd <= 0:
+            continue
+
+        return {
+            "wallet_address": wallet,
+            "chain": "solana",
+            "token_mint": sold_mint,
+            "notional_usd": proceeds_usd,
+            "timestamp_ms": timestamp_ms,
+            "tx_signature": event.get("signature", ""),
+        }
+    return None
+
+
+def _parse_sell_via_transfers(
+    event: dict,
+    pool: set[str],
+    sol_price_usd: float,
+    timestamp_ms: int,
+) -> Optional[dict]:
+    """Transfer-based sell parser, mirror of _parse_via_transfers buy logic.
+
+    SELL pattern: wallet SENDS a non-stable token AND RECEIVES SOL/USDC/USDT.
+    """
+    token_transfers = event.get("tokenTransfers") or []
+    native_transfers = event.get("nativeTransfers") or []
+
+    for wallet in pool:
+        # Did this wallet SEND a non-stable token?
+        sold_mint: Optional[str] = None
+        for tt in token_transfers:
+            if tt.get("fromUserAccount") != wallet:
+                continue
+            mint = tt.get("mint")
+            if not mint or mint in INPUT_LEG_MINTS:
+                continue
+            sold_mint = mint
+            break
+        if not sold_mint:
+            continue
+
+        # If they ALSO received a non-stable token, this is a token-for-token
+        # rotation, not a "cashing out" sell. Skip to avoid double-counting
+        # against the buy detector (which also processes this event).
+        received_non_stable = any(
+            tt.get("toUserAccount") == wallet and tt.get("mint") not in INPUT_LEG_MINTS
+            for tt in token_transfers
+        )
+        if received_non_stable:
+            continue
+
+        # Sum SOL inflow to wallet (lamports → USD)
+        lamports_in = 0
+        for nt in native_transfers:
+            if nt.get("toUserAccount") == wallet:
+                try:
+                    lamports_in += int(nt.get("amount", 0))
+                except Exception:
+                    pass
+        proceeds_usd = (lamports_in / 1_000_000_000) * sol_price_usd
+
+        # Also sum wrapped-SOL + stablecoin inflows.
+        for tt in token_transfers:
+            if tt.get("toUserAccount") != wallet:
+                continue
+            mint = tt.get("mint")
+            try:
+                amt = float(tt.get("tokenAmount") or 0)
+            except Exception:
+                continue
+            if mint == WSOL_MINT:
+                proceeds_usd += amt * sol_price_usd
+            elif mint in (USDC_MINT, USDT_MINT):
+                proceeds_usd += amt
+
+        if proceeds_usd <= 0:
+            continue
+
+        return {
+            "wallet_address": wallet,
+            "chain": "solana",
+            "token_mint": sold_mint,
+            "notional_usd": proceeds_usd,
+            "timestamp_ms": timestamp_ms,
+            "tx_signature": event.get("signature", ""),
+        }
+    return None
 
 
 def _parse_via_events_swap(
@@ -422,19 +588,34 @@ async def _process_webhook(
     pool: set[str] = request.app[f"{tier}_pool"]
     sol_price_usd: float = request.app.get("sol_price_usd") or SOL_PRICE_FALLBACK_USD
 
-    matched = 0
+    matched_buys = 0
+    matched_sells = 0
     skipped_dup = 0
     skipped_unmatched = 0
     log_rows: list[tuple[str, str]] = []  # (wallet_address, tier) for batch persist
     debug_unmatched = os.environ.get("COPY_RECEIVER_DEBUG_UNMATCHED", "0") == "1"
 
     for event in events:
+        # Try buy parse first, then sell parse. A single event could
+        # plausibly produce a sell of token A + buy of token B (token-for-
+        # token rotation), but our parsers skip that case on the buy side
+        # via `sent_non_stable` filter and on the sell side via
+        # `received_non_stable` filter — so each event resolves to at
+        # most one side classification.
         try:
             buy = _parse_swap_event(event, pool, sol_price_usd)
         except Exception:
-            log.exception("event_parse_failed", tier=tier)
-            continue
+            log.exception("buy_event_parse_failed", tier=tier)
+            buy = None
+        sell: Optional[dict] = None
         if buy is None:
+            try:
+                sell = _parse_sell_event(event, pool, sol_price_usd)
+            except Exception:
+                log.exception("sell_event_parse_failed", tier=tier)
+                sell = None
+
+        if buy is None and sell is None:
             skipped_unmatched += 1
             if debug_unmatched:
                 tts = event.get("tokenTransfers") or []
@@ -458,26 +639,36 @@ async def _process_webhook(
                          tts=tt_summary, nts=nt_summary)
             continue
 
-        # Every matched event gets logged regardless of tier — promote/demote
-        # cron needs visibility into watch-tier activity.
-        log_rows.append((buy["wallet_address"], tier))
+        matched_event = buy or sell  # exactly one is truthy here
+        channel = REDIS_BUYS_CHANNEL if buy is not None else REDIS_SELLS_CHANNEL
+        kind = "buy" if buy is not None else "sell"
+        log_rows.append((matched_event["wallet_address"], tier))
 
-        # Active-tier only: publish to cluster channel (after dedup).
+        # Active-tier only: publish to the appropriate cluster channel (after dedup).
+        # Dedup key includes the kind so a token-for-token swap that somehow
+        # registered as both (shouldn't happen given our skips, but defensive)
+        # would be deduped per-side, not collide.
         if tier == "active":
-            sig = buy["tx_signature"]
+            sig = matched_event["tx_signature"]
             if sig:
-                dedup_key = f"{REDIS_DEDUP_PREFIX}{sig}"
+                dedup_key = f"{REDIS_DEDUP_PREFIX}{kind}:{sig}"
                 seen = await redis_client.set(dedup_key, "1", nx=True, ex=DEDUP_TTL_SECONDS)
                 if not seen:
                     skipped_dup += 1
                     continue
             try:
-                await redis_client.publish(REDIS_BUYS_CHANNEL, json.dumps(buy))
-                matched += 1
+                await redis_client.publish(channel, json.dumps(matched_event))
+                if kind == "buy":
+                    matched_buys += 1
+                else:
+                    matched_sells += 1
             except Exception:
-                log.exception("redis_publish_failed", tier=tier)
+                log.exception("redis_publish_failed", tier=tier, kind=kind)
         else:
-            matched += 1  # watch-tier "match" = event logged
+            if kind == "buy":
+                matched_buys += 1
+            else:
+                matched_sells += 1
 
     # Persist event log + bump counters in one batched DB roundtrip
     if log_rows:
@@ -488,7 +679,7 @@ async def _process_webhook(
 
     log.info("webhook_batch",
              tier=tier,
-             total=len(events), matched=matched,
+             total=len(events), matched_buys=matched_buys, matched_sells=matched_sells,
              skipped_dup=skipped_dup, skipped_unmatched=skipped_unmatched)
     return web.Response(status=200, text="ok")
 
