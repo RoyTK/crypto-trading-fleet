@@ -40,6 +40,9 @@ class OpenPaperTrade:
     stop_pct: Optional[float]
     take_profit_pct: Optional[float]
     timeout_hours: Optional[int]
+    # Trailing-stop state, persisted across cycles in Trade.sim_metadata.
+    # None until the first cycle observes a positive move.
+    peak_pct_since_entry: Optional[float] = None
 
 
 def persist_signal(candidate: SignalCandidate) -> int:
@@ -166,8 +169,40 @@ def list_open_paper_trades() -> list[OpenPaperTrade]:
                 stop_pct=md.get("stop_pct"),
                 take_profit_pct=md.get("take_profit_pct"),
                 timeout_hours=md.get("timeout_hours"),
+                peak_pct_since_entry=_to_float_or_none(md.get("peak_pct_since_entry")),
             ))
     return out
+
+
+def _to_float_or_none(v) -> Optional[float]:
+    """Best-effort numeric coerce — JSON columns sometimes round-trip int/str."""
+    if v is None:
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def update_trade_peak_pct(trade_id: int, peak_pct: float) -> None:
+    """Persist peak_pct_since_entry into Trade.sim_metadata.
+
+    Monotonic: only writes when the new value exceeds the existing one.
+    Used by the trailing-stop machinery in both _manage_open_positions
+    (paper) and _manage_open_real_trades (shadow/live) so a bot restart
+    doesn't lose accumulated peak state — without persistence the
+    trailing stop would reset to the current price after every restart
+    and lock in profits too late (or never).
+    """
+    with session_scope() as s:
+        t = s.get(Trade, trade_id)
+        if t is None or t.fill_status != "open":
+            return
+        md = dict(t.sim_metadata or {})
+        existing = _to_float_or_none(md.get("peak_pct_since_entry")) or float("-inf")
+        if peak_pct > existing:
+            md["peak_pct_since_entry"] = peak_pct
+            t.sim_metadata = md
 
 
 @dataclass
@@ -186,6 +221,7 @@ class OpenRealTrade:
     stop_pct: Optional[float]
     take_profit_pct: Optional[float]
     timeout_hours: Optional[int]
+    peak_pct_since_entry: Optional[float] = None
 
 
 def list_open_real_trades() -> list[OpenRealTrade]:
@@ -213,6 +249,7 @@ def list_open_real_trades() -> list[OpenRealTrade]:
                 stop_pct=md.get("stop_pct"),
                 take_profit_pct=md.get("take_profit_pct"),
                 timeout_hours=md.get("timeout_hours"),
+                peak_pct_since_entry=_to_float_or_none(md.get("peak_pct_since_entry")),
             ))
     return out
 

@@ -42,9 +42,11 @@ from bots.copy.loop_helpers import (
     panic_close_all_open,
     persist_paper_trade,
     persist_signal,
+    update_trade_peak_pct,
     write_cluster_detection,
 )
 from bots.copy.executor import CopyExecutor
+from bots.copy.trailing_stop import evaluate_trailing_exit
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
@@ -586,16 +588,26 @@ class CopyBot(BotLifecycle):
             )
 
             exit_reason: Optional[str] = None
-            if mid is not None:
-                pct_move = (mid - trade.entry_price) / trade.entry_price * 100.0
-                if trade.direction == "short":
-                    pct_move = -pct_move
-                equity_pct = pct_move * trade.leverage
-                if trade.stop_pct is not None and equity_pct <= -trade.stop_pct:
-                    exit_reason = "stop"
-                elif trade.take_profit_pct is not None and equity_pct >= trade.take_profit_pct:
-                    exit_reason = "tp"
-                elif timed_out:
+            if mid is not None and trade.entry_price > 0:
+                # Trailing-stop machinery: pure function returns the new peak
+                # AND any exit reason (stop / trailing_stop / trailing_hard_cap
+                # / tp). Persist the peak so a bot restart doesn't reset it.
+                new_peak, exit_reason = evaluate_trailing_exit(
+                    entry_price=trade.entry_price,
+                    current_price=mid,
+                    stored_peak_pct=trade.peak_pct_since_entry,
+                    leverage=trade.leverage,
+                    direction=trade.direction,
+                    stop_pct=trade.stop_pct,
+                    take_profit_pct=trade.take_profit_pct,
+                )
+                if trade.peak_pct_since_entry is None or new_peak > trade.peak_pct_since_entry:
+                    try:
+                        update_trade_peak_pct(trade.trade_id, new_peak)
+                    except Exception:
+                        self.log.exception("paper_peak_persist_failed",
+                                           trade_id=trade.trade_id)
+                if exit_reason is None and timed_out:
                     exit_reason = "timeout"
             elif timed_out:
                 exit_reason = "timeout_no_quote"
@@ -793,14 +805,25 @@ class CopyBot(BotLifecycle):
                 )
                 exit_reason: Optional[str] = None
                 if mid is not None and trade.entry_price > 0:
-                    pct_move = (mid - trade.entry_price) / trade.entry_price * 100.0
-                    if trade.direction == "short":
-                        pct_move = -pct_move
-                    if trade.stop_pct is not None and pct_move <= -trade.stop_pct:
-                        exit_reason = "stop"
-                    elif trade.take_profit_pct is not None and pct_move >= trade.take_profit_pct:
-                        exit_reason = "tp"
-                    elif timed_out:
+                    # Same trailing-stop logic as the paper path. The
+                    # close trigger is different (real Jupiter swap vs
+                    # synthetic fill) but the decision is identical.
+                    new_peak, exit_reason = evaluate_trailing_exit(
+                        entry_price=trade.entry_price,
+                        current_price=mid,
+                        stored_peak_pct=trade.peak_pct_since_entry,
+                        leverage=1.0,  # shadow/live are spot 1x
+                        direction=trade.direction,
+                        stop_pct=trade.stop_pct,
+                        take_profit_pct=trade.take_profit_pct,
+                    )
+                    if trade.peak_pct_since_entry is None or new_peak > trade.peak_pct_since_entry:
+                        try:
+                            update_trade_peak_pct(trade.trade_id, new_peak)
+                        except Exception:
+                            self.log.exception("real_peak_persist_failed",
+                                               trade_id=trade.trade_id)
+                    if exit_reason is None and timed_out:
                         exit_reason = "timeout"
                 elif timed_out:
                     # No mid available — still fire timeout so positions don't

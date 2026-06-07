@@ -108,8 +108,26 @@ WALLET_PRUNE_INACTIVE_DAYS = 60
 
 # Per-bot exit logic
 EXIT_STOP_PCT = 8.0                        # software stop (DEX has no native server-side stops)
-EXIT_TAKE_PROFIT_PCT = 30.0                # quick TP for cluster signals
+EXIT_TAKE_PROFIT_PCT = 30.0                # static TP — only fires before trailing activates
 EXIT_TIMEOUT_HOURS = 12                    # cluster signals decay fast
+
+# Trailing stop — captures memecoin upside per brainstorm 2026-05-30
+# (Trader's R1: "Wide-static TP is strictly worse than trailing-stop").
+# Logic (applied per check cycle):
+#   1. Track peak_pct_since_entry (monotonic, persisted to Trade.sim_metadata)
+#   2. If current_pct >= EXIT_TRAILING_HARD_CAP_PCT (200%) → force exit at hard cap
+#   3. Else if current_pct <= -EXIT_STOP_PCT → static stop (downside protection)
+#   4. Else if peak_pct >= EXIT_TRAILING_ACTIVATION_PCT (20%) → trailing active:
+#        stop level = peak_pct - EXIT_TRAILING_STOP_PCT (25%)
+#        if current_pct <= that level → exit
+#   5. Else if current_pct >= EXIT_TAKE_PROFIT_PCT (30%) → static TP
+#      (only reachable if peak somehow skipped over activation — defensive)
+#   6. Else if timed_out → timeout
+# Activation gate (20%) prevents trailing from firing on early-stage noise;
+# the static -8% stop is the safety net during that period.
+EXIT_TRAILING_ACTIVATION_PCT = 20.0
+EXIT_TRAILING_STOP_PCT = 25.0
+EXIT_TRAILING_HARD_CAP_PCT = 200.0
 
 
 # ---------------------------------------------------------------------------
