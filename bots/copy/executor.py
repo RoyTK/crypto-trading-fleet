@@ -192,7 +192,7 @@ class CopyExecutor:
             session=session,
             output_mint=candidate.asset,
             notional_usd=shadow_usd,
-            slippage_bps=self.settings.copy_swap_slippage_bps,
+            slippage_ladder=self.settings.get_slippage_ladder(),
             priority_fee_lamports=self.settings.copy_swap_priority_fee_micro_lamports,
             confirm_timeout_sec=self.settings.copy_swap_confirm_timeout_sec,
         )
@@ -270,7 +270,7 @@ class CopyExecutor:
                 session=session,
                 output_mint=candidate.asset,
                 notional_usd=notional_usd,
-                slippage_bps=self.settings.copy_swap_slippage_bps,
+                slippage_ladder=self.settings.get_slippage_ladder(),
                 priority_fee_lamports=self.settings.copy_swap_priority_fee_micro_lamports,
                 confirm_timeout_sec=self.settings.copy_swap_confirm_timeout_sec,
             )
@@ -329,6 +329,10 @@ class CopyExecutor:
             "realized_slippage_bps": result.slippage_bps,
             "swap_fees_usd": result.fees_usd,
             "shadow_paper_trade_id": paper_trade_id,
+            # Telemetry for the adaptive-slippage analysis: which ladder
+            # tier filled this trade, and at what tolerance.
+            "fill_attempt_index": result.attempt_index,
+            "fill_slippage_bps_used": result.slippage_bps_used,
         }
         with session_scope() as s:
             trade = Trade(
@@ -436,7 +440,7 @@ class CopyExecutor:
             session=session,
             input_mint=asset,
             amount_in_atomic=actual_out_atomic,
-            slippage_bps=self.settings.copy_swap_slippage_bps,
+            slippage_ladder=self.settings.get_slippage_ladder(),
             priority_fee_lamports=self.settings.copy_swap_priority_fee_micro_lamports,
             confirm_timeout_sec=self.settings.copy_swap_confirm_timeout_sec,
         )

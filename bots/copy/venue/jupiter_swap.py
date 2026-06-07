@@ -78,16 +78,46 @@ class SwapResult:
     - dropped: tx never confirmed within timeout
     - no_wallet: no signing key configured — caller gated wrong
     - rejected: pre-flight failure (quote unavailable, signing failed, etc.)
+
+    attempt_index + slippage_bps_used tell which ladder tier produced this
+    result. Useful telemetry to see whether most fills happen at the
+    tight 200bps tier (liquid tokens) or the loose 3000bps tier (memecoins).
     """
     status: str
     signature: Optional[str] = None
     fill_price_usd: Optional[float] = None       # USD per token bought (or sold)
     actual_in_atomic: Optional[int] = None
     actual_out_atomic: Optional[int] = None
-    slippage_bps: Optional[float] = None
+    slippage_bps: Optional[float] = None          # REALIZED slippage from on-chain
     fees_usd: Optional[float] = None
     error_message: Optional[str] = None
     raw_meta: Optional[dict[str, Any]] = None
+    attempt_index: int = 0                        # 0-indexed ladder tier
+    slippage_bps_used: int = 0                    # tolerance used on this attempt
+
+
+# Reasons we should retry at a wider slippage. 'quote_unavailable' means
+# Jupiter couldn't find a route at the current tolerance; widening MAY help.
+# 'failed' and 'dropped' are also retryable — the tx executed but slippage
+# breached or the network dropped it; both can be tolerance-related.
+# Everything else (no_wallet, signing_failed, etc.) is terminal — wider
+# slippage doesn't help when the bot can't sign at all.
+_RETRYABLE_REJECTED_REASONS = frozenset({"quote_unavailable"})
+
+
+def should_escalate(result: SwapResult) -> bool:
+    """Decide whether to advance to the next slippage tier.
+
+    Pure function for testability. The ladder iterator calls this between
+    attempts; True means continue, False means return immediately.
+    """
+    if result.status in ("filled", "no_wallet"):
+        return False
+    if result.status == "rejected":
+        return (result.error_message or "") in _RETRYABLE_REJECTED_REASONS
+    # 'failed' (slippage breach during execution) and 'dropped' (no inclusion
+    # within timeout) — both can plausibly be fixed by widening tolerance.
+    return result.status in ("failed", "dropped")
 
 
 async def quote_for_swap(
@@ -327,25 +357,18 @@ async def fetch_tx_balance_changes(
     return deltas
 
 
-async def execute_swap_usdc_to_token(
+async def _attempt_swap_usdc_to_token(
     session: aiohttp.ClientSession,
+    *,
     output_mint: str,
-    notional_usd: float,
+    amount_in_atomic: int,
     slippage_bps: int,
     priority_fee_lamports: int,
-    confirm_timeout_sec: int = 45,
+    confirm_timeout_sec: int,
+    user_pubkey: str,
 ) -> SwapResult:
-    """Top-level entry-side swap: spend USDC, receive output_mint."""
-    if not is_wallet_available():
-        return SwapResult(status="no_wallet")
-    user_pubkey = public_key_b58()
-    if user_pubkey is None:
-        return SwapResult(status="no_wallet")
-
-    amount_in_atomic = int(notional_usd * (10 ** USDC_DECIMALS))
-    if amount_in_atomic <= 0:
-        return SwapResult(status="rejected", error_message="zero_input")
-
+    """One swap attempt at a fixed slippage tolerance. Caller iterates the
+    ladder; this function is unaware of escalation."""
     quote = await quote_for_swap(
         session, USDC_MINT, output_mint, amount_in_atomic, slippage_bps,
     )
@@ -383,13 +406,8 @@ async def execute_swap_usdc_to_token(
     fill_price_usd: Optional[float] = None
     slippage_bps_actual: Optional[float] = None
     if actual_out > 0 and actual_in > 0:
-        # We don't know token decimals here; the fill_price is expressed
-        # as USD per atomic-unit. Caller can divide by 10**decimals later
-        # if a human-readable price is needed; everything else operates on
-        # the atomic side anyway.
         in_usd = actual_in / (10 ** USDC_DECIMALS)
         fill_price_usd = in_usd / actual_out
-        # Compare actual vs expected to compute realized slippage.
         if quote.out_amount_atomic > 0:
             slippage_bps_actual = (
                 (quote.out_amount_atomic - actual_out)
@@ -402,32 +420,85 @@ async def execute_swap_usdc_to_token(
         actual_in_atomic=actual_in,
         actual_out_atomic=actual_out,
         slippage_bps=slippage_bps_actual,
-        # Jupiter takes a 0.10% platform fee on memecoin swaps; bake it
-        # into our fees estimate. Networks fees + priority fee are SOL,
-        # not USDC — tracked separately if we need wallet-level PnL.
+        # Jupiter takes a 0.10% platform fee on memecoin swaps. Network
+        # fees + priority fee are SOL, not USDC — tracked separately.
         fees_usd=(actual_in / (10 ** USDC_DECIMALS)) * 0.001 if actual_in > 0 else 0.0,
         raw_meta=meta,
     )
 
 
-async def execute_swap_token_to_usdc(
+async def execute_swap_usdc_to_token(
     session: aiohttp.ClientSession,
-    input_mint: str,
-    amount_in_atomic: int,
-    slippage_bps: int,
+    output_mint: str,
+    notional_usd: float,
+    slippage_ladder: tuple[int, ...] | list[int],
     priority_fee_lamports: int,
     confirm_timeout_sec: int = 45,
 ) -> SwapResult:
-    """Exit-side swap: spend token, receive USDC. amount_in_atomic is the
-    full position we're closing."""
+    """Top-level entry-side swap with adaptive slippage escalation.
+
+    Tries each tier of `slippage_ladder` in order. Stops at the first
+    `filled` result; otherwise escalates per `should_escalate()`. Returns
+    the last attempt's result if the ladder is exhausted, with
+    `attempt_index` and `slippage_bps_used` populated for telemetry.
+
+    Per brainstorm 2026-05-30 spec: default ladder is [200, 500, 1500,
+    3000] bps. The tight 200 tier should fill liquid tokens at near-mid
+    price; loose 3000 covers low-liquidity memecoins.
+    """
     if not is_wallet_available():
         return SwapResult(status="no_wallet")
     user_pubkey = public_key_b58()
     if user_pubkey is None:
         return SwapResult(status="no_wallet")
+
+    amount_in_atomic = int(notional_usd * (10 ** USDC_DECIMALS))
     if amount_in_atomic <= 0:
         return SwapResult(status="rejected", error_message="zero_input")
 
+    if not slippage_ladder:
+        return SwapResult(status="rejected", error_message="empty_slippage_ladder")
+
+    last_result = SwapResult(status="rejected", error_message="ladder_not_executed")
+    for i, slippage_bps in enumerate(slippage_ladder):
+        log.info(
+            "swap_attempt", direction="buy",
+            attempt=i, slippage_bps=slippage_bps,
+            output_mint=output_mint, notional_usd=notional_usd,
+        )
+        result = await _attempt_swap_usdc_to_token(
+            session,
+            output_mint=output_mint,
+            amount_in_atomic=amount_in_atomic,
+            slippage_bps=slippage_bps,
+            priority_fee_lamports=priority_fee_lamports,
+            confirm_timeout_sec=confirm_timeout_sec,
+            user_pubkey=user_pubkey,
+        )
+        result.attempt_index = i
+        result.slippage_bps_used = slippage_bps
+        if not should_escalate(result):
+            return result
+        log.info(
+            "swap_escalating", direction="buy",
+            attempt=i, attempted_bps=slippage_bps,
+            status=result.status, error=result.error_message,
+        )
+        last_result = result
+    return last_result
+
+
+async def _attempt_swap_token_to_usdc(
+    session: aiohttp.ClientSession,
+    *,
+    input_mint: str,
+    amount_in_atomic: int,
+    slippage_bps: int,
+    priority_fee_lamports: int,
+    confirm_timeout_sec: int,
+    user_pubkey: str,
+) -> SwapResult:
+    """One exit-side swap attempt at a fixed slippage tolerance."""
     quote = await quote_for_swap(
         session, input_mint, USDC_MINT, amount_in_atomic, slippage_bps,
     )
@@ -481,3 +552,53 @@ async def execute_swap_token_to_usdc(
         fees_usd=(actual_out / (10 ** USDC_DECIMALS)) * 0.001 if actual_out > 0 else 0.0,
         raw_meta=meta,
     )
+
+
+async def execute_swap_token_to_usdc(
+    session: aiohttp.ClientSession,
+    input_mint: str,
+    amount_in_atomic: int,
+    slippage_ladder: tuple[int, ...] | list[int],
+    priority_fee_lamports: int,
+    confirm_timeout_sec: int = 45,
+) -> SwapResult:
+    """Exit-side swap with adaptive slippage escalation. Same ladder logic
+    as the entry side. `amount_in_atomic` is the full position size being
+    closed (in the input token's atomic units)."""
+    if not is_wallet_available():
+        return SwapResult(status="no_wallet")
+    user_pubkey = public_key_b58()
+    if user_pubkey is None:
+        return SwapResult(status="no_wallet")
+    if amount_in_atomic <= 0:
+        return SwapResult(status="rejected", error_message="zero_input")
+    if not slippage_ladder:
+        return SwapResult(status="rejected", error_message="empty_slippage_ladder")
+
+    last_result = SwapResult(status="rejected", error_message="ladder_not_executed")
+    for i, slippage_bps in enumerate(slippage_ladder):
+        log.info(
+            "swap_attempt", direction="sell",
+            attempt=i, slippage_bps=slippage_bps,
+            input_mint=input_mint, amount_in_atomic=amount_in_atomic,
+        )
+        result = await _attempt_swap_token_to_usdc(
+            session,
+            input_mint=input_mint,
+            amount_in_atomic=amount_in_atomic,
+            slippage_bps=slippage_bps,
+            priority_fee_lamports=priority_fee_lamports,
+            confirm_timeout_sec=confirm_timeout_sec,
+            user_pubkey=user_pubkey,
+        )
+        result.attempt_index = i
+        result.slippage_bps_used = slippage_bps
+        if not should_escalate(result):
+            return result
+        log.info(
+            "swap_escalating", direction="sell",
+            attempt=i, attempted_bps=slippage_bps,
+            status=result.status, error=result.error_message,
+        )
+        last_result = result
+    return last_result

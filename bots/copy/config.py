@@ -189,7 +189,16 @@ class CopySettings(BaseSettings):
     # Slippage tolerance for memecoin swaps. Memecoins routinely show
     # 5-15% impact on $20 swaps; HL's 2% would auto-reject most signals.
     # 1500 bps = 15%. Tune down once we see real fills.
+    # KEPT for backwards compatibility with the original skeleton; new
+    # code paths use the ladder below for adaptive escalation.
     copy_swap_slippage_bps: int = Field(default=1500)
+    # Adaptive slippage ladder — bot tries each tier in order, escalating
+    # when a tier fails with a tolerance-related error (quote_unavailable,
+    # tx failed/dropped). Per brainstorm 2026-05-30 spec the default is
+    # [200, 500, 1500, 3000] bps. Tight 200 fills cleanly on liquid
+    # tokens; loose 3000 covers low-liquidity memecoins. Comma-separated
+    # bps values; parse via get_slippage_ladder().
+    copy_swap_slippage_ladder_bps: str = Field(default="200,500,1500,3000")
     # Compute-unit price (priority fee) in micro-lamports. 50_000 (=0.00005
     # SOL per CU at 1M CU cap → ~0.05 SOL = ~$10 at $200 SOL) is high
     # for a typical swap but ensures inclusion during congestion. Jupiter
@@ -203,6 +212,20 @@ class CopySettings(BaseSettings):
     # off; shadow gets enabled first; live only after shadow PnL +
     # calibration_ratio looks sane.
     copy_live_full_enabled: bool = Field(default=False)
+
+    def get_slippage_ladder(self) -> tuple[int, ...]:
+        """Parse comma-separated `copy_swap_slippage_ladder_bps` into a
+        tuple of ints. Returns a single-element fallback (1500 bps)
+        if parsing fails, so the bot never crashes on a malformed env.
+        """
+        raw = self.copy_swap_slippage_ladder_bps or ""
+        try:
+            parsed = tuple(
+                int(x.strip()) for x in raw.split(",") if x.strip()
+            )
+        except ValueError:
+            parsed = ()
+        return parsed or (self.copy_swap_slippage_bps or 1500,)
 
 
 @lru_cache(maxsize=1)

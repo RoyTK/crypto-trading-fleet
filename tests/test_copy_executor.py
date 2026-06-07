@@ -1,7 +1,6 @@
-"""Tests for COPY executor — sampling gates, exposure cap, swap result
-flow. All Solana RPC + Jupiter calls are mocked; no network required.
+"""Tests for COPY executor + Jupiter swap ladder.
 
-These tests cover the behavior the executor MUST guarantee:
+Covers the behaviors the executor + jupiter_swap MUST guarantee:
 - copy_live_enabled=false => maybe_place_shadow / maybe_place_live
   return None without touching the wallet
 - no wallet available => maybe_place_* returns None even with the flag on
@@ -10,6 +9,8 @@ These tests cover the behavior the executor MUST guarantee:
 - exposure cap breach => returns None
 - successful swap path => writes Trade(mode='shadow') + CalibrationRecord
 - close path => updates Trade.exit_* and CalibrationRecord PnL fields
+- slippage ladder: should_escalate() classifies each status correctly
+- slippage ladder: get_slippage_ladder() parses comma-separated env safely
 """
 from __future__ import annotations
 
@@ -358,3 +359,183 @@ def test_wallet_unavailable_when_no_secret(monkeypatch):
     assert solana_wallet.load_wallet() is None
     assert solana_wallet.is_wallet_available() is False
     assert solana_wallet.public_key_b58() is None
+
+
+# ---------------------------------------------------------------------------
+# Adaptive slippage ladder
+# ---------------------------------------------------------------------------
+
+def test_should_escalate_filled_returns_false():
+    """A filled swap is terminal — never escalate."""
+    from bots.copy.venue.jupiter_swap import SwapResult, should_escalate
+    assert should_escalate(SwapResult(status="filled")) is False
+
+
+def test_should_escalate_no_wallet_returns_false():
+    """No-wallet is terminal — wider slippage doesn't help when we can't sign."""
+    from bots.copy.venue.jupiter_swap import SwapResult, should_escalate
+    assert should_escalate(SwapResult(status="no_wallet")) is False
+
+
+def test_should_escalate_quote_unavailable_returns_true():
+    """quote_unavailable at a tight tolerance MAY succeed wider."""
+    from bots.copy.venue.jupiter_swap import SwapResult, should_escalate
+    assert should_escalate(SwapResult(
+        status="rejected", error_message="quote_unavailable",
+    )) is True
+
+
+def test_should_escalate_signing_failed_returns_false():
+    """signing_failed is a config issue — wider slippage doesn't help."""
+    from bots.copy.venue.jupiter_swap import SwapResult, should_escalate
+    assert should_escalate(SwapResult(
+        status="rejected", error_message="signing_failed",
+    )) is False
+
+
+def test_should_escalate_failed_status_returns_true():
+    """failed = tx executed but errored (likely slippage breach). Escalate."""
+    from bots.copy.venue.jupiter_swap import SwapResult, should_escalate
+    assert should_escalate(SwapResult(status="failed")) is True
+
+
+def test_should_escalate_dropped_status_returns_true():
+    """dropped = tx never confirmed. Wider slippage may help on retry."""
+    from bots.copy.venue.jupiter_swap import SwapResult, should_escalate
+    assert should_escalate(SwapResult(status="dropped")) is True
+
+
+def test_get_slippage_ladder_parses_default():
+    """Default ladder env value parses cleanly."""
+    s = _settings_with()  # uses default copy_swap_slippage_ladder_bps
+    assert s.get_slippage_ladder() == (200, 500, 1500, 3000)
+
+
+def test_get_slippage_ladder_parses_custom_with_whitespace():
+    """Comma-separated with whitespace + odd spacing still parses."""
+    s = _settings_with(copy_swap_slippage_ladder_bps=" 100, 250 ,500,1000 ")
+    assert s.get_slippage_ladder() == (100, 250, 500, 1000)
+
+
+def test_get_slippage_ladder_handles_empty():
+    """Empty ladder env → fallback to single-tier (copy_swap_slippage_bps)."""
+    s = _settings_with(
+        copy_swap_slippage_ladder_bps="",
+        copy_swap_slippage_bps=2500,
+    )
+    assert s.get_slippage_ladder() == (2500,)
+
+
+def test_get_slippage_ladder_handles_malformed():
+    """Non-int values in the ladder → fallback (don't crash bot)."""
+    s = _settings_with(
+        copy_swap_slippage_ladder_bps="hello,world",
+        copy_swap_slippage_bps=1234,
+    )
+    assert s.get_slippage_ladder() == (1234,)
+
+
+@pytest.mark.asyncio
+async def test_ladder_returns_first_filled_attempt(monkeypatch):
+    """Ladder stops at first 'filled' result; attempt_index reflects position."""
+    from bots.copy.venue import jupiter_swap
+    from bots.copy.venue.jupiter_swap import SwapResult, execute_swap_usdc_to_token
+
+    # First two attempts fail with quote_unavailable, third fills.
+    call_log: list[int] = []
+
+    async def fake_attempt(session, *, output_mint, amount_in_atomic,
+                             slippage_bps, priority_fee_lamports,
+                             confirm_timeout_sec, user_pubkey):
+        call_log.append(slippage_bps)
+        if slippage_bps < 1500:
+            return SwapResult(status="rejected", error_message="quote_unavailable")
+        return SwapResult(status="filled", signature="SIG_OK",
+                           fill_price_usd=0.0001, actual_in_atomic=15_000_000,
+                           actual_out_atomic=150_000_000_000, fees_usd=0.015)
+
+    monkeypatch.setattr(jupiter_swap, "_attempt_swap_usdc_to_token", fake_attempt)
+    monkeypatch.setattr(jupiter_swap, "is_wallet_available", lambda: True)
+    monkeypatch.setattr(jupiter_swap, "public_key_b58", lambda: "TEST_PUBKEY")
+
+    result = await execute_swap_usdc_to_token(
+        session=None, output_mint="MINT_X", notional_usd=15.0,
+        slippage_ladder=(200, 500, 1500, 3000),
+        priority_fee_lamports=50_000,
+    )
+    assert result.status == "filled"
+    assert result.attempt_index == 2  # third attempt (1500 bps tier)
+    assert result.slippage_bps_used == 1500
+    assert call_log == [200, 500, 1500]   # stopped after first fill
+
+
+@pytest.mark.asyncio
+async def test_ladder_exhausted_returns_last_result(monkeypatch):
+    """If every tier fails, return the last attempt's result."""
+    from bots.copy.venue import jupiter_swap
+    from bots.copy.venue.jupiter_swap import SwapResult, execute_swap_usdc_to_token
+
+    async def fake_attempt(session, *, output_mint, amount_in_atomic,
+                             slippage_bps, priority_fee_lamports,
+                             confirm_timeout_sec, user_pubkey):
+        return SwapResult(status="dropped", signature=f"SIG_{slippage_bps}",
+                           error_message="confirmation_timeout")
+
+    monkeypatch.setattr(jupiter_swap, "_attempt_swap_usdc_to_token", fake_attempt)
+    monkeypatch.setattr(jupiter_swap, "is_wallet_available", lambda: True)
+    monkeypatch.setattr(jupiter_swap, "public_key_b58", lambda: "TEST_PUBKEY")
+
+    result = await execute_swap_usdc_to_token(
+        session=None, output_mint="MINT_X", notional_usd=15.0,
+        slippage_ladder=(200, 500, 1500),
+        priority_fee_lamports=50_000,
+    )
+    assert result.status == "dropped"
+    assert result.attempt_index == 2     # last attempt
+    assert result.slippage_bps_used == 1500
+    assert result.signature == "SIG_1500"
+
+
+@pytest.mark.asyncio
+async def test_ladder_stops_on_terminal_non_filled(monkeypatch):
+    """signing_failed is terminal — don't waste fee credits retrying."""
+    from bots.copy.venue import jupiter_swap
+    from bots.copy.venue.jupiter_swap import SwapResult, execute_swap_usdc_to_token
+
+    call_log: list[int] = []
+
+    async def fake_attempt(session, *, output_mint, amount_in_atomic,
+                             slippage_bps, priority_fee_lamports,
+                             confirm_timeout_sec, user_pubkey):
+        call_log.append(slippage_bps)
+        return SwapResult(status="rejected", error_message="signing_failed")
+
+    monkeypatch.setattr(jupiter_swap, "_attempt_swap_usdc_to_token", fake_attempt)
+    monkeypatch.setattr(jupiter_swap, "is_wallet_available", lambda: True)
+    monkeypatch.setattr(jupiter_swap, "public_key_b58", lambda: "TEST_PUBKEY")
+
+    result = await execute_swap_usdc_to_token(
+        session=None, output_mint="MINT_X", notional_usd=15.0,
+        slippage_ladder=(200, 500, 1500),
+        priority_fee_lamports=50_000,
+    )
+    assert result.status == "rejected"
+    assert result.error_message == "signing_failed"
+    assert call_log == [200]   # stopped after first terminal
+
+
+@pytest.mark.asyncio
+async def test_ladder_empty_returns_rejected_without_wallet_load(monkeypatch):
+    """Empty ladder is a config bug — return rejected immediately."""
+    from bots.copy.venue import jupiter_swap
+    from bots.copy.venue.jupiter_swap import execute_swap_usdc_to_token
+
+    monkeypatch.setattr(jupiter_swap, "is_wallet_available", lambda: True)
+    monkeypatch.setattr(jupiter_swap, "public_key_b58", lambda: "TEST_PUBKEY")
+    result = await execute_swap_usdc_to_token(
+        session=None, output_mint="MINT_X", notional_usd=15.0,
+        slippage_ladder=(),
+        priority_fee_lamports=50_000,
+    )
+    assert result.status == "rejected"
+    assert result.error_message == "empty_slippage_ladder"
