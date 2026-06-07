@@ -37,12 +37,14 @@ from bots.copy.loop_helpers import (
     close_paper_trade,
     has_open_position,
     list_open_paper_trades,
+    list_open_real_trades,
     open_allocation_pct,
     panic_close_all_open,
     persist_paper_trade,
     persist_signal,
     write_cluster_detection,
 )
+from bots.copy.executor import CopyExecutor
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
@@ -51,6 +53,7 @@ from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import size_position
 from bots.copy.venue.dex_quoter import multi_price_solana, quote
 from bots.copy.venue.helius_solana import WalletBuyEvent
+from bots.copy.venue.solana_wallet import is_wallet_available, public_key_b58
 from framework.config import get_settings as get_framework_settings
 from framework.reconciliation import reconcile_once, register_venue_fetcher
 
@@ -110,6 +113,7 @@ class CopyBot(BotLifecycle):
         self.loop_interval_seconds = self.copy_settings.copy_loop_interval_seconds
         self.simulator = CopyFillSimulator()
         self.cluster = ClusterDetector()
+        self.executor = CopyExecutor()
         self._wallets_solana: list[str] = []
         self._wallets_base: list[str] = []
         self._wallets_arbitrum: list[str] = []
@@ -131,12 +135,19 @@ class CopyBot(BotLifecycle):
         # Subscribe to wallet-buy events on Redis (published by webhook_receiver)
         self._buys_redis = redis_async.from_url(self.settings.redis_url, decode_responses=True)
         self._buys_subscriber_task = asyncio.create_task(self._buys_subscriber())
+        # Visibility on executor configuration at startup. Paper-only is the
+        # default state; flipping copy_live_enabled (with a wallet present)
+        # is what graduates to shadow execution.
         self.log.info(
             "copy_started",
             paper_capital_usd=self.copy_settings.copy_paper_capital_usd,
             sol_wallets=len(self._wallets_solana),
             base_wallets=len(self._wallets_base),
             arbitrum_wallets=len(self._wallets_arbitrum),
+            live_enabled=self.copy_settings.copy_live_enabled,
+            live_full_enabled=self.copy_settings.copy_live_full_enabled,
+            wallet_available=is_wallet_available(),
+            wallet_pubkey=public_key_b58(),
         )
 
     async def on_stop(self) -> None:
@@ -430,18 +441,51 @@ class CopyBot(BotLifecycle):
         )
 
         signal_id = persist_signal(candidate)
-        persist_paper_trade(
+        paper_trade_id = self.executor.place_paper(
             signal_id=signal_id,
             candidate=candidate,
             sim_fill=sim_fill,
             notional_usd=notional_usd,
             leverage=1.0,
         )
+        # Executor-driven shadow + live placement (both gated by config and
+        # never able to block the paper path). Both calls are no-ops when
+        # copy_live_enabled=false, which is the default until Roy provisions
+        # the keypair + .env on Hetzner.
+        if paper_trade_id is not None and self._session is not None:
+            try:
+                await self.executor.maybe_place_shadow(
+                    session=self._session,
+                    signal_id=signal_id,
+                    paper_trade_id=paper_trade_id,
+                    candidate=candidate,
+                    paper_sim_fill=sim_fill,
+                    paper_notional_usd=notional_usd,
+                )
+            except Exception:
+                self.log.exception("executor_shadow_failed",
+                                   asset=candidate.asset, signal_id=signal_id)
+            try:
+                await self.executor.maybe_place_live(
+                    session=self._session,
+                    signal_id=signal_id,
+                    paper_trade_id=paper_trade_id,
+                    candidate=candidate,
+                    paper_sim_fill=sim_fill,
+                    notional_usd=notional_usd,
+                )
+            except Exception:
+                self.log.exception("executor_live_failed",
+                                   asset=candidate.asset, signal_id=signal_id)
 
     # ---- Position management ----------------------------------------------
 
     async def _manage_open_positions(self) -> None:
         opens = list_open_paper_trades()
+        # Drive shadow/live exits in parallel with the paper-trade exits below.
+        # The real path swaps the held token back to USDC via Jupiter — slow,
+        # IO-bound, so we kick it off and don't block the paper loop on it.
+        await self._manage_open_real_trades()
         if not opens or self._session is None:
             return
 
@@ -532,6 +576,64 @@ class CopyBot(BotLifecycle):
                 exit_fill=exit_fill,
                 exit_reason=exit_reason,
             )
+
+    # ---- Real-trade (shadow/live) exit loop --------------------------------
+
+    async def _manage_open_real_trades(self) -> None:
+        """Drive exits for open shadow/live trades.
+
+        Reuses the same stop/TP/timeout logic as paper, but on hit we route
+        through the executor (which swaps the token back to USDC on-chain)
+        instead of writing a simulated close. Runs every position-check
+        interval, same cadence as paper exits.
+
+        Like the paper loop, this is best-effort: any per-trade exception is
+        caught and logged so a single failing trade doesn't block the others.
+        """
+        if self._session is None:
+            return
+        opens = list_open_real_trades()
+        if not opens:
+            return
+        # Batch-fetch all Solana mids in one Birdeye call (same optimization
+        # the paper loop uses — see comment in _manage_open_positions).
+        sol_mints = sorted({t.asset for t in opens if t.venue == "solana"})
+        sol_prices = await multi_price_solana(self._session, sol_mints) if sol_mints else {}
+        now = datetime.now(timezone.utc)
+        for trade in opens:
+            try:
+                mid = sol_prices.get(trade.asset) if trade.venue == "solana" else None
+                timed_out = (
+                    trade.timeout_hours is not None
+                    and (now - trade.entry_at) >= timedelta(hours=trade.timeout_hours)
+                )
+                exit_reason: Optional[str] = None
+                if mid is not None and trade.entry_price > 0:
+                    pct_move = (mid - trade.entry_price) / trade.entry_price * 100.0
+                    if trade.direction == "short":
+                        pct_move = -pct_move
+                    if trade.stop_pct is not None and pct_move <= -trade.stop_pct:
+                        exit_reason = "stop"
+                    elif trade.take_profit_pct is not None and pct_move >= trade.take_profit_pct:
+                        exit_reason = "tp"
+                    elif timed_out:
+                        exit_reason = "timeout"
+                elif timed_out:
+                    # No mid available — still fire timeout so positions don't
+                    # live forever when the oracle has gone dark.
+                    exit_reason = "timeout_no_quote"
+                if exit_reason is None:
+                    continue
+                await self.executor.close_real_trade(
+                    session=self._session,
+                    trade_id=trade.trade_id,
+                    exit_reason=exit_reason,
+                )
+            except Exception:
+                self.log.exception(
+                    "manage_real_trade_failed",
+                    trade_id=trade.trade_id, mode=trade.mode,
+                )
 
     # ---- Wallet pool -------------------------------------------------------
 

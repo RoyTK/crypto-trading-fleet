@@ -161,6 +161,49 @@ class CopySettings(BaseSettings):
     # NOT reset the kill-criteria window per the operational-fix carve-out.
     copy_cluster_dedup_hours: int = Field(default=24)
 
+    # ------------------------------------------------------------------
+    # Live + shadow execution (2026-06-06 — executor build)
+    # ------------------------------------------------------------------
+    # Master gate. Default FALSE — full skeleton in code but no signing
+    # path can fire until this is flipped. When false: paper-only,
+    # identical to pre-executor behavior. When true: paper + sampled
+    # shadow (and live, if the per-mode gate is also set).
+    copy_live_enabled: bool = Field(default=False)
+    # Bot-specific Solana keypair, base58-encoded 64-byte secret. NEVER
+    # commit this to the repo; set only in .env on Hetzner. If empty,
+    # is_wallet_available() returns False and all executor paths short
+    # out before reaching the signing code.
+    copy_solana_private_key: str = Field(default="")
+    # Shadow sampling rate. Mirrors STRUCTURE_SHADOW_PCT semantics — a
+    # roll < this % places a shadow trade pair to the paper trade.
+    copy_shadow_pct: float = Field(default=10.0)
+    # Hard cap on total open shadow notional. STRUCTURE uses $40 of $50
+    # HL equity; COPY's target shadow bankroll is similar (~$50-100
+    # USDC). Cap at $40 to leave $10 headroom for gas/rent.
+    copy_shadow_open_cap_usd: float = Field(default=40.0)
+    # Per-shadow notional band. Bottom is the Jupiter minimum sensible
+    # swap (~$10 — below this and fees dominate). Top caps single-trade
+    # blast radius.
+    copy_shadow_notional_min_usd: float = Field(default=10.0)
+    copy_shadow_notional_max_usd: float = Field(default=25.0)
+    # Slippage tolerance for memecoin swaps. Memecoins routinely show
+    # 5-15% impact on $20 swaps; HL's 2% would auto-reject most signals.
+    # 1500 bps = 15%. Tune down once we see real fills.
+    copy_swap_slippage_bps: int = Field(default=1500)
+    # Compute-unit price (priority fee) in micro-lamports. 50_000 (=0.00005
+    # SOL per CU at 1M CU cap → ~0.05 SOL = ~$10 at $200 SOL) is high
+    # for a typical swap but ensures inclusion during congestion. Jupiter
+    # picks the actual CU count; this is the rate.
+    copy_swap_priority_fee_micro_lamports: int = Field(default=50_000)
+    # Tx confirmation timeout. Solana finality is ~12s under normal load,
+    # 30-45s during congestion. Drop to 30s once we observe stable times.
+    copy_swap_confirm_timeout_sec: int = Field(default=45)
+    # Live (full-exposure) gate. Even with copy_live_enabled=true, live
+    # placement requires this. Two-key safety: skeleton ships with both
+    # off; shadow gets enabled first; live only after shadow PnL +
+    # calibration_ratio looks sane.
+    copy_live_full_enabled: bool = Field(default=False)
+
 
 @lru_cache(maxsize=1)
 def get_copy_settings() -> CopySettings:

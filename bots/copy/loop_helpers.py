@@ -170,6 +170,53 @@ def list_open_paper_trades() -> list[OpenPaperTrade]:
     return out
 
 
+@dataclass
+class OpenRealTrade:
+    """Lightweight handle to an open shadow/live Trade row, surfaced from
+    `list_open_real_trades` so the main loop's exit logic can drive the
+    executor without re-reading the full Trade object."""
+    trade_id: int
+    mode: str  # 'shadow' | 'live'
+    asset: str
+    venue: str
+    direction: str
+    entry_price: float
+    size_usd: float
+    entry_at: datetime
+    stop_pct: Optional[float]
+    take_profit_pct: Optional[float]
+    timeout_hours: Optional[int]
+
+
+def list_open_real_trades() -> list[OpenRealTrade]:
+    """All currently-open COPY trades in shadow OR live mode. Paper trades
+    use list_open_paper_trades (the close path is different — sim fill vs
+    real swap)."""
+    out: list[OpenRealTrade] = []
+    with session_scope() as s:
+        q = select(Trade).where(
+            Trade.bot_id == BOT_ID,
+            Trade.mode.in_(("shadow", "live")),
+            Trade.fill_status == "open",
+        )
+        for t in s.execute(q).scalars():
+            md = t.sim_metadata or {}
+            out.append(OpenRealTrade(
+                trade_id=t.id,
+                mode=t.mode,
+                asset=t.asset,
+                venue=t.venue,
+                direction=t.direction,
+                entry_price=float(t.entry_price or 0.0),
+                size_usd=float(t.size_usd or 0.0),
+                entry_at=t.entry_at or t.created_at,
+                stop_pct=md.get("stop_pct"),
+                take_profit_pct=md.get("take_profit_pct"),
+                timeout_hours=md.get("timeout_hours"),
+            ))
+    return out
+
+
 def close_paper_trade(
     *,
     trade_id: int,
