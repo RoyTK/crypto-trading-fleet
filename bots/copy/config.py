@@ -149,7 +149,9 @@ class CopySettings(BaseSettings):
     birdeye_api_key: str = Field(default="")
 
     # DEX quoters
-    jupiter_quote_url: str = Field(default="https://quote-api.jup.ag/v6/quote")
+    # Migrated 2026-06-08 from quote-api.jup.ag/v6/quote → lite-api endpoint.
+    # See note in bots/copy/venue/jupiter_swap.py JUPITER_QUOTE_URL.
+    jupiter_quote_url: str = Field(default="https://lite-api.jup.ag/swap/v1/quote")
     zeroex_api_base: str = Field(default="https://api.0x.org")
 
     # COPY-specific

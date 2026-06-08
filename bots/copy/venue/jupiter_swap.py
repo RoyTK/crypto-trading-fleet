@@ -49,8 +49,14 @@ from framework.logging_setup import get_logger
 
 log = get_logger(__name__)
 
-JUPITER_QUOTE_URL = "https://quote-api.jup.ag/v6/quote"
-JUPITER_SWAP_URL = "https://quote-api.jup.ag/v6/swap"
+# Migrated 2026-06-08 from quote-api.jup.ag/v6/{quote,swap} after shadow swaps
+# returned status=000 (DNS unresolvable / intermittent) from Hetzner. The v6
+# endpoint still resolves sometimes but Jupiter actively maintains the
+# `lite-api` and `api` hosts in 2026; lite is free + public, no API key
+# required. Response shape is compatible with what we read (inAmount,
+# outAmount, otherAmountThreshold, priceImpactPct, swapTransaction).
+JUPITER_QUOTE_URL = "https://lite-api.jup.ag/swap/v1/quote"
+JUPITER_SWAP_URL = "https://lite-api.jup.ag/swap/v1/swap"
 USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 # USDC has 6 decimals everywhere we care about.
 USDC_DECIMALS = 6

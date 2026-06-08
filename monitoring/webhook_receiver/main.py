@@ -520,7 +520,9 @@ def _parse_via_transfers(
 # ---- Background SOL price refresher --------------------------------------
 
 async def _fetch_sol_price(session: aiohttp.ClientSession) -> float:
-    url = os.environ.get("JUPITER_QUOTE_URL", "https://quote-api.jup.ag/v6/quote")
+    # Default migrated 2026-06-08 from quote-api.jup.ag/v6/quote to the
+    # lite-api endpoint. Env var override preserved for ops flexibility.
+    url = os.environ.get("JUPITER_QUOTE_URL", "https://lite-api.jup.ag/swap/v1/quote")
     params = {
         "inputMint": WSOL_MINT,
         "outputMint": USDC_MINT,
