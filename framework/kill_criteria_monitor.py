@@ -38,9 +38,38 @@ log = get_logger(__name__)
 # WINDOW + CRITERIA (signed 2026-05-25, see project_decision_log.md)
 # ---------------------------------------------------------------------------
 
-WINDOW_START = datetime(2026, 5, 25, tzinfo=timezone.utc)
-WINDOW_END_PRIMARY = datetime(2026, 7, 24, tzinfo=timezone.utc)   # +60d
-WINDOW_END_EXTENDED = datetime(2026, 8, 23, tzinfo=timezone.utc)  # +90d auto-extend
+# Per-bot observation windows. STRUCTURE's window is the original
+# 2026-05-25 + 60/90d that was signed in the 2026-05-25 decision log.
+#
+# COPY's window was RESET 2026-06-09 from 2026-05-25 to 2026-06-07
+# because the trades before then are from a fundamentally different
+# bot — wallet pool wasn't yet curated, operator-cluster cohort
+# (9ZPsRWG etc.) hadn't been identified via browser-Opus, and cluster
+# signals were firing on a much noisier set. Paper trading was
+# restarted 2026-06-07 with the curated pool driving signals. That
+# IS the bot trading now. Including the pre-edge 25 trades (16% WR,
+# -$734) in the kill_criteria would have made the dashboard read 26%
+# WR / +5.80% Net PnL when the actual current bot is at 38.5% WR /
+# +$1,517 over its first 26 trades. End dates shifted accordingly
+# (+60d primary, +90d extended).
+WINDOWS: dict[str, dict[str, datetime]] = {
+    "structure": {
+        "start":        datetime(2026, 5, 25, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 7, 24, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 8, 23, tzinfo=timezone.utc),
+    },
+    "copy": {
+        "start":        datetime(2026, 6, 7, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 6, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 5, tzinfo=timezone.utc),
+    },
+}
+
+# Backwards-compat exports. Default to STRUCTURE since these constants
+# pre-date the per-bot dict. New code should read from WINDOWS[bot_id].
+WINDOW_START = WINDOWS["structure"]["start"]
+WINDOW_END_PRIMARY = WINDOWS["structure"]["end_primary"]
+WINDOW_END_EXTENDED = WINDOWS["structure"]["end_extended"]
 
 # Trigger alerts when criterion is within this fraction of firing
 WARNING_MARGIN = 0.10  # 10% margin
@@ -87,19 +116,20 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _window_metadata() -> dict[str, Any]:
+def _window_metadata(bot_id: str = "structure") -> dict[str, Any]:
+    win = WINDOWS.get(bot_id, WINDOWS["structure"])
     now = _now()
-    primary_remaining = (WINDOW_END_PRIMARY - now).days
-    extended_remaining = (WINDOW_END_EXTENDED - now).days
-    day_of_window = (now - WINDOW_START).days
+    primary_remaining = (win["end_primary"] - now).days
+    extended_remaining = (win["end_extended"] - now).days
+    day_of_window = (now - win["start"]).days
     return {
-        "start": WINDOW_START.isoformat(),
-        "end_primary": WINDOW_END_PRIMARY.isoformat(),
-        "end_extended": WINDOW_END_EXTENDED.isoformat(),
+        "start": win["start"].isoformat(),
+        "end_primary": win["end_primary"].isoformat(),
+        "end_extended": win["end_extended"].isoformat(),
         "day_of_window": day_of_window,
         "days_remaining_primary": primary_remaining,
         "days_remaining_extended": extended_remaining,
-        "phase": "primary" if now < WINDOW_END_PRIMARY else ("extended" if now < WINDOW_END_EXTENDED else "ended"),
+        "phase": "primary" if now < win["end_primary"] else ("extended" if now < win["end_extended"] else "ended"),
     }
 
 
@@ -179,7 +209,7 @@ def _sharpe(pnls: list[float]) -> Optional[float]:
 
 def _compute_structure_status() -> dict[str, Any]:
     paper_capital = _paper_capital_for("structure")
-    window_start = WINDOW_START
+    window_start = WINDOWS["structure"]["start"]
 
     with session_scope() as s:
         # Closed paper trades — WR + PnL.
@@ -323,7 +353,7 @@ def _compute_structure_status() -> dict[str, Any]:
 
     return {
         "bot_id": "structure",
-        "window": _window_metadata(),
+        "window": _window_metadata("structure"),
         "paper_capital_usd": paper_capital,
         "n": n,
         "wr": round(wr, 4),
@@ -345,7 +375,7 @@ def _compute_structure_status() -> dict[str, Any]:
 
 def _compute_copy_status() -> dict[str, Any]:
     paper_capital = _paper_capital_for("copy")
-    window_start = WINDOW_START
+    window_start = WINDOWS["copy"]["start"]
     tier = COPY_CRITERIA["wallet_tier_filter"]
 
     with session_scope() as s:
@@ -395,7 +425,7 @@ def _compute_copy_status() -> dict[str, Any]:
 
     return {
         "bot_id": "copy",
-        "window": _window_metadata(),
+        "window": _window_metadata("copy"),
         "paper_capital_usd": paper_capital,
         "wallet_tier_filter": tier,
         "n": n,
