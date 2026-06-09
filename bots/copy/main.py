@@ -47,7 +47,7 @@ from bots.copy.loop_helpers import (
     write_cluster_detection,
 )
 from bots.copy.executor import CopyExecutor
-from bots.copy.trailing_stop import evaluate_exit_actions
+from bots.copy.trailing_stop import evaluate_exit_actions, is_price_scale_anomaly
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
@@ -645,6 +645,24 @@ class CopyBot(BotLifecycle):
             exit_reason: Optional[str] = None
             partial_actions: list = []
             if mid is not None and trade.entry_price > 0:
+                # Price-scale anomaly guardrail: if entry/current ratio
+                # is absurd (>10,000x), refuse to act this cycle. The
+                # underlying cause is almost certainly a price-source bug
+                # (wrong-units math, oracle glitch). Don't update peak,
+                # don't fire partials, don't close. Position waits for
+                # sane prices. Caught the 2026-06-09 cbBTC cascade.
+                if is_price_scale_anomaly(trade.entry_price, mid):
+                    self.log.warning(
+                        "price_scale_anomaly_skip",
+                        trade_id=trade.trade_id,
+                        asset=trade.asset,
+                        entry_price=trade.entry_price,
+                        current_price=mid,
+                        implied_ratio=mid / trade.entry_price,
+                        venue=trade.venue,
+                        side="paper",
+                    )
+                    continue
                 # New tiered ladder + multiplicative trailing. Returns
                 # (peak, partials_to_fire, full_close_reason_or_None).
                 # Partials are sold synthetically (paper) below; full
@@ -885,6 +903,22 @@ class CopyBot(BotLifecycle):
                 exit_reason: Optional[str] = None
                 partial_actions: list = []
                 if mid is not None and trade.entry_price > 0:
+                    # Same price-scale anomaly guardrail as the paper
+                    # path. Extra critical here because the shadow/live
+                    # path actually swaps tokens on-chain — a bogus
+                    # cascade would burn real SOL on real-bad fills.
+                    if is_price_scale_anomaly(trade.entry_price, mid):
+                        self.log.warning(
+                            "price_scale_anomaly_skip",
+                            trade_id=trade.trade_id,
+                            asset=trade.asset,
+                            entry_price=trade.entry_price,
+                            current_price=mid,
+                            implied_ratio=mid / trade.entry_price,
+                            venue=trade.venue,
+                            side="real",
+                        )
+                        continue
                     # Same tiered ladder + trailing as the paper path.
                     # Partials route through executor.execute_partial_close
                     # (real Jupiter swap of the tier's fraction).

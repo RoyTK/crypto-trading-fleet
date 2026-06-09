@@ -59,6 +59,33 @@ class PartialExitAction:
     tier_index: int       # 0..len(PARTIAL_EXIT_TIERS)-1
 
 
+# Real memecoins can do 1000x in a great run, but not in a single
+# position-check cycle, and ~never above 10,000x in a session. A ratio
+# beyond this between entry_price and current_price almost certainly
+# indicates a price-source bug (wrong-units math, oracle glitch, stale
+# cache). Caught the 2026-06-09 cbBTC trade where pre-fix dex_quoter
+# stored entry_price 10^8× too small ($0.000624 vs real $60k) and the
+# partial-exit ladder cascaded all 4 tiers when Birdeye started
+# returning sane current_prices again, producing $38B fake PnL.
+PRICE_SCALE_ANOMALY_RATIO = 10_000.0
+
+
+def is_price_scale_anomaly(
+    entry_price: float,
+    current_price: float,
+    ratio_threshold: float = PRICE_SCALE_ANOMALY_RATIO,
+) -> bool:
+    """True when entry/current ratio is so extreme it's almost certainly
+    a price-source bug, not a real move. Caller should skip position
+    management this cycle and emit an alert.
+    """
+    if entry_price <= 0 or current_price <= 0:
+        return False
+    hi = max(entry_price, current_price)
+    lo = min(entry_price, current_price)
+    return (hi / lo) > ratio_threshold
+
+
 def evaluate_exit_actions(
     *,
     entry_price: float,
