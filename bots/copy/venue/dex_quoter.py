@@ -66,6 +66,37 @@ async def _quote_solana_jupiter(
     input_usd: float,
     slippage_bps_tolerance: int,
 ) -> Optional[DexQuote]:
+    """Get Jupiter slippage estimate, but price comes from Birdeye.
+
+    BUG FIX 2026-06-09: the previous implementation computed
+    `expected_price_per_token_usd = input_usd / out_amount` where
+    `out_amount` is RAW ATOMIC UNITS (token quantity × 10^decimals).
+    That produces a price-per-atomic-unit, NOT a price-per-UI-token.
+    For a typical 6-decimal Solana memecoin the stored entry_price
+    came out 1,000,000× too small. The bug only manifested when
+    Jupiter quote actually succeeded — before 2026-06-09 the
+    quote-api.jup.ag endpoint was DNS-flaky, so Birdeye fallback was
+    always hit (correct price). After we migrated to lite-api.jup.ag
+    on 2026-06-08, Jupiter quotes started succeeding for graduated
+    tokens, and tiny entry_prices started landing in trade rows.
+
+    Result: 6 paper trades on 2026-06-09 morning showed peak_pct of
+    100,000,000%+ and pseudo-PnL of $400M each, because the new
+    partial-exit ladder fired all 4 tiers in one cycle on price
+    ratios that LOOKED like 1,000,000× pumps but were actually just
+    the scale bug.
+
+    Fix: Jupiter doesn't return token decimals in its quote response,
+    so we can't fix the math without an extra Solana RPC call per
+    quote. Instead, look up the actual price via Birdeye and return
+    Jupiter's slippage estimate combined with Birdeye's price. Two
+    HTTP calls per quote but accurate.
+
+    If Birdeye lookup fails, return None — caller falls through to
+    `_quote_solana_birdeye` which is the pure Birdeye path. Worst-case
+    behavior: paper trades use flat 100bps slippage estimate instead
+    of Jupiter's price-impact-derived estimate. Acceptable for now.
+    """
     settings = get_copy_settings()
     amount_in = int(input_usd * 1_000_000)  # USDC has 6 decimals
     params = {
@@ -89,18 +120,46 @@ async def _quote_solana_jupiter(
             return None
         price_impact_pct = float(data.get("priceImpactPct", 0))
         slippage_bps = abs(price_impact_pct) * 100.0
-        return DexQuote(
-            asset=output_mint,
-            chain="solana",
-            input_usd=input_usd,
-            expected_out_native=float(out_amount),
-            expected_price_per_token_usd=input_usd / out_amount if out_amount > 0 else 0,
-            slippage_bps=slippage_bps,
-            raw_response=data,
-        )
     except Exception:
         log.exception("jupiter_quote_parse_failed", mint=output_mint)
         return None
+
+    # Get the actual per-UI-token USD price from Birdeye, not the
+    # broken atomic-unit math from Jupiter.
+    settings = get_copy_settings()
+    if not settings.birdeye_api_key:
+        return None    # No fallback price available; caller goes to _quote_solana_birdeye
+    headers = {"X-API-KEY": settings.birdeye_api_key, "x-chain": "solana"}
+    try:
+        async with session.get(
+            "https://public-api.birdeye.so/defi/price",
+            params={"address": output_mint},
+            headers=headers,
+            timeout=aiohttp.ClientTimeout(total=8),
+        ) as r:
+            if r.status != 200:
+                return None
+            body = await r.json()
+    except Exception:
+        return None
+    try:
+        price_per_token_usd = float(((body.get("data") or {}).get("value")) or 0)
+    except (TypeError, ValueError):
+        return None
+    if price_per_token_usd <= 0:
+        return None
+
+    return DexQuote(
+        asset=output_mint,
+        chain="solana",
+        input_usd=input_usd,
+        # expected_out_native is preserved for telemetry but the price
+        # comes from Birdeye, not from the broken Jupiter math.
+        expected_out_native=float(out_amount),
+        expected_price_per_token_usd=price_per_token_usd,
+        slippage_bps=slippage_bps,
+        raw_response=data,
+    )
 
 
 async def multi_price_solana(
