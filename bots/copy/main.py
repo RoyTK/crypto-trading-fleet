@@ -35,6 +35,7 @@ from bots.copy.config import get_copy_settings
 from bots.copy.fill_simulator import DEX_FEE_PCT, CopyFillSimulator, CopyMarketSnapshot
 from bots.copy.loop_helpers import (
     close_paper_trade,
+    execute_paper_partial_close,
     has_open_position,
     list_open_paper_trades,
     list_open_real_trades,
@@ -46,7 +47,8 @@ from bots.copy.loop_helpers import (
     write_cluster_detection,
 )
 from bots.copy.executor import CopyExecutor
-from bots.copy.trailing_stop import evaluate_trailing_exit
+from bots.copy.trailing_stop import evaluate_exit_actions
+from bots.copy.config import PARTIAL_EXIT_TIERS
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
@@ -86,6 +88,31 @@ MACRO_MINT_TO_HL_ASSET: dict[str, str] = {
 
 
 WALLET_POOL_PATH = Path(__file__).parent / "wallet_pool.json"
+
+
+def _completed_tier_pcts(trade_id: int) -> tuple[float, ...]:
+    """Read the already-filled partial-exit tiers from Trade.sim_metadata.
+
+    Returns the tier_pct values (in monotonic increasing order) of
+    partials that previously fired and filled. Used by the exit-evaluator
+    so a tier that already executed doesn't re-fire on every cycle.
+    """
+    from framework.db import session_scope
+    from framework.models import Trade
+    try:
+        with session_scope() as s:
+            t = s.get(Trade, trade_id)
+            if t is None:
+                return ()
+            md = t.sim_metadata or {}
+            partials = md.get("partial_exits") or []
+            return tuple(
+                float(p["tier_pct"]) for p in partials
+                if isinstance(p, dict) and p.get("status") == "filled"
+                and "tier_pct" in p
+            )
+    except Exception:
+        return ()
 
 
 def _extract_wallet_list(c: SignalCandidate) -> list[str]:
@@ -588,14 +615,18 @@ class CopyBot(BotLifecycle):
             )
 
             exit_reason: Optional[str] = None
+            partial_actions: list = []
             if mid is not None and trade.entry_price > 0:
-                # Trailing-stop machinery: pure function returns the new peak
-                # AND any exit reason (stop / trailing_stop / trailing_hard_cap
-                # / tp). Persist the peak so a bot restart doesn't reset it.
-                new_peak, exit_reason = evaluate_trailing_exit(
+                # New tiered ladder + multiplicative trailing. Returns
+                # (peak, partials_to_fire, full_close_reason_or_None).
+                # Partials are sold synthetically (paper) below; full
+                # close routes through close_paper_trade as before.
+                completed_tier_pcts = _completed_tier_pcts(trade.trade_id)
+                new_peak, partial_actions, exit_reason = evaluate_exit_actions(
                     entry_price=trade.entry_price,
                     current_price=mid,
                     stored_peak_pct=trade.peak_pct_since_entry,
+                    completed_tier_pcts=completed_tier_pcts,
                     leverage=trade.leverage,
                     direction=trade.direction,
                     stop_pct=trade.stop_pct,
@@ -607,6 +638,24 @@ class CopyBot(BotLifecycle):
                     except Exception:
                         self.log.exception("paper_peak_persist_failed",
                                            trade_id=trade.trade_id)
+                # Fire each partial tier that should execute this cycle.
+                for action in partial_actions:
+                    try:
+                        execute_paper_partial_close(
+                            trade_id=trade.trade_id,
+                            tier_pct=action.tier_pct,
+                            fraction=action.fraction,
+                            tier_index=action.tier_index,
+                            current_price=mid,
+                        )
+                    except Exception:
+                        self.log.exception("paper_partial_close_failed",
+                                           trade_id=trade.trade_id,
+                                           tier_pct=action.tier_pct)
+                # If the final tier fired in this cycle, the position is
+                # fully exited via partials — close the row with 'tier_complete'.
+                if (len(completed_tier_pcts) + len(partial_actions)) >= len(PARTIAL_EXIT_TIERS):
+                    exit_reason = "tier_complete"
                 if exit_reason is None and timed_out:
                     exit_reason = "timeout"
             elif timed_out:
@@ -804,14 +853,17 @@ class CopyBot(BotLifecycle):
                     and (now - trade.entry_at) >= timedelta(hours=trade.timeout_hours)
                 )
                 exit_reason: Optional[str] = None
+                partial_actions: list = []
                 if mid is not None and trade.entry_price > 0:
-                    # Same trailing-stop logic as the paper path. The
-                    # close trigger is different (real Jupiter swap vs
-                    # synthetic fill) but the decision is identical.
-                    new_peak, exit_reason = evaluate_trailing_exit(
+                    # Same tiered ladder + trailing as the paper path.
+                    # Partials route through executor.execute_partial_close
+                    # (real Jupiter swap of the tier's fraction).
+                    completed_tier_pcts = _completed_tier_pcts(trade.trade_id)
+                    new_peak, partial_actions, exit_reason = evaluate_exit_actions(
                         entry_price=trade.entry_price,
                         current_price=mid,
                         stored_peak_pct=trade.peak_pct_since_entry,
+                        completed_tier_pcts=completed_tier_pcts,
                         leverage=1.0,  # shadow/live are spot 1x
                         direction=trade.direction,
                         stop_pct=trade.stop_pct,
@@ -823,6 +875,27 @@ class CopyBot(BotLifecycle):
                         except Exception:
                             self.log.exception("real_peak_persist_failed",
                                                trade_id=trade.trade_id)
+                    # Fire each partial tier. A failure (e.g. Jupiter
+                    # quote unavailable for the partial size) doesn't
+                    # mark the tier completed — caller will retry next
+                    # cycle. We still proceed to the next tier this cycle
+                    # to capture any that DO work, since they're independent
+                    # swaps.
+                    for action in partial_actions:
+                        try:
+                            await self.executor.execute_partial_close(
+                                session=self._session,
+                                trade_id=trade.trade_id,
+                                tier_pct=action.tier_pct,
+                                fraction=action.fraction,
+                                tier_index=action.tier_index,
+                            )
+                        except Exception:
+                            self.log.exception("real_partial_close_failed",
+                                               trade_id=trade.trade_id,
+                                               tier_pct=action.tier_pct)
+                    if (len(completed_tier_pcts) + len(partial_actions)) >= len(PARTIAL_EXIT_TIERS):
+                        exit_reason = "tier_complete"
                     if exit_reason is None and timed_out:
                         exit_reason = "timeout"
                 elif timed_out:

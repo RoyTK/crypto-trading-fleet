@@ -205,6 +205,80 @@ def update_trade_peak_pct(trade_id: int, peak_pct: float) -> None:
             t.sim_metadata = md
 
 
+def execute_paper_partial_close(
+    *,
+    trade_id: int,
+    tier_pct: float,
+    fraction: float,
+    tier_index: int,
+    current_price: float,
+) -> bool:
+    """Synthetic partial close for paper trades. Mirrors
+    executor.execute_partial_close shape but no Jupiter swap — we just
+    record the implied USDC received at current_price.
+
+    Paper trades use simulated fills, so the per-tier "received_usdc"
+    is computed from entry_price/current_price ratio applied to the
+    appropriate fraction of size_usd. Fees use the DEX_FEE_PCT constant
+    (matches the entry-side simulator math).
+
+    Returns True on recorded fill, False on bad state.
+    """
+    from bots.copy.fill_simulator import DEX_FEE_PCT
+    with session_scope() as s:
+        t = s.get(Trade, trade_id)
+        if t is None or t.fill_status != "open":
+            return False
+        if t.mode != "paper":
+            return False
+        size_usd = float(t.size_usd or 0.0)
+        entry_price = float(t.entry_price or 0.0)
+        if size_usd <= 0 or entry_price <= 0:
+            return False
+        # Slice math: fraction of original notional sized in tokens at
+        # entry_price; sold at current_price.
+        slice_usd = size_usd * fraction
+        # tokens_in_slice = slice_usd / entry_price; received_usdc =
+        # tokens_in_slice × current_price - fees
+        gross_received = (slice_usd / entry_price) * current_price
+        fees_usd = gross_received * (DEX_FEE_PCT / 100.0)
+        received_usdc = gross_received - fees_usd
+        md = dict(t.sim_metadata or {})
+        partials = list(md.get("partial_exits") or [])
+        partials.append({
+            "tier_pct": tier_pct,
+            "fraction": fraction,
+            "tier_index": tier_index,
+            "status": "filled",
+            "tokens_sold_atomic": None,  # paper: no atomic tracking
+            "received_usdc": received_usdc,
+            "exit_price_usd": current_price,
+            "tx_signature": None,
+            "executed_at": datetime.now(timezone.utc).isoformat(),
+            "realized_slippage_bps": None,
+        })
+        md["partial_exits"] = partials
+        # remaining_atomic doesn't apply to paper; track remaining_size_usd
+        # for the eventual close math.
+        sold_fraction = sum(float(p.get("fraction", 0.0)) for p in partials
+                            if p.get("status") == "filled")
+        md["remaining_size_usd"] = max(0.0, size_usd * (1.0 - sold_fraction))
+        t.sim_metadata = md
+        t.fees_usd = float(t.fees_usd or 0.0) + fees_usd
+    write_audit(
+        "paper_partial_close_filled",
+        bot_id=BOT_ID,
+        payload={
+            "trade_id": trade_id,
+            "tier_pct": tier_pct,
+            "fraction": fraction,
+            "received_usdc": received_usdc,
+            "exit_price_usd": current_price,
+        },
+    )
+    return True
+
+
 @dataclass
 class OpenRealTrade:
     """Lightweight handle to an open shadow/live Trade row, surfaced from
@@ -261,24 +335,75 @@ def close_paper_trade(
     exit_fill: SimulatedFill,
     exit_reason: str,
 ) -> None:
+    """Close an open paper trade. Handles BOTH the legacy single-exit
+    lifecycle AND the new partial-exit ladder (where 0-3 tiers may have
+    already fired before this close).
+
+    PnL math:
+    - If no partials fired: identical to old behavior.
+    - If partials fired:
+        gross_received = sum(partial.received_usdc) + remaining_slice
+                          where remaining_slice = (1 - sum_fractions) ×
+                                size_usd × (exit_price / entry_price)
+        pnl_usd = gross_received - size_usd - (remaining_slice's fees +
+                                               exit_fill.fees_usd)
+    - For 'tier_complete' (all 4 partials fired): no remainder swap,
+      pnl_usd derived purely from partial_exits sums.
+    """
+    from bots.copy.fill_simulator import DEX_FEE_PCT
     with session_scope() as s:
         t = s.get(Trade, trade_id)
         if t is None or t.fill_status != "open":
             return
+        entry_price = float(t.entry_price or 0.0)
+        size_usd = float(t.size_usd or 0.0)
+        leverage = float(t.leverage or 1.0)
+        md = dict(t.sim_metadata or {})
+        partial_exits = list(md.get("partial_exits") or [])
+        sold_fraction = sum(
+            float(p.get("fraction", 0.0)) for p in partial_exits
+            if p.get("status") == "filled"
+        )
+        remaining_fraction = max(0.0, 1.0 - sold_fraction)
+
+        # exit_price/exit_fill apply to the REMAINING fraction only when
+        # partials have fired. For backwards compat (no partials), the
+        # entire position is the remainder.
+        partial_received_usdc = sum(
+            float(p.get("received_usdc", 0.0)) for p in partial_exits
+            if p.get("status") == "filled"
+        )
+        if remaining_fraction > 0 and entry_price > 0:
+            slice_usd = size_usd * remaining_fraction
+            gross_remaining = (slice_usd / entry_price) * exit_price
+            remaining_received = gross_remaining - exit_fill.fees_usd
+        else:
+            remaining_received = 0.0
+        total_received_usdc = partial_received_usdc + remaining_received
+
         t.exit_price = exit_price
         t.exit_at = datetime.now(timezone.utc)
         t.exit_reason = exit_reason
         t.fill_status = "closed"
         t.fees_usd = float(t.fees_usd or 0.0) + exit_fill.fees_usd
 
-        if t.entry_price and t.entry_price > 0:
-            raw_pct = (exit_price - t.entry_price) / t.entry_price * 100.0
-            if t.direction == "short":
-                raw_pct = -raw_pct
-            t.pnl_pct = raw_pct * float(t.leverage or 1.0)
-            t.pnl_usd = float(t.size_usd or 0.0) * (t.pnl_pct / 100.0)
-        md = dict(t.sim_metadata or {})
+        if entry_price > 0 and size_usd > 0:
+            if partial_exits:
+                pnl_usd = total_received_usdc - size_usd
+                pnl_pct = pnl_usd / size_usd * 100.0
+            else:
+                raw_pct = (exit_price - entry_price) / entry_price * 100.0
+                if t.direction == "short":
+                    raw_pct = -raw_pct
+                pnl_pct = raw_pct * leverage
+                pnl_usd = size_usd * (pnl_pct / 100.0)
+            t.pnl_pct = pnl_pct
+            t.pnl_usd = pnl_usd
         md["exit_slippage_bps"] = exit_fill.slippage_bps
+        if partial_exits:
+            md["partial_received_usdc"] = partial_received_usdc
+            md["final_received_usdc"] = remaining_received
+            md["total_received_usdc"] = total_received_usdc
         t.sim_metadata = md
     write_audit(
         "paper_trade_closed",

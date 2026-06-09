@@ -111,23 +111,50 @@ EXIT_STOP_PCT = 8.0                        # software stop (DEX has no native se
 EXIT_TAKE_PROFIT_PCT = 30.0                # static TP — only fires before trailing activates
 EXIT_TIMEOUT_HOURS = 12                    # cluster signals decay fast
 
-# Trailing stop — captures memecoin upside per brainstorm 2026-05-30
-# (Trader's R1: "Wide-static TP is strictly worse than trailing-stop").
-# Logic (applied per check cycle):
-#   1. Track peak_pct_since_entry (monotonic, persisted to Trade.sim_metadata)
-#   2. If current_pct >= EXIT_TRAILING_HARD_CAP_PCT (200%) → force exit at hard cap
-#   3. Else if current_pct <= -EXIT_STOP_PCT → static stop (downside protection)
-#   4. Else if peak_pct >= EXIT_TRAILING_ACTIVATION_PCT (20%) → trailing active:
-#        stop level = peak_pct - EXIT_TRAILING_STOP_PCT (25%)
-#        if current_pct <= that level → exit
-#   5. Else if current_pct >= EXIT_TAKE_PROFIT_PCT (30%) → static TP
-#      (only reachable if peak somehow skipped over activation — defensive)
-#   6. Else if timed_out → timeout
+# Trailing stop + partial exits — captures memecoin upside per brainstorm
+# 2026-05-30 (Trader's R1) plus 2026-06-08 ladder refinement.
+#
+# Logic (applied per check cycle, in this order):
+#   1. Update peak_pct_since_entry (monotonic, persisted to Trade.sim_metadata)
+#   2. If current_pct <= -EXIT_STOP_PCT → static stop (downside protection)
+#      [full close, no partials — we never sell pieces of a loser]
+#   3. For each tier in PARTIAL_EXIT_TIERS whose threshold is met by the
+#      current peak_pct AND hasn't already fired: sell that tier's fraction
+#      of the ORIGINAL position. Multiple tiers can fire in one cycle if
+#      peak gap-up'd past several thresholds.
+#   4. After partials, if peak_pct >= activation: check trailing stop on
+#      the REMAINING position. Trailing is MULTIPLICATIVE — 25% drop in
+#      price from peak, NOT 25 percentage points off the gain. This is
+#      critical at high peaks: 25 pct-points off 4900% is ~0.5% of
+#      price (would fire on noise); 25% multiplicative is a real pullback.
+#   5. Static TP fallback (only reachable if peak somehow skipped activation)
+#   6. Timeout — handled by caller, not the pure function
+#
 # Activation gate (20%) prevents trailing from firing on early-stage noise;
 # the static -8% stop is the safety net during that period.
+#
+# PARTIAL_EXIT_TIERS in peak_pct (percentage gain from entry):
+#   - 200% peak = 3x  → sell 25% (recoups ~75% of cost basis)
+#   - 900% peak = 10x → sell 25% (recoups full cost basis after this tier)
+#   - 4900% peak = 50x → sell 25%
+#   - 99900% peak = 1000x → sell 25% (final close)
+# After all four tiers: 0% remaining. The trade row closes with
+# exit_reason='tier_complete'.
 EXIT_TRAILING_ACTIVATION_PCT = 20.0
-EXIT_TRAILING_STOP_PCT = 25.0
-EXIT_TRAILING_HARD_CAP_PCT = 200.0
+EXIT_TRAILING_STOP_PCT = 25.0          # interpreted MULTIPLICATIVELY: 25% drop in price from peak
+
+# Deprecated 2026-06-08 with the tiered partial-exit ladder. Tier 4 of
+# PARTIAL_EXIT_TIERS at 99900% (1000x) is the effective ceiling now;
+# this constant is kept ONLY for backwards-compat with any external
+# code/tests that still import it. evaluate_exit_actions ignores it.
+EXIT_TRAILING_HARD_CAP_PCT = 99900.0
+
+PARTIAL_EXIT_TIERS: tuple[tuple[float, float], ...] = (
+    (200.0, 0.25),     # 3x
+    (900.0, 0.25),     # 10x
+    (4900.0, 0.25),    # 50x
+    (99900.0, 0.25),   # 1000x
+)
 
 
 # ---------------------------------------------------------------------------
