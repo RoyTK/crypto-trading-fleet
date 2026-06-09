@@ -111,7 +111,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND exit_at >= '2026-06-07' ORDER BY exit_at",
           "format": "time_series"
         }
       ],
@@ -263,7 +263,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT wallet_address, chain, COUNT(*) AS n_trades, ROUND(SUM(attributed_pnl_usd)::numeric, 2) AS total_pnl_usd, ROUND(AVG(attributed_pnl_pct)::numeric, 2) AS avg_pct, ROUND(MAX(attributed_pnl_pct)::numeric, 2) AS best_pct, ROUND(MIN(attributed_pnl_pct)::numeric, 2) AS worst_pct, COUNT(*) FILTER (WHERE attributed_pnl_usd > 0) AS wins, COUNT(*) FILTER (WHERE attributed_pnl_usd <= 0) AS losses, ROUND((COUNT(*) FILTER (WHERE attributed_pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM wallet_attributions WHERE bot_id='copy' GROUP BY wallet_address, chain ORDER BY total_pnl_usd DESC NULLS LAST",
+          "rawSql": "SELECT wa.wallet_address, wa.chain, COUNT(*) AS n_trades, ROUND(SUM(wa.attributed_pnl_usd)::numeric, 2) AS total_pnl_usd, ROUND(AVG(wa.attributed_pnl_pct)::numeric, 2) AS avg_pct, ROUND(MAX(wa.attributed_pnl_pct)::numeric, 2) AS best_pct, ROUND(MIN(wa.attributed_pnl_pct)::numeric, 2) AS worst_pct, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0) AS wins, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd <= 0) AS losses, ROUND((COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' GROUP BY wa.wallet_address, wa.chain ORDER BY total_pnl_usd DESC NULLS LAST",
           "format": "table"
         }
       ],
@@ -310,7 +310,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT COUNT(DISTINCT wallet_address) AS active_wallets FROM wallet_attributions WHERE bot_id='copy'",
+          "rawSql": "SELECT COUNT(DISTINCT wa.wallet_address) AS active_wallets FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07'",
           "format": "table"
         }
       ],
@@ -325,7 +325,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ROUND(SUM(attributed_pnl_usd)::numeric, 2) FROM wallet_attributions WHERE bot_id='copy'",
+          "rawSql": "SELECT ROUND(SUM(wa.attributed_pnl_usd)::numeric, 2) FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07'",
           "format": "table"
         }
       ],
@@ -361,7 +361,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ROUND(AVG(cluster_size)::numeric, 2) FROM wallet_attributions WHERE bot_id='copy'",
+          "rawSql": "SELECT ROUND(AVG(wa.cluster_size)::numeric, 2) FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07'",
           "format": "table"
         }
       ],
@@ -376,7 +376,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT COUNT(*) FROM (SELECT wallet_address FROM wallet_attributions WHERE bot_id='copy' GROUP BY 1 HAVING COUNT(*) >= 5) sub",
+          "rawSql": "SELECT COUNT(*) FROM (SELECT wa.wallet_address FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' GROUP BY 1 HAVING COUNT(*) >= 5) sub",
           "format": "table"
         }
       ],
