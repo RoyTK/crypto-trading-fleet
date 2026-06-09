@@ -149,8 +149,12 @@ EXIT_TRAILING_STOP_PCT = 25.0          # interpreted MULTIPLICATIVELY: 25% drop 
 # code/tests that still import it. evaluate_exit_actions ignores it.
 EXIT_TRAILING_HARD_CAP_PCT = 99900.0
 
+# Hard-coded fallback in case env parsing produces an empty/invalid ladder.
+# Live config is `CopySettings.get_partial_exit_tiers()` which parses
+# COPY_PARTIAL_EXIT_TIERS env var. Default below matches Roy's 2026-06-08
+# choice: 4x / 10x / 50x / 1000x.
 PARTIAL_EXIT_TIERS: tuple[tuple[float, float], ...] = (
-    (200.0, 0.25),     # 3x
+    (300.0, 0.25),     # 4x   (1 + 300/100)
     (900.0, 0.25),     # 10x
     (4900.0, 0.25),    # 50x
     (99900.0, 0.25),   # 1000x
@@ -278,6 +282,20 @@ class CopySettings(BaseSettings):
     # off; shadow gets enabled first; live only after shadow PnL +
     # calibration_ratio looks sane.
     copy_live_full_enabled: bool = Field(default=False)
+    # Tier ladder for partial exits. Comma-separated `pct:fraction` pairs.
+    # Default: 4x / 10x / 50x / 1000x with 25% each. Tweaking is just an
+    # env var update + container recreate — no code change needed.
+    # Notes:
+    # - pct is peak_pct_since_entry threshold (e.g. 300 = 4x = +300%)
+    # - fraction is 0.0-1.0 share of ORIGINAL position sold at that tier
+    # - Sum of fractions doesn't have to be 1.0 — leaving a long-term
+    #   rider (e.g. 4 tiers × 20% = 80% sold, 20% rides forever on
+    #   trailing/sell-cluster) is a valid configuration.
+    # - Must be monotonically increasing by pct. If not, the loader
+    #   sorts defensively but you should fix the env value.
+    copy_partial_exit_tiers: str = Field(
+        default="300:0.25,900:0.25,4900:0.25,99900:0.25"
+    )
 
     def get_slippage_ladder(self) -> tuple[int, ...]:
         """Parse comma-separated `copy_swap_slippage_ladder_bps` into a
@@ -292,6 +310,38 @@ class CopySettings(BaseSettings):
         except ValueError:
             parsed = ()
         return parsed or (self.copy_swap_slippage_bps or 1500,)
+
+    def get_partial_exit_tiers(self) -> tuple[tuple[float, float], ...]:
+        """Parse `copy_partial_exit_tiers` env (format:
+        'pct:frac,pct:frac,...') into a tuple of (peak_pct, fraction)
+        pairs. Defensive against malformed input: returns the module-level
+        PARTIAL_EXIT_TIERS constant on any parse failure or empty result.
+
+        Sorts the tiers by pct ascending if the input isn't ordered —
+        evaluate_exit_actions assumes monotonic order, so this prevents
+        silent misbehavior from a user typo.
+        """
+        raw = (self.copy_partial_exit_tiers or "").strip()
+        if not raw:
+            return PARTIAL_EXIT_TIERS
+        try:
+            parsed: list[tuple[float, float]] = []
+            for item in raw.split(","):
+                item = item.strip()
+                if not item:
+                    continue
+                pct_str, frac_str = item.split(":", 1)
+                pct = float(pct_str.strip())
+                frac = float(frac_str.strip())
+                if pct < 0 or frac <= 0 or frac > 1.0:
+                    raise ValueError(f"invalid tier ({pct}, {frac})")
+                parsed.append((pct, frac))
+            if not parsed:
+                return PARTIAL_EXIT_TIERS
+            parsed.sort(key=lambda x: x[0])
+            return tuple(parsed)
+        except (ValueError, IndexError):
+            return PARTIAL_EXIT_TIERS
 
 
 @lru_cache(maxsize=1)

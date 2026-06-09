@@ -48,7 +48,6 @@ from bots.copy.loop_helpers import (
 )
 from bots.copy.executor import CopyExecutor
 from bots.copy.trailing_stop import evaluate_exit_actions
-from bots.copy.config import PARTIAL_EXIT_TIERS
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
@@ -90,12 +89,22 @@ MACRO_MINT_TO_HL_ASSET: dict[str, str] = {
 WALLET_POOL_PATH = Path(__file__).parent / "wallet_pool.json"
 
 
-def _completed_tier_pcts(trade_id: int) -> tuple[float, ...]:
-    """Read the already-filled partial-exit tiers from Trade.sim_metadata.
+def _completed_tier_indexes(
+    trade_id: int,
+    partial_tiers: tuple[tuple[float, float], ...],
+) -> tuple[int, ...]:
+    """Read the already-filled partial-exit tier INDEXES from
+    Trade.sim_metadata. Used by the exit-evaluator so a tier that
+    already executed doesn't re-fire on every cycle.
 
-    Returns the tier_pct values (in monotonic increasing order) of
-    partials that previously fired and filled. Used by the exit-evaluator
-    so a tier that already executed doesn't re-fire on every cycle.
+    Identity is tier_index (0..N-1), NOT tier_pct. This means changing
+    PARTIAL_EXIT_TIERS values mid-flight is always safe — a position
+    that fired the old "tier 0 at 200%" stays marked tier 0 even if
+    the config now says tier 0 is at 300%.
+
+    Falls back to inferring index from tier_pct for legacy records
+    that don't carry tier_index (shouldn't happen in new data; defensive
+    for hypothetical future replays).
     """
     from framework.db import session_scope
     from framework.models import Trade
@@ -106,11 +115,30 @@ def _completed_tier_pcts(trade_id: int) -> tuple[float, ...]:
                 return ()
             md = t.sim_metadata or {}
             partials = md.get("partial_exits") or []
-            return tuple(
-                float(p["tier_pct"]) for p in partials
-                if isinstance(p, dict) and p.get("status") == "filled"
-                and "tier_pct" in p
-            )
+        out: set[int] = set()
+        for p in partials:
+            if not isinstance(p, dict) or p.get("status") != "filled":
+                continue
+            idx = p.get("tier_index")
+            if idx is not None:
+                try:
+                    out.add(int(idx))
+                except (TypeError, ValueError):
+                    pass
+                continue
+            # Legacy fallback: infer from tier_pct against current ladder
+            tier_pct = p.get("tier_pct")
+            if tier_pct is None:
+                continue
+            try:
+                pct_val = float(tier_pct)
+            except (TypeError, ValueError):
+                continue
+            for i, (t_pct, _) in enumerate(partial_tiers):
+                if abs(t_pct - pct_val) < 0.001:
+                    out.add(i)
+                    break
+        return tuple(sorted(out))
     except Exception:
         return ()
 
@@ -621,12 +649,14 @@ class CopyBot(BotLifecycle):
                 # (peak, partials_to_fire, full_close_reason_or_None).
                 # Partials are sold synthetically (paper) below; full
                 # close routes through close_paper_trade as before.
-                completed_tier_pcts = _completed_tier_pcts(trade.trade_id)
+                ladder = self.copy_settings.get_partial_exit_tiers()
+                completed = _completed_tier_indexes(trade.trade_id, ladder)
                 new_peak, partial_actions, exit_reason = evaluate_exit_actions(
                     entry_price=trade.entry_price,
                     current_price=mid,
                     stored_peak_pct=trade.peak_pct_since_entry,
-                    completed_tier_pcts=completed_tier_pcts,
+                    completed_tier_indexes=completed,
+                    partial_tiers=ladder,
                     leverage=trade.leverage,
                     direction=trade.direction,
                     stop_pct=trade.stop_pct,
@@ -654,7 +684,7 @@ class CopyBot(BotLifecycle):
                                            tier_pct=action.tier_pct)
                 # If the final tier fired in this cycle, the position is
                 # fully exited via partials — close the row with 'tier_complete'.
-                if (len(completed_tier_pcts) + len(partial_actions)) >= len(PARTIAL_EXIT_TIERS):
+                if (len(completed) + len(partial_actions)) >= len(ladder):
                     exit_reason = "tier_complete"
                 if exit_reason is None and timed_out:
                     exit_reason = "timeout"
@@ -858,12 +888,14 @@ class CopyBot(BotLifecycle):
                     # Same tiered ladder + trailing as the paper path.
                     # Partials route through executor.execute_partial_close
                     # (real Jupiter swap of the tier's fraction).
-                    completed_tier_pcts = _completed_tier_pcts(trade.trade_id)
+                    ladder = self.copy_settings.get_partial_exit_tiers()
+                    completed = _completed_tier_indexes(trade.trade_id, ladder)
                     new_peak, partial_actions, exit_reason = evaluate_exit_actions(
                         entry_price=trade.entry_price,
                         current_price=mid,
                         stored_peak_pct=trade.peak_pct_since_entry,
-                        completed_tier_pcts=completed_tier_pcts,
+                        completed_tier_indexes=completed,
+                        partial_tiers=ladder,
                         leverage=1.0,  # shadow/live are spot 1x
                         direction=trade.direction,
                         stop_pct=trade.stop_pct,
@@ -894,7 +926,7 @@ class CopyBot(BotLifecycle):
                             self.log.exception("real_partial_close_failed",
                                                trade_id=trade.trade_id,
                                                tier_pct=action.tier_pct)
-                    if (len(completed_tier_pcts) + len(partial_actions)) >= len(PARTIAL_EXIT_TIERS):
+                    if (len(completed) + len(partial_actions)) >= len(ladder):
                         exit_reason = "tier_complete"
                     if exit_reason is None and timed_out:
                         exit_reason = "timeout"

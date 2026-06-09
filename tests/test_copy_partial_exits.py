@@ -4,14 +4,15 @@ stop. No DB, no network — only the evaluator decision logic.
 Behaviors under test:
 
 - Static stop terminates everything (no partials on a loser)
-- Tier 1 fires when peak crosses 200%, only once
+- Tier 1 fires when peak crosses 300% (4x), only once
 - Multiple tiers fire in one cycle when peak gap-ups past several
-- Tier 4 firing means the position fully exits via partials (caller
-  closes with 'tier_complete')
+- Tier 4 firing means the position fully exits via partials
 - Trailing stop is MULTIPLICATIVE — 25% drop from peak in PRICE terms
 - Trailing fires AFTER partials in the same cycle
-- Already-completed tiers don't re-fire
+- Already-completed tiers (tracked by INDEX, not pct) don't re-fire
 - TP fallback only when peak skips activation (defensive)
+- Env-driven tier ladder parses safely and falls back on bad input
+- Identity is tier_index — re-tuning tier_pct mid-flight is safe
 """
 from __future__ import annotations
 
@@ -20,6 +21,7 @@ from bots.copy.config import (
     EXIT_TAKE_PROFIT_PCT,
     EXIT_TRAILING_ACTIVATION_PCT,
     PARTIAL_EXIT_TIERS,
+    CopySettings,
 )
 from bots.copy.trailing_stop import (
     PartialExitAction,
@@ -45,8 +47,8 @@ def test_static_stop_terminates_with_no_partials():
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
         current_price=_at_pct(ENTRY, -EXIT_STOP_PCT),
-        stored_peak_pct=300.0,    # had been at 4x peak previously
-        completed_tier_pcts=(200.0,),    # tier 1 already fired
+        stored_peak_pct=400.0,    # had been at 5x peak previously
+        completed_tier_indexes=(0,),    # tier 0 (4x) already fired
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
@@ -58,41 +60,62 @@ def test_static_stop_terminates_with_no_partials():
 # Tier firing — basic
 # ---------------------------------------------------------------------------
 
-def test_tier_1_fires_at_3x_peak():
-    """Pump to 3x (peak_pct = 200) → tier 1 fires once."""
+def test_tier_0_fires_at_4x_peak():
+    """Pump to 4x (peak_pct = 300) → tier 0 fires once. (Default ladder
+    has tier 0 at 300% = 4x.)"""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 200.0),
+        current_price=_at_pct(ENTRY, 300.0),
         stored_peak_pct=None,
-        completed_tier_pcts=(),
+        completed_tier_indexes=(),
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
-    # new_peak = 200%. Tier 1 (200) eligible. Trailing on remainder: peak
-    # 200% → trail level = (1+200/100)*0.75 - 1 = 125%. Current 200% > 125%
-    # → hold remainder.
-    assert new_peak == 200.0
+    # new_peak = 300%. Tier 0 (300) eligible. Trailing on remainder: peak
+    # 300% → trail mult = (1+300/100)*0.75 = 3. trail_pct = 200%. Current
+    # 300% > 200% → hold remainder.
+    assert new_peak == 300.0
     assert len(partials) == 1
-    assert partials[0].tier_pct == 200.0
+    assert partials[0].tier_pct == 300.0
     assert partials[0].fraction == 0.25
     assert partials[0].tier_index == 0
     assert full is None
 
 
-def test_tier_1_does_not_refire_when_already_completed():
-    """If tier 1 previously fired, it doesn't fire again."""
+def test_tier_0_does_not_refire_when_already_completed():
+    """If tier 0 previously fired, it doesn't fire again — identity is
+    tier_index 0, regardless of pct value."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 350.0),
-        stored_peak_pct=400.0,
-        completed_tier_pcts=(200.0,),    # tier 1 already done
+        current_price=_at_pct(ENTRY, 500.0),
+        stored_peak_pct=500.0,
+        completed_tier_indexes=(0,),    # tier 0 already done
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
-    # Only tiers >= peak that aren't already completed. Tier 2 (900) needs
-    # peak >= 900. Peak is 400. So no new tiers.
+    # Tier 1 (900) needs peak >= 900. Peak 500 < 900 → no fire.
     assert partials == []
-    assert full is None    # current 350 > trailing level (400 → 275% trail) → hold
+    # Trailing: peak 500 → trail mult 6 × 0.75 = 4.5 → trail_pct 350%.
+    # Current 500 > 350 → hold.
+    assert full is None
+
+
+def test_tier_identity_is_index_not_pct():
+    """If the config has been re-tuned mid-flight (tier 0 was 200, now
+    300), a position that already fired the OLD tier 0 at 200% stays
+    marked complete — won't double-fire on the new tier 0 at 300%."""
+    new_peak, partials, full = evaluate_exit_actions(
+        entry_price=ENTRY,
+        current_price=_at_pct(ENTRY, 400.0),
+        stored_peak_pct=400.0,
+        completed_tier_indexes=(0,),    # tier 0 was fired (at whatever pct)
+        partial_tiers=((300.0, 0.25), (900.0, 0.25)),    # current config
+        stop_pct=EXIT_STOP_PCT,
+        take_profit_pct=EXIT_TAKE_PROFIT_PCT,
+    )
+    # Tier 0 (300) is in completed_set as INDEX 0, not as pct=300. So even
+    # though peak 400 >= 300, tier 0 doesn't refire.
+    assert all(p.tier_index != 0 for p in partials)
 
 
 # ---------------------------------------------------------------------------
@@ -101,39 +124,37 @@ def test_tier_1_does_not_refire_when_already_completed():
 
 def test_gap_up_fires_multiple_tiers_in_one_cycle():
     """Peak skips from 0 to 5000% in one cycle (memecoin gap-up).
-    Tiers 1 (200%), 2 (900%), and 3 (4900%) all fire. Tier 4 (99900%) doesn't."""
+    Tiers 0 (300%), 1 (900%), 2 (4900%) all fire. Tier 3 (99900%) doesn't."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
         current_price=_at_pct(ENTRY, 5000.0),
         stored_peak_pct=None,
-        completed_tier_pcts=(),
+        completed_tier_indexes=(),
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
     assert new_peak == 5000.0
-    fired_tiers = sorted(p.tier_pct for p in partials)
-    assert fired_tiers == [200.0, 900.0, 4900.0]
-    # 25% of position remains. Peak 5000% → trail level = 51 × 0.75 - 1 = 37.25
-    # → trail_pct = 3725%. Current 5000% > 3725% → hold remainder.
+    fired_indexes = sorted(p.tier_index for p in partials)
+    assert fired_indexes == [0, 1, 2]
+    # Trailing on remainder: peak 5000 → trail mult 51 × 0.75 = 38.25 →
+    # trail_pct 3725%. Current 5000 > 3725 → hold.
     assert full is None
 
 
-def test_gap_up_through_tier_4_completes_position():
-    """Peak crosses tier 4 (99900%) → all 4 tiers fire in one cycle.
-    Caller is responsible for detecting 'all tiers complete' → close row."""
+def test_gap_up_through_tier_3_fires_all_four():
+    """Peak crosses tier 3 (99900%) → all 4 tiers fire in one cycle.
+    Caller infers 'tier_complete' from len(completed)+len(this_cycle) ==
+    len(tiers)."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 100_000.0),    # 1001x — past tier 4
+        current_price=_at_pct(ENTRY, 100_000.0),    # past tier 3
         stored_peak_pct=None,
-        completed_tier_pcts=(),
+        completed_tier_indexes=(),
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
-    fired_tiers = sorted(p.tier_pct for p in partials)
-    assert fired_tiers == [200.0, 900.0, 4900.0, 99900.0]
-    # Note: this function doesn't return 'tier_complete' as a full_close
-    # reason — the caller in main.py infers that from
-    # len(completed)+len(partials) >= len(PARTIAL_EXIT_TIERS).
+    fired_indexes = sorted(p.tier_index for p in partials)
+    assert fired_indexes == [0, 1, 2, 3]
     assert full is None
 
 
@@ -141,44 +162,28 @@ def test_gap_up_through_tier_4_completes_position():
 # Multiplicative trailing — the corrected math
 # ---------------------------------------------------------------------------
 
-def test_trailing_uses_multiplicative_math_at_low_peak():
-    """At peak 100%, multiplicative trail = (1+1)*0.75 - 1 = 0.5 = 50% pct.
-    Old percentage-point math would have given 100 - 25 = 75% pct.
-    The multiplicative version is the trader-intuition correct one."""
-    new_peak, partials, full = evaluate_exit_actions(
-        entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 50.0),    # back to +50%
-        stored_peak_pct=100.0,    # peak was at 2x
-        completed_tier_pcts=(),
-        stop_pct=EXIT_STOP_PCT,
-        take_profit_pct=EXIT_TAKE_PROFIT_PCT,
-    )
-    # equity = 50, trail level = 50. Current AT level → fires (<= comparison).
-    assert full == "trailing_stop"
-
-
 def test_trailing_uses_multiplicative_math_at_high_peak():
     """At peak 4900% (50x), trailing fires at 3650% (37.5x = 25% multiplicative drop).
     Old pct-point math would have fired at 4875% (0.5% price drop — noise)."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 3650.0),    # 37.5x — exactly the new trail level
+        current_price=_at_pct(ENTRY, 3650.0),    # exactly trail level
         stored_peak_pct=4900.0,
-        completed_tier_pcts=(200.0, 900.0, 4900.0),    # all 3 lower tiers fired
+        completed_tier_indexes=(0, 1, 2),    # all lower tiers fired
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
     assert full == "trailing_stop"
-    assert partials == []   # no new tiers (peak < 99900 = tier 4)
+    assert partials == []   # no new tiers (peak < 99900 = tier 3)
 
 
-def test_trailing_holds_when_above_multiplicative_stop():
-    """Peak 4900%, current 4000% (still 41x — well above the 37.5x trail). Hold."""
+def test_trailing_holds_above_multiplicative_stop():
+    """Peak 4900%, current 4000% (41x — well above the 37.5x trail). Hold."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
         current_price=_at_pct(ENTRY, 4000.0),
         stored_peak_pct=4900.0,
-        completed_tier_pcts=(200.0, 900.0, 4900.0),
+        completed_tier_indexes=(0, 1, 2),
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
@@ -191,21 +196,21 @@ def test_trailing_holds_when_above_multiplicative_stop():
 # ---------------------------------------------------------------------------
 
 def test_partial_and_trailing_can_fire_together():
-    """Peak ratchets to 300% (4x), current dips to 200% (3x).
-    Tier 1 (200%) eligible because peak crossed it. Trailing also fires
-    on the remainder because trail level = (1+3)*0.75 - 1 = 200% and
-    current = 200% (≤ trail level)."""
+    """Peak ratchets to 400% (5x), current dips to 275%.
+    Tier 0 (300%) eligible because peak crossed it. Trailing also fires
+    on the remainder because trail mult = 5 × 0.75 = 3.75 → trail_pct
+    275% and current = 275% (at trail level)."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 200.0),
-        stored_peak_pct=300.0,
-        completed_tier_pcts=(),
+        current_price=_at_pct(ENTRY, 275.0),
+        stored_peak_pct=400.0,
+        completed_tier_indexes=(),
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
-    assert new_peak == 300.0
+    assert new_peak == 400.0
     assert len(partials) == 1
-    assert partials[0].tier_pct == 200.0
+    assert partials[0].tier_index == 0
     assert full == "trailing_stop"
 
 
@@ -219,7 +224,7 @@ def test_peak_is_monotonic_under_pullback():
         entry_price=ENTRY,
         current_price=_at_pct(ENTRY, 100.0),
         stored_peak_pct=500.0,
-        completed_tier_pcts=(200.0,),
+        completed_tier_indexes=(0,),
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
@@ -231,12 +236,11 @@ def test_peak_is_monotonic_under_pullback():
 # ---------------------------------------------------------------------------
 
 def test_zero_entry_price_returns_no_actions():
-    """Zero entry price defensive return — no partials, no exit."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=0.0,
         current_price=1.0,
         stored_peak_pct=300.0,
-        completed_tier_pcts=(),
+        completed_tier_indexes=(),
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
@@ -246,19 +250,87 @@ def test_zero_entry_price_returns_no_actions():
 
 
 # ---------------------------------------------------------------------------
-# Config sanity
+# Config sanity (canonical default)
 # ---------------------------------------------------------------------------
 
-def test_partial_tiers_are_strictly_increasing():
+def test_default_partial_tiers_are_strictly_increasing():
     """The ladder must be ordered low-to-high or the gap-up logic
-    misbehaves (a tier_pct already met might be checked AFTER a smaller
-    one and incorrectly considered 'already complete')."""
+    misbehaves."""
     pcts = [t[0] for t in PARTIAL_EXIT_TIERS]
     assert pcts == sorted(pcts)
-    assert pcts == [200.0, 900.0, 4900.0, 99900.0]
+    assert pcts == [300.0, 900.0, 4900.0, 99900.0]
 
 
-def test_partial_tier_fractions_sum_to_one():
-    """The 4 tiers must fully exit the position when they all fire."""
+def test_default_partial_tier_fractions_sum_to_one():
+    """The 4 default tiers must fully exit the position when they all
+    fire. Custom env configs may set fractions that don't sum to 1
+    (long-term rider design); the default does."""
     total = sum(t[1] for t in PARTIAL_EXIT_TIERS)
     assert abs(total - 1.0) < 1e-9
+
+
+# ---------------------------------------------------------------------------
+# Env-driven tier parsing
+# ---------------------------------------------------------------------------
+
+def test_env_parses_default_format():
+    s = CopySettings(copy_partial_exit_tiers="300:0.25,900:0.25,4900:0.25,99900:0.25")
+    assert s.get_partial_exit_tiers() == (
+        (300.0, 0.25), (900.0, 0.25), (4900.0, 0.25), (99900.0, 0.25),
+    )
+
+
+def test_env_parses_with_whitespace():
+    s = CopySettings(copy_partial_exit_tiers=" 300 : 0.25 , 900 : 0.25 ")
+    assert s.get_partial_exit_tiers() == ((300.0, 0.25), (900.0, 0.25))
+
+
+def test_env_sorts_unordered_tiers():
+    s = CopySettings(copy_partial_exit_tiers="900:0.25,300:0.25,4900:0.5")
+    assert s.get_partial_exit_tiers() == (
+        (300.0, 0.25), (900.0, 0.25), (4900.0, 0.5),
+    )
+
+
+def test_env_falls_back_on_empty():
+    s = CopySettings(copy_partial_exit_tiers="")
+    assert s.get_partial_exit_tiers() == PARTIAL_EXIT_TIERS
+
+
+def test_env_falls_back_on_malformed():
+    """A bad value in the middle invalidates the whole list, fallback
+    keeps the bot running."""
+    s = CopySettings(copy_partial_exit_tiers="300:0.25,not-a-number")
+    assert s.get_partial_exit_tiers() == PARTIAL_EXIT_TIERS
+
+
+def test_env_rejects_invalid_fraction():
+    """fraction > 1.0 is rejected as a config bug → fallback."""
+    s = CopySettings(copy_partial_exit_tiers="300:1.5")
+    assert s.get_partial_exit_tiers() == PARTIAL_EXIT_TIERS
+
+
+def test_env_accepts_long_term_rider_config():
+    """User wants 4 tiers × 20% = leave 20% riding forever. Valid."""
+    s = CopySettings(copy_partial_exit_tiers="300:0.2,900:0.2,4900:0.2,99900:0.2")
+    tiers = s.get_partial_exit_tiers()
+    total = sum(t[1] for t in tiers)
+    assert abs(total - 0.8) < 1e-9    # 20% rider remaining
+
+
+def test_custom_ladder_fires_at_custom_thresholds():
+    """End-to-end: a non-default ladder via env produces the right
+    fire decisions."""
+    custom = ((100.0, 0.5), (500.0, 0.5))    # 2x and 6x, 50% each
+    new_peak, partials, full = evaluate_exit_actions(
+        entry_price=ENTRY,
+        current_price=_at_pct(ENTRY, 100.0),
+        stored_peak_pct=None,
+        completed_tier_indexes=(),
+        partial_tiers=custom,
+        stop_pct=EXIT_STOP_PCT,
+        take_profit_pct=EXIT_TAKE_PROFIT_PCT,
+    )
+    assert len(partials) == 1
+    assert partials[0].tier_pct == 100.0
+    assert partials[0].fraction == 0.5

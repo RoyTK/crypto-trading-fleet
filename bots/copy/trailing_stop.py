@@ -64,7 +64,7 @@ def evaluate_exit_actions(
     entry_price: float,
     current_price: float,
     stored_peak_pct: Optional[float],
-    completed_tier_pcts: tuple[float, ...] = (),
+    completed_tier_indexes: tuple[int, ...] = (),
     partial_tiers: tuple[tuple[float, float], ...] = PARTIAL_EXIT_TIERS,
     leverage: float = 1.0,
     direction: str = "long",
@@ -86,10 +86,14 @@ def evaluate_exit_actions(
       'stop', 'trailing_stop', 'tp'. Timeout is handled by caller
       because we don't see the entry timestamp here.
 
+    Tier identity is the INDEX (0..N-1) into partial_tiers, NOT the
+    pct value. This means re-tuning the pct thresholds is always safe
+    on in-flight positions: a tier that ALREADY fired stays marked as
+    completed even if its threshold changed mid-flight.
+
     Notes on action ordering: partials always fire first this cycle.
     If full_close is also set, it acts on whatever fraction remains
-    AFTER the partials fire. The math is simply: remaining_after =
-    1 - sum(completed_pcts_fractions) - sum(partials_this_cycle).
+    AFTER the partials fire.
     """
     if entry_price <= 0:
         return (stored_peak_pct or 0.0, [], None)
@@ -107,11 +111,12 @@ def evaluate_exit_actions(
     if stop_pct is not None and equity_pct <= -float(stop_pct):
         return (new_peak_pct, [], "stop")
 
-    # 2. Detect partial tiers that should fire this cycle.
+    # 2. Detect partial tiers that should fire this cycle. Identity is
+    # tier index — bullet-proof against config changes mid-flight.
     partial_actions: list[PartialExitAction] = []
-    completed_set = {float(p) for p in completed_tier_pcts}
+    completed_set = {int(i) for i in completed_tier_indexes}
     for idx, (tier_pct, fraction) in enumerate(partial_tiers):
-        if tier_pct in completed_set:
+        if idx in completed_set:
             continue
         if new_peak_pct >= tier_pct:
             partial_actions.append(PartialExitAction(
@@ -166,7 +171,7 @@ def evaluate_trailing_exit(
         entry_price=entry_price,
         current_price=current_price,
         stored_peak_pct=stored_peak_pct,
-        completed_tier_pcts=(),
+        completed_tier_indexes=(),
         leverage=leverage,
         direction=direction,
         stop_pct=stop_pct,
