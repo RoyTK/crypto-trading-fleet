@@ -58,8 +58,10 @@ from bots.copy.sizing import size_position
 from bots.copy.venue.dex_quoter import multi_price_solana, quote
 from bots.copy.venue.helius_solana import WalletBuyEvent, WalletSellEvent
 from bots.copy.venue.solana_wallet import is_wallet_available, public_key_b58
+from framework.alerts import emit_alert
 from framework.config import get_settings as get_framework_settings
 from framework.reconciliation import reconcile_once, register_venue_fetcher
+from monitoring.alerting.taxonomy import Severity
 
 
 REDIS_BUYS_CHANNEL = "copy:buys"
@@ -184,6 +186,10 @@ class CopyBot(BotLifecycle):
         self._buys_subscriber_task: Optional[asyncio.Task] = None
         self._sells_subscriber_task: Optional[asyncio.Task] = None
         self._buys_redis: Optional[redis_async.Redis] = None
+        # Throttle for price-scale anomaly alerts. Per-trade, 1 hour
+        # cool-down — prevents spam if Birdeye is returning persistently
+        # bad data and every cycle re-triggers the guard for the same trade.
+        self._anomaly_alert_ts: dict[int, float] = {}
 
     # ---- Lifecycle hooks ---------------------------------------------------
 
@@ -592,6 +598,50 @@ class CopyBot(BotLifecycle):
 
     # ---- Position management ----------------------------------------------
 
+    def _emit_anomaly_alert(self, trade: Any, current_price: float, *, side: str) -> None:
+        """Throttled P2 Discord alert when the price-scale guardrail fires.
+
+        Throttle is per-trade for 1 hour. If Birdeye returns persistently
+        bad data for a token, we want ONE alert + structured logs every
+        cycle — not a Discord storm.
+        """
+        import time
+        last = self._anomaly_alert_ts.get(trade.trade_id, 0.0)
+        now = time.time()
+        if now - last < 3600:
+            return
+        self._anomaly_alert_ts[trade.trade_id] = now
+        try:
+            ratio = current_price / trade.entry_price if trade.entry_price > 0 else float("inf")
+            emit_alert(
+                severity=Severity.P2,
+                title=f"[copy] price-scale anomaly on trade {trade.trade_id} ({side})",
+                body=(
+                    f"Position management for trade {trade.trade_id} skipped this cycle.\n"
+                    f"Asset: `{trade.asset}` ({trade.venue})\n"
+                    f"Entry price: {trade.entry_price}\n"
+                    f"Current price (Birdeye): {current_price}\n"
+                    f"Implied ratio: {ratio:.2g}x (guardrail >10,000x)\n\n"
+                    "Almost certainly a price-source bug, not a real move. "
+                    "Investigate the underlying mint pricing (Birdeye / Jupiter / "
+                    "decimals lookup). Position stays open; partials WILL NOT fire "
+                    "while the ratio remains anomalous."
+                ),
+                bot_id="copy",
+                event_type="price_scale_anomaly_skip",
+                metadata={
+                    "trade_id": trade.trade_id,
+                    "asset": trade.asset,
+                    "venue": trade.venue,
+                    "side": side,
+                    "entry_price": trade.entry_price,
+                    "current_price": current_price,
+                    "implied_ratio": ratio,
+                },
+            )
+        except Exception:
+            self.log.exception("anomaly_alert_emit_failed", trade_id=trade.trade_id)
+
     async def _manage_open_positions(self) -> None:
         opens = list_open_paper_trades()
         # Drive shadow/live exits in parallel with the paper-trade exits below.
@@ -662,6 +712,7 @@ class CopyBot(BotLifecycle):
                         venue=trade.venue,
                         side="paper",
                     )
+                    self._emit_anomaly_alert(trade, mid, side="paper")
                     continue
                 # New tiered ladder + multiplicative trailing. Returns
                 # (peak, partials_to_fire, full_close_reason_or_None).
@@ -918,6 +969,7 @@ class CopyBot(BotLifecycle):
                             venue=trade.venue,
                             side="real",
                         )
+                        self._emit_anomaly_alert(trade, mid, side="real")
                         continue
                     # Same tiered ladder + trailing as the paper path.
                     # Partials route through executor.execute_partial_close

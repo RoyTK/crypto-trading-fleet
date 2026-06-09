@@ -24,8 +24,11 @@ from bots.copy.config import (
     CopySettings,
 )
 from bots.copy.trailing_stop import (
+    PARTIAL_EXIT_TIERS as TRAIL_DEFAULT_TIERS,
+    PRICE_SCALE_ANOMALY_RATIO,
     PartialExitAction,
     evaluate_exit_actions,
+    is_price_scale_anomaly,
 )
 
 
@@ -334,3 +337,84 @@ def test_custom_ladder_fires_at_custom_thresholds():
     assert len(partials) == 1
     assert partials[0].tier_pct == 100.0
     assert partials[0].fraction == 0.5
+
+
+# ---------------------------------------------------------------------------
+# Price-scale anomaly guardrail (commit b92c9d1, response to cbBTC cascade)
+# ---------------------------------------------------------------------------
+
+def test_anomaly_normal_range_returns_false():
+    """A 10x move is normal memecoin behavior — never anomaly."""
+    assert is_price_scale_anomaly(entry_price=1.0, current_price=10.0) is False
+    assert is_price_scale_anomaly(entry_price=10.0, current_price=1.0) is False
+
+
+def test_anomaly_at_tier_4_threshold_returns_false():
+    """Tier 4 of the partial-exit ladder is 99,900% peak_pct = 1000x.
+    A legitimate climb to tier 4 must NOT trigger the anomaly guard."""
+    assert is_price_scale_anomaly(entry_price=1.0, current_price=1000.0) is False
+
+
+def test_anomaly_well_above_tier_4_returns_false_at_5000x():
+    """5000x is rare but possible for true moonshots — still under
+    the 10,000x guard."""
+    assert is_price_scale_anomaly(entry_price=1.0, current_price=5000.0) is False
+
+
+def test_anomaly_at_guard_boundary_returns_false():
+    """The threshold uses STRICT > so the boundary value itself is
+    NOT an anomaly. 10,000x exactly is treated as a (very rare) real move."""
+    assert is_price_scale_anomaly(entry_price=1.0, current_price=10_000.0) is False
+
+
+def test_anomaly_above_guard_returns_true():
+    """One step above the guard fires."""
+    assert is_price_scale_anomaly(entry_price=1.0, current_price=10_001.0) is True
+
+
+def test_anomaly_inverse_ratio_also_fires():
+    """The guard is direction-agnostic. If entry is 10,000x current
+    (collapse to dust), that's ALSO a price-source bug, not a real
+    move — fire the guard."""
+    assert is_price_scale_anomaly(entry_price=10_001.0, current_price=1.0) is True
+
+
+def test_anomaly_at_cbbtc_real_world_ratio_fires():
+    """The actual ratio from the 2026-06-09 cbBTC cascade: bug-stored
+    entry $0.000624, real Birdeye current $60,832. Ratio ~9.7×10^7."""
+    assert is_price_scale_anomaly(
+        entry_price=0.0006242655,
+        current_price=60832.91,
+    ) is True
+
+
+def test_anomaly_zero_entry_returns_false():
+    """Don't fire on uninitialized state — defer to caller's existing
+    `entry_price > 0` check."""
+    assert is_price_scale_anomaly(entry_price=0.0, current_price=100.0) is False
+
+
+def test_anomaly_negative_entry_returns_false():
+    assert is_price_scale_anomaly(entry_price=-1.0, current_price=100.0) is False
+
+
+def test_anomaly_zero_current_returns_false():
+    """Zero current price means an oracle dropout — the caller's
+    `mid is None` check should handle it, but our guard shouldn't
+    misfire on a literal 0.0."""
+    assert is_price_scale_anomaly(entry_price=100.0, current_price=0.0) is False
+
+
+def test_anomaly_custom_threshold_overrides_default():
+    """The threshold is a parameter so tests + ops can tune it."""
+    # Tighter threshold (1000x) catches what default doesn't
+    assert is_price_scale_anomaly(
+        entry_price=1.0, current_price=2000.0, ratio_threshold=1000.0
+    ) is True
+    # Default would NOT fire on 2000x
+    assert is_price_scale_anomaly(entry_price=1.0, current_price=2000.0) is False
+
+
+def test_anomaly_default_constant_is_10000x():
+    """Pin the default so a future tweak is a deliberate decision."""
+    assert PRICE_SCALE_ANOMALY_RATIO == 10_000.0
