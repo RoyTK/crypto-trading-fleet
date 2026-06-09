@@ -57,7 +57,16 @@ STRUCTURE_CRITERIA: dict[str, Any] = {
 
 
 COPY_CRITERIA: dict[str, Any] = {
-    "wr_floor": 0.47,
+    # WR floor lowered 2026-06-09 from 0.47 → 0.25 per Roy's call after
+    # observing the positive-skew distribution of COPY's first ~120 closed
+    # paper trades. Memecoin strategies routinely run sub-30% WR with
+    # positive total PnL — a few outsized winners + many small losers.
+    # The original 0.47 threshold was inherited from STRUCTURE's swing-
+    # trade kill criteria and doesn't fit COPY's economics. Pair this
+    # with the unchanged Net PnL floor (2%) which catches the failure
+    # mode that low-WR-with-positive-skew CANNOT mask: persistent
+    # negative expected value.
+    "wr_floor": 0.25,
     "wr_min_n": 60,
     "pnl_floor_pct": 2.0,              # kill if net PnL < +2% of paper capital at N>=wr_min_n
     "wallet_tier_filter": "active",    # only count active-tier signals

@@ -320,7 +320,7 @@
       "id": 32,
       "type": "stat",
       "title": "Total attributed PnL",
-      "description": "Sum of all per-wallet attributions. Should equal sum of paper trade pnl_usd (sanity check).",
+      "description": "Sum of all per-wallet attributions. Should equal sum of paper trade pnl_usd (sanity check). Color: green > 0, yellow -500 to 0, red < -500.",
       "gridPos": {"x": 6, "y": 56, "w": 6, "h": 4},
       "targets": [
         {
@@ -329,7 +329,29 @@
           "format": "table"
         }
       ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": -500},
+              {"color": "green", "value": 0}
+            ]
+          },
+          "unit": "currencyUSD"
+        }
+      },
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      }
     },
     {
       "id": 33,
