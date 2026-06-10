@@ -810,6 +810,23 @@ class CopyBot(BotLifecycle):
             cluster_uuid = shadow_log.make_cluster_uuid()
             wallet_tier = _cluster_wallet_tier(c)
 
+            # Record the detection for analytics, but DO NOT gate the exit
+            # action on dedup (Option A, 2026-06-10). Exit clusters must
+            # fire on EVERY wave — an escalating sell sequence is more
+            # conviction to get out, not a duplicate to ignore. The 15-min
+            # in-memory guard in SellClusterDetector.evaluate() already
+            # prevents fire-storms within a session, and re-firing an exit
+            # is a harmless no-op when no position is open
+            # (_close_positions_on_sell_cluster logs sell_cluster_no_open_positions).
+            #
+            # The prior 24h DB dedup (shared with BUY clusters) silently
+            # suppressed the real exit waves on TRILL (trade 719) and NUT
+            # (trade 729) — both rugged shortly after. A pre-entry exit
+            # cluster consumed the 24h slot, so the post-entry "smart money
+            # is leaving" wave was suppressed and the position was never
+            # closed. Only the +200% hard cap saved those two; the new
+            # ladder removes that cap, so a working per-wave sell-cluster
+            # is now the primary rug backstop.
             try:
                 dedup = write_cluster_detection(
                     candidate=c,
@@ -817,19 +834,16 @@ class CopyBot(BotLifecycle):
                     wallet_tier=wallet_tier,
                     dedup_hours=self.copy_settings.copy_cluster_dedup_hours,
                 )
+                if dedup is not None and not dedup.fired:
+                    self.log.info(
+                        "sell_cluster_dedup_dup_acting_anyway",
+                        asset=c.asset, chain=c.chain,
+                        cluster_size=c.cluster_size,
+                        reason=dedup.reason,
+                    )
             except Exception:
                 self.log.exception("sell_cluster_detection_write_failed",
                                    asset=c.asset, chain=c.chain)
-                dedup = None
-
-            if dedup is not None and not dedup.fired:
-                self.log.info(
-                    "sell_cluster_dedup_suppressed",
-                    asset=c.asset, chain=c.chain,
-                    cluster_size=c.cluster_size,
-                    reason=dedup.reason,
-                )
-                continue
 
             # Persist shadow signal so we have a record even when no
             # position exists to close (most fires will land here —
