@@ -45,6 +45,7 @@ from bots.copy.loop_helpers import (
     persist_signal,
     update_trade_peak_pct,
     update_trade_token_age,
+    update_trade_token_meta,
     write_cluster_detection,
 )
 from bots.copy.executor import CopyExecutor
@@ -56,7 +57,12 @@ from bots.copy.signals.sell_cluster import SellClusterDetector
 from bots.copy import shadow_log
 from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import size_position
-from bots.copy.venue.dex_quoter import fetch_token_creation, multi_price_solana, quote
+from bots.copy.venue.dex_quoter import (
+    fetch_token_creation,
+    fetch_token_security,
+    multi_price_solana,
+    quote,
+)
 from bots.copy.venue.helius_solana import WalletBuyEvent, WalletSellEvent
 from bots.copy.venue.solana_wallet import is_wallet_available, public_key_b58
 from framework.alerts import emit_alert
@@ -550,6 +556,26 @@ class CopyBot(BotLifecycle):
 
         if self._session is None:
             return
+
+        # Token security lookup (Solana only): one Birdeye call that serves
+        # BOTH the serial-deployer blocklist (skip the buy) AND concentration
+        # instrumentation (stored post-placement). Best-effort / fail-open:
+        # a failed lookup never blocks a buy and just leaves the fields unset.
+        token_security: Optional[dict] = None
+        if candidate.venue == "solana":
+            try:
+                token_security = await fetch_token_security(self._session, candidate.asset)
+            except Exception:
+                self.log.exception("token_security_fetch_failed", asset=candidate.asset)
+            if token_security:
+                creator = token_security.get("creator")
+                blocked = self.copy_settings.get_blocked_creators()
+                if creator and creator in blocked:
+                    self.log.info("blocked_creator_skip",
+                                  asset=candidate.asset, creator=creator,
+                                  cluster_size=candidate.cluster_size)
+                    return
+
         snapshot = CopyMarketSnapshot(chain=candidate.chain, session=self._session)
         sim_fill = await self.simulator.simulate_entry_async(
             asset=candidate.asset,
@@ -605,6 +631,24 @@ class CopyBot(BotLifecycle):
             # median Solana rug lifespan ~17 min). Solana-only for now
             # (Birdeye token_creation_info is the source).
             if candidate.venue == "solana":
+                # Concentration instrumentation — store the security data we
+                # already fetched pre-placement (no second call). Pure
+                # instrumentation; we do NOT filter on concentration.
+                if token_security is not None:
+                    try:
+                        update_trade_token_meta(
+                            paper_trade_id,
+                            creator=token_security.get("creator"),
+                            top10_holder_pct=token_security.get("top10_holder_pct"),
+                            owner_pct=token_security.get("owner_pct"),
+                        )
+                        self.log.info("token_security_captured",
+                                      asset=candidate.asset,
+                                      creator=token_security.get("creator"),
+                                      top10_holder_pct=token_security.get("top10_holder_pct"))
+                    except Exception:
+                        self.log.exception("token_security_capture_failed",
+                                           asset=candidate.asset)
                 try:
                     import time
                     info = await fetch_token_creation(self._session, candidate.asset)

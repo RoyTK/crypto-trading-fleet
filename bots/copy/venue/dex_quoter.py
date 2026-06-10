@@ -312,6 +312,61 @@ async def fetch_token_creation(
         return None
 
 
+async def fetch_token_security(
+    session: aiohttp.ClientSession,
+    mint: str,
+) -> Optional[dict]:
+    """Fetch a Solana token's creator + holder concentration from Birdeye.
+
+    Returns {"creator": str|None, "top10_holder_pct": float|None,
+    "owner_pct": float|None} or None on any failure. Best-effort —
+    NEVER raises.
+
+    Two uses (both at entry):
+      1. Blocklist check — skip the buy if `creator` is a known serial
+         net-loss rug deployer (config.get_blocked_creators).
+      2. Concentration instrumentation — stamp top10_holder_pct/owner_pct
+         into sim_metadata so we can LATER test whether any entry-time
+         concentration threshold separates the rug-pumps we profit on
+         (NUT/TRILL) from the dead-on-arrival ones we lose on. We do NOT
+         filter on concentration today — the 2026-06-10 audit showed a
+         blanket concentration filter is -EV (rugs are the profit center,
+         and winners/losers share the same fingerprint at entry). This is
+         pure instrumentation pending data. See project_fleet_design_state.
+
+    Endpoint: /defi/token_security. Birdeye returns percentages as
+    fractions (0-1); stored raw.
+    """
+    settings = get_copy_settings()
+    if not settings.birdeye_api_key:
+        return None
+    url = "https://public-api.birdeye.so/defi/token_security"
+    headers = {"X-API-KEY": settings.birdeye_api_key, "x-chain": "solana"}
+    try:
+        async with session.get(url, params={"address": mint}, headers=headers,
+                                timeout=aiohttp.ClientTimeout(total=8)) as r:
+            if r.status != 200:
+                return None
+            body = await r.json()
+    except Exception:
+        return None
+    data = body.get("data") if isinstance(body, dict) else None
+    if not isinstance(data, dict):
+        return None
+
+    def _f(v) -> Optional[float]:
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    return {
+        "creator": data.get("creatorAddress") or data.get("ownerAddress"),
+        "top10_holder_pct": _f(data.get("top10HolderPercent")),
+        "owner_pct": _f(data.get("creatorPercentage") or data.get("ownerPercentage")),
+    }
+
+
 async def quote_evm(
     session: aiohttp.ClientSession,
     chain: str,

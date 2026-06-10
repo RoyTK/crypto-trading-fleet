@@ -297,6 +297,28 @@ class CopySettings(BaseSettings):
         default="300:0.25,900:0.25,4900:0.25,99900:0.25"
     )
 
+    # Comma-separated base58 token-creator wallets to block. Seeded with a
+    # serial rug deployer identified in the 2026-06-10 audit: it minted
+    # both "Doge Trillionaire" and "pack of cigarettes", BOTH net losses
+    # for us (dumped too fast to ride). A cluster whose token creator is on
+    # this list is SKIPPED at entry — a deliberate exception to the
+    # ride-the-pump default (rugs are normally COPY's profit center),
+    # justified only for operators whose tokens have a track record of
+    # dumping before we can profit. Add creators here as the post-mortem
+    # data identifies more net-loss serial deployers. NOTE: base58 is
+    # case-sensitive — do not lowercase.
+    copy_blocked_creators: str = Field(
+        default="ERbjHyBxd1MYWTk8TvHJA84LfwAkAeQcxoZkdEusicaY"
+    )
+
+    def get_blocked_creators(self) -> frozenset[str]:
+        """Parse `copy_blocked_creators` into a set of base58 addresses.
+        Empty/malformed → empty set (fail-open: never block on a bad env)."""
+        raw = (self.copy_blocked_creators or "").strip()
+        if not raw:
+            return frozenset()
+        return frozenset(x.strip() for x in raw.split(",") if x.strip())
+
     def get_slippage_ladder(self) -> tuple[int, ...]:
         """Parse comma-separated `copy_swap_slippage_ladder_bps` into a
         tuple of ints. Returns a single-element fallback (1500 bps)

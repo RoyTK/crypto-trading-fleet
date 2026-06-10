@@ -214,6 +214,37 @@ def update_trade_token_age(
         t.sim_metadata = md
 
 
+def update_trade_token_meta(
+    trade_id: int,
+    *,
+    creator: Optional[str] = None,
+    top10_holder_pct: Optional[float] = None,
+    owner_pct: Optional[float] = None,
+) -> None:
+    """Stamp the token's creator + holder concentration into sim_metadata.
+
+    Best-effort enrichment (post-placement). Fields:
+      - token_creator: base58 creator/owner wallet (serial-deployer analysis)
+      - top10_holder_pct / owner_pct: concentration at entry (0-1 fraction)
+
+    Pure instrumentation — we do NOT filter on concentration (the
+    2026-06-10 audit showed a blanket concentration filter is -EV). These
+    fields let us LATER test for a surgical filter on our own data.
+    """
+    with session_scope() as s:
+        t = s.get(Trade, trade_id)
+        if t is None:
+            return
+        md = dict(t.sim_metadata or {})
+        if creator is not None:
+            md["token_creator"] = creator
+        if top10_holder_pct is not None:
+            md["top10_holder_pct"] = top10_holder_pct
+        if owner_pct is not None:
+            md["owner_pct"] = owner_pct
+        t.sim_metadata = md
+
+
 def update_trade_peak_pct(trade_id: int, peak_pct: float) -> None:
     """Persist peak_pct_since_entry into Trade.sim_metadata.
 

@@ -418,3 +418,35 @@ def test_anomaly_custom_threshold_overrides_default():
 def test_anomaly_default_constant_is_10000x():
     """Pin the default so a future tweak is a deliberate decision."""
     assert PRICE_SCALE_ANOMALY_RATIO == 10_000.0
+
+
+# ---------------------------------------------------------------------------
+# Serial-deployer blocklist parsing (commit for the 2026-06-10 audit)
+# ---------------------------------------------------------------------------
+
+def test_blocked_creators_parses_csv():
+    s = CopySettings(copy_blocked_creators="AAA,BBB,CCC")
+    assert s.get_blocked_creators() == frozenset({"AAA", "BBB", "CCC"})
+
+
+def test_blocked_creators_strips_whitespace():
+    s = CopySettings(copy_blocked_creators=" AAA , BBB ")
+    assert s.get_blocked_creators() == frozenset({"AAA", "BBB"})
+
+
+def test_blocked_creators_empty_is_empty_set():
+    """Fail-open: empty env → never block anyone."""
+    s = CopySettings(copy_blocked_creators="")
+    assert s.get_blocked_creators() == frozenset()
+
+
+def test_blocked_creators_is_case_sensitive():
+    """base58 is case-sensitive — must NOT collapse case."""
+    s = CopySettings(copy_blocked_creators="AbC,aBc")
+    assert s.get_blocked_creators() == frozenset({"AbC", "aBc"})
+
+
+def test_blocked_creators_default_seeds_known_rugger():
+    """The known serial net-loss deployer from the audit ships blocked."""
+    s = CopySettings()
+    assert "ERbjHyBxd1MYWTk8TvHJA84LfwAkAeQcxoZkdEusicaY" in s.get_blocked_creators()
