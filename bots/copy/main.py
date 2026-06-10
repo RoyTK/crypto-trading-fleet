@@ -44,6 +44,7 @@ from bots.copy.loop_helpers import (
     persist_paper_trade,
     persist_signal,
     update_trade_peak_pct,
+    update_trade_token_age,
     write_cluster_detection,
 )
 from bots.copy.executor import CopyExecutor
@@ -55,7 +56,7 @@ from bots.copy.signals.sell_cluster import SellClusterDetector
 from bots.copy import shadow_log
 from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import size_position
-from bots.copy.venue.dex_quoter import multi_price_solana, quote
+from bots.copy.venue.dex_quoter import fetch_token_creation, multi_price_solana, quote
 from bots.copy.venue.helius_solana import WalletBuyEvent, WalletSellEvent
 from bots.copy.venue.solana_wallet import is_wallet_available, public_key_b58
 from framework.alerts import emit_alert
@@ -595,6 +596,34 @@ class CopyBot(BotLifecycle):
             except Exception:
                 self.log.exception("executor_live_failed",
                                    asset=candidate.asset, signal_id=signal_id)
+
+            # Best-effort token-age capture. Runs LAST (after paper +
+            # shadow + live placement) so it can never delay or block an
+            # entry fill. Stamps sim_metadata.token_age_at_entry_hours so
+            # we can study rug risk by token age — rugs cluster in the
+            # first minutes-to-hours of a fresh mint (research 2026-06-10:
+            # median Solana rug lifespan ~17 min). Solana-only for now
+            # (Birdeye token_creation_info is the source).
+            if candidate.venue == "solana":
+                try:
+                    import time
+                    info = await fetch_token_creation(self._session, candidate.asset)
+                    if info and info.get("created_unix"):
+                        age_hours = max(0.0, (time.time() - info["created_unix"]) / 3600.0)
+                        update_trade_token_age(
+                            paper_trade_id,
+                            created_unix=info["created_unix"],
+                            age_hours=age_hours,
+                            tx=info.get("tx"),
+                        )
+                        self.log.info("token_age_captured",
+                                      asset=candidate.asset,
+                                      age_hours=round(age_hours, 3))
+                    else:
+                        self.log.info("token_age_unavailable", asset=candidate.asset)
+                except Exception:
+                    self.log.exception("token_age_capture_failed",
+                                       asset=candidate.asset)
 
     # ---- Position management ----------------------------------------------
 

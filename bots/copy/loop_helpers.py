@@ -184,6 +184,36 @@ def _to_float_or_none(v) -> Optional[float]:
         return None
 
 
+def update_trade_token_age(
+    trade_id: int,
+    *,
+    created_unix: Optional[int],
+    age_hours: Optional[float],
+    tx: Optional[str] = None,
+) -> None:
+    """Stamp the token's on-chain age at entry into Trade.sim_metadata.
+
+    Best-effort enrichment written post-placement so the entry fill is
+    never delayed or blocked. Fields:
+      - token_created_unix: token mint block time (unix seconds)
+      - token_age_at_entry_hours: hours between mint and our entry
+      - token_creation_tx: the mint tx signature (forensics)
+
+    Enables rug-risk-by-age analysis: rugs cluster in the first
+    minutes-to-hours of a fresh mint. See project_fleet_design_state.
+    """
+    with session_scope() as s:
+        t = s.get(Trade, trade_id)
+        if t is None:
+            return
+        md = dict(t.sim_metadata or {})
+        md["token_created_unix"] = created_unix
+        md["token_age_at_entry_hours"] = age_hours
+        if tx:
+            md["token_creation_tx"] = tx
+        t.sim_metadata = md
+
+
 def update_trade_peak_pct(trade_id: int, peak_pct: float) -> None:
     """Persist peak_pct_since_entry into Trade.sim_metadata.
 

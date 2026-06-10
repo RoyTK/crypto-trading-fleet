@@ -270,6 +270,48 @@ async def _quote_solana_birdeye(
         return None
 
 
+async def fetch_token_creation(
+    session: aiohttp.ClientSession,
+    mint: str,
+) -> Optional[dict]:
+    """Fetch a Solana token's on-chain creation time from Birdeye.
+
+    Returns {"created_unix": int, "tx": Optional[str]} or None on any
+    failure. Best-effort — NEVER raises, NEVER blocks the entry fill
+    (called post-placement). Used to stamp token age at entry
+    (sim_metadata.token_age_at_entry_hours) so we can study rug risk by
+    token age — rugs cluster in the first minutes-to-hours of a fresh
+    mint (see project_fleet_design_state rug-timing research, 2026-06-10:
+    median Solana rug lifespan ~17 min, p75 ~1.4h).
+
+    Endpoint: /defi/token_creation_info. One call per entry (entries are
+    infrequent — a few per hour) so CU cost is negligible.
+    """
+    settings = get_copy_settings()
+    if not settings.birdeye_api_key:
+        return None
+    url = "https://public-api.birdeye.so/defi/token_creation_info"
+    headers = {"X-API-KEY": settings.birdeye_api_key, "x-chain": "solana"}
+    try:
+        async with session.get(url, params={"address": mint}, headers=headers,
+                                timeout=aiohttp.ClientTimeout(total=8)) as r:
+            if r.status != 200:
+                return None
+            body = await r.json()
+    except Exception:
+        return None
+    data = body.get("data") if isinstance(body, dict) else None
+    if not isinstance(data, dict):
+        return None
+    unix = data.get("blockUnixTime")
+    if unix is None:
+        return None
+    try:
+        return {"created_unix": int(unix), "tx": data.get("txHash")}
+    except (TypeError, ValueError):
+        return None
+
+
 async def quote_evm(
     session: aiohttp.ClientSession,
     chain: str,
