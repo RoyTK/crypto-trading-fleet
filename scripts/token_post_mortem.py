@@ -22,6 +22,9 @@ Usage (run inside the framework container against the prod DB):
   # Record a token that did NOT rug
   docker compose exec -T framework python -m scripts.token_post_mortem <MINT> --no-rug
 
+  # Backfill the 29-token browser-Opus audit (2026-06-10) in one shot
+  docker compose exec -T framework python -m scripts.token_post_mortem --backfill
+
   # Aggregate all recorded findings: rug rate, silent-rug rate, rug-by-age
   docker compose exec -T framework python -m scripts.token_post_mortem --summary
 
@@ -47,6 +50,44 @@ FINDING_EVENT = "token_post_mortem"
 CT = "America/Chicago"
 
 
+# The browser-Opus on-chain audit of 2026-06-10 (all 29 distinct tokens
+# COPY had traded, verified on Solscan). (mint_prefix, rugged, label).
+# Backfill matches each prefix to the full mint in our trades table.
+_AUDIT_2026_06_10: list[tuple[str, bool, str]] = [
+    # --- rugs ---
+    ("9wC5f97tpVT2", True,  "NUT (Good Nut) — rug, +208% exit"),
+    ("56jore829siC", True,  "TRILL (Trillionaire) — rug, +253% exit"),
+    ("3b8XLvVZ",     True,  "Teletubby — rug, +74% exit"),
+    ("7H8zef5X",     True,  "Scooby Doo — rug, +36% exit"),
+    ("Dxmt6jQB",     True,  "NEO — rug, +21% exit"),
+    ("EKi12cnj",     True,  "UBT (Universal Basic Token) — rug, peaked +70% closed -51%"),
+    ("76U8SgQ6",     True,  "TRILLION (Doge Trillionaire) — rug, -29% [serial deployer ERbjHyBxd]"),
+    ("GcD4kWRf",     True,  "Commiss (Commissions) — rug/DOA, -36%"),
+    ("ALr1dmfT",     True,  "'20' (pack of cigarettes) — rug, -21% [serial deployer ERbjHyBxd]"),
+    ("7qVULygE",     True,  "CRCW (Crypto) — rug, -14%"),
+    ("GScAhxRk",     True,  "Bountycore (Bounty For Good) — rug, -12%"),
+    ("BgWptcAo",     True,  "CHANCE (Chancecoin) — rug, -16%"),
+    ("95wbdkEQ",     True,  "PS2 (PS2FICATION) — rug, -11%"),
+    ("3k55EMSX",     True,  "IRA (Imaginary Retirement Acct) — rug, peaked +21% closed -12%"),
+    ("Bp2NeSnn",     True,  "BELLO (Bello) — rug, -16%"),
+    ("6xfBZwBb",     True,  "Nunu (Justice for Nunu) — rug, peaked +27% closed -10%"),
+    ("3dWXHCEe",     True,  "Teracorn (Trillion Dollar Unicorn) — rug, -13%"),
+    ("GRFb9HmG",     True,  "CHANCE dup (Chancecoin) — rug, peaked +60% closed -3%"),
+    ("4VxCgtEh",     True,  "LMEOW — rug (fake 2007 holders, 88% one wallet), -19%"),
+    # --- legit ---
+    ("Dfh5DzRg",     False, "Pippin — LEGIT (50k holders), -$79"),
+    ("pumpCmXq",     False, "PUMP (Pump.fun) — LEGIT, -$9.50"),
+    ("9BB6NFEc",     False, "Fartcoin — LEGIT, -$0.23"),
+    ("EKpQGSJt",     False, "WIF (dogwifhat) — LEGIT, -$15"),
+    ("6p6xgHyF",     False, "TRUMP (Official Trump) — LEGIT, +$19"),
+    ("7vfCXTUX",     False, "WETH (Wrapped Ether/Wormhole) — LEGIT, +$3.54"),
+    ("Dz9mQ9Nz",     False, "USELESS — LEGIT, +$1.53"),
+    ("cbbtcf3aa",    False, "cbBTC (Coinbase Wrapped BTC) — LEGIT, -$1.82"),
+    ("4k3Dyjzv",     False, "RAY (Raydium) — LEGIT, open"),
+    ("ukHH6c7m",     False, "BOME (Book of Meme) — LEGIT, open"),
+]
+
+
 # --------------------------------------------------------------------------
 # Queries
 # --------------------------------------------------------------------------
@@ -59,6 +100,7 @@ SELECT id, mode, fill_status,
        ROUND(pnl_pct::numeric, 2)       AS pnl_pct,
        ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct,
        sim_metadata->>'token_age_at_entry_hours' AS age_h,
+       sim_metadata->>'top10_holder_pct'         AS top10,
        exit_reason,
        entry_at AT TIME ZONE :tz AS entry_ct,
        exit_at  AT TIME ZONE :tz AS exit_ct
@@ -90,34 +132,39 @@ ORDER BY fired_at
 """
 
 
-def _report(mint: str) -> dict[str, Any]:
-    """Print the forensic report and return a dict of derived facts
-    used when recording a finding."""
+def _report(mint: str, *, quiet: bool = False) -> dict[str, Any]:
+    """Run the forensic queries; print the report unless quiet. Returns a
+    dict of derived facts used when recording a finding."""
+    def out(s: str = "") -> None:
+        if not quiet:
+            print(s)
+
     with session_scope() as s:
         trades = s.execute(text(_TRADES_SQL), {"mint": mint, "tz": CT}).all()
         clusters = s.execute(text(_CLUSTERS_SQL), {"mint": mint, "tz": CT}).all()
         shadow = s.execute(text(_SHADOW_SQL), {"mint": mint, "tz": CT}).all()
 
-    print(f"\n=== TOKEN POST-MORTEM: {mint} ===\n")
+    out(f"\n=== TOKEN POST-MORTEM: {mint} ===\n")
 
     # --- Our trades ---
-    print("OUR TRADES")
+    out("OUR TRADES")
     if not trades:
-        print("  (none — COPY never traded this token)")
+        out("  (none — COPY never traded this token)")
     else:
         for t in trades:
             age = f"{float(t.age_h):.2f}h" if t.age_h is not None else "n/a (pre-capture)"
-            print(f"  #{t.id} {t.mode}/{t.fill_status}  "
-                  f"pnl={_f(t.pnl_usd)}  pct={_f(t.pnl_pct)}%  peak={_f(t.peak_pct)}%  "
-                  f"age_at_entry={age}  exit={t.exit_reason}")
-            print(f"      entry {t.entry_ct}  ->  exit {t.exit_ct}")
+            conc = f"{float(t.top10) * 100:.0f}%" if t.top10 is not None else "n/a"
+            out(f"  #{t.id} {t.mode}/{t.fill_status}  "
+                f"pnl={_f(t.pnl_usd)}  pct={_f(t.pnl_pct)}%  peak={_f(t.peak_pct)}%  "
+                f"age_at_entry={age}  top10={conc}  exit={t.exit_reason}")
+            out(f"      entry {t.entry_ct}  ->  exit {t.exit_ct}")
 
     # --- Cluster signal timeline ---
-    print("\nCLUSTER SIGNAL TIMELINE  (long=buy, exit=sell-cluster)")
+    out("\nCLUSTER SIGNAL TIMELINE  (long=buy, exit=sell-cluster)")
     n_exit_total = 0
     n_exit_fired = 0
     if not clusters:
-        print("  (no cluster detections recorded)")
+        out("  (no cluster detections recorded)")
     else:
         for c in clusters:
             if c.direction == "exit":
@@ -125,38 +172,38 @@ def _report(mint: str) -> dict[str, Any]:
                 if c.fired:
                     n_exit_fired += 1
             mark = "FIRED " if c.fired else f"suppr({c.suppressed_reason})"
-            print(f"  {c.detected_ct}  {c.direction:<5} sz={c.cluster_size} "
-                  f"${_f(c.notional):>10}  {c.wallet_tier:<7} {mark}")
+            out(f"  {c.detected_ct}  {c.direction:<5} sz={c.cluster_size} "
+                f"${_f(c.notional):>10}  {c.wallet_tier:<7} {mark}")
 
     # --- Price trajectory ---
-    print("\nPRICE TRAJECTORY  (shadow log)")
+    out("\nPRICE TRAJECTORY  (shadow log)")
     if not shadow:
-        print("  (no shadow-log row)")
+        out("  (no shadow-log row)")
     else:
         for r in shadow:
-            print(f"  fired {r.fired_ct}  sz={r.cluster_size}  "
-                  f"MFE={_f(r.mfe)}%  MAE={_f(r.mae)}%")
-            print(f"      entry={r.entry_price}  30m={r.price_30m}  1h={r.price_1h}  "
-                  f"4h={r.price_4h}  12h={r.price_12h}")
+            out(f"  fired {r.fired_ct}  sz={r.cluster_size}  "
+                f"MFE={_f(r.mfe)}%  MAE={_f(r.mae)}%")
+            out(f"      entry={r.entry_price}  30m={r.price_30m}  1h={r.price_1h}  "
+                f"4h={r.price_4h}  12h={r.price_12h}")
             if r.cluster_wallets:
-                print(f"      wallets={r.cluster_wallets}")
+                out(f"      wallets={r.cluster_wallets}")
 
     # --- Derived analysis ---
     had_exit_signal = n_exit_total > 0
-    print("\nANALYSIS")
-    print(f"  exit-cluster signals detected: {n_exit_total} "
-          f"({n_exit_fired} fired, {n_exit_total - n_exit_fired} suppressed)")
+    out("\nANALYSIS")
+    out(f"  exit-cluster signals detected: {n_exit_total} "
+        f"({n_exit_fired} fired, {n_exit_total - n_exit_fired} suppressed)")
     if had_exit_signal:
-        print("  -> Smart money DID signal an exit. A working sell-cluster "
-              "(post-Option-A) would act on it.")
+        out("  -> Smart money DID signal an exit. A working sell-cluster "
+            "(post-Option-A) would act on it.")
         if n_exit_fired == 0:
-            print("  -> NOTE: every exit signal was SUPPRESSED (pre-Option-A "
-                  "dedup bug). Option A now lets these fire.")
+            out("  -> NOTE: every exit signal was SUPPRESSED (pre-Option-A "
+                "dedup bug). Option A now lets these fire.")
     else:
-        print("  -> NO exit-cluster signal. If this token rugged, it was a "
-              "SILENT rug — the case no exit mechanism can catch. These are "
-              "what a recoup tier / fresh-token timeout would hedge.")
-    print()
+        out("  -> NO exit-cluster signal. If this token rugged, it was a "
+            "SILENT rug — the case no exit mechanism can catch. These are "
+            "what a recoup tier / fresh-token timeout would hedge.")
+    out()
 
     return {
         "mint": mint,
@@ -169,11 +216,15 @@ def _report(mint: str) -> dict[str, Any]:
         "token_age_at_entry_hours": (
             float(trades[0].age_h) if trades and trades[0].age_h is not None else None
         ),
+        "top10_holder_pct": (
+            float(trades[0].top10) if trades and trades[0].top10 is not None else None
+        ),
     }
 
 
-def _record(mint: str, *, rugged: bool, rug_at: Optional[str], note: Optional[str]) -> None:
-    facts = _report(mint)
+def _record(mint: str, *, rugged: bool, rug_at: Optional[str],
+            note: Optional[str], quiet: bool = False) -> None:
+    facts = _report(mint, quiet=quiet)
     payload = {
         **facts,
         "rugged": rugged,
@@ -185,7 +236,34 @@ def _record(mint: str, *, rugged: bool, rug_at: Optional[str], note: Optional[st
     fid = write_audit(FINDING_EVENT, bot_id="copy", actor="roy", payload=payload, note=note)
     verdict = "RUGGED" if rugged else "no-rug"
     silent = " (SILENT)" if payload["silent_rug"] else ""
-    print(f"[recorded finding #{fid}] {mint}: {verdict}{silent}")
+    print(f"[finding #{fid}] {mint[:14]}…  {verdict}{silent}  signals={facts['exit_signals_detected']}")
+
+
+def _backfill() -> None:
+    """Record the 29-token browser-Opus audit (2026-06-10) as findings.
+    Matches each audit prefix to the full mint in our trades table.
+    Skips mints already recorded so re-running is safe."""
+    with session_scope() as s:
+        assets = [r.asset for r in s.execute(text(
+            "SELECT DISTINCT asset FROM trades WHERE bot_id = 'copy'")).all()]
+    existing = {x.get("mint") for x in _findings()}
+    recorded = skipped = nomatch = 0
+    print(f"\nBackfilling {len(_AUDIT_2026_06_10)} audited tokens...\n")
+    for prefix, rugged, label in _AUDIT_2026_06_10:
+        match = next((a for a in assets if a.startswith(prefix)), None)
+        if match is None:
+            print(f"  [no-match] {prefix:<14} ({label})")
+            nomatch += 1
+            continue
+        if match in existing:
+            print(f"  [exists]   {match[:14]}… ({label})")
+            skipped += 1
+            continue
+        _record(match, rugged=rugged, rug_at=None,
+                note=f"audit 2026-06-10: {label}", quiet=True)
+        recorded += 1
+    print(f"\nbackfill complete: {recorded} recorded, {skipped} already-present, "
+          f"{nomatch} no-match\n")
 
 
 def _findings() -> list[dict[str, Any]]:
@@ -219,22 +297,29 @@ def _age_band(age_h: Optional[float]) -> str:
 def _summary() -> None:
     f = _findings()
     if not f:
-        print("(no recorded findings yet — run with --rugged/--no-rug on tokens first)",
+        print("(no recorded findings yet — run --backfill or record tokens first)",
               file=sys.stderr)
         return
     n = len(f)
     rugged = [x for x in f if x.get("rugged")]
     silent = [x for x in rugged if x.get("silent_rug")]
+    # PnL split — the inversion check (rugs vs legit)
+    rug_pnl = sum(x["our_pnl_usd"] for x in rugged if x.get("our_pnl_usd") is not None)
+    legit = [x for x in f if not x.get("rugged")]
+    legit_pnl = sum(x["our_pnl_usd"] for x in legit if x.get("our_pnl_usd") is not None)
+
     print(f"\n=== POST-MORTEM SUMMARY  (n={n} tokens) ===\n")
-    print(f"  rugged:          {len(rugged)}/{n}  ({_pct(len(rugged), n)})")
-    print(f"  rugged w/ signal:{len(rugged) - len(silent)}/{len(rugged) or 1}  "
-          f"(sell-cluster could catch — the GOOD case)")
-    print(f"  SILENT rugs:     {len(silent)}/{len(rugged) or 1}  "
+    print(f"  rugged:            {len(rugged)}/{n}  ({_pct(len(rugged), n)})")
+    print(f"  rugged w/ signal:  {len(rugged) - len(silent)}/{len(rugged) or 1}  "
+          f"(sell-cluster can catch — the GOOD case)")
+    print(f"  SILENT rugs:       {len(silent)}/{len(rugged) or 1}  "
           f"({_pct(len(silent), len(rugged))} of rugs)  <- decides recoup-tier need")
     print()
+    print(f"  P&L on RUGS:       {rug_pnl:+.2f}   (the profit center if positive)")
+    print(f"  P&L on LEGIT:      {legit_pnl:+.2f}")
+    print()
     print("  RUG RATE BY TOKEN AGE AT ENTRY:")
-    bands = ["<1h", "1-6h", "6-24h", ">24h", "unknown"]
-    for b in bands:
+    for b in ["<1h", "1-6h", "6-24h", ">24h", "unknown"]:
         in_band = [x for x in f if _age_band(x.get("token_age_at_entry_hours")) == b]
         rb = [x for x in in_band if x.get("rugged")]
         if in_band:
@@ -290,10 +375,14 @@ def main() -> int:
     p.add_argument("--no-rug", action="store_true", help="Record this token as NOT rugged")
     p.add_argument("--rug-at", default=None, help="Rug timestamp, e.g. '2026-06-08 16:40' (free-text)")
     p.add_argument("--note", default=None, help="Free-text note stored with the finding")
+    p.add_argument("--backfill", action="store_true", help="Record the 2026-06-10 29-token audit")
     p.add_argument("--summary", action="store_true", help="Aggregate all recorded findings")
     p.add_argument("--list", action="store_true", help="List recorded findings")
     args = p.parse_args()
 
+    if args.backfill:
+        _backfill()
+        return 0
     if args.summary:
         _summary()
         return 0
@@ -301,7 +390,7 @@ def main() -> int:
         _list()
         return 0
     if not args.mint:
-        p.error("mint is required unless --summary/--list")
+        p.error("mint is required unless --backfill/--summary/--list")
     if args.rugged and args.no_rug:
         p.error("--rugged and --no-rug are mutually exclusive")
 
