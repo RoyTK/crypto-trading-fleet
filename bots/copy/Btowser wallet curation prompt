@@ -6,6 +6,7 @@ OneDrive folder: My files → Documents → Documents → Claude
 File to append to: SOL_early_token_traders.txt (it's valid CSV despite the .txt extension)
 Columns (keep this exact order): Wallet Address (FULL), Lifetime Total PnL, Wallet Age, # Multi-x Wins, Smart Money?, Sniper?, Builder?, Source Token(s), Cluster, Notes, Date Curated
 Note: my prior rows don't have a "Date Curated" value — leave theirs blank and only stamp the NEW rows you add this session with today's date (YYYY-MM-DD).
+Note on the "Lifetime Total PnL" column: record the wallet's REALIZED PnL here (see Qualification criteria for why realized, not total), and put any large-unrealized-bag or long-hold red flags in the Notes column.
 
 Discovery workflow (repeat per token)
 
@@ -16,17 +17,27 @@ For each worthwhile wallet, open https://birdeye.so/solana/wallet-analyzer/[FULL
 
 Qualification criteria (a wallet QUALIFIES if all are true)
 
-Lifetime Total PnL (from the wallet-analyzer page, not the per-token table) is significantly positive.
-Multiple multi-x wins (count of >100% and >500% trades). Several multi-x wins is more valuable than one big win.
-Pattern of entering early and exiting with multi-x profits. Small caps / new mints are fine ($200 profit on $400 counts).
+Read all of these from the wallet-analyzer page (NOT the per-token table). The Realized-vs-Unrealized PnL split is the single most important thing — it tells you whether the wallet actually EXITS (which is the bot's whole edge) or just holds bags.
+
+REALIZED PnL is significantly positive. Use REALIZED, not Total PnL. Total = Realized + Unrealized, and a big Total can be mostly paper gains on still-held bags. Realized = profits actually banked = exit skill, which is exactly what the bot copies.
+Unrealized PnL is NOT deeply negative. REJECT if unrealized losses exceed realized gains — that's a bag-holder who enters good tokens but rides them to zero instead of exiting (the anti-pattern). Small or positive unrealized is fine.
+Avg Holding Duration is short — ideally ≤ ~7 days. The bot's mechanism is a ~15-minute co-buy cluster with fast ladder/pullback exits, so a swing trader holding ~14-27+ days is the wrong STYLE even if profitable.
+Multiple multi-x wins (count of >100% and >500% in the PnL distribution donut). Several multi-x wins beats one big win.
+Pattern of entering early and exiting with multi-x profits on small caps / new mints ($200 profit on $400 counts).
 NOT brand new — exclude wallets only a few days old (roughly 1 week minimum; 1+ month preferred).
 Classified as Smart Money by Birdeye.
 
+IMPORTANT — the "Scam/Rug tokens %" metric is NOT a disqualifier; a HIGH value is expected and even confirmatory for the wallets we want. The bot's edge is riding fresh-mint pumps (most of which later rug) and exiting before the collapse, so the ideal wallet trades LOTS of rug-prone tokens AND still has strongly positive REALIZED PnL, small unrealized losses, and short holds.
+  - High Scam/Rug % + positive Realized + low Unrealized + short hold = EXACTLY what we want. Top pick.
+  - High Scam/Rug % + big Unrealized losses + long hold = a bag-holder. Reject.
+(Worked example: a wallet with Realized +$38.9K / Unrealized +$9.8K / 7d hold / 73% rug is ideal; a wallet with Realized +$95K but Unrealized −$241K / 27d hold / 93% rug is a REJECT despite the big realized number — it holds rug bags to zero.)
+
 Exclude / ignore
 
-Exclude: brand-new wallets, pure market-maker/HFT bots, and wallets with negative lifetime PnL (you may log these in a separate EXCLUDED section for reference, but don't treat them as candidates).
-Ignore win rate entirely (lots of small losses are fine).
+Exclude: brand-new wallets, pure market-maker/HFT bots, wallets with negative REALIZED PnL, and BAG-HOLDERS (unrealized losses bigger than realized gains, and/or avg holding duration ~14+ days). Log excluded wallets in a separate EXCLUDED section for reference, but don't treat them as candidates.
+Ignore win rate entirely (lots of small losses are fine — positive skew is the norm here).
 Ignore SOL in PnL calculations.
+Do NOT exclude a wallet for a high Scam/Rug % alone — for this strategy that's a feature, not a bug, as long as the realized/unrealized/hold criteria above hold.
 
 Tags & clusters (important)
 
