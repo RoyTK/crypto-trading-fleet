@@ -217,6 +217,19 @@ class CopySettings(BaseSettings):
     # so swap_in fired 24-92x/day). Birdeye CU scales with active size; at
     # current usage (2.5% of 2.5M) there's headroom, but watch this as it grows.
     copy_active_list_target: int = Field(default=125)
+    # Rug detection floor for paper sells (2026-06-21). At paper-close time
+    # we check the token's current Birdeye liquidity; if it's below this
+    # USD floor, the LP has been pulled (rug) and the position can't really
+    # be sold — so we book a ~total loss instead of a fictitious exit at the
+    # stale last price (the turtle bug: +$295 booked on a rugged token).
+    copy_rug_liquidity_floor_usd: float = Field(default=1000.0)
+    # Floor for modeled paper slippage (2026-06-21). The dex_quoter fix
+    # (0f7e73c) switched entry slippage from a flat 100bps estimate to
+    # Jupiter's priceImpactPct (~3bps), which is unrealistically optimistic
+    # for fresh-mint memecoins and biased paper PnL high (avg dropped to
+    # 3.4bps). Floor the modeled slippage so paper assumes realistic
+    # memecoin friction. Set to 0 to disable the floor.
+    copy_min_paper_slippage_bps: float = Field(default=150.0)
     # Shadow log poll cadence — how often to fetch updated prices for
     # pending shadow_log rows + compute MFE/MAE. 5min matches Birdeye
     # historical candle resolution.

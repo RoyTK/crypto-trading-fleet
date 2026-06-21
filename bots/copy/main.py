@@ -59,6 +59,7 @@ from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import size_position
 from bots.copy.venue.dex_quoter import (
     fetch_token_creation,
+    fetch_token_liquidity,
     fetch_token_security,
     multi_price_solana,
     quote,
@@ -715,6 +716,29 @@ class CopyBot(BotLifecycle):
         except Exception:
             self.log.exception("anomaly_alert_emit_failed", trade_id=trade.trade_id)
 
+    async def _is_rugged(self, asset: str, venue: str, mid: Optional[float]) -> bool:
+        """True if the token's liquidity has collapsed below the rug floor.
+
+        Only meaningful for solana with a price in hand (the classic rug:
+        Birdeye still returns a stale last price but the LP is gone). Used to
+        book paper sells of rugged tokens as ~total losses instead of
+        fictitious clean exits. Best-effort; a failed check returns False
+        (don't block the close).
+        """
+        if venue != "solana" or mid is None or self._session is None:
+            return False
+        try:
+            liq = await fetch_token_liquidity(self._session, asset)
+        except Exception:
+            self.log.exception("rug_liquidity_check_failed", asset=asset)
+            return False
+        floor = self.copy_settings.copy_rug_liquidity_floor_usd
+        if liq is not None and liq < floor:
+            self.log.warning("paper_close_rug_detected",
+                             asset=asset, liquidity_usd=liq, floor_usd=floor)
+            return True
+        return False
+
     async def _manage_open_positions(self) -> None:
         opens = list_open_paper_trades()
         # Drive shadow/live exits in parallel with the paper-trade exits below.
@@ -836,10 +860,31 @@ class CopyBot(BotLifecycle):
             if exit_reason is None:
                 continue
 
+            # Rug check (2026-06-21): before booking a paper sell, verify the
+            # token still has liquidity. If the LP was pulled, the position
+            # can't actually be sold — book a ~total loss on the remainder
+            # instead of a fictitious exit at the stale last price (turtle
+            # bug: +$295 booked on a rugged token). Solana-only; only when we
+            # were going to exit at a market price.
+            rugged = await self._is_rugged(trade.asset, trade.venue, mid)
+
             # Build the exit fill locally — we already have `mid` from the
             # batch, no need for the simulator to re-fetch it. When `mid` is
             # missing, flat-mark at entry_price (pnl=0) so the trade closes.
-            if mid is not None:
+            if rugged:
+                # Remaining position is unsellable (~0). The partial-aware
+                # close math books any already-banked partials + ~total loss
+                # on the remainder.
+                close_price = trade.entry_price * 1e-6
+                exit_fill = SimulatedFill(
+                    fill_price=close_price,
+                    fees_usd=0.0,
+                    slippage_bps=0.0,
+                    metadata={"side": "exit", "rugged": True,
+                              "orig_exit_reason": exit_reason},
+                )
+                exit_reason = "rug_no_liquidity"
+            elif mid is not None:
                 fees = trade.size_usd * (DEX_FEE_PCT / 100.0)
                 exit_fill = SimulatedFill(
                     fill_price=mid,
@@ -970,25 +1015,40 @@ class CopyBot(BotLifecycle):
                 self.log.warning("sell_cluster_paper_price_fetch_failed",
                                  asset=c.asset)
 
+        # Rug check (2026-06-21): a sell-cluster often fires right as a token
+        # is being dumped/rugged. If the LP is already gone, book ~total loss
+        # instead of a fictitious exit at the stale price.
+        rugged = await self._is_rugged(c.asset, c.venue, mid)
+
         # Constant for the synthesized paper exit. Matches the
         # _manage_open_positions cadence — DEX-paper world is fee-only.
         EXIT_SLIPPAGE_BPS_PAPER = 100.0
         for t in paper_trades:
-            close_price = mid if mid is not None else t.entry_price
-            fees = float(t.size_usd) * (DEX_FEE_PCT / 100.0)
-            exit_fill = SimulatedFill(
-                fill_price=close_price,
-                fees_usd=fees,
-                slippage_bps=EXIT_SLIPPAGE_BPS_PAPER,
-                metadata={"side": "exit", "exit_reason": "sell_cluster",
-                          "no_price_at_close": mid is None},
-            )
+            if rugged:
+                close_price = float(t.entry_price) * 1e-6
+                exit_fill = SimulatedFill(
+                    fill_price=close_price, fees_usd=0.0, slippage_bps=0.0,
+                    metadata={"side": "exit", "rugged": True,
+                              "orig_exit_reason": "sell_cluster"},
+                )
+                exit_reason = "rug_no_liquidity"
+            else:
+                close_price = mid if mid is not None else t.entry_price
+                fees = float(t.size_usd) * (DEX_FEE_PCT / 100.0)
+                exit_fill = SimulatedFill(
+                    fill_price=close_price,
+                    fees_usd=fees,
+                    slippage_bps=EXIT_SLIPPAGE_BPS_PAPER,
+                    metadata={"side": "exit", "exit_reason": "sell_cluster",
+                              "no_price_at_close": mid is None},
+                )
+                exit_reason = "sell_cluster"
             try:
                 close_paper_trade(
                     trade_id=t.trade_id,
                     exit_price=close_price,
                     exit_fill=exit_fill,
-                    exit_reason="sell_cluster",
+                    exit_reason=exit_reason,
                 )
             except Exception:
                 self.log.exception("sell_cluster_paper_close_failed",

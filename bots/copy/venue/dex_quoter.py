@@ -119,7 +119,14 @@ async def _quote_solana_jupiter(
         if out_amount == 0:
             return None
         price_impact_pct = float(data.get("priceImpactPct", 0))
-        slippage_bps = abs(price_impact_pct) * 100.0
+        # Floor at the configured paper-slippage minimum. Jupiter's
+        # priceImpactPct is unrealistically optimistic for fresh-mint
+        # memecoins (~3bps); modeling near-frictionless fills biases paper
+        # PnL high. See config.copy_min_paper_slippage_bps.
+        slippage_bps = max(
+            get_copy_settings().copy_min_paper_slippage_bps,
+            abs(price_impact_pct) * 100.0,
+        )
     except Exception:
         log.exception("jupiter_quote_parse_failed", mint=output_mint)
         return None
@@ -251,8 +258,9 @@ async def _quote_solana_birdeye(
         price_per_token_usd = float(((data.get("data") or {}).get("value")) or 0)
         if price_per_token_usd <= 0:
             return None
-        # No liquidity data → flat 100 bps slippage estimate for memecoins
-        ESTIMATED_SLIPPAGE_BPS = 100.0
+        # No liquidity data → flat slippage estimate for memecoins, floored
+        # at the configured paper-slippage minimum.
+        ESTIMATED_SLIPPAGE_BPS = max(settings.copy_min_paper_slippage_bps, 100.0)
         # Output amount in token native units. We don't know token decimals
         # without an extra call; consumer (sim) only uses price_per_token_usd
         # so leave expected_out_native as USD/price for downstream logging.
@@ -308,6 +316,45 @@ async def fetch_token_creation(
         return None
     try:
         return {"created_unix": int(unix), "tx": data.get("txHash")}
+    except (TypeError, ValueError):
+        return None
+
+
+async def fetch_token_liquidity(
+    session: aiohttp.ClientSession,
+    mint: str,
+) -> Optional[float]:
+    """Fetch a Solana token's current pool liquidity (USD) from Birdeye.
+
+    Returns liquidity in USD, or None on failure. Best-effort — never raises.
+    Used at paper-sell time to detect rugs: if liquidity has collapsed
+    (LP pulled), the token can't actually be sold, so the paper close must
+    book a ~total loss instead of a fictitious exit at the stale last price
+    (the 2026-06-14 turtle bug: paper-sold a rugged token at +74% / +$295
+    when the real outcome was ~-100%).
+
+    Birdeye /defi/price with include_liquidity=true returns data.liquidity.
+    """
+    settings = get_copy_settings()
+    if not settings.birdeye_api_key:
+        return None
+    url = "https://public-api.birdeye.so/defi/price"
+    headers = {"X-API-KEY": settings.birdeye_api_key, "x-chain": "solana"}
+    try:
+        async with session.get(url, params={"address": mint, "include_liquidity": "true"},
+                                headers=headers,
+                                timeout=aiohttp.ClientTimeout(total=8)) as r:
+            if r.status != 200:
+                return None
+            body = await r.json()
+    except Exception:
+        return None
+    data = body.get("data") if isinstance(body, dict) else None
+    if not isinstance(data, dict):
+        return None
+    liq = data.get("liquidity")
+    try:
+        return float(liq) if liq is not None else None
     except (TypeError, ValueError):
         return None
 
