@@ -58,10 +58,20 @@ WINDOWS: dict[str, dict[str, datetime]] = {
         "end_primary":  datetime(2026, 7, 24, tzinfo=timezone.utc),
         "end_extended": datetime(2026, 8, 23, tzinfo=timezone.utc),
     },
+    # RE-BASELINED 2026-06-21 (was 2026-06-07). The entire 06-07 window's
+    # n=159 was contaminated and is invalid for the edge evaluation:
+    #   - swap_in mass-churn kept the active list full of HFT noise wallets
+    #     that spammed losing trades (fixed: target=125 + PnL demotion +
+    #     swap_in off)
+    #   - paper sells of rugged tokens booked fictitious exits at stale
+    #     prices, inflating PnL (fixed: paper-sell liquidity check)
+    #   - modeled slippage collapsed to ~3bps, frictionless (fixed: floor)
+    # Clock restarts on clean post-fix data. Trades that closed before this
+    # date are excluded from kill_criteria (exit_at >= start).
     "copy": {
-        "start":        datetime(2026, 6, 7, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 6, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 5, tzinfo=timezone.utc),
+        "start":        datetime(2026, 6, 21, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 20, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 19, tzinfo=timezone.utc),
     },
 }
 

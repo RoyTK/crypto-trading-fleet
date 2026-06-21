@@ -452,7 +452,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "WITH events_7d AS (SELECT wallet_address, COUNT(*) AS n7d FROM wallet_events_log WHERE event_at >= NOW() - INTERVAL '7 days' GROUP BY 1) SELECT wp.address, COALESCE(e.n7d, 0) AS events_7d, wp.events_30d, wp.last_event_at, wp.source, wp.added_at FROM wallet_pool wp LEFT JOIN events_7d e ON e.wallet_address = wp.address WHERE wp.tier='watch' ORDER BY COALESCE(e.n7d, 0) DESC, wp.events_30d DESC LIMIT 25",
+          "rawSql": "WITH ev AS (SELECT wallet_address, COUNT(*) FILTER (WHERE event_at >= NOW() - INTERVAL '7 days') AS n7d, COUNT(*) FILTER (WHERE event_at >= NOW() - INTERVAL '30 days') AS n30d FROM wallet_events_log WHERE event_at >= NOW() - INTERVAL '30 days' GROUP BY 1) SELECT wp.address, COALESCE(e.n7d, 0) AS events_7d, COALESCE(e.n30d, 0) AS events_30d, wp.last_event_at, wp.source, wp.added_at FROM wallet_pool wp LEFT JOIN ev e ON e.wallet_address = wp.address WHERE wp.tier='watch' ORDER BY COALESCE(e.n7d, 0) DESC, COALESCE(e.n30d, 0) DESC LIMIT 25",
           "format": "table"
         }
       ],
