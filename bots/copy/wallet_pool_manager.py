@@ -53,6 +53,16 @@ DEMOTE_ATTRIBUTED_PNL_BELOW_USD = 0.0
 ENABLE_SWAP_IN = False
 MAX_SWAPS_PER_RUN = 5
 
+# Cap promotions per daily run (2026-06-21). After the one-time mass
+# PnL-demotion of the bloated HFT active list, active drops far below
+# target and promote would otherwise re-flood it with ~50 UNPROVEN watch
+# wallets in a single day — recreating the losing-trade spam via the
+# promote path. Cap the daily influx so the pool refills gradually and new
+# wallets get a chance to prove (or fail) on attributed PnL before more
+# flood in. Watch wallets have no attributed PnL yet, so promotion is still
+# activity-ranked; the cap + PnL-demotion together make that safe.
+MAX_PROMOTIONS_PER_RUN = 10
+
 
 @dataclass
 class WalletSnapshot:
@@ -99,6 +109,7 @@ def decide_tier_changes(
     demote_attributed_pnl_below_usd: float = DEMOTE_ATTRIBUTED_PNL_BELOW_USD,
     enable_swap_in: bool = ENABLE_SWAP_IN,
     max_swaps_per_run: int = MAX_SWAPS_PER_RUN,
+    max_promotions_per_run: int = MAX_PROMOTIONS_PER_RUN,
 ) -> TierDecisions:
     """Decide the daily tier transitions.
 
@@ -185,7 +196,11 @@ def decide_tier_changes(
     # Rank by recent activity (events_7d desc) — promote the hottest first
     eligible_promotions.sort(key=lambda w: w.events_7d, reverse=True)
 
-    for w in eligible_promotions[:headroom]:
+    # Cap the daily influx (see MAX_PROMOTIONS_PER_RUN): fill headroom but no
+    # more than the per-run cap, so a post-cleanup active list refills
+    # gradually instead of flooding with unproven wallets in one day.
+    promote_budget = min(headroom, max_promotions_per_run)
+    for w in eligible_promotions[:promote_budget]:
         promote.append(w.address)
 
     # ---- Step 4: targeted swap-in for hot watch wallets if active cap full

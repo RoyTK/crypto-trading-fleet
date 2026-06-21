@@ -290,6 +290,18 @@ def test_swap_in_capped_when_enabled():
     assert len(d.swap_in) == 5  # capped, not 20
 
 
+# ---------- Promotion cap (2026-06-21) --------------------------------------
+
+def test_promotions_capped_per_run():
+    """After a mass demotion, headroom is large but promotions are capped
+    so active refills gradually, not flooded with unproven wallets."""
+    # No actives → headroom = full target (125), far above the cap
+    watches = [_w(f"w{i}", tier="watch", events_7d=10 + i, events_30d=40,
+                  cielo_winrate_90d=0.7) for i in range(30)]
+    d = decide_tier_changes(watches, now=NOW, max_promotions_per_run=10)
+    assert len(d.promote) == 10  # capped, not 30
+
+
 # ---------- PnL-based demotion (2026-06-21) ---------------------------------
 
 def test_demote_active_wallet_net_negative_after_enough_trades():
