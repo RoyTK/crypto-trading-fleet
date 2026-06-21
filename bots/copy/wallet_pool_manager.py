@@ -83,18 +83,32 @@ class WalletSnapshot:
     # attribution. Default 0/0 = no copied trades yet (can't judge → keep).
     attributed_trades: int = 0
     attributed_pnl_usd: float = 0.0
+    # Most-negative single attributed trade (2026-06-21). Used so one bad
+    # trade (e.g. a rug) can't condemn an otherwise-positive wallet — see
+    # _is_proven_loser. 0.0 default = no losing trade recorded.
+    worst_attributed_pnl_usd: float = 0.0
     # Discovery source — used to prioritize promotion (2026-06-21). Vetted
     # browser_opus curated wallets promote ahead of raw birdeye_gainers.
     source: Optional[str] = None
 
 
 def _is_proven_loser(w: "WalletSnapshot", min_trades: int, pnl_floor: float) -> bool:
-    """A wallet that has copied enough trades to judge AND is net-negative.
+    """A wallet that has copied enough trades to judge AND is ROBUSTLY
+    net-negative — negative even after excluding its single worst trade.
+
     Criterion is MONEY, not activity (a high-frequency winner like 9ZPsRWG is
-    NOT a loser). NOTE: one rug doesn't make a loser — this fires only on the
-    accumulated net PnL across >= min_trades, so a single bad token is
-    outweighed by an otherwise-positive record."""
-    return w.attributed_trades >= min_trades and w.attributed_pnl_usd < pnl_floor
+    NOT a loser). The exclude-worst-trade rule encodes "one rug doesn't make
+    a loser" (Roy): a wallet that's +$100 across its trades but dropped to
+    -$33 by a single -$133 rug is NOT a loser — excluding that trade it's
+    +$100. A wallet that's still negative after dropping its worst trade IS a
+    robust loser (CreQJ2t9, MfDuWeq, the turtle cluster)."""
+    if w.attributed_trades < min_trades:
+        return False
+    if w.attributed_pnl_usd >= pnl_floor:
+        return False
+    # Negative even without the single worst (most-negative) trade?
+    net_excluding_worst = w.attributed_pnl_usd - min(0.0, w.worst_attributed_pnl_usd)
+    return net_excluding_worst < 0
 
 
 def _source_priority(source: Optional[str]) -> int:
@@ -187,14 +201,14 @@ def decide_tier_changes(
         if w.pinned:
             continue
 
-        # 2a. PnL-based demotion (2026-06-21). A wallet that has copied
-        # enough trades to judge AND is net-negative gets demoted —
-        # regardless of how active it is or whether it's attribution-
-        # protected. This is the path that removes noisy money-losers
-        # (HFT/MM bots) that the events_30d<10 rule never could. Criterion
-        # is MONEY, not activity, so high-frequency WINNERS (9ZPsRWG) stay.
-        if (w.attributed_trades >= demote_min_attributed_trades
-                and w.attributed_pnl_usd < demote_attributed_pnl_below_usd):
+        # 2a. PnL-based demotion (2026-06-21). A wallet that is a ROBUST
+        # net-loser (negative even excluding its single worst trade) gets
+        # demoted — regardless of activity or attribution protection. This
+        # removes noisy money-losers (HFT/MM bots) the events_30d<10 rule
+        # never could. Criterion is MONEY not activity (9ZPsRWG stays), and
+        # the exclude-worst rule means one rug can't condemn an otherwise-
+        # positive wallet.
+        if _is_proven_loser(w, demote_min_attributed_trades, demote_attributed_pnl_below_usd):
             demote.append(w.address)
             continue
 

@@ -304,6 +304,29 @@ def test_proven_loser_watch_wallet_is_pruned():
     assert "watch_loser" not in d.promote  # never re-promoted
 
 
+def test_one_rug_does_not_condemn_otherwise_positive_wallet():
+    """Roy's rule: a wallet that's +$100 across its trades but dropped to
+    -$33 by a single -$133 rug is NOT a loser — excluding that one trade it's
+    +$100. Must NOT be demoted/pruned."""
+    w = _w("good_one_rug", tier="active", events_30d=5000)
+    w.attributed_trades = 8
+    w.attributed_pnl_usd = -33.0          # net negative...
+    w.worst_attributed_pnl_usd = -133.0   # ...but driven entirely by one rug
+    d = decide_tier_changes([w], now=NOW)
+    assert "good_one_rug" not in d.demote  # protected
+
+
+def test_robust_loser_demoted_despite_one_bad_trade_carveout():
+    """A wallet that's still negative AFTER excluding its worst trade IS a
+    robust loser (the turtle cluster: ~-$294 net, worst -$133 → -$161)."""
+    w = _w("robust_loser", tier="active", events_30d=5000)
+    w.attributed_trades = 10
+    w.attributed_pnl_usd = -294.0
+    w.worst_attributed_pnl_usd = -133.0   # ex-worst still -$161 < 0
+    d = decide_tier_changes([w], now=NOW)
+    assert "robust_loser" in d.demote
+
+
 def test_proven_loser_excluded_from_promotion():
     """Even if not yet dropped, a proven loser is never promoted."""
     loser = _w("loser", tier="watch", events_7d=100, events_30d=300)

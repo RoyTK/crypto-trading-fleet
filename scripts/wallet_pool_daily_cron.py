@@ -104,18 +104,20 @@ def _snapshot_wallets() -> list[WalletSnapshot]:
         attr_rows = s.execute(text("""
             SELECT wallet_address,
                    COUNT(*) AS n,
-                   COALESCE(SUM(attributed_pnl_usd), 0) AS pnl
+                   COALESCE(SUM(attributed_pnl_usd), 0) AS pnl,
+                   COALESCE(MIN(attributed_pnl_usd), 0) AS worst
             FROM wallet_attributions
             WHERE bot_id = 'copy'
             GROUP BY wallet_address
         """)).all()
-        attr: dict[str, tuple[int, float]] = {
-            r.wallet_address: (int(r.n), float(r.pnl)) for r in attr_rows
+        attr: dict[str, tuple[int, float, float]] = {
+            r.wallet_address: (int(r.n), float(r.pnl), float(r.worst)) for r in attr_rows
         }
 
         for w in s.execute(select(WalletPool)).scalars():
             events_7d, events_48h = aux.get(w.address, (0, 0))
-            attributed_trades, attributed_pnl_usd = attr.get(w.address, (0, 0.0))
+            attributed_trades, attributed_pnl_usd, worst_attributed = attr.get(
+                w.address, (0, 0.0, 0.0))
             snapshots.append(WalletSnapshot(
                 address=w.address,
                 tier=w.tier,
@@ -132,6 +134,7 @@ def _snapshot_wallets() -> list[WalletSnapshot]:
                 pinned=bool(w.pinned),
                 attributed_trades=attributed_trades,
                 attributed_pnl_usd=attributed_pnl_usd,
+                worst_attributed_pnl_usd=worst_attributed,
                 source=w.source,
             ))
     return snapshots
