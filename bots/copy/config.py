@@ -209,6 +209,14 @@ class CopySettings(BaseSettings):
     # cluster detector, and shadow log all running. Signed 2026-05-28 per
     # adversarial team meeting on COPY's strategic future.
     copy_cluster_buy_enabled: bool = Field(default=True)
+    # Active-tier size target. Intentionally >75 (Roy, 2026-06): if proper
+    # PnL-based promotion works and there are >75 wallets contributing to
+    # profits, a larger active list captures more of the edge. Drives the
+    # daily cron's promote/demote/swap math — MUST match the real intent or
+    # swap_in mass-churns (the 2026-06-21 bug: code said 75, active was 124,
+    # so swap_in fired 24-92x/day). Birdeye CU scales with active size; at
+    # current usage (2.5% of 2.5M) there's headroom, but watch this as it grows.
+    copy_active_list_target: int = Field(default=125)
     # Shadow log poll cadence — how often to fetch updated prices for
     # pending shadow_log rows + compute MFE/MAE. 5min matches Birdeye
     # historical candle resolution.

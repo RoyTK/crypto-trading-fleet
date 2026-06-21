@@ -17,7 +17,7 @@ from typing import Optional
 
 # Default rule parameters (overridable per-call for testing). These match
 # the locked plan: copy-wallet-active-watch-tier.md.
-ACTIVE_LIST_TARGET = 75
+ACTIVE_LIST_TARGET = 125  # Roy 2026-06: intentionally >75 (see config.copy_active_list_target)
 DEMOTE_EVENTS_30D_BELOW = 10
 PROMOTE_EVENTS_7D_AT_LEAST = 5
 PROMOTE_MIN_WIN_RATE = 0.55  # Cielo 90d winrate (0-1 ratio)
@@ -29,6 +29,29 @@ TARGETED_SWAP_IN_EVENTS_48H = 10
 # can't have accumulated yet. Same logic protects against demoting the
 # entire pool on day 1 of the Phase A migration.
 DEMOTE_GRACE_DAYS = 30
+
+# PnL-based demotion (2026-06-21 fix). The original logic ONLY demoted
+# QUIET wallets (events_30d < 10), so noisy money-LOSERS (HFT/MM bots that
+# fire constant cluster signals) could never be removed — they spammed
+# losing trades forever. Demote any active wallet that has copied enough
+# trades to judge AND is net-negative. Criterion is MONEY, not activity:
+# our best wallet (9ZPsRWG) does ~1500 swaps/day and is hugely positive —
+# an event-count "HFT filter" would have killed it. This bypasses the
+# attribution-protection window (that window protects proven WINNERS from
+# quiet-period demotion; a proven LOSER should still go).
+DEMOTE_MIN_ATTRIBUTED_TRADES = 5
+DEMOTE_ATTRIBUTED_PNL_BELOW_USD = 0.0
+
+# swap_in is DISABLED by default (2026-06-21 fix). It was an
+# observation-phase mechanism to force "hot" (= most active) watch wallets
+# into a full active list, displacing the weakest-by-events active. With
+# active permanently over target and the watch pool full of HFT
+# birdeye_gainers wallets, it mass-churned 24-92 wallets/day, kept active
+# stuffed with HFT noise, and thrashed the Helius webhook (status=400). The
+# promote/demote/PnL path is now the clean selection mechanism; swap_in is
+# gated off and capped if ever re-enabled.
+ENABLE_SWAP_IN = False
+MAX_SWAPS_PER_RUN = 5
 
 
 @dataclass
@@ -44,6 +67,12 @@ class WalletSnapshot:
     cielo_winrate_90d: Optional[float]  # 0-1 ratio (not 0-100)
     last_attribution_at: Optional[datetime]
     pinned: bool
+    # Attributed-trade PnL for this wallet (2026-06-21). Drives PnL-based
+    # demotion. attributed_trades = number of closed copied trades this
+    # wallet participated in; attributed_pnl_usd = sum of its equal-share
+    # attribution. Default 0/0 = no copied trades yet (can't judge → keep).
+    attributed_trades: int = 0
+    attributed_pnl_usd: float = 0.0
 
 
 @dataclass
@@ -66,6 +95,10 @@ def decide_tier_changes(
     attribution_protection_days: int = ATTRIBUTION_PROTECTION_DAYS,
     targeted_swap_in_events_48h: int = TARGETED_SWAP_IN_EVENTS_48H,
     demote_grace_days: int = DEMOTE_GRACE_DAYS,
+    demote_min_attributed_trades: int = DEMOTE_MIN_ATTRIBUTED_TRADES,
+    demote_attributed_pnl_below_usd: float = DEMOTE_ATTRIBUTED_PNL_BELOW_USD,
+    enable_swap_in: bool = ENABLE_SWAP_IN,
+    max_swaps_per_run: int = MAX_SWAPS_PER_RUN,
 ) -> TierDecisions:
     """Decide the daily tier transitions.
 
@@ -106,9 +139,23 @@ def decide_tier_changes(
 
     # ---- Step 2: demote underperforming active wallets -------------------
     grace_cutoff = now - timedelta(days=demote_grace_days)
+    protection_cutoff = now - timedelta(days=attribution_protection_days)
     for w in actives:
         if w.pinned:
             continue
+
+        # 2a. PnL-based demotion (2026-06-21). A wallet that has copied
+        # enough trades to judge AND is net-negative gets demoted —
+        # regardless of how active it is or whether it's attribution-
+        # protected. This is the path that removes noisy money-losers
+        # (HFT/MM bots) that the events_30d<10 rule never could. Criterion
+        # is MONEY, not activity, so high-frequency WINNERS (9ZPsRWG) stay.
+        if (w.attributed_trades >= demote_min_attributed_trades
+                and w.attributed_pnl_usd < demote_attributed_pnl_below_usd):
+            demote.append(w.address)
+            continue
+
+        # 2b. Quiet-wallet demotion (original rule): events_30d below bar.
         if w.events_30d >= demote_events_30d_below:
             continue
         # Grace period: newly-added wallets can't have accumulated 30d of
@@ -116,10 +163,10 @@ def decide_tier_changes(
         if w.added_at > grace_cutoff:
             continue
         # Attribution-protected? Only if last_attribution_at is recent.
-        if w.last_attribution_at is not None:
-            protection_cutoff = now - timedelta(days=attribution_protection_days)
-            if w.last_attribution_at >= protection_cutoff:
-                continue
+        # (Applies only to the QUIET path — a proven loser in 2a is demoted
+        # regardless of protection.)
+        if w.last_attribution_at is not None and w.last_attribution_at >= protection_cutoff:
+            continue
         demote.append(w.address)
 
     # ---- Step 3: promote qualifying watch wallets (up to headroom) -------
@@ -142,9 +189,11 @@ def decide_tier_changes(
         promote.append(w.address)
 
     # ---- Step 4: targeted swap-in for hot watch wallets if active cap full
-    # If active list is full AND a watch wallet shows ≥10 events/48h AND
-    # there exists a non-protected active wallet to displace, swap them.
-    if len(remaining_actives) + len(promote) >= active_list_target:
+    # DISABLED by default (2026-06-21). This activity-ranked swap mass-
+    # churned the active list with HFT noise and thrashed the Helius
+    # webhook. The promote/demote/PnL path is the selection mechanism now.
+    # Kept behind enable_swap_in + a per-run cap for optional future use.
+    if enable_swap_in and len(remaining_actives) + len(promote) >= active_list_target:
         already_promoted = set(promote)
         hot_watches = [
             w for w in watches
@@ -175,6 +224,8 @@ def decide_tier_changes(
         for hot in hot_watches:
             if not displaceable:
                 break
+            if len(swap_in) >= max_swaps_per_run:
+                break  # cap churn even when enabled
             victim = displaceable.pop(0)
             swap_in.append((hot.address, victim.address))
 

@@ -93,7 +93,8 @@ def test_dont_promote_when_active_at_cap_no_demotions():
         _w(f"a{i}", tier="active", events_30d=50, events_7d=10) for i in range(75)
     ]
     candidate = _w("hot", tier="watch", events_7d=20, events_30d=40, cielo_winrate_90d=0.8)
-    d = decide_tier_changes(actives + [candidate], now=NOW)
+    # target=75 so the 75 actives are at cap (default is now 125)
+    d = decide_tier_changes(actives + [candidate], now=NOW, active_list_target=75)
     # No room, no swap-in eligibility (candidate's events_48h=0 < 10)
     assert "hot" not in d.promote
     assert not d.swap_in
@@ -222,7 +223,10 @@ def test_swap_in_when_active_full_and_hot_watch_appears():
         events_7d=15, events_30d=15, events_48h=20,  # ≥10 in 48h
         cielo_winrate_90d=0.8,
     )
-    d = decide_tier_changes(actives + [hot], now=NOW)
+    # swap_in is OFF by default now (2026-06-21) — must opt in. target=75 so
+    # the 75 actives are "at cap" (default target is 125).
+    d = decide_tier_changes(actives + [hot], now=NOW,
+                            enable_swap_in=True, active_list_target=75)
     assert len(d.swap_in) == 1
     promote_addr, demote_addr = d.swap_in[0]
     assert promote_addr == "hot"
@@ -239,7 +243,8 @@ def test_no_swap_in_below_48h_event_bar():
         events_48h=5,  # below 10 threshold
         cielo_winrate_90d=0.8,
     )
-    d = decide_tier_changes(actives + [candidate], now=NOW)
+    d = decide_tier_changes(actives + [candidate], now=NOW,
+                            enable_swap_in=True, active_list_target=75)
     assert not d.swap_in
 
 
@@ -254,11 +259,87 @@ def test_swap_in_skips_attribution_protected_displacement_target():
         "hot", tier="watch", events_7d=15, events_30d=15, events_48h=20,
         cielo_winrate_90d=0.8,
     )
-    d = decide_tier_changes(actives + [hot], now=NOW)
+    d = decide_tier_changes(actives + [hot], now=NOW,
+                            enable_swap_in=True, active_list_target=75)
     # a0 (protected) should NOT be the displaced wallet; next-weakest a1 is
     assert len(d.swap_in) == 1
     _, demote_addr = d.swap_in[0]
     assert demote_addr == "a1"
+
+
+# ---------- swap_in disabled by default (2026-06-21) ------------------------
+
+def test_swap_in_off_by_default():
+    """The activity-ranked swap churned HFT noise into active; it's now OFF
+    unless explicitly enabled."""
+    actives = [_w(f"a{i}", tier="active", events_30d=20 + i, events_7d=5)
+               for i in range(75)]
+    hot = _w("hot", tier="watch", events_7d=15, events_30d=15, events_48h=20,
+             cielo_winrate_90d=0.8)
+    d = decide_tier_changes(actives + [hot], now=NOW, active_list_target=75)
+    assert d.swap_in == []
+
+
+def test_swap_in_capped_when_enabled():
+    """Even enabled, swaps are capped per run to prevent mass churn."""
+    actives = [_w(f"a{i}", tier="active", events_30d=20 + i) for i in range(75)]
+    hots = [_w(f"hot{i}", tier="watch", events_7d=15, events_30d=15,
+               events_48h=20, cielo_winrate_90d=0.8) for i in range(20)]
+    d = decide_tier_changes(actives + hots, now=NOW, enable_swap_in=True,
+                            active_list_target=75, max_swaps_per_run=5)
+    assert len(d.swap_in) == 5  # capped, not 20
+
+
+# ---------- PnL-based demotion (2026-06-21) ---------------------------------
+
+def test_demote_active_wallet_net_negative_after_enough_trades():
+    """A noisy money-loser (high events, negative attributed PnL) gets
+    demoted — the path the old events_30d<10 rule could never reach."""
+    w = _w("loser", tier="active", events_30d=200_000)  # HFT-level activity
+    w.attributed_trades = 108
+    w.attributed_pnl_usd = -96.6
+    d = decide_tier_changes([w], now=NOW)
+    assert "loser" in d.demote
+
+
+def test_high_frequency_winner_is_kept():
+    """9ZPsRWG-class: very high activity BUT net-positive PnL → KEEP.
+    An event-count HFT filter would wrongly kill this; PnL-based doesn't."""
+    w = _w("winner", tier="active", events_30d=45_000)  # ~1500 swaps/day
+    w.attributed_trades = 20
+    w.attributed_pnl_usd = 421.0
+    d = decide_tier_changes([w], now=NOW)
+    assert "winner" not in d.demote
+
+
+def test_pnl_demotion_needs_minimum_trades():
+    """A net-negative wallet with too few trades isn't demoted yet (noise)."""
+    w = _w("newish", tier="active", events_30d=5000)
+    w.attributed_trades = 3  # below the 5-trade bar
+    w.attributed_pnl_usd = -20.0
+    d = decide_tier_changes([w], now=NOW)
+    assert "newish" not in d.demote
+
+
+def test_pnl_demotion_bypasses_attribution_protection():
+    """A proven LOSER is demoted even if attribution-protected (the
+    protection guards quiet WINNERS, not money-losers)."""
+    w = _w("protected_loser", tier="active", events_30d=100_000,
+           last_attribution_days_ago=10)  # recent attribution = protected
+    w.attributed_trades = 50
+    w.attributed_pnl_usd = -54.0
+    d = decide_tier_changes([w], now=NOW)
+    assert "protected_loser" in d.demote
+
+
+def test_pnl_demotion_respects_pinned():
+    """Pinned wallets (9ZPsRWG) are immune even if PnL is negative on the
+    contaminated sample."""
+    w = _w("pinned_loser", tier="active", events_30d=100_000, pinned=True)
+    w.attributed_trades = 50
+    w.attributed_pnl_usd = -54.0
+    d = decide_tier_changes([w], now=NOW)
+    assert "pinned_loser" not in d.demote
 
 
 # ---------- Composite scenario ----------------------------------------------

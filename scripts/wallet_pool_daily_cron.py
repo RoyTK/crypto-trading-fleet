@@ -98,8 +98,24 @@ def _snapshot_wallets() -> list[WalletSnapshot]:
         """)).all()
         aux: dict[str, tuple[int, int]] = {r.address: (int(r.events_7d), int(r.events_48h)) for r in rows}
 
+        # Per-wallet attributed PnL (2026-06-21) — drives PnL-based demotion.
+        # COUNT = number of closed copied trades this wallet participated in;
+        # SUM = its equal-share attributed PnL. Only 'copy' bot rows.
+        attr_rows = s.execute(text("""
+            SELECT wallet_address,
+                   COUNT(*) AS n,
+                   COALESCE(SUM(attributed_pnl_usd), 0) AS pnl
+            FROM wallet_attributions
+            WHERE bot_id = 'copy'
+            GROUP BY wallet_address
+        """)).all()
+        attr: dict[str, tuple[int, float]] = {
+            r.wallet_address: (int(r.n), float(r.pnl)) for r in attr_rows
+        }
+
         for w in s.execute(select(WalletPool)).scalars():
             events_7d, events_48h = aux.get(w.address, (0, 0))
+            attributed_trades, attributed_pnl_usd = attr.get(w.address, (0, 0.0))
             snapshots.append(WalletSnapshot(
                 address=w.address,
                 tier=w.tier,
@@ -114,6 +130,8 @@ def _snapshot_wallets() -> list[WalletSnapshot]:
                 ),
                 last_attribution_at=w.last_attribution_at,
                 pinned=bool(w.pinned),
+                attributed_trades=attributed_trades,
+                attributed_pnl_usd=attributed_pnl_usd,
             ))
     return snapshots
 
@@ -214,7 +232,10 @@ def main() -> int:
     _recompute_event_counts()
     _refresh_attribution_timestamps()
     snapshots = _snapshot_wallets()
-    decisions = decide_tier_changes(snapshots)
+    decisions = decide_tier_changes(
+        snapshots,
+        active_list_target=settings.copy_active_list_target,
+    )
 
     log.info("decisions",
              promote=len(decisions.promote),
