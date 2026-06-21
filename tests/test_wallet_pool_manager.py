@@ -290,6 +290,46 @@ def test_swap_in_capped_when_enabled():
     assert len(d.swap_in) == 5  # capped, not 20
 
 
+# ---------- Proven-loser prune + source-priority (2026-06-21) ---------------
+
+def test_proven_loser_watch_wallet_is_pruned():
+    """A watch wallet with enough trades + net-negative PnL is dropped to
+    pruned (not left to cycle). Fixes CreQJ2t9/MfDuWeq/Ddwfjf re-promotion."""
+    w = _w("watch_loser", tier="watch", events_7d=50, events_30d=200,
+           added_days_ago=20)
+    w.attributed_trades = 166
+    w.attributed_pnl_usd = -117.0
+    d = decide_tier_changes([w], now=NOW)
+    assert "watch_loser" in d.drop
+    assert "watch_loser" not in d.promote  # never re-promoted
+
+
+def test_proven_loser_excluded_from_promotion():
+    """Even if not yet dropped, a proven loser is never promoted."""
+    loser = _w("loser", tier="watch", events_7d=100, events_30d=300)
+    loser.attributed_trades = 30
+    loser.attributed_pnl_usd = -50.0
+    good = _w("good", tier="watch", events_7d=10, events_30d=40)
+    d = decide_tier_changes([loser, good], now=NOW)
+    assert "loser" not in d.promote
+    assert "good" in d.promote
+
+
+def test_promotion_prioritizes_vetted_source():
+    """browser_opus curated wallets promote ahead of raw birdeye_gainers,
+    even when the raw ones are more active."""
+    raw = [_w(f"raw{i}", tier="watch", events_7d=100, events_30d=200,
+              cielo_winrate_90d=None) for i in range(15)]
+    for r in raw:
+        r.source = "birdeye_gainers"
+    vetted = _w("vetted", tier="watch", events_7d=6, events_30d=20,
+                cielo_winrate_90d=None)
+    vetted.source = "browser_opus:HUNTER-cluster-A"
+    d = decide_tier_changes(raw + [vetted], now=NOW, max_promotions_per_run=10)
+    # vetted promotes despite far lower activity than the raw HFT wallets
+    assert "vetted" in d.promote
+
+
 # ---------- Promotion cap (2026-06-21) --------------------------------------
 
 def test_promotions_capped_per_run():

@@ -132,6 +132,7 @@ def _snapshot_wallets() -> list[WalletSnapshot]:
                 pinned=bool(w.pinned),
                 attributed_trades=attributed_trades,
                 attributed_pnl_usd=attributed_pnl_usd,
+                source=w.source,
             ))
     return snapshots
 

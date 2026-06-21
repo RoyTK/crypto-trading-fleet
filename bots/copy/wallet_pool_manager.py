@@ -83,6 +83,29 @@ class WalletSnapshot:
     # attribution. Default 0/0 = no copied trades yet (can't judge → keep).
     attributed_trades: int = 0
     attributed_pnl_usd: float = 0.0
+    # Discovery source — used to prioritize promotion (2026-06-21). Vetted
+    # browser_opus curated wallets promote ahead of raw birdeye_gainers.
+    source: Optional[str] = None
+
+
+def _is_proven_loser(w: "WalletSnapshot", min_trades: int, pnl_floor: float) -> bool:
+    """A wallet that has copied enough trades to judge AND is net-negative.
+    Criterion is MONEY, not activity (a high-frequency winner like 9ZPsRWG is
+    NOT a loser). NOTE: one rug doesn't make a loser — this fires only on the
+    accumulated net PnL across >= min_trades, so a single bad token is
+    outweighed by an otherwise-positive record."""
+    return w.attributed_trades >= min_trades and w.attributed_pnl_usd < pnl_floor
+
+
+def _source_priority(source: Optional[str]) -> int:
+    """Promotion ordering: vetted browser_opus curated wallets first, then
+    legacy migration, then raw leaderboard scrapes (birdeye_gainers)."""
+    s = (source or "").lower()
+    if s.startswith("browser_opus"):
+        return 0
+    if s.startswith("legacy_migration"):
+        return 1
+    return 2
 
 
 @dataclass
@@ -135,14 +158,23 @@ def decide_tier_changes(
     actives = [w for w in wallets if w.tier == "active"]
     watches = [w for w in wallets if w.tier == "watch"]
 
-    # ---- Step 1: drop fully-silent watch wallets -------------------------
+    # ---- Step 1: drop silent OR proven-loser watch wallets ---------------
     silent_cutoff = now - timedelta(days=drop_days_silent)
     for w in watches:
         if w.pinned:
             continue
-        # Wallet is silent if no events ever, OR last event before cutoff.
-        # Also gate on "added before cutoff" so newly-added wallets get a
-        # full window to prove themselves before being dropped.
+        # 1a. Proven-loser drop (2026-06-21). A watch wallet that already
+        # copied enough trades and lost money gets PRUNED — not left in
+        # watch to be re-promoted by activity ranking. This is the fix for
+        # the loser-cycle: high-activity losers (CreQJ2t9 -$117/166 trades,
+        # MfDuWeq -$116/186, Ddwfjf -$332/31) were demoted to watch then
+        # re-promoted daily because they're the most active. Pruning
+        # unsubscribes them entirely so the cycle stops.
+        if _is_proven_loser(w, demote_min_attributed_trades, demote_attributed_pnl_below_usd):
+            drop.append(w.address)
+            continue
+        # 1b. Silent drop (original): no events in drop_days_silent days.
+        # Gate on "added before cutoff" so new wallets get a full window.
         if w.added_at > silent_cutoff:
             continue
         if w.last_event_at is None or w.last_event_at < silent_cutoff:
@@ -185,16 +217,22 @@ def decide_tier_changes(
     remaining_actives = [w for w in actives if w.address not in demote]
     headroom = max(0, active_list_target - len(remaining_actives))
 
-    # Eligible: watch wallets with enough recent activity + WR validation
+    # Eligible: watch wallets with enough recent activity + WR validation,
+    # EXCLUDING proven losers (don't re-admit a wallet that already lost
+    # money — the core fix for the loser-cycle).
     eligible_promotions = [
         w for w in watches
         if w.address not in drop
         and not w.pinned  # pinned watch wallets shouldn't auto-promote
         and w.events_7d >= promote_events_7d_at_least
         and (w.cielo_winrate_90d is None or w.cielo_winrate_90d >= promote_min_win_rate)
+        and not _is_proven_loser(w, demote_min_attributed_trades, demote_attributed_pnl_below_usd)
     ]
-    # Rank by recent activity (events_7d desc) — promote the hottest first
-    eligible_promotions.sort(key=lambda w: w.events_7d, reverse=True)
+    # Rank by SOURCE first (vetted browser_opus ahead of raw birdeye_gainers),
+    # then by recent activity within a source tier. Watch wallets have no
+    # attributed PnL yet, so source quality is the best promotion signal we
+    # have — promote the curated picks before the leaderboard noise.
+    eligible_promotions.sort(key=lambda w: (_source_priority(w.source), -w.events_7d))
 
     # Cap the daily influx (see MAX_PROMOTIONS_PER_RUN): fill headroom but no
     # more than the per-run cap, so a post-cleanup active list refills
