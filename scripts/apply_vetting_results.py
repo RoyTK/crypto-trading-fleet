@@ -37,6 +37,13 @@ from framework.db import session_scope
 from framework.audit import write_audit
 from framework.models import WalletPool
 
+try:
+    from framework.alerts import emit_alert
+    from monitoring.alerting.taxonomy import Severity
+    _ALERTS = True
+except Exception:
+    _ALERTS = False
+
 
 # .txt extension (CSV content) — OneDrive blocks browser-Opus writing .csv,
 # same as curated_wallets.txt. The parser is extension-agnostic.
@@ -101,6 +108,20 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
                     payload={"kept": kept, "rejected": rejected})
         print("\nPruned wallets unsubscribe from Helius on the next daily cron "
               "sync. Kept wallets promote vetted-first (cap 10/day).")
+        # Notify so an unattended cron run is visible (P2, no ping).
+        if _ALERTS:
+            try:
+                emit_alert(
+                    severity=Severity.P2,
+                    title="[copy] wallet vetting applied",
+                    body=(f"KEEP -> vetted: {kept}\nREJECT -> pruned: {rejected}\n"
+                          f"skipped: {skipped}  not-in-pool: {notfound}  malformed: {bad}\n"
+                          f"Source file: {file_path.name}"),
+                    bot_id="copy", event_type="wallet_vetting_applied",
+                    metadata={"kept": kept, "rejected": rejected},
+                )
+            except Exception:
+                pass
     return 0
 
 
