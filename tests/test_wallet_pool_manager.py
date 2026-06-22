@@ -31,6 +31,7 @@ def _w(
     cielo_winrate_90d: float | None = 0.7,
     last_attribution_days_ago: int | None = None,
     pinned: bool = False,
+    source: str = "browser_opus",  # vetted by default (promote_vetted_only is on)
 ):
     return WalletSnapshot(
         address=address,
@@ -49,6 +50,7 @@ def _w(
             else NOW - timedelta(days=last_attribution_days_ago)
         ),
         pinned=pinned,
+        source=source,
     )
 
 
@@ -351,6 +353,28 @@ def test_promotion_prioritizes_vetted_source():
     d = decide_tier_changes(raw + [vetted], now=NOW, max_promotions_per_run=10)
     # vetted promotes despite far lower activity than the raw HFT wallets
     assert "vetted" in d.promote
+
+
+# ---------- Vetted-only promotion (2026-06-22) ------------------------------
+
+def test_promote_vetted_only_blocks_unvetted():
+    """With vetted-only on (default), an unvetted (birdeye_gainers) watch
+    wallet is NOT promoted even if active+qualified; a vetted one is."""
+    raw = _w("raw", tier="watch", events_7d=50, events_30d=200, cielo_winrate_90d=None)
+    raw.source = "birdeye_gainers"
+    vetted = _w("vetted", tier="watch", events_7d=6, events_30d=20, cielo_winrate_90d=None)
+    vetted.source = "browser_opus_vetted"
+    d = decide_tier_changes([raw, vetted], now=NOW)
+    assert "raw" not in d.promote
+    assert "vetted" in d.promote
+
+
+def test_promote_vetted_only_off_allows_unvetted():
+    """Flag off → old behavior (any qualified watch wallet promotes)."""
+    raw = _w("raw", tier="watch", events_7d=50, events_30d=200, cielo_winrate_90d=None)
+    raw.source = "birdeye_gainers"
+    d = decide_tier_changes([raw], now=NOW, promote_vetted_only=False)
+    assert "raw" in d.promote
 
 
 # ---------- Promotion cap (2026-06-21) --------------------------------------

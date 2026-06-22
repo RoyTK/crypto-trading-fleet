@@ -53,6 +53,18 @@ DEMOTE_ATTRIBUTED_PNL_BELOW_USD = 0.0
 ENABLE_SWAP_IN = False
 MAX_SWAPS_PER_RUN = 5
 
+# Vetted-only promotion (2026-06-22, Roy). The active list should be VETTED
+# wallets only — the legacy/auto-discovery wallets were never held to the
+# realized-PnL/short-hold/not-bag-holder standard, and vetting found ~94%
+# of auto-discovered wallets are noise. So only promote wallets whose source
+# is browser_opus* (curated or vetted). Unvetted wallets sit in watch until
+# browser-Opus vets them (KEEP->vetted->promotable, REJECT->pruned).
+PROMOTE_VETTED_ONLY = True
+
+
+def _is_vetted(source: Optional[str]) -> bool:
+    return (source or "").lower().startswith("browser_opus")
+
 # Cap promotions per daily run (2026-06-21). After the one-time mass
 # PnL-demotion of the bloated HFT active list, active drops far below
 # target and promote would otherwise re-flood it with ~50 UNPROVEN watch
@@ -147,6 +159,7 @@ def decide_tier_changes(
     enable_swap_in: bool = ENABLE_SWAP_IN,
     max_swaps_per_run: int = MAX_SWAPS_PER_RUN,
     max_promotions_per_run: int = MAX_PROMOTIONS_PER_RUN,
+    promote_vetted_only: bool = PROMOTE_VETTED_ONLY,
 ) -> TierDecisions:
     """Decide the daily tier transitions.
 
@@ -241,6 +254,7 @@ def decide_tier_changes(
         and w.events_7d >= promote_events_7d_at_least
         and (w.cielo_winrate_90d is None or w.cielo_winrate_90d >= promote_min_win_rate)
         and not _is_proven_loser(w, demote_min_attributed_trades, demote_attributed_pnl_below_usd)
+        and (not promote_vetted_only or _is_vetted(w.source))
     ]
     # Rank by SOURCE first (vetted browser_opus ahead of raw birdeye_gainers),
     # then by recent activity within a source tier. Watch wallets have no

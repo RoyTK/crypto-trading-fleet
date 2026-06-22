@@ -217,6 +217,10 @@ class CopySettings(BaseSettings):
     # so swap_in fired 24-92x/day). Birdeye CU scales with active size; at
     # current usage (2.5% of 2.5M) there's headroom, but watch this as it grows.
     copy_active_list_target: int = Field(default=125)
+    # Vetted-only promotion (2026-06-22). Only browser_opus* (curated/vetted)
+    # wallets get promoted to active. Set false to revert to the old
+    # activity-ranked promotion of any watch wallet. See wallet_pool_manager.
+    copy_promote_vetted_only: bool = Field(default=True)
     # Rug detection floor for paper sells (2026-06-21). At paper-close time
     # we check the token's current Birdeye liquidity; if it's below this
     # USD floor, the LP has been pulled (rug) and the position can't really

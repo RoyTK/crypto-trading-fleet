@@ -239,6 +239,7 @@ def main() -> int:
     decisions = decide_tier_changes(
         snapshots,
         active_list_target=settings.copy_active_list_target,
+        promote_vetted_only=settings.copy_promote_vetted_only,
     )
 
     log.info("decisions",
