@@ -58,7 +58,7 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
         return 2
 
     rows = list(csv.reader(file_path.read_text(encoding="utf-8-sig").splitlines()))
-    kept = rejected = skipped = notfound = bad = inserted_new = 0
+    kept = rejected = skipped = notfound = bad = inserted_new = too_fast = 0
     now = datetime.now(timezone.utc)
 
     with session_scope() as s:
@@ -108,6 +108,11 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
                     w.demoted_at = now
                 print(f"  REJECT {addr[:14]}…  tier {w.tier} -> pruned")
                 rejected += 1
+            elif verdict in ("TOO_FAST", "TOOFAST"):
+                # Good wallet but sub-15-min holds — unfollowable by COPY's
+                # latency. NOT ingested into COPY (logged-only for a future
+                # fast/MEV-grade bot). Don't touch its pool state.
+                too_fast += 1
             else:
                 print(f"  [skip] {addr[:14]}… unknown verdict '{verdict}'")
                 skipped += 1
@@ -115,7 +120,8 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
     action = "would apply" if dry_run else "applied"
     print(f"\n{action}: {kept} KEEP (->vetted, {inserted_new} new inserted), "
           f"{rejected} REJECT (->pruned)")
-    print(f"  skipped: {skipped}  reject-not-in-pool(noop): {notfound}  malformed: {bad}")
+    print(f"  too_fast (logged, not ingested): {too_fast}  skipped: {skipped}  "
+          f"reject-not-in-pool(noop): {notfound}  malformed: {bad}")
     if not dry_run and (kept or rejected):
         write_audit("wallet_vetting_applied", bot_id="copy", actor="roy",
                     payload={"kept": kept, "rejected": rejected})

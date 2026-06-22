@@ -19,8 +19,12 @@ File to append to: vetted_watch_results.txt  (CSV content, .txt extension —
   OneDrive blocks .csv; do NOT rename or convert to .xlsx, which drops data)
 Columns (EXACT order): address, verdict, realized_pnl, unrealized_pnl, avg_hold,
   rug_pct, multi_x_wins, reason, date_vetted
-You only ever write verdict=KEEP rows (this is discovery of NEW qualifiers; the
-file already contains historical KEEP/REJECT rows — leave them untouched).
+Verdicts you write:
+  - KEEP     = qualifies AND followable hold (~30min-7d) -> ingested into COPY
+  - TOO_FAST = qualifies on everything else but holds sub-~15-min -> NOT ingested
+               into COPY (the cron ingestion only acts on KEEP/REJECT, so TOO_FAST
+               is safely logged-only); kept on the list for a future fast bot.
+Leave the file's historical rows untouched.
 
 PER-RUN WORKFLOW
 1. Read vetted_watch_results.txt first and collect EVERY address already present
@@ -42,8 +46,15 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
   = exit skill = what the bot copies.
 - Unrealized NOT deeply negative. REJECT if unrealized losses exceed realized gains
   (bag-holder who rides tokens to zero — the anti-pattern).
-- Avg Holding Duration SHORT — ideally <= ~7 days. The bot is 15-min cluster + fast
-  exits; a ~14d+ swing trader is the wrong STYLE even if profitable.
+- Avg Holding Duration in the FOLLOWABLE window: ~30 minutes to 7 days. COPY's
+  entry latency (Helius webhook + cluster formation + quote/execute) is ~10s to a
+  few minutes, so it can ride a wallet that holds 30min-days. Two failure modes:
+    * TOO SLOW (~14d+ swing): wrong style, COPY exits early. REJECT.
+    * TOO FAST (sub-~15-min holds — e.g. 7-second or 1-minute snipers): UNFOLLOWABLE.
+      COPY buys what they're already dumping. A wallet that qualifies on everything
+      ELSE but holds sub-15-min is NOT a KEEP — mark it verdict=TOO_FAST (see Output).
+      It's an excellent wallet for a future faster (MEV-grade) bot, but COPY's
+      latency can't follow it, so it must not be ingested into COPY.
 - Multiple multi-x wins (>100% and >500% in the distribution). Several beats one
   big win — a one-hit wonder is not a repeatable edge.
 - NOT brand new (>= ~1 week old; 1+ month preferred). NOT a pure market-maker/HFT
@@ -61,10 +72,12 @@ When several wallets co-buy a token within ~15 min, capture EVERY member's FULL
 address and note the shared cluster in the reason column (e.g. "co-buy TOKEN-cluster").
 Log every member as its own row — do NOT collapse a cluster into one wallet.
 
-OUTPUT — append KEEP rows to vetted_watch_results.txt
-For each qualifier write one row:
+OUTPUT — append rows to vetted_watch_results.txt
+For each followable qualifier write one row:
   address,KEEP,realized_pnl,unrealized_pnl,avg_hold,rug_pct,multi_x_wins,reason,YYYY-MM-DD
-- reason: one tight sentence on why it qualifies (realized/unrealized/hold/multi-x).
+For an otherwise-great wallet that holds sub-~15-min, write it as TOO_FAST instead
+of KEEP (same columns) — note "too fast for COPY latency; future fast-bot" in reason.
+- reason: one tight sentence (realized/unrealized/hold/multi-x, or the too-fast flag).
 - date_vetted: today.
 Reliable append method: build a self-contained HTML table in a real https tab with
 a "Copy CSV to clipboard" button (full addresses, color-coded), click it to load
