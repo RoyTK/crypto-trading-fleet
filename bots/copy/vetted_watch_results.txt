@@ -1,0 +1,555 @@
+address,verdict,realized_pnl,unrealized_pnl,avg_hold,rug_pct,multi_x_wins,reason,date_vetted
+2aU9JFxnESiF8RoyP9AdhqULRkJaiPQfBx8d9WWQq2Kz,REJECT,+$934.63K,-$702.37K,11d,100%,"49 (24>500%, 25>100%)","Strong realized but 11d avg hold exceeds ~7d fast-exit target; large -$702K unrealized bag + 95K txns = swing/MM profile, wrong style",2026-06-22
+5KJEmUWT474k49ZVZrteFYicZbT22sTvvNRRNk75hBpn,KEEP,+$6.19M,-$1.42M,11d,100%,"300 (120>500%, 180>100%)","Exceptional realized +$6.19M dwarfs -$1.42M unrealized (not a bagholder); 79% win rate, 300 multi-x wins. 11d hold slightly over ~7d target but strong exit skill justifies KEEP",2026-06-22
+8ZgAmj7fSo2eTcwidgg4uUYLZRXi8vyeFuywmA8FBQAv,REJECT,-$47.94K,-$2.68K,10d,0%,"0 (0>500%, 0>100%)","Negative realized PnL, 28% win rate, zero multi-x wins; bluechip swing trader, not a fresh-mint exit specialist",2026-06-22
+HHLtihp7xDmJpfvPNy2E39qZyBBFquQahkaMcLkCoAwy,REJECT,+$272.64K,-$802.34K,1mo,100%,"1 (0>500%, 1>100%)","Bag-holder: unrealized -$802K far exceeds realized +$272K; 1-month avg hold and only 1 multi-x win = wrong style (slow swing, holding losers)",2026-06-22
+EgQX9R3Qph1dPHE1Ysou1auSYqRGomCNmLDC28Yg77aq,KEEP,+$2.77M,-$229.11,1m,98.63%,"884 (9>500%, 875>100%)","Ideal profile: +$2.77M realized, ~$0 unrealized (no bags), ~1min holds w/ 99.97% instant-sell on fresh rug-mints, 884 multi-x wins, 74% win rate = textbook fast fresh-mint exit specialist",2026-06-22
+2RCjTNMYfivvCHpp9CtxQhBB1kzQG8fptq4nYa3EB3tP,REJECT,+$4.56M,-$877.05K,15d,100%,"261 (149>500%, 112>100%)",Strong realized + multi-x but 15d avg hold = ~14d+ swing trader profile user explicitly flagged as wrong style for 15-min fast-exit bot; also -$877K unrealized bag building,2026-06-22
+AEJZ1tRF5LjEzF6QxJQhoPodhvxfYHcZKxdpnDkSR2Wh,REJECT,+$7.76M,-$7.94M,2mo,99.94%,"1030 (330>500%, 700>100%)","Bag-holder: unrealized -$7.94M exceeds realized +$7.76M (net Total PnL negative); 2-month avg hold = holds losers indefinitely, wrong style despite strong wins",2026-06-22
+88Md1AAEfdr2iwYHA9pb9okS2fYfiCL8Wu9buaTPbcQM,REJECT,+$7.4M,-$5.22M,2mo,99.95%,"295 (37>500%, 258>100%)","Realized exceeds unrealized but 2-month avg hold + large -$5.22M unrealized bag = slow holder, opposite of exit-before-rug style; wrong style despite positive realized",2026-06-22
+BwGNeSNP8SVjkQfz3Z3wpJ65c9mxZomjnbL1r8euN1Vd,REJECT,+$2.11M,-$3.85M,1mo,99.86%,"210 (97>500%, 113>100%)","Bag-holder: unrealized -$3.85M exceeds realized +$2.11M (net Total PnL -$1.74M); 1-month avg hold = holds losers, wrong style",2026-06-22
+6mc4M2jySnFvkbfzpmFJKv8ZwZmZRgKaVqdwbf6ywomi,REJECT,+$453.92K,-$5.59M,3mo,99.91%,"252 (19>500%, 233>100%)","Severe bag-holder: unrealized -$5.59M dwarfs realized +$454K (Total PnL -$5.14M); 3-month avg hold = holds rugs to zero, exact opposite of fast-exit strategy",2026-06-22
+98SMxxEX6CK3jzaQE4ohKq8W7YBei1iCZZvK2DymLdjv,REJECT,+$168.43K,-$2.58M,3mo,99.82%,"54 (8>500%, 46>100%)","Bag-holder: unrealized -$2.58M dwarfs realized +$168K (Total PnL -$2.42M); 3-month avg hold, holds losers; wrong style",2026-06-22
+8yQp2pV6YTdMHg1iFwTWzs6peFMBaNGXoM2kdGTvEvo2,REJECT,+$20.53M,-$7.02M,3mo,99.87%,"446 (259>500%, 187>100%)","Huge realized +$20.53M (not a net bagholder) but 3-month avg hold + 18% win rate = long-hold whale, not 15-min fast-exit style; rejected on hold duration despite profitability",2026-06-22
+91DyLhNfDMGtyaP4sz1oFr48SCbAaubeGLcuVqh7R8U5,REJECT,-$17.37,-$1.62M,22d,96.25%,"0 (0>500%, 0>100%)","Near-zero/negative realized, zero multi-x wins, 100% of 1.6K tokens sitting at small unrealized loss (never sells) = accumulator/farmer bot, no exit skill",2026-06-22
+9YsTe2rW9HpmNDAMEJwWVcVws6BEqqKL7GEtFQJ56KSP,REJECT,-$2.85,-$347.5K,10d,96.23%,"0 (0>500%, 0>100%)","Near-zero realized, zero multi-x wins, buys fresh tokens and never sells (345 unsold bags) = accumulator/sniper-farmer with no realized exit skill",2026-06-22
+3cmf1r4gMfEkj87PjLSsjkhLsp1o6VXLRWSgaeeDrdan,REJECT,-$74.66K,+$1.51M,3d,7.64%,"0 (0>500%, 0>100%)","Stablecoin MM/arb bot ($316M vol in USDC/PYUSD/USDe/syrupUSDC), negative realized, zero multi-x wins; unrealized gain is a stablecoin yield bag, not fresh-mint pump trading - wrong strategy entirely",2026-06-22
+Fbmn95o8KFKksVa3w5VagnuXwVqRcvnXjKgGp4PEJ8YS,REJECT,+$18.69K,-$68.18K,5d,25%,"0 (0>500%, 0>100%)","Small realized +$18.69K exceeded by -$68K unrealized (net Total PnL negative); zero multi-x wins, only 4 tokens, holding -$62K bag = bagholder, no multi-x edge",2026-06-22
+61VFto2Wx5uzVfJnhaLeGQXnmxrX5aEuT44iTLoiB82L,REJECT,-$2.29M,-$332.18K,5d,99.84%,"2 (0>500%, 2>100%)","Severely negative realized -$2.29M, 0.07% win rate, 96% of tokens down >50%; fast holds but loses on nearly everything - no exit skill",2026-06-22
+FFqhWGJCUiWta7Ek9me2wgMnm9FCDUhPpkP6CexME9VG,REJECT,-$1.95M,-$360.75K,8d,99.96%,"25 (11>500%, 14>100%)","Severely negative realized -$1.95M, 0.37% win rate, 89% of tokens down >50%; few multi-x wins overwhelmed by losses - no exit skill",2026-06-22
+Fh2zaSbf3VFcQNWAGtaJVZC5rGTi5XUFouK37myYpGvG,REJECT,-$18.28M,-$1.28M,2d,99.95%,"0 (0>500%, 0>100%)","Catastrophic realized -$18.28M, 0.04% win rate, 95% of tokens down >50%, zero multi-x wins; fast holds but a near-total loser",2026-06-22
+xm4dC6XCRH4MWUXCNNZ1MqYm8jZjnabV4BHS7Eyoj29,REJECT,-$7.34K,-$6.03M,3mo,5.73%,"0 (0>500%, 0>100%)","Negative realized, -$6.03M unrealized bag, 3-month holds, 270K buys vs 8K sells (accumulates and holds), zero multi-x wins; bagholder accumulator, wrong style",2026-06-22
+j1opmdubY84LUeidrPCsSGskTCYmeJVzds1UWm6nngb,REJECT,+$41.95M,-$65.72M,11mo,78.65%,"3749 (729>500%, 3.02K>100%)","Market-maker/HFT bot: 2M txns, $1.26B vol, bluechip-heavy; unrealized -$65.72M exceeds realized (net Total PnL -$23.76M), 11mo avg hold = MM + bagholder, wrong style",2026-06-22
+HUPHeyBkcSCkHTxS9wsbVcj9UP9wZNXU998g5Csbc9AT,REJECT,+$1.14M,-$1.02M,17d,100%,"134 (96>500%, 38>100%)",Strong realized + 134 multi-x but 17d avg hold exceeds ~14d swing-trader line (wrong style); -$1.02M unrealized nearly cancels realized (Total PnL only +$114K) = bag accumulation risk,2026-06-22
+3MvopLKqEEYxwjkig5z1DKmsafErzjxpULjcrqJ7agz7,REJECT,+$1.43M,-$1.53M,21d,99.71%,"157 (75>500%, 82>100%)","Strong realized + 157 multi-x but unrealized -$1.53M exceeds realized +$1.43M (net Total PnL negative); 21d avg hold = swing trader holding bags, wrong style",2026-06-22
+3LDsJWsurP5QmQGUwgEbk61EmiXfY3Vx57vE6x5tTfbj,REJECT,-$33.34,-$3.28K,14d,95.12%,"0 (0>500%, 0>100%)","Near-zero/negative realized, zero multi-x wins, 31% win rate; tiny dust-trade churner with negligible per-trade PnL, no edge",2026-06-22
+x7wpXYKb64KqkMrGdSd3oppoDFbWZM1yZCGwLFSTBHm,REJECT,-$70.88K,-$207.81K,11d,99.89%,"32 (12>500%, 20>100%)","Negative realized -$70.88K, 5% win rate, 62% of tokens down >50%; few multi-x wins drowned by losses - no exit skill",2026-06-22
+DHpJzL9Yb214uuGBLzAWP9vZuQoPtRvyJPUhr7yZSxXG,REJECT,+$217.19,-$2.12K,13d,94.44%,"0 (0>500%, 0>100%)","Near-zero realized (+$217), zero multi-x wins, 19% win rate, net Total PnL -$1.9K; tiny dust-trade churner, no edge",2026-06-22
+BuBwBXY4r5bV2XruenKUhLRqkLTZJcPTcHHFj1hxHe8r,REJECT,+$516.78,-$1.16M,22d,99.87%,"0 (0>500%, 0>100%)","Near-zero realized, -$1.16M unrealized bag, 822 buys vs 2 sells (never exits), zero multi-x wins, 22d holds; accumulator/farmer, no exit skill",2026-06-22
+8jm9CZgvUhEaXgpTjAiqY4bkBYYoZ5zSNCyoqoDkjCkL,REJECT,+$362.20,-$3.57K,12d,94.9%,"0 (0>500%, 0>100%)","Near-zero realized (+$362), zero multi-x wins, 9% win rate, net Total PnL -$3.21K; tiny dust-trade churner, no edge",2026-06-22
+6heT4UvdE4gCRmaktxoC7RrhADHWBw5g79pXh5aaZm3h,REJECT,+$1.09K,-$3.59K,14d,93.13%,"1 (1>500%, 0>100%)","Near-zero realized (+$1.1K), negligible multi-x, 38% win rate, net Total PnL -$2.5K; same dust-churn micro-trader cluster, no edge",2026-06-22
+F4qeu5kVdwepwsY1JwSHQ56G5wPJ11bpPKGeewbujDRK,REJECT,$0,$0,0,81.02%,"0 (0>500%, 0>100%)","Zero realized PnL, 0 buys / 5.65K sells (100% 'Didn't Buy') - only receives airdrops/transfers and dumps them; distribution wallet, not a trader, no signal",2026-06-22
+H65BX7fdrAvQFEwD7VrRjpHwBBqjLKRzHz6y5tuBb2KB,REJECT,+$153.99,-$2.66K,12d,91.81%,"0 (0>500%, 0>100%)","Near-zero realized (+$154), zero multi-x wins, 43% win rate, net Total PnL -$2.5K; same dust-churn micro-trader cluster, no edge",2026-06-22
+4DLrassVNmnbke5JFJdHHMkmdrkYdHZcDYV1tnYsyHbS,REJECT,+$623.41,-$4.23K,14d,95.63%,"0 (0>500%, 0>100%)","Near-zero realized (+$623), zero multi-x wins, 38% win rate, net Total PnL -$3.61K; same dust-churn micro-trader cluster, no edge",2026-06-22
+6vVw7jtWk2uGdWfkvXKrWMisZ4weWECebHomVuPTMLbq,REJECT,+$66.90,-$3.45K,11d,92.34%,"0 (0>500%, 0>100%)","Near-zero realized (+$67), zero multi-x wins, 15% win rate, net Total PnL -$3.39K; same dust-churn micro-trader cluster, no edge",2026-06-22
+5f8zXcDHqesvjWdEVHY8e3SfjFxtUocNPFj3QH7p62bm,REJECT,+$59.86K,-$2.09M,1mo,99.92%,"10 (0>500%, 10>100%)","Tiny realized +$60K vs -$2.09M unrealized bag (Total PnL -$2.03M); 2.16K buys vs 54 sells, 1mo holds = accumulator/bagholder, no exit skill",2026-06-22
+Tcz87LRTzQLJuSozniRnuSUeLhU41w75MxqTCAFMKPb,REJECT,+$3.56M,-$7.76M,2mo,100%,"290 (169>500%, 121>100%)","Strong realized + 290 multi-x but unrealized -$7.76M dwarfs realized +$3.56M (net Total PnL -$4.19M); 2mo avg hold = bagholder, wrong style",2026-06-22
+CmSsX7v6v85DggK3k5XLgJAMndCpsoENjtBAKx4VsP9v,REJECT,+$565.19,-$3.72K,11d,93.65%,"0 (0>500%, 0>100%)","Near-zero realized (+$565), zero multi-x wins, 38% win rate, net Total PnL -$3.15K; same dust-churn micro-trader cluster, no edge",2026-06-22
+8uaDLxXyfq56bmZBNgXT9MXGNvzsdMTZzz9Px4kYy36a,REJECT,+$473.38,-$3.43K,12d,92.82%,"0 (0>500%, 0>100%)","Near-zero realized (+$473), zero multi-x wins, 57% win rate but net Total PnL -$2.96K; same dust-churn micro-trader cluster, no edge",2026-06-22
+BK9fi9bjTmJ3z6FisfC8MgS86zZz4YYt2biikZbv1tcD,REJECT,-$0.04,-$1.64M,25d,99.88%,"0 (0>500%, 0>100%)","Zero realized, -$1.64M unrealized bag, 952 buys vs 1 sell (never exits), zero multi-x wins, 25d holds; pure accumulator, no exit skill",2026-06-22
+46ojZjmvYCzgikVQ4NZ1rSMz2vURDhW74U1CQm5p6HSM,KEEP,+$291.65K,-$59.9K,23d (skewed; per-trade exits in minutes),97.88%,"217 (13>500%, 204>100%)","Banks profit: realized +$291K vs only -$60K unrealized (no bags), Total PnL +$232K positive; 217 multi-x wins, 54% instant-sell, sells fresh rug-mints within minutes (23d avg skewed by outliers) = fast-exit fresh-mint profile",2026-06-22
+BFCKmigMutDgTYjMbLMdc5qarnVUbPvu2ibMFL52dMA,REJECT,-$0.96,-$221.53K,10d,97.74%,"0 (0>500%, 0>100%)","Zero realized, -$221K unrealized bag, 670 buys vs 6 sells (never exits), zero multi-x wins; accumulator/sniper-farmer, no exit skill",2026-06-22
+2QioJBwKBVtsP2FajWoquvCt5VVjPUxtpDaXecprcgpF,REJECT,+$10.94M,-$16.24M,2mo,100%,"430 (52>500%, 378>100%)","Huge realized + 430 multi-x but unrealized -$16.24M dwarfs realized +$10.94M (net Total PnL -$5.29M); 2mo avg hold = bagholder holding rugs, wrong style",2026-06-22
+7NxxdQzrhTHMqdv4YqEmQkrdB8iarh5sGPsoDbLjEQYf,REJECT,+$210.81K,+$122.27,3h,0%,"1 (1>500%, 0>100%)","Fast holds + flat unrealized but ALL profit from ONE token (SON); only 1 multi-x win across 6 tokens in 26d = one-hit wonder, fails 'multiple multi-x wins' requirement, not a repeatable edge",2026-06-22
+GVWABx5Wxe5yT2DZe3tKpieBjs7dDWxp8J1oWU6DHKSo,REJECT,-$397.20,-$4.54K,14d,95.45%,"0 (0>500%, 0>100%)","Negative realized, zero multi-x wins, 15% win rate, net Total PnL -$4.93K; same dust-churn micro-trader cluster, no edge",2026-06-22
+AZetby3ifHUm1sUzruvnPV9ZUeMoP74WTUKqv5izUfNU,REJECT,+$97.08,-$3.49K,15d,95.85%,"0 (0>500%, 0>100%)","Near-zero realized (+$97), zero multi-x wins, 10% win rate, net Total PnL -$3.39K; same dust-churn micro-trader cluster, no edge",2026-06-22
+FUwBg3eSSbar7yUChNSoLyyZpDFPJm8p5nCvSCsz1mjj,KEEP,+$436.5K,-$0,7s,99.36%,"473 (7>500%, 466>100%)","Near-perfect profile: +$436.5K realized, ~$0 unrealized (zero bags), 7-second avg hold, 99.55% instant-sell on fresh rug-mints, 473 multi-x wins, 85% win rate = textbook fast fresh-mint exit specialist",2026-06-22
+8im4QyQmzJiZsePb9nGRxi8d5kD1NgQifGixxyqsuww5,REJECT,+$697.47K,-$1.7M,28d,99.87%,"571 (177>500%, 394>100%)","Strong realized + 571 multi-x but unrealized -$1.7M dwarfs realized +$697K (net Total PnL -$1M); 28d avg hold, 44% of tokens down >50% = bagholder, wrong style",2026-06-22
+FxNLACMwGK3AAprfWsDnASJpFDCKNDtbbUukNbAC7xjN,REJECT,$0,$0,0,100%,"0 (0>500%, 0>100%)","Zero realized PnL, 0 buys / 2.21K sells (100% 'Didn't Buy') - only receives airdrops/transfers and dumps; distribution wallet, not a trader, no signal",2026-06-22
+dV23NH6PJ6fosCVVyssd5fTP8esjvrDWx681Br6D7Qz,REJECT,+$1.02K,-$6.42K,16d,94.63%,"0 (0>500%, 0>100%)","Near-zero realized (+$1K), zero multi-x wins, 29% win rate, net Total PnL -$5.39K; same dust-churn micro-trader cluster, no edge",2026-06-22
+DPWT8w8VVThR3BK9xFDBKQc7SUoqiE5bGNuVm8p7baS8,REJECT,+$170.89,-$2.76K,12d,93.46%,"0 (0>500%, 0>100%)","Near-zero realized (+$171), zero multi-x wins, 29% win rate, net Total PnL -$2.59K; same dust-churn micro-trader cluster, no edge",2026-06-22
+DeEUpDja8iUhLmYAgQYH7G5Ug3SHNqpVEXJGqcJTLsa9,REJECT,+$3.63K,-$5.12K,10d,0%,"1 (1>500%, 0>100%)","Tiny 10-day-old wallet, only 1 token traded; unrealized -$5.12K exceeds realized +$3.63K (net negative); single multi-x win fails 'multiple wins' requirement, no track record",2026-06-22
+DsCLwbpYSy1yGYFU4mHBsRC9eU2cYcA9DABnPKHQkiEg,REJECT,+$48.4K,-$1.7M,1mo,99.9%,"8 (1>500%, 7>100%)",Bag-holder: unrealized -$1.7M dwarfs realized +$48.4K (Total PNL -$1.66M); 1mo holds = wrong style,2026-06-22
+A6WnLUatWDjBip5No7ds42DM8fCUAasvXMDBEUk3cphr,REJECT,+$619.77K,-$1.57M,26d,99.74%,"74 (39>500%, 35>100%)",Bag-holder: unrealized -$1.57M exceeds realized +$619.77K (Total PNL -$956K); 26d avg hold = wrong style despite strong multi-x,2026-06-22
+whamNNP9tHoxLg92yHvJPdYhghEoCg1qYTsh5a2oLbx,KEEP,+$2.52M,-$119.05K,4d,99.44%,"979 (66>500%, 913>100%)","Ideal fast fresh-mint exit specialist: +$2.52M realized, tiny -$119K unrealized (no bag, Total PnL +$2.4M), 4d holds, 93% instant-sell, 79% win rate, 979 multi-x wins",2026-06-22
+54pMUZ5u8Cs1KtjsipENyrtMrhtBHG2eEiXSFe2vL8xL,REJECT,-$327.1K,-$43.55K,4d,80.66%,"19 (4>500%, 15>100%)","Negative realized -$327.1K, 22% win rate, 79% of tokens at a loss; fast holds but no exit skill (loses on most trades)",2026-06-22
+Fh6eiZ9Q8b7av8ioMY3YCXEjZ4WPSAoNRBbggvxp7UpC,REJECT,-$187.14K,-$56.33K,7d,100%,"0 (0>500%, 0>100%)","Negative realized -$187.14K, zero multi-x wins, 92% of 25 tokens down >50%; no exit edge",2026-06-22
+973vghafz4fQYB3MquWdLZd8dBMzJWcsTyBxH2GAMqcY,REJECT,+$1.21M,-$3.35M,8mo,99.6%,"12 (0>500%, 12>100%)","Distribution/bag-holder: 95.65% 'Didn't Buy', 97% 'Sold>Bought' (66 buys vs 6.74K sells = dumps airdrops); unrealized -$3.35M exceeds realized (Total PnL -$2.13M), 8mo holds, 0.87% win rate",2026-06-22
+BvyDJRN3gNcveWo1BezbRgfzamSurgzW5Aemd5FJnWeh,REJECT,+$649.02K,-$1.69M,26d,99.5%,"70 (42>500%, 28>100%)",Bag-holder: unrealized -$1.69M exceeds realized +$649K (Total PnL -$1.04M); 26d avg hold = wrong style despite strong multi-x,2026-06-22
+DBp3PZXh5MaoHsqXa4ez3czUFhRf9YxsZW4zf9cgGKj9,REJECT,+$81.48K,-$51.2K,2d,29.56%,"1 (0>500%, 1>100%)","Thin-margin high-volume churner: only +$81K realized on $13.87M vol, just 1 multi-x win (fails 'multiple wins'), 44% win rate; bluechip/stablecoin scalper, no fresh-mint pump edge",2026-06-22
+27Uh1TLBRnRNfSTShFNiy4rRLm367zacMnNEkHDNwjX3,KEEP,+$86K,-$58.94K,5d,90%,"18 (0>500%, 18>100%)","Fits profile: +$86K realized exceeds -$58.94K unrealized (Total PnL +$27K, not a bagholder), 5d holds, 70% win rate, 18 multi-x wins on 90% rug-mints = fast fresh-mint exit style",2026-06-22
+FqJsk25LNvr7Z8GBVLAidDjr8dQS3XFamu5Dn2NdHbrR,REJECT,+$3.58K,-$701.19,12h,57.14%,"13 (0>500%, 13>100%)","Near-zero realized (+$3.58K on $840K vol, 14K txns); HFT dust-churner with tiny per-trade PnL, 42% win rate; no meaningful banked profit, no fresh-mint edge",2026-06-22
+HxjwdF326ZunmUwC1iXhfgL3ku78YsksN6n7Rfxzwr6b,REJECT,+$5.71M,-$1.67M,0,70.03%,"4930 (2710>500%, 2220>100%)","Market-maker/HFT bot: $1.13B volume, 1.23M txns, 0 avg hold, 96% win rate, two-sided bluechip scalping (SOL/USDC/ZEC/HYPE/cbBTC); thin per-trade PnL, not fresh-mint pump trading - wrong strategy",2026-06-22
+5RK7d5RHzPH4ngBqNdLCyY65kFT8NeE3mviBqJJAsUNK,REJECT,-$162.19K,-$39.54K,3mo,16.48%,"2 (0>500%, 2>100%)","Negative realized -$162.19K, 3mo avg hold, 36% win rate, only 2 multi-x wins; bluechip/pre-stock swing trader, wrong style and no exit edge",2026-06-22
+F4UE9T1mnSLyEziU73FhBnaQbXgwgfxEibg5VGNtW6wo,REJECT,+$2.84K,-$3.96M,2mo,99.9%,"1 (0>500%, 1>100%)","Accumulator/farmer: 1.05K buys vs only 7 sells (never realizes), near-zero realized +$2.84K, -$3.96M unrealized bag, 2mo holds; no exit skill",2026-06-22
+GJnoiho7NMoF25wcddZsWckHbFLqJ4JLQq92141UoMoW,REJECT,+$209.46,-$174.89,8d,89.33%,"17 (12>500%, 5>100%)","Near-zero realized (+$209 on $5.63M vol), 24% win rate, multi-x wins are sub-dollar dust; negligible banked profit, no meaningful edge",2026-06-22
+HMw1Fu3JnCQimdgxQvq56wD9JDf4poxwt6W43qf21ix,REJECT,+$72.35K,-$1.81M,1mo,99.93%,"11 (2>500%, 9>100%)","Accumulator/bag-holder: 4.06K buys vs 94 sells, unrealized -$1.81M dwarfs realized +$72K (Total PnL -$1.74M), 1mo holds, 96.8% of tokens at a loss; barely sells, no exit edge",2026-06-22
+FLXP3Qa3J2JDVTzwn5HWUQM11U8NQdiPo8vSQc6GdZNX,REJECT,+$8.99K,-$5.33M,2mo,99.94%,"1 (0>500%, 1>100%)","Severe accumulator/bag-holder: near-zero realized +$9K, -$5.33M unrealized bag (Total PnL -$5.32M), 2mo holds, 91% of 1.76K tokens at loss; holds rugs to zero, no exit skill",2026-06-22
+GzE38KeF3yL5iwCyAexa95J7fvGCfMTWJg4WcmmBbBdu,REJECT,$0,-$774.41K,23d,100%,"0 (0>500%, 0>100%)","Pure accumulator: 495 buys vs 0 sells (never sells anything), $0 realized, -$774K unrealized bag, 100% of tokens at loss; no exit skill whatsoever",2026-06-22
+HkqUALTs8Jc4Hgu4Ad8AMuoCPXom3UtT1Dj4WtE41T5n,REJECT,+$2.13K,+$278.28K,18d,40%,"1 (1>500%, 0>100%)","Near-zero realized (+$2.13K); +$280K Total PnL is unbanked paper gain on 1 unsold Jotchua position, not exit skill; 9.67% win rate, 18d holds; banks nothing",2026-06-22
+seBwrgHMtBJAhV7zWQSdGGqsGikyAAmzPoHApjgiwJS,REJECT,-$6.46K,+$948.19,2mo,92%,"1 (1>500%, 0>100%)","Negative realized -$6.46K, 5.55% win rate, 2mo avg hold, only 1 multi-x win; tiny losing wallet, no exit edge",2026-06-22
+5zEPuVmmL3ixzae78ASsg8MGV4sC31LV1v6asBR8YXhu,REJECT,+$48.01K,-$1.2M,1mo,100%,"13 (12>500%, 1>100%)","Accumulator/bag-holder: 782 buys vs 40 sells, unrealized -$1.2M dwarfs realized +$48K (Total PnL -$1.16M), 1mo holds, 98% of tokens at loss; holds rugs, no exit edge",2026-06-22
+72CUzAjX61qgmF8MNkgPUfii4PjXpENZgoEF9dKUAn3S,REJECT,-$9.22M,-$569.2K,2d,100%,"0 (0>500%, 0>100%)","Catastrophic realized -$9.22M, zero multi-x wins, 94.66% of 1.08K tokens down >50%; fast holds but a near-total loser, no exit skill",2026-06-22
+6DLqEmLJ3Hqm2srgyMyc3gKBEXeFDkTgLjGkKYjMRJx1,REJECT,$0,-$102.22,3mo,99.91%,"0 (0>500%, 0>100%)","Pure dust accumulator: 1.56K buys vs 0 sells, $0 realized, $0.09 avg cost on 1.12K dust tokens, 3mo holds; never sells, no edge",2026-06-22
+CC6FRpsDoWmzt7KeGhcc2CAR7oUBaBbmjSQC3SsMM8c6,REJECT,+$6.8K,-$2.88K,16d,16%,"1 (0>500%, 1>100%)","Modest realized +$6.8K, only 1 multi-x win (fails 'multiple wins'), 16d hold over target, 33% win rate; bluechip/stablecoin churner, no fresh-mint edge",2026-06-22
+FXwBcnyTUViqiWgbzSGTC51jKvwhhVWsp8Ls6jvnr3gs,REJECT,$0,-$100.81,3mo,99.91%,"0 (0>500%, 0>100%)","Pure dust accumulator: 1.55K buys vs 0 sells, $0 realized, $0.08 avg cost on 1.12K dust tokens, 3mo holds; never sells, no edge (sister wallet to 6DLqEmLJ)",2026-06-22
+8RLueJsuCjx5uvoAqyM7X27QQfbYPG4z1FWtsRjaRWL2,REJECT,$0,-$106.75,3mo,99.91%,"0 (0>500%, 0>100%)","Pure dust accumulator: 1.55K buys vs 0 sells, $0 realized, $0.09 avg cost on 1.12K dust tokens, 3mo holds; never sells (same farmer cluster), no edge",2026-06-22
+GvJyYFGPSWpGd8TsxYNFqjRGkLURfo39tC3SXqofbcan,REJECT,$0,-$104.49,3mo,99.91%,"0 (0>500%, 0>100%)","Pure dust accumulator: 1.56K buys vs 0 sells, $0 realized, $0.09 avg cost, 3mo holds; never sells (same farmer cluster as 6DLqEmLJ/FXwBcny/8RLueJsu), no edge",2026-06-22
+Dcf8HAGzKSHWP1gBnnxvGoju4RmBYB3hQgfiaY622Y4S,REJECT,$0,-$101.57,3mo,99.91%,"0 (0>500%, 0>100%)","Pure dust accumulator: 1.56K buys vs 0 sells, $0 realized, $0.09 avg cost, 3mo holds; never sells (same farmer cluster), no edge",2026-06-22
+MisBn7HPfn6u7dYsG1xYyAWcmz84PQPVGBKFBjRbcjK,REJECT,$0,-$105.09,3mo,99.91%,"0 (0>500%, 0>100%)","Pure dust accumulator: 1.56K buys vs 0 sells, $0 realized, $0.09 avg cost, 3mo holds; never sells (same farmer cluster), no edge",2026-06-22
+5nxGye38HowRueCPg7sn5ve3bUrqyHo1JoSLYDaEyX4u,REJECT,$0,-$108.43,3mo,99.91%,"0 (0>500%, 0>100%)","Pure dust accumulator: 1.56K buys vs 0 sells, $0 realized, $0.09 avg cost, 3mo holds; never sells (same farmer cluster), no edge",2026-06-22
+8stzDUko13Dj9gXr6sseAgGFHpim22m3nsuTJBoWSzsZ,REJECT,$0,-$103.45,3mo,99.91%,"0 (0>500%, 0>100%)","Pure dust accumulator: 1.56K buys vs 0 sells, $0 realized, $0.09 avg cost, 3mo holds; never sells (same farmer cluster), no edge",2026-06-22
+A6vLy8dZnocbZnYQpQSMFEdfNjACcsgd6qT64zEjp8CL,REJECT,$0,-$102.19,3mo,99.91%,0,"Zero realized PnL, 3mo holds, accumulator never sells - wrong style",2026-06-22
+7QbGP6UKnvms8uRvHhemRJvQQywiVWDrVjPksFUqG6D9,REJECT,$0,-$104.29,3mo,99.91%,0,"Dust-farmer cluster (PACT), $0 realized, 1.56K buys/0 sells, never exits",2026-06-22
+ADwQJ8etThjvcECXLJ4PUzY1Qo3JmXFq9bHMErcnwSww,REJECT,+$397.67K,-$1.38M,28d,100%,42,Bag-holder: -$1.38M unrealized dwarfs +$398K realized; 28d holds = wrong style,2026-06-22
+BojwfAFiGc23QjRcZBspcSVRHdzuaWWXuMua59BpDZMg,KEEP,+$5.57K,-$2.92K,5d,92.3%,"10 (>100%), 4 (>500%)",Realized +$5.57K > unrealized loss; 5d holds; multiple multi-x wins; 64% instant-sell exit skill,2026-06-22
+3YqHLrqAvo1aXcexvwQRPsewX33HcJJfFuUtKZYzjgZM,REJECT,+$4.74K,-$645K,1d,100%,7 (>500%),"Bag-holder: -$645K unrealized dwarfs +$4.7K realized; 838 buys/15 sells, barely exits",2026-06-22
+Ff81WCgw2TFZj2a6a2hsPzBSevfNj3WsH6ME9vFGkUo3,REJECT,+$535.18K,-$1.09M,20d,100%,"46 (>100%), 22 (>500%)",Bag-holder: -$1.09M unrealized > +$535K realized; 20d holds = wrong style,2026-06-22
+J3EtprN9Qe7AgyUSGPrgodPup72NQ71nybjLxro6oUwj,REJECT,-$0.45,-$35.43,17d,99.68%,0,"Negative realized PnL, 17d holds, 317 buys/5 sells accumulator",2026-06-22
+12XSLP3i2th15gGGWJ7A82JXoeQb5gaA6T2gDZgAKzQ8,REJECT,-$35.89,-$186.4K,3d,93.37%,0,Negative realized; -$186K unrealized bag of unsold dust; 4.25% win rate,2026-06-22
+7xVEAo8m7Md3fiywzinKFzxrC1GjHJackXFo46nxbCTD,REJECT,+$77.12K,-$76.64K,7d,100%,0,No multi-x wins; unrealized loss cancels realized gain (Total +$485); 16.66% win rate,2026-06-22
+AgLBMJv6pXZkwRu7mKHTE6tAXPPxcVzwR3VWs4PfZhXJ,REJECT,+$1.29K,+$4.41K,12d,0%,0,"Only 2 tokens, no multi-x wins, 12d holds; concentrated holder not fast-flip style",2026-06-22
+AyC5aMKf4F3TYypirhCiERj8HRj7M3wTuP52hjyCPLJu,REJECT,+$37.88K,+$1.29M,2mo,99.83%,3 (>100%),Paper gain from 1 unsold position (SPCX); 2mo holds; 684 buys/13 sells accumulator,2026-06-22
+3SghYC2mup7CkkzWP4R6eKYj1fkeNYLgGWtfiA1d3eFj,REJECT,+$21.9K,-$173.48K,13d,87.5%,5 (>100%),Bag-holder: -$173K unrealized dwarfs +$21.9K realized; 13d holds,2026-06-22
+AkNaQg5ekjx1RN1y1rApi7kVyrT9f6qeEUuzDbKtv363,REJECT,-$0.44,-$35.6,17d,99.69%,0,"Negative realized; 17d holds; 329 buys/5 sells accumulator, never exits",2026-06-22
+7xosfqoL42vGrUqgEizoYTXziFMFVUQ318VFHWzESgRp,REJECT,-$0.31,-$35.05,18d,99.68%,0,Negative realized; 18d holds; 316 buys/3 sells accumulator dust-farmer,2026-06-22
+4m2h5A2hfieCpnTkGcpWoq9tJbTMuswUMPPz2FLqKfGS,REJECT,-$676.61K,+$37.61,4h,97.47%,0,"HFT/MM bot: -$677K realized, 202K txns, 2.4% win rate, $7.5M churn",2026-06-22
+D21Z4MdKo4r6nwiFwTu5LiQRp2w4yAUdyYuBbrUHRGCz,REJECT,+$161.27K,-$680.27K,1mo,99.75%,"26 (>100%), 11 (>500%)",Bag-holder: -$680K unrealized dwarfs +$161K realized; 1mo holds,2026-06-22
+DqRzdtSa9nYwqzndTMhLHw9uq34manhnoRcXdj7TuWb4,REJECT,+$160.75K,-$1.79M,3mo,100%,"31 (>100%), 16 (>500%)",Bag-holder: -$1.79M unrealized dwarfs +$161K realized; 3mo holds,2026-06-22
+JCUFuR4UtaSRHcsNAiekTwdE1HRxxUZN6buJNnj32dpZ,REJECT,-$7.36K,+$1.35M,30d,71.76%,0 realized,Negative realized; +$1.35M is unbanked paper gain from 1 unsold position (Jotchua); 30d holds,2026-06-22
+76YMoAZWFJnVsMjDbTnRujaro98kUYUBnadHC7STreLf,REJECT,-$173.5K,-$32.51,6d,100%,0,"Negative realized -$173.5K; $7.8M two-sided churn, 0 multi-x wins, losing bot",2026-06-22
+B9aZH4is2gpNAoCahWfz8rBdRjzjMQNrCLYr37tV3Xi3,REJECT,-$526.4,-$2.17K,2mo,57.75%,11 (>100%),"Negative realized; 2mo holds; 6K-txn two-sided churner, 24% win rate",2026-06-22
+BeyJuk9dX6FisPCyniDaKxDtHqtpRc2Mn5ZYaaxY5gir,KEEP,+$88.68K,-$0,5m,98.11%,"17 (>100%), 3 (>500%)","IDEAL: +$88.68K all banked, no bag, 5m holds, 98% instant-sell, 17 multi-x wins, 100% WR",2026-06-22
+FE2mgimB4e3bcV1krNXAJztFdT8QHKEhE8VY2GwAKATw,REJECT,+$125.45K,+$143.65K,5h,13.33%,0,"Strong banked + short holds but 0 multi-x wins; large-size bluechip scalper, not fresh-mint multi-x style",2026-06-22
+8UfVkyuAtnh5nwmvwDdjYznpzV6kSrVJcVN4Hx2z8GiX,REJECT,+$65.45K,-$64.52K,13d,30.38%,2 (>100%),Unrealized loss cancels realized (Total +$937); 10.5K-txn bluechip churner; 13d holds; only 2 multi-x,2026-06-22
+2Bev4H43NeBuo4wzXS1PYfKSSmEo1TL576Bvd2iPfXDh,REJECT,-$7.33K,-$3.53K,2mo,98.24%,0,"Negative realized -$7.33K; 2mo holds; 9% win rate, 0 multi-x wins",2026-06-22
+3EQ84HbDgx7WBuk85yXJ97x4B7K22sH3AMcZ2iGxMo9J,REJECT,-$6.69K,+$156.6K,2mo,8.1%,0,"Negative realized; gain is unrealized; tokenized-stock/stablecoin trader; 2mo holds, 0 multi-x",2026-06-22
+9PX1Zki6r3VUzxKmkepb7AWi6m25Thad1i7sdrFi8MbS,REJECT,-$52.15K,-$44.6,7d,100%,0,"Negative realized -$52K; $5M two-sided churn, 20% win rate, 0 multi-x, losing bot",2026-06-22
+4kDySta6dogdVxH4JrEKpLvckHLnLkVk8Ts3LMX5GzDK,REJECT,-$391.77,-$11.72K,1d,0%,0,Negative realized; midcap meme churner net-negative; 0 multi-x wins,2026-06-22
+HsdFZozMrA4u8CYvUbVqQbf6Lu66FnwCEFfahcqhUxx7,REJECT,+$1.21K,-$575.47,8d,100%,0,"Only 1 token, tiny $4.6K sample, 0 multi-x wins; insufficient track record",2026-06-22
+24PFmgULyneucpaRjkMQwSUK8fRY9dFfEG7aAfCPhuCu,REJECT,+$687.64,-$119.48K,19d,0%,0,"Near-zero realized; -$119K unrealized bag (HYPE); 19d holds; bluechip, 0 multi-x",2026-06-22
+43Ynwqa1qpRfTfaRtmxqXNNLgvZTZiCcJ9iB3R61Ja6s,KEEP,+$8.92M,-$872.49K,19d,100%,"259 (227 >100%, 32 >500%)","Elite: +$8.92M banked dwarfs -$872K unrealized; 259 multi-x wins, 93.7% WR; proven exit skill (sold $13.3M)",2026-06-22
+yHCxHBEaJW5tbndqC8JciSThr7U1cqLpdcsvHcx6PRe,KEEP,+$163.34K,+$274.28K,8d,93.57%,"181 (172 >100%, 9 >500%)","Ideal: +$163K banked, unrealized positive (no bag), 8d holds, 181 multi-x wins, 89.7% WR, 61% instant-sell",2026-06-22
+CWjwDW9GPxTP94QR2xt5zXU2a2TiyUuJTAsxJ4YvpwW2,REJECT,-$4.22K,-$3.61K,1d,36.64%,0,"Negative realized; 10.5K-txn two-sided churner; 0 multi-x wins, 30% win rate",2026-06-22
+BZSRVc1GyQzKA4n9dPV1e8b95JK7Tid5eWuN2ecFEEXh,REJECT,-$5.98K,-$7.48K,2mo,97.36%,0,"Negative realized; 2mo holds; 9.85% win rate; 14K-sell churner, 0 multi-x",2026-06-22
+A92TkarSz6pQvYQKwPo69pq6qQdEVmtxJ3fgc2xin5h6,REJECT,+$17.27K,-$613.73K,1d,100%,1 (>100%),"Bag-holder: -$614K unrealized dwarfs +$17K realized; 80 buys/4 sells, barely exits",2026-06-22
+E6ny3NrW6hEb99qdJLxyaDAuQDSS2Cm2veFJht4jPscg,REJECT,-$2.39K,-$10.94K,2mo,98.29%,0,"Negative realized; 2mo holds; 10.95% win rate, 0 multi-x wins",2026-06-22
+CsK2PCxJ3vydVaKu8yiQyWkMGGFwvth7rTmftU57EXSf,REJECT,+$83.45K,-$755.11K,14h,96.38%,3 (>100%),"Bag-holder: -$755K unrealized dwarfs +$83K realized; 84 buys/11 sells, huge unsold bag",2026-06-22
+EiS6a9hjFNZPPXqXaUd8pGnL3ZBnHs8uNKibVRWhBeT6,REJECT,+$57K,-$87.97K,1d,80.43%,0,"Unrealized loss -$88K exceeds +$57K realized (Total -$31K); 0 multi-x wins, dust-spam positions",2026-06-22
+8KYMfXzpbB6atKguR1q3rK8wFX72fjWMknGMXDhHnLrg,REJECT,+$16.95K,-$35.39K,1mo,78.04%,5 (>100%),"Unrealized loss -$35K exceeds +$17K realized (Total -$18K); 1mo holds, bag-holder",2026-06-22
+AD2Do5Qah56KELghcNR6nQMro5cS4TmUfHY9jMEnRNme,REJECT,+$56.3K,-$382.86K,2mo,4.16%,0,"Bag-holder: -$383K unrealized dwarfs +$56K realized; 2mo holds; LST/SOL staking trader, 0 multi-x",2026-06-22
+BjXj2ugqWhZ5FwxnuZ2gbcM7r2yniAJsCVBgBvDWzpmi,REJECT,-$2.08K,-$9.21K,2mo,98.24%,0,"Negative realized; 2mo holds; 12% win rate, 0 multi-x wins",2026-06-22
+JCw2bP2zxW7LLq3nzefuNnQCezF1J7Xobx4ofnaMUzcE,REJECT,+$2.02K,-$1.78K,1d,31.39%,5 (>100%),"Marginal: realized +$2K barely exceeds -$1.78K unrealized (Total +$249); tiny $12K dust-trade sample, thin edge",2026-06-22
+43GqExcNbEb8tvHWBfzPuL97dwxVpo4XyCPnb59GJhdD,REJECT,-$7.39K,+$98.04K,1mo,87.5%,2 (>100%),"Negative realized; +$98K is unbanked paper gain from 1 unsold position (HAIR); 1mo holds, 12% WR",2026-06-22
+7Kf94rsxSSEef3JHoCRzKifmxkNMVWhjw7fpUBfWRh8v,REJECT,-$896.02,+$161.65K,1d,0%,0,Negative realized; +$161K is unbanked paper gain from 1 unsold position (ZERO); near-zero banked,2026-06-22
+AGWFP3vwujS1ArGa6XAyaRtgxHaekzffwsn3ZQJb4uYw,REJECT,+$10.81K,-$171.78K,1mo,4.76%,0,"Bag-holder: -$172K unrealized dwarfs +$11K realized; 1mo holds; BTC/LST/stablecoin trader, 0 multi-x",2026-06-22
+HPZPTbCwN3mRFKCEtcgtGzCCAUpzFzJ4EVdpiqSz7Yic,REJECT,+$59.23K,+$3.12M,9mo,8.69%,0,"9mo holds; +$3.1M is unbanked HYPE/ZEC paper; bluechip swing trader, 0 multi-x; modest realized vs $89M vol",2026-06-22
+4MpfoNtAUAAESaQyKq1mwPzdWQ9WHzF8CGmUKT1bPZCA,REJECT,+$18.68K,-$23.98K,13h,96.96%,"4 (3 >100%, 1 >500%)",Unrealized loss -$24K exceeds +$18.7K realized (Total -$5.3K); bag bigger than banked profit,2026-06-22
+MGSg73WbcdFNsNYHQqRhXkSfqRSGiZ9pEFn1PF1GQEt,REJECT,-$6.28K,-$6.75K,2mo,96.89%,1 (>100%),"Negative realized; 2mo holds; 9.87% win rate, single-token sell-churner",2026-06-22
+8v2yUb6G1pAUon1gVxnKtCrL6Xi3VpBDc7ceRYEEX1Kb,REJECT,+$891.55K,-$890.54K,2mo,99.86%,"134 (115 >100%, 19 >500%)",Unrealized loss -$891K cancels +$892K realized (Total +$1K); 2mo holds = bag-holder despite multi-x,2026-06-22
+CAi4Dxk66CnL2ND19yCTnHmQPusTWH9pjwb7oUYRQijo,REJECT,-$366.97K,-$6.5M,2mo,24.24%,0,"Negative realized -$367K; -$6.5M unrealized bag (GOAT/KMNO); 2mo holds, whale bluechip/LST trader, 0 multi-x",2026-06-22
+FPjx1P5RUwKGESWoksupbNexMiCzwsYhazoN268kpBvt,REJECT,-$1.33K,-$27.58K,22d,7.69%,0,"Negative realized; 22d holds; stablecoin/LST yield trader, 0 multi-x wins",2026-06-22
+31o3cjq1yr2ssTrAvXHEGa5MUPbViDQChocmwoL8ptWc,REJECT,-$1.77M,+$2.84M,2mo,0%,"0 (0>500%, 0>100%)","Negative realized -$1.77M; Total +$1.07M only from unrealized paper bags; 2mo holds + 20K/25K txns = MM/whale bot, wrong style",2026-06-22
+DFUc5Cj17B2d2RE1LbquQY2dcp8CEYdmoBc6LNz6HEkN,KEEP,+$3.15K,+$5.82K,1d,89.1%,"16 (2>500%, 14>100%)","Fast-exit fresh-mint profile: +$3.15K realized banked, unrealized positive (no bag), 1d holds, 75% instant-sell, 16 multi-x wins, 89% rug = ideal strategy match",2026-06-22
+BR3vXHJx6b1WLkiAyk3Qs8DW4AGWdS5nRTk8vYDKi5ty,REJECT,-$623.84,-$11.41K,2mo,97.22%,"0 (0>500%, 0>100%)","Negative realized -$624; -$11.41K unrealized bag (Total -$12K); 2mo holds; 0 multi-x = bag-holder, wrong style",2026-06-22
+6ghvV1WrbSii7x1WH9ubhbrEispGMWkaNwajzwyYN1TH,REJECT,+$50.16K,-$227.65K,25d,99.07%,"14 (3>500%, 11>100%)",Bag-holder: -$227.65K unrealized dwarfs +$50.16K realized (Total -$177K); 25d holds = wrong style despite multi-x wins,2026-06-22
+DrAR2ZNC5KYZps7NJyYHfzeZTaqbMUaGM3CBUWfpbCUs,REJECT,-$13.61K,-$2.01M,1mo,33.33%,"0 (0>500%, 0>100%)","Negative realized -$13.6K; -$2.01M unrealized bag (Total -$2.02M); 1mo holds; 0 multi-x = bag-holder whale, wrong style",2026-06-22
+9vsykra2NWHJbPasDStpoPfEvrFSrAATrwtM2me6Upu4,REJECT,-$261.64K,-$1.31K,1d,80.43%,"0 (0>500%, 0>100%)","Heavily negative realized -$261.64K despite 1d holds; 0 multi-x wins = no exit edge, losing trader",2026-06-22
+6e7JGdVmnAFGuNj7myWk4rY6JVCcXYrJXTvsdWNeoUpC,REJECT,+$1K,-$1.68K,1d,90.12%,"10 (0>500%, 10>100%)",Near-zero realized +$1K with -$1.68K unrealized exceeding it (Total -$681 net negative); banked edge too thin to qualify,2026-06-22
+B67dd8HT3afpEuvkHD7iEJxiEDYRKpX4iG4R3XFKUvVG,REJECT,+$0,-$0.21,18d,100%,"22 (22>500%, 0>100%)","Custody/holding wallet: $0 realized, $0.22 total volume, 18d holds; >500% counts are dust airdrops, no real trading edge",2026-06-22
+HpnVcVKFWhEC2bx9SCvEdMQXHfiyqYgCUmRnccYLmNQX,REJECT,-$2.77,-$14.75,9d,23.52%,"0 (0>500%, 0>100%)","Negative realized; tiny $225 dust wallet, 0 multi-x, 14% win rate, 9d holds = losing micro-trader, no edge",2026-06-22
+7X2oVc64cq7SVxUSPw9dndvLm5t2tcAZZA8BBrWBw7ex,REJECT,+$47.36K,-$5.87K,18h,12.5%,"0 (0>500%, 0>100%)","Strong realized +$47K, short 18h holds, small bag - but ZERO multi-x wins (only 8 tokens, large-size scalper); fails multi-x criterion for fresh-mint strategy",2026-06-22
+HJdhB1dtGvv8cXfjmqLgX9sjrKUqjdwLauPFUDMCrUKV,REJECT,-$143.27K,-$77.41,1d,80.48%,"0 (0>500%, 0>100%)","Heavily negative realized -$143K despite 1d holds; 0 multi-x, 25% WR = losing trader, no exit edge",2026-06-22
+BVvGaM8FvJNQJxGyDofUA6WmUQKRDev3pWQe1FTbHU2t,REJECT,$0,-$65.9K,11d,100%,"0 (0>500%, 0>100%)","Pure accumulator: 10 buys / 0 sells, $0 realized, -$65.9K unrealized bag, never exits = opposite of fast-exit strategy",2026-06-22
+Luckywzbt7nYBhmEZLnzqAsQmRE8bMmgyduxsP5kktR,KEEP,+$24.23K,-$0.81,10m,33.79%,"19 (6>500%, 13>100%)","IDEAL: +$24.23K all banked (~$0 unrealized, no bag), 10m holds, 97% instant-sell, 19 multi-x wins, 99.55% WR = fresh-mint fast-exit",2026-06-22
+6ReDxKr2ms5TRmPvVkv86q5nfmRHn8iutJ3cjQA23XSJ,REJECT,+$113.23K,-$11.5K,2mo,100%,"2 (1>500%, 1>100%)","Strong realized +$113K, small bag - but 2mo avg hold = wrong style (swing trader, not 15-min fast-exit); only 2 multi-x wins",2026-06-22
+7zUBmfH1YCoN96jXN2kiUbp3r9rvRT5wbPh25Q2dTGV9,REJECT,+$29.29K,-$7.04K,2mo,98.03%,"1 (1>500%, 0>100%)","Positive realized +$29K but 2mo avg hold = wrong style (swing trader); only 1 multi-x win, 18% WR",2026-06-22
+9krn16wHQNwXGmQGjn46kfoQMrzxiuBKjVwkaYkEnymA,REJECT,+$237.78K,+$53.98K,1d,80%,"0 (0>500%, 0>100%)","Strong realized +$238K, positive unrealized, 1d holds - but ZERO multi-x wins (avg $10K size scalper, not pump-rider); fails multi-x criterion",2026-06-22
+AogAZz5VHMCCFfc2oXZ2n6y3Cm9mBQ77M9J9UazfNd4e,REJECT,-$150.02K,-$3.97K,1d,80%,"0 (0>500%, 0>100%)","Heavily negative realized -$150K despite 1d holds; 0 multi-x, 100% tokens are losers = losing trader",2026-06-22
+8JCFM7rb4ERnyM23epym2eBJBJokT3WeNDsKjZhzLwiL,REJECT,-$0.02,-$480.5K,12d,0%,"0 (0>500%, 0>100%)","Bag-holder: ~$0 realized, -$480.5K unrealized, bought $5.9M sold $61 (never exits), 12d holds = opposite of fast-exit",2026-06-22
+Dihzuv6wVXJBEcRJAFTHzRAxqDKXfT7a9wAePvTVVHHj,REJECT,-$280.37,-$4.22K,16h,89.09%,"76 (5>500%, 71>100%)",Negative realized -$280 (Total -$4.5K) despite 16h holds & 76 multi-x wins; doesn't net positive banked profit = no edge,2026-06-22
+9CzqkQT5ew3rYoNVAPnpxoTRTp7r2T8231ecMd1p9HqP,REJECT,+$0,-$0.19,19d,100%,"20 (20>500%, 0>100%)","Custody/holding wallet: $0 realized, $0.19 total volume, 19d holds; >500% are dust airdrops, no trading edge",2026-06-22
+Dh7WgZLQvhG11rHG679fDzPvMra2RmRyEmP9hyfuRKQA,REJECT,+$3.13K,+$199.72K,1d,42.85%,"3 (0>500%, 3>100%)",Total +$203K is 98% UNREALIZED paper gain; only +$3.13K actually banked. Currently holding a big winner = not demonstrated exit skill (bot needs banked exits),2026-06-22
+Hhac439UvL5CUwxffNQrRh1DjUTPcXYm7c5BD2TkBWVV,REJECT,+$0,+$6.99K,14d,87.5%,"5 (5>500%, 0>100%)","Custody/holding wallet: $0 realized, $0.05 total volume, 14d holds; >500% are dust airdrops, no trading edge",2026-06-22
+GuTYupA9NpamVdk38VvxmyYngMFpRcnVpwhv65rEX9V1,KEEP,+$20.93K,-$13.15K,11d,100%,"4 (0>500%, 4>100%)",+$20.93K realized banked exceeds -$13.15K bag (net Total +$7.77K positive); 4 multi-x wins; scales out via many sells; 11d hold marginal but acceptable,2026-06-22
+9vQsYHn2dARP5jwsHttUB1Hb5ct5rPQnyi3jDqvJwDmh,KEEP,+$20K,-$7.68K,3d,88.88%,"4 (0>500%, 4>100%)","+$20K realized banked exceeds -$7.68K bag (net +$12.31K); 3d holds, 4 multi-x wins, 89% rug, scales out via 345 sells = fast-exit profile",2026-06-22
+9TZQyHYUGCAPVLykSecQdj4Nygj25WLzEw29T6SgaT4P,REJECT,-$14.92K,-$397.17,10d,33.33%,"0 (0>500%, 0>100%)","Negative realized -$14.92K; 0 multi-x wins, 10d holds, large-size loser = no edge",2026-06-22
+3w5Ewpdj4xTBqNMfwVPUwtWUuLwZTRagFf6mAy5F244i,REJECT,+$185.3,-$18.42,12h,71%,"5 (2>500%, 3>100%)","Right pattern (12h holds, 5 multi-x, high rug) but only +$185 realized on $4K volume = dust sample too thin to confirm edge",2026-06-22
+FePSGRavtQty99PFUty5WnaK6M7eibcEEpZRcrmZ6Xi1,REJECT,-$45.01K,-$5.05K,14d,77.77%,"0 (0>500%, 0>100%)","Negative realized -$45K; 14d holds; 0 multi-x = losing trader, wrong style",2026-06-22
+9uPiF4zA3fiz5aNW7SgkugS8w895X3Fk1mAHryNxJ3Ct,REJECT,+$0,-$0.05,5d,100%,"4 (4>500%, 0>100%)","Custody/holding wallet: $0 realized, $0.05 total volume; >500% are dust airdrops, no trading edge",2026-06-22
+55kySRakPhgtKvKUcb7zW3C5pFshGvY3LFCQ67gwBh1n,REJECT,+$284.03,-$2.36K,16d,0%,"1 (0>500%, 1>100%)","Only 1 token traded; -$2.36K bag exceeds +$284 realized (Total -$2.07K); 16d hold = thin sample, net loser, wrong style",2026-06-22
+6xvfq2CLRuC9fCDc4UzWYDYgtAGtgHeTWAH73kvagcXn,REJECT,+$2.22K,+$320.02K,11d,0%,"1 (1>500%, 0>100%)","Total +$322K is 99% UNREALIZED paper gain on 1 position; only +$2.22K banked; 2-token sample, 11d hold = unbanked holder, not exit skill",2026-06-22
+9HzLQ8hGATLdkypz1ziDCpVs5HWxqZJFBHxgUBgTuk8S,REJECT,+$7.79K,-$77.93K,15d,54.75%,"10 (0>500%, 10>100%)",Bag-holder: -$77.93K unrealized dwarfs +$7.79K realized (Total -$70K); 15d holds = wrong style despite 10 multi-x,2026-06-22
+Gnggyp4UeSWtmDHJVttirQ7vEsnKKVDLCLdWTq6ptVNi,REJECT,+$0,-$0.03,11d,100%,"4 (4>500%, 0>100%)","Custody/holding wallet: $0 realized, $0.03 total volume; >500% are dust airdrops, no trading edge",2026-06-22
+JDYTQsMZiC3Jks8VTBjvMnYAfw2UqFN68TLmL4xj7BFx,REJECT,+$0,-$0.03,12d,100%,"4 (4>500%, 0>100%)","Custody/holding wallet: $0 realized, $0.03 total volume; >500% are dust airdrops, no trading edge",2026-06-22
+GRDknmrH8FCkuuAxugzNUmVoyctrgKKyFrMA2YU5LFTk,REJECT,$0,+$2.51M,1mo,0%,"0 (0>500%, 0>100%)","Single-position holder: $0 realized, +$2.51M unrealized paper gain, 4 buys/0 sells (never exits), 1mo hold = no exit skill",2026-06-22
+3da4bqNpn1ecCtxSynMe1EGEGoFMafzPa13aaVhFM6Fc,REJECT,-$30.05,-$5.79,8d,100%,"0 (0>500%, 0>100%)","Negative realized; 2-token $45 dust wallet, 0 multi-x = no edge, thin losing sample",2026-06-22
+Egqv9PNYQ1boGVUrngr2bL8kKrFrqgds1TK6Qgr2hGks,REJECT,-$1.1K,-$812.04,5mo,62.2%,"7 (0>500%, 7>100%)",Negative realized -$1.1K; 5mo avg hold = totally wrong style (long-term holder); net loser,2026-06-22
+BV1dengBUiVNurB8oDDMKic25Pqztha5BkC5PGWinb4i,REJECT,-$14.93,-$977.52K,1mo,99.49%,"0 (0>500%, 0>100%)","Massive bag-holder: ~$0 realized, -$977.52K unrealized, 3K buys/67 sells (barely exits), 1mo holds, 7% WR = accumulator, opposite of fast-exit",2026-06-22
+2wBUvf9EAszS4A7JDbbhLTUbxcGjdRLa5WPLeVyx16ny,REJECT,-$3.64K,-$336.45,6d,34.41%,"4 (0>500%, 4>100%)","Negative realized -$3.64K despite 6d holds; 11% WR, 38% of tokens down >50% = losing churner, no banked edge",2026-06-22
+ATUuh9eZWBx359k5DEZtQkTJMQgY3KHVZpXnNLcjiqZu,REJECT,+$0,-$0.06,6d,100%,"3 (3>500%, 0>100%)","Custody/holding wallet: $0 realized, $0.06 total volume; >500% are dust airdrops, no trading edge",2026-06-22
+gtagyESa99t49VmUqnnfsuowYnigSNKuYXdXWyXWNdd,KEEP,+$4.63M,-$26.67K,18h,68.52%,"~5280 (2.5K>500%, 2.78K>100%)","ELITE: +$4.63M realized all banked (tiny -$27K unrealized), 18h holds, 88% instant-sell, ~5280 multi-x wins, 97.69% WR = high-freq fresh-mint sniper, ideal",2026-06-22
+2Tc4PizSNQG4rWfQ65ySMx2VaDoVJHfKyvxJvH9VvTET,REJECT,+$4.25K,-$5.27K,6d,66.66%,"1 (0>500%, 1>100%)","-$5.27K unrealized bag exceeds +$4.25K realized (Total -$1.01K net negative); only 3 tokens, 1 multi-x = thin bag-holder",2026-06-22
+6rFWL8iHnRd7qXDbwDNyLh328QPP1WCm9QE5r1SfjY19,REJECT,+$426.52K,+$187.74K,2mo,61.29%,"17 (3>500%, 14>100%)","Strong realized +$427K, positive unrealized, 17 multi-x - but 2mo avg hold = wrong style (large-size swing trader, not 15-min fast-exit)",2026-06-22
+GprHPtrDfCNsJJki587MAHgq8Rr4MQVrcez8qG5TD7rP,REJECT,+$414.41,-$0,11d,100%,"0 (0>500%, 0>100%)","Single token, 1 round-trip ($644K in/out for +$414), 11d hold, 0 multi-x = thin one-off sample, no demonstrable edge",2026-06-22
+5Brheo4Za1khfmNhQm54ULSJMn8Lfy9jYV79uW9zy9gf,REJECT,+$0,+$64.94K,10d,66.66%,"3 (3>500%, 0>100%)","Custody/holding wallet: $0 realized, $0.01 total volume; >500% are dust airdrops, no trading edge",2026-06-22
+2s6ATXgkU94ErAyGqE1gxZJm7kV6Miz6XNVYT4gk7YTs,REJECT,+$0.05,-$3.3K,1y,0%,"0 (0>500%, 0>100%)","~$0 realized, -$3.3K unrealized bag, 4 tokens, 1yr avg hold = dormant bag-holder, totally wrong style",2026-06-22
+FdSCAZV3mWtJtQTSj8b1GRz8PZo2KBR5Wba4wLmsuQN1,KEEP,+$8.51K,+$98.99K,2d,42.85%,"3 (3>500%, 0>100%)","+$8.51K realized banked, unrealized POSITIVE (no bag), 2d holds, 3 multi-x wins, 78% WR, 43% instant-sell = fast-exit profile with winning open positions",2026-06-22
+3eLn5x88LVtAqvpkjsLxrXwCS7yZDXLaxBReNd5QEbyi,REJECT,+$3.62K,-$3.58K,5d,0%,"1 (0>500%, 1>100%)","Single token; -$3.58K unrealized nearly cancels +$3.62K realized (Total +$37); 1 trade sample = too thin, no edge",2026-06-22
+4rGhZ4NsmKWCdP6apioNiJAogNSVw5pgf6FY7FbEuMQW,REJECT,-$489.42K,+$175.35K,2mo,55.25%,"62 (11>500%, 51>100%)","Heavily negative realized -$489K (banked losses); 2mo holds, 19% WR = losing swing trader despite multi-x; paper unrealized doesn't offset banked losses",2026-06-22
+2SFrYKAF1UtA4FZ262VVkMC3vMtP97N2TH7CzNhggyXS,REJECT,-$100.91K,-$653.22K,6mo,0%,"0 (0>500%, 0>100%)","Negative realized -$101K; -$653K unrealized bag (Total -$754K); 6mo holds, 0 multi-x = large bag-holder whale, wrong style",2026-06-22
+ARu4n5mFdZogZAravu7CcizaojWnS6oqka37gdLT5SZn,REJECT,-$13.16M,-$26.43M,2mo,90.29%,"~2415 (455>500%, 1.96K>100%)","Massively negative realized -$13.16M; -$26.43M bag (Total -$39.6M); 2mo holds, 9% WR, 2.4M txns = giant losing MM/whale bot",2026-06-22
+GSfrS21bWDfqLmYSWCGP7g5Ma2wNrmuWwSGccPtbticD,REJECT,+$0,+$22.74K,8d,75%,0 (>100%),"Custody/holding wallet: $760M value but $0.02 volume, $0 realized, gains all unrealized dust airdrops",2026-06-22
+AgafYfEWs7gmBpTscnw2TvnqAbcQfZLLcpmhgsd1V913,REJECT,+$0,-$0,6d,100%,0 (>100%),"Inactive/custody: single token, $0 volume, $0 realized",2026-06-22
+FX3Lpdwc9UpCd4mYsnZn1etm6G4hXWFjaFxzy5M589ff,REJECT,+$515.96K,-$69.67K,2mo,0%,0 (>100%),"Long-hold swing trader (2mo avg), 0 multi-x wins, wrong style despite strong realized",2026-06-22
+5McKNg3ZBPwE3MZR2JGiBZC4Kf9Xx3wwfNAXc7HQ3xJs,REJECT,$0,-$23.86K,11d,50%,0 (>100%),"$0 realized, holding -$23.86K unrealized loss, only 2 tokens",2026-06-22
+H9qU5S6SxCngZcqJoWBPXxtguJbPs6m15hietdVt3NB,REJECT,$0,+$41.82K,17d,0%,0 (>100%),"Accumulator/never-sell: $0 realized, single unrealized position, sold $0",2026-06-22
+Eex8mgvu2QoH7wVYUjdmwoWJbz3hQoeACinQr37NeHWR,REJECT,-$17.97K,-$97.02K,2mo,4.54%,0 (>100%),"Negative realized + bag-holder (-$97K unrealized) + 2mo holds, 6.66% WR",2026-06-22
+b619EzHShebQRX7oouwUD5fUo72ai8GgcMLAHkcqfG2,KEEP,+$70.66K,-$2.91K,3h,23.62%,"26 (8 >500%, 18 >100%)","HF fresh-mint sniper: +$70.66K banked, tiny unrealized, 3h holds, 26 multi-x, 79.82% WR, 81.78% instant-sell",2026-06-22
+7wYyFLN63nCZPCqahQXuEcoWfoh3BZ4LxcMrKb6sYT4b,REJECT,-$69.49,-$189.89,16d,0%,0 (>100%),"Negative realized, tiny dust wallet, 1 token, 16d hold",2026-06-22
+4N3ojPE9uceAM2ScSuqKz8Jd9jQqia8dEP6iqmW3hDBV,REJECT,+$0,-$0.16,17d,100%,0 (>100%),"Custody/holding: $701K value but $0.16 volume, $0 realized, sold $0, dust airdrops",2026-06-22
+2LS3GfxzvvVKHMq11hoq3468dKW1QyQyGZTCRB2To614,REJECT,+$47.29K,-$269.94K,12d,100%,10 (>100%),"Bag-holder: -$270K unrealized loss dwarfs +$47K realized gain, 12d holds",2026-06-22
+5y52LN8mGXwUmcRGkeqH61jodbNuxkaQgRn1w5Am9nnL,REJECT,+$47.92K,-$4.64M,1mo,0%,0 (>100%),"Massive bag-holder: -$4.64M unrealized loss vs +$47.92K realized, 1mo holds",2026-06-22
+Ee2p6qwwTpLW54EjQrsWEQGMGhmGKigJVLzhqHh3b7sd,REJECT,-$1.74K,$0,7d,100%,0 (>100%),"Negative realized, single losing token, dust wallet",2026-06-22
+2ZQmezyhW5kMKxkv7TdKhJ4a7abMURZoTsZnM68pBrQC,REJECT,-$35.61,-$861.34,3d,20%,0 (>100%),"Negative realized, tiny dust wallet, no multi-x wins",2026-06-22
+CkcJx7Uwgxck5zm3DqUp2N1ikkkoPn2wA8zf7oS4tFSZ,REJECT,+$34.09K,-$20.21K,1mo,17.77%,"4 (1 >500%, 3 >100%)","Long-hold (1mo avg) over 135 tokens, wrong style; 'Dual Finance' tagged wallet",2026-06-22
+HRSZhpndTJe2cuJtFZgDE15DBA23uu4RTeYyZMMLp4qK,REJECT,+$9.99K,-$251.94K,4d,100%,2 (>100%),Bag-holder: -$252K unrealized loss dwarfs +$10K realized,2026-06-22
+78UssHbHnuxGCxn4sppR7dLqtVQ3tvXQxTrZZ3RvCU84,REJECT,+$1.97,-$24.67,1mo,0%,0 (>100%),"Near-zero realized, tiny inactive dust wallet, 1mo holds",2026-06-22
+6Ey3bQBjWLaNALCtnpGnohJ1cmdbNbCMwCEq3Ruu9jYq,REJECT,+$23.12,+$370.16K,4d,0%,1 (>500%),"Unbanked paper-gain holder: only $23 realized, $370K all unrealized (not banked)",2026-06-22
+DEbyNPggs6vJH5P9gGipJ8c9yJ3WB97aYbHvx9EARmvi,REJECT,+$84.47K,-$16.37K,3mo,31.32%,3 (>100%),"Long-hold swing trader (3mo avg), 30% WR, wrong style despite positive realized",2026-06-22
+EhTEsE7JVr6nfM7HkatyRxViKSsPL1jwDXH1qfQCQaQr,REJECT,$0,-$144.03K,30d,100%,0 (>100%),"Accumulator/never-sell: sold $0, -$144K unrealized bag, $0 realized, 25 losing tokens",2026-06-22
+3rTQiFutYqPAqYBd3hgxQtY2BPinb23hcqcsPhSQZMyS,REJECT,+$0,-$0,7d,100%,0 (>100%),"Inactive/dust: $0 volume, single token, $0 realized",2026-06-22
+6en32VA77SHf1WuCoLNty7rxWmzBdVpp7VNpwpsYGySz,REJECT,+$0,-$0.16,21d,100%,0 (>100%),"Inactive/dust: $0.16 volume, single token, $0 realized",2026-06-22
+FXM1AmzMKGYdhqhtqfRZ5s6Bgcu5NraEuAvgCaR8yt3P,REJECT,-$102.02,-$13.61K,3d,100%,0 (>100%),"Negative realized, single losing token, holding -$13.6K bag",2026-06-22
+Fny4GjuaYWsSvczFn9yVhANCWjfVS973iq6ZSENmbn1R,REJECT,+$171.54K,-$7.21M,10mo,4.16%,1 (>500%),"Massive bag-holder: -$7.21M unrealized vs +$171K realized, 10mo holds, 15% WR",2026-06-22
+txuHCAxHtUkSRrc4rxfhcuid99rWSoHpPphjDxo6tzB,REJECT,+$0,-$0,14d,100%,0 (>100%),"Inactive/dust: $0 volume, single token, $0 realized",2026-06-22
+4eFHogrKWk4KcmhWprYE1D5fNJ9MUxHpiUFSj1hoDUiN,REJECT,+$0,-$0,13d,100%,0 (>100%),"Inactive/dust: $0 volume, single token, $0 realized",2026-06-22
+3Sw3k3LyaEhBn6LhyAGYixVKYRqHrwKJS6TrA5QsLPQo,REJECT,$0,-$195.69K,29d,100%,0 (>100%),"Accumulator/never-sell: sold $0, -$196K unrealized bag, $0 realized",2026-06-22
+uy4UHT62J5yScW7FwNBeAMy3x1hxTLxpgLFXpGmrpM9,REJECT,-$557.45K,-$159.13K,3mo,0%,0 (>100%),"Large losing trader: -$557K realized loss, 3mo holds, 0 multi-x",2026-06-22
+BSHjmitWDnR9j8pmXjgvqEeARVoETf2CMMZm2jEawMem,REJECT,$0,-$407.92K,7d,100%,0 (>100%),"Never-sell accumulator: sold $0, -$408K unrealized bag, $0 realized",2026-06-22
+4vZ6xM3QF69PD4Bgq5CFcRrjttdQWsqCiCUmq6dacKoS,REJECT,+$0,-$0,12d,100%,0 (>100%),"Custody/inactive: $128K value but $0 volume, single token, $0 realized",2026-06-22
+BqBMwBYJKZiQgGd6V1pZ1YxqRUvH2ZJ6Lm4dVmgLLvcA,REJECT,+$0,-$0,23d,100%,0 (>100%),"Inactive/dust: $0 volume, single token, $0 realized",2026-06-22
+7mZhtd5TkALwwcRt4CQ2mRfXjynXukZaDnbREeBa5Tq,KEEP,+$247.96K,-$0,1h,100%,2 (>500%),"Fast-exit profit-banker: +$247.96K banked, $0 unrealized, 1h holds, 100% WR, 2 >500% wins (small sample but ideal profile)",2026-06-22
+5jeKdg6nnjP3DNDxqMBMXYuQjp62ejz22pSa8Box4gVN,REJECT,$0,+$240.84K,19d,0%,0 (>100%),"Accumulator/never-sell: $0 realized, sold $0, single unrealized position",2026-06-22
+8BJbDs1NJVFJcGHDzb1PE4RACApPgqp3XAttiLaZUQHn,REJECT,$0,-$1.23K,13d,100%,0 (>100%),"Inactive/dust: single token, never sold, $0 realized",2026-06-22
+2JfBppU6ekyTohmeFV3jcfdphHCrTMZ8EL2WePnkeq8v,REJECT,+$0,-$0.01,10d,100%,0 (>100%),"Custody/inactive: $45K value but $0.01 volume, $0 realized",2026-06-22
+XYPND7SanTrGgHGQdKFfaYXURVRmbgJPgrekrqrG9Lc,REJECT,+$0,-$0,27d,100%,0 (>100%),"Inactive/dust: $0 volume, single token, $0 realized",2026-06-22
+9RBXyMEVj1jnaUxDozxo3DDhYMQcAXwzmxGdX1b3d7Rj,REJECT,-$51.01K,-$77.49K,17d,0%,0 (>100%),"Negative realized (-$51K) + bag (-$77K unrealized), 17d holds",2026-06-22
+B96ivXkFzzwsuWUtBXS3gNHtReMvndhX4uYimgLjLLG9,REJECT,-$0,+$13.82K,16d,0%,0 (>100%),"Near-zero realized, gains all unrealized, sold only $66 (barely exits)",2026-06-22
+2qoNbW7ddPwkAZDPSQxwMByMpzac8VWb7NaiPU1LdU5V,REJECT,+$656.28,-$55.44K,7mo,20%,0 (>100%),"Near-zero realized + bag (-$55K unrealized), 7mo holds",2026-06-22
+2PApe1rKtpVjacHnsGTKYVwmk2YnxVZXLdVQBsXKjfkq,REJECT,+$16.84K,-$175.72K,11d,100%,4 (>100%),"Bag-holder: -$176K unrealized dwarfs +$17K realized, 11d holds",2026-06-22
+5FcL29a3TwTDCFJi2kbKAJgexDMTbFNYgmv6iH2k8Jd,REJECT,+$763.42K,$0,7h,0%,1 (>500%),"One-hit wonder: single token, 1 big win only; fails 'multiple multi-x wins' criterion despite strong banked profit & 7h hold",2026-06-22
+GgXJAJG4hb51Y4URG63DwzLmdwfsSMDjC9XAu1wEX12G,KEEP,+$21.56K,-$6.97K,3d,100%,4 (>100%),"Fast-exit profit-banker: +$21.56K realized exceeds small -$7K unrealized, 3d holds, 4 multi-x wins, sold>bought",2026-06-22
+29XnFvCWsRCDoMvMncidkFP82pE1ibPrGcbEQH9Cv1hc,REJECT,-$317.09,+$1.62M,5d,33.33%,0 (>100%),"Negative realized; $1.62M is all unrealized paper (not banked), 0 multi-x",2026-06-22
+nEuXi2QZcov6v16FgvWLexhbKPXfm41rX83999iUuRJ,REJECT,$0,-$153.75K,5d,0%,0 (>100%),"Never-sell accumulator: sold $0, -$154K unrealized bag, $0 realized",2026-06-22
+BFeqz3FE1K3qA8JLADK3fjcvvgcCQE2gxJqtgDEBPcqj,REJECT,+$0,-$0,8d,100%,0 (>100%),"Custody/holding: $305M value but $0 volume, single token, $0 realized",2026-06-22
+BySJgfbShoMaxKR9MbNeYtQwKDuapsXHG3fsENPeUKXH,REJECT,-$9.26,-$1.21M,2mo,99.75%,1 (>100%),"Massive bag-holder/spray: -$1.21M unrealized over 1.22K tokens, negative realized, 2mo holds, 5.88% WR",2026-06-22
+4MW1hAXfsN2tbca6iTr59ebhM18b2fKc565BjhTxZSe8,REJECT,$0,+$7.03M,7d,0%,0 (>100%),"Never-sell accumulator: sold $0, $0 realized; $7M all unbanked unrealized, single token",2026-06-22
+RaVenxw8kykBbW7KGBaBsb7fDkkBYK4uJVDSFun6ZxR,KEEP,+$2.87M,-$92.8K,1d,72.73%,"~4450 (2.19K >500%, 2.26K >100%)","ELITE HF fresh-mint sniper: +$2.87M banked, tiny unrealized, 1d holds, 97.9% WR, ~4450 multi-x wins, 90% instant-sell",2026-06-22
+BwTDkftTEw24NHeD2VBtqUvP8NLj2duaEeW8d3wPMkJz,REJECT,+$0,-$0,4d,100%,0 (>100%),"Custody/inactive: $106K value but $0 volume, single token, $0 realized",2026-06-22
+69xByBrJn2ZH5KrL85XLPxTXPVUjYEKvuJdLwUogyG1b,REJECT,$0,-$11.39M,17d,92.3%,0 (>100%),"Never-sell accumulator: sold $0, -$11.39M unrealized bag, $0 realized, 13 losing tokens",2026-06-22
+29TC63AMYvUaYNYob6kamQ7UZzzvRdP4GxcYoMcuc1QC,REJECT,-$2.98K,$0,7h,100%,0 (>100%),"Negative realized, 2 losing tokens, dust wallet",2026-06-22
+CSavADCRWnAvgLr2LHJ6T7dD9mm7iErbTN5L1cadLqbZ,REJECT,+$7.86K,+$52.25K,8d,4.88%,"2>500%,5>100%",Realized near-zero vs $52K unrealized paper bag; weak multi-x; total PnL is unbanked,2026-06-22
+4LtGVKFeMMUVRDMaY84f76Q5oYD9FDFbjEDo3E5bdVCZ,REJECT,+$186.35K,-$344.01K,8d,100%,0,Bag-holder: unrealized loss dwarfs realized gain; net total negative; 0 multi-x; WR 16.66%,2026-06-22
+3nz1c4bG3TrB2K3vdanWsZEB5p9Fjfdo1x65BrFkVNEa,REJECT,+$32.47K,-$205.54K,1y,40.35%,"2>500%,2>100%",Bag-holder w/ 1y holds; unrealized loss dwarfs realized; net total negative; wrong style,2026-06-22
+s1fNPHjhaX1R1NgegoqDVP93zt1Uas5H6bZESYiZE9J,REJECT,-$1.67K,$0,10h,100%,0,Negative realized; single token loser; inactive,2026-06-22
+CxmDPP2jCdS4pg4QyYkE6UjzgCoFFS3PPEF94Hax1eZC,REJECT,+$20.86K,-$2.39K,7d,48.27%,0,Zero multi-x wins; low WR 29.62%; modest realized; fails multi-x criterion,2026-06-22
+Fg18iKpeYLYHUuRn8iQie5CYkPSFU9jm9mRvy1Z4HF5q,REJECT,$0,+$4.99M,6d,0%,0,"Never-sell accumulator: $0 realized, all gain unrealized paper on 1 token; no exit skill",2026-06-22
+HbBwzseuTTCL6Mxeo2jwMfvYsiyqzJgieZV4Dg8eLnJ8,REJECT,-$262.81,-$710.9,1mo,0%,0,Negative realized; net loss; 1mo holds; 0 multi-x; small inactive wallet,2026-06-22
+8dVmBMEhHtZYD3iEy7TVCfyzoc15HxAACyWgC3QQhBwQ,REJECT,$0,-$40K,22d,0%,0,"Never-sell bag-holder: $0 realized, $40K unrealized loss on 1 token",2026-06-22
+Ba6HpitvdeKHdZJibjdbCRSRqBDFqgK9H1SJJ23G919Q,REJECT,$0,-$180.31K,28d,100%,0,"Never-sell: 30 buys 0 sells; $0 realized, all unrealized loss; no exit skill",2026-06-22
+ByYZU4EdiRjWLo5nFwZ2NTCnaVRANDmapNssjLqCMpar,REJECT,+$7.54K,$0,2h,100%,1>500%,Banked + fast exits but only 3 tokens / 1 multi-x win; fails multiple multi-x criterion,2026-06-22
+EsquSudF1aSRBTU9XBrd4i3v7tMr1uTyskZRJ4je4yEN,REJECT,-$97.73K,$0,13m,100%,0,Negative realized; all 19 tokens <-50%; consistent loser,2026-06-22
+6hdVwguWuQjPhEM5VG3c8JaYWG3ekwkpN478CcvUA8Uw,REJECT,+$925.43K,-$22.43M,5mo,100%,0,Catastrophic bag-holder: -$22.4M unrealized dwarfs realized; 5mo holds; 1 token; net -$21.5M,2026-06-22
+CAqzxqJ8SA3qfa9PEUJ6hsu31WzQ3fXdeeMeyGE6xaRr,REJECT,-$9.46,-$204.68K,25d,100%,0,Near-zero/negative realized; -$204K unrealized bag; net loss; 0 multi-x,2026-06-22
+9KMYUQaho6QHLkrpDUQRzGH1eG7MyaqxGdrNfKiKWJun,REJECT,+$0,-$0.01,9d,100%,2>500% (dust),"Custody/holding wallet: $2.99M value but $0.01 volume, $0 realized; >500% are dust; not a trader",2026-06-22
+4zqUdpDVTmTHVVt2AFHsueYmtjg42xMRW5dSY3D9ApkN,REJECT,$0,+$83.02K,27d,0%,0,Never-sell accumulator: 1 buy 0 sells; $0 realized; all paper gain; no exit skill,2026-06-22
+FRv6VQv9MeutgZ3Wp3zfVEMyT7ApApQSJBvfxmmXis6o,REJECT,+$2.46K,$0,5m,66.66%,0,Tiny realized; 0 multi-x wins; only 3 tokens; fails multi-x criterion,2026-06-22
+4YiznNWuDz9tcoiQvcKH618uMXokAqXie7TvEHWdsNNH,REJECT,$0,+$206.38K,10d,0%,0,Never-sell accumulator: 1 buy 0 sells; $0 realized; all unrealized paper; no exit skill,2026-06-22
+4r7w1NevTAKYdLd8TWseknJsSgtdEEj5iaj5Sn5AwnrY,REJECT,$0,-$376.44,20d,100%,0,Dust never-sell: 1 buy 0 sells; $0 realized; tiny inactive wallet,2026-06-22
+2vjLTHaYCdtjzzNoWKfmSRhmrYo1FFWa6hoaMdJfKnoo,REJECT,+$2.65K,-$24.37K,1d,51.5%,4>100%,"High-volume churner, weak edge: tiny realized, unrealized loss dwarfs it, net -$21.7K, WR 31%",2026-06-22
+6gXb2Qxzpsek9Cy4pKB4TtCEiCiDnLTa9p3PejNHyrM4,REJECT,$0,-$39.09K,5d,0%,0,Never-sell bag-holder: 1 buy 0 sells; $0 realized; -$39K unrealized,2026-06-22
+HYe4vSaEGqQKnDrxWDrk3o5H2gznv7qtij5G6NNG8WHd,REJECT,+$1.67M,-$496.57K,2d,3.57%,0,"Pure MM/HFT bot: $5.03B volume, 15.3M/17.8M txs, 0 multi-x, thin per-trade edge; wrong style",2026-06-22
+2FaFwiaXKNV8zpGjtaa3NzJGTfU4BECVhhLRHeKq1WGV,REJECT,$0,-$0,1mo,100%,0,"Empty/inactive wallet: $0 volume, $0 realized; dust",2026-06-22
+D9nH5kb8tZ5ZQwp97rHA2kFbPBtLYETwpr3Q334ffK8i,REJECT,+$0,+$355.15K,13d,0%,1>500% (airdrop),"Airdrop/custody holding: $0 volume, $0 realized; single airdropped token paper gain; not a trader",2026-06-22
+51HpMRqXBrf8zemA6jp5GZBnSQV9MMpgafQdkFq98ptw,REJECT,+$785.58K,-$616.14K,24d,100%,"56>500%,27>100%",Strong realized + abundant multi-x BUT 24d avg hold = swing-trader style (rubric: 14d+ wrong); large unrealized bag too,2026-06-22
+4BvJvrqh4JMBnKAxRtPDcPzvrfsGpxZSSMSGre25b24N,REJECT,-$44.89,-$101.63,4d,83.33%,0,Negative realized; dust wallet; net loss; 0 multi-x,2026-06-22
+4rjXx4pLx1naxJp8exCBiHJotRvzifgJQdEz7Zh2TZND,REJECT,$0,+$207.66K,2d,0%,0,Never-sell/airdrop holder: 7 buys 0 sells; $0 realized; all paper gain,2026-06-22
+3UB5mxvHssteU5ZUj9rygeJEUG89RmP8RzRrXLahXjEY,REJECT,+$0,-$0,14d,100%,1>500% (dust),"Dust/custody: $0 volume, $0 realized; single token; not an active trader",2026-06-22
+CpyD4tXPfAJXchDoBaUn34rKNYUPrkhrdKTfLzy157XS,REJECT,+$588.63K,-$76.7K,7mo,22.22%,3>100%,Strong realized but 7mo avg hold = swing trader (wrong style); only 3 multi-x; low WR 28.57%,2026-06-22
+9dceWdLZDSr9RtRPKv5qbLCpbUDadQpbKP8nAajnLu9v,REJECT,$0,-$143.67K,27d,100%,0,Never-sell bag-holder: 2 buys 0 sells; $0 realized; all unrealized loss,2026-06-22
+BEBrkzAfDhrJzsSDi9UCoMcoaYB1CW4eZZFP7ZyN2JAj,REJECT,-$97.35K,-$48.59K,7d,100%,0,Negative realized; net loss; 0 multi-x; 98% of tokens lost value,2026-06-22
+GE99eYwpW5ud8X6DhHMEeK33oGJKLenwT6CoHrF78kw8,REJECT,-$568.93,+$512.29K,26d,75.67%,1>500%,Negative realized; total PnL is all unbanked paper; 26d holds; not an exit-skill trader,2026-06-22
+HCEXdwNCi7gL9KYKCwXfe7DkSGbEogGPrie64WKi3Kfs,REJECT,$0,-$35.83K,3d,100%,0,Never-sell holding: 6 buys 0 sells; $0 realized; 1 token,2026-06-22
+4sTFjAfLUtE8rZ8P8NUS1goLC4DcHxuppALV3aGCqP4j,REJECT,+$0,-$0,16d,100%,1>500% (dust),"Custody/holding wallet: $413M value but $0 volume, $0 realized; not a trader",2026-06-22
+VUuZyNg3dWfvadYh2eYGsNV7KHoX1wNFtqAN32nzRuK,REJECT,-$636.03K,-$1.8M,4mo,11.29%,2>500%,Negative realized; net -$2.43M; 4mo holds; big loser/bag-holder,2026-06-22
+ByPbfoBWr8f7gp3qux4hVx5TVzV36jzuVZyMyora7wDh,REJECT,-$27.68K,$0,2h,100%,0,Negative realized; all 20 tokens <-50%; fast but consistent loser,2026-06-22
+7PCC6g5v4oL6UgpwrxzgTdw5CLE5LMkyUfQcSJP63Bq5,REJECT,-$90.27K,-$93.31,11d,16.66%,0,Negative realized; net loss; 11d holds; 0 multi-x,2026-06-22
+EyuCnRpNHnd2cQbNyTEvYrghLKCcqbQRvD6q8CuAUER,REJECT,-$1.44K,$0,8h,100%,0,Negative realized; single token loser; dust wallet,2026-06-22
+x6CFWFXDJei3QqqAkBS6gPds5zEzcTB5pUBiN66ftQJ,REJECT,-$228.77K,-$977.43K,5mo,18.46%,"3>500%,4>100%",Negative realized; net -$1.2M; 5mo holds; big bag-holder; WR 15%,2026-06-22
+GikoxFWFFdyF5ZFvLiFtQXRkbHLkYY6GgAGiAGmokcZq,REJECT,$0,-$215.69K,27d,100%,0,Never-sell bag-holder: 3 buys 0 sells; $0 realized; all unrealized loss,2026-06-22
+439xPwm2Dd4gEcn7ZCJ4cnzKDub8G6Ei44kSrD3WhicQ,REJECT,+$0,-$0,5d,100%,1>500% (dust),"Custody/holding wallet: $480M value but $0 volume, $0 realized; not a trader",2026-06-22
+9e78mqLKSMst7ABa6m9iUsfFaMBj9VpAksPD53cV5QzN,REJECT,-$980.38K,-$645.42,1d,11.11%,0,Negative realized -$980K; high-volume churner; 0 multi-x; big loser,2026-06-22
+2Ab5XZXHNrwtQQfZU7PzUKTnQL1qx3XGSAoa4iuBPqRa,REJECT,-$1.06K,$0,1h,100%,0,Negative realized; single token loser; dust wallet,2026-06-22
+86FqQ3CqTE8gNeLhkPZx3GaaDfcDu34ANzHckUQa5VLY,REJECT,+$0,-$0.01,6d,100%,2>500% (dust),"Custody/holding wallet: $597M value but $0.01 volume, $0 realized; not a trader",2026-06-22
+HV8RoxAL7cMc4XgwQT6SMa17rxm619s5LQRuxrBMra8Q,REJECT,+$0,-$0,13d,100%,1>500% (dust),"Custody/holding wallet: $0 volume, $0 realized; single dust token; not a trader",2026-06-22
+FqSDBQnQoSEDx3y6oXN85D5LMmVKghX3AvczGMeaTUHC,REJECT,-$120.09K,-$7.94K,7d,100%,1>500%,Negative realized; net -$128K; WR 14%; 98% of tokens lost; consistent loser,2026-06-22
+9ieCwswQgvvU7McBJM2EDoeMuoCRj2BDdso6kzJrdRnL,REJECT,$0,-$179.62K,29d,100%,0,Never-sell bag-holder: 30 buys 0 sells; $0 realized; all unrealized loss,2026-06-22
+v6EdeRFXBZUP6wR2j76Ej92sm4BgXsjGScAgE8um1Eo,REJECT,$0,-$33.15K,1mo,0%,0,Never-sell bag-holder: 1 buy 0 sells; $0 realized; -$33K unrealized,2026-06-22
+3FT2hLDi9A9XJhMJkkMWknJarENdDbfDKxYfnFg3zvAL,KEEP,+$485.44K,-$389.94,12d,97.29%,"16>500%,33 total >100%","Strong banked realized +$485K, negligible unrealized, 16 >500% + 17 >100% multi-x, 97% rug; ideal fresh-mint exit profile (12d hold under 14d)",2026-06-22
+BEtnXMyRcc4NLuzRR7XbjwbpcyKMwT9wy5KT7wQTF5Bv,REJECT,$0,-$8.46K,28d,100%,0,Never-sell bag-holder: 1 buy 0 sells; $0 realized; -$8.5K unrealized,2026-06-22
+rqMQNUwGrgrXZF6fS6ztUpSHvDH3wcJ6KfZY6DM5Mfv,REJECT,-$2.82K,-$4.48K,7mo,5.88%,1>100%,Negative realized; net loss; 7mo holds; only 1 multi-x; wrong style,2026-06-22
+K1tChn2NETQd9cCHe1UmUyWP3rDA92gP1dH4nNyEJrx,KEEP,+$3.88M,-$29K,4d,64.73%,"171>500%,339>100%","Elite HF fresh-mint sniper: +$3.88M banked, tiny unrealized, 97.83% WR, 4d holds, 92.7% instant-sell, abundant multi-x",2026-06-22
+BhX8kAW1EoMWLovomncKWP6QPWvPWWjXFtbk4TXSiTDt,REJECT,$0,+$177.46K,20d,0%,0,Never-sell accumulator: 1 buy 0 sells; $0 realized; all paper gain; no exit skill,2026-06-22
+4umy2K5EQY21QgPeZ2PXnibepdQq7BLZJcgJfdMLQWKE,REJECT,$0,-$223.31K,29d,100%,0,Never-sell bag-holder: 37 buys 0 sells; $0 realized; all unrealized loss,2026-06-22
+G8pZpdSzFj6zfvcrZrKaQYeQ25xfVCJFrhnXDWf4E5oL,REJECT,-$146.68K,-$25.91K,6d,100%,0,Negative realized; net -$172K; 99% of tokens lost; 0 multi-x; consistent loser,2026-06-22
+BerLPehhd1Qtv86xe6TkQdGyrGa1FH8EPdze3AS3d679,REJECT,$0,+$237.44K,20d,0%,0,Never-sell accumulator: 1 buy 0 sells; $0 realized; all paper gain; no exit skill,2026-06-22
+58kZBjjtHShTtXFmygr3ZT8VSU4dH28PanRAdouHbToh,REJECT,-$1.34M,-$1.08M,2mo,12.65%,0,Negative realized -$1.34M; net -$2.43M; 2mo holds; 0 multi-x; big loser,2026-06-22
+FaMHP71NSgMQtJ4idhNAw8ggiNcVp98itY8hZpnZSYFR,REJECT,$0,+$244.35K,28d,0%,0,$0 realized; all unrealized paper gain; 28d holds; no exit skill,2026-06-22
+FBvSsKjZPpUMJgtLTAF6iQb1nbkWCPsttiG9cushj8fF,REJECT,-$11.01K,$0,32m,100%,0,Negative realized; 90% of tokens <-50%; fast but consistent loser,2026-06-22
+uNHnfUNssR4qM4gVzJhECgQzCZDFnScndJ2ktaq5n7B,REJECT,+$0,-$0,12d,100%,1>500% (dust),"Custody/holding wallet: $0 volume, $0 realized; single dust token; not a trader",2026-06-22
+5e6DYCP4XBQiiPJeKdrWWB8ny3nkoyuR1S5Tk41u4mtb,REJECT,$0,+$38.57K,25d,0%,0,Never-sell accumulator: 139 buys 0 sells; $0 realized; all paper gain; no exit skill,2026-06-22
+MvMFMxiuCEp8UkkYHBEAKp2SoMqoQxJRKWTVnpBak4x,KEEP,+$178.04K,-$0.01,8d,100%,2>500%,"Banked +$178K realized, negligible unrealized, 8d holds, 2 >500% wins, 100% rug; ideal fast-exit profile (small sample but matches #211 precedent)",2026-06-22
+8QJB9heJ68UPE1zu4gCpfBB5LtLZ7dpwUUcCe1Z7AVv,REJECT,$0,-$38.47K,4d,100%,0,Never-sell bag-holder: 1 buy 0 sells; $0 realized; -$38K unrealized,2026-06-22
+HtwTGAFBcsztWz11UxBLndgH6TgKqKBVib99yBFFxpSm,REJECT,-$85.2K,-$63.89K,7d,100%,0,Negative realized; net -$149K; WR 10%; 99% of tokens lost; consistent loser,2026-06-22
+74BG5Z2mBzWyvgxY4XAcXzAK61sMTLtWZeNHybNPbgeg,REJECT,-$179.65K,-$5.01K,8d,100%,0,Negative realized; net -$184K; 0 multi-x; 96% of tokens lost; consistent loser,2026-06-22
+BLue6985Azdq6By4VGi6m5u1UkvVqN7w7Hcg2VhUw2PE,KEEP,+$52.45K,+$14.36,1h,33.6%,"53>500%,127>100%","HF fresh-mint sniper: +$52K banked, ~$0 unrealized, 1h holds, 92% WR, 91% instant-sell, abundant multi-x (53>500%)",2026-06-22
+GbheozXy9ujhQk8XSV4rnw8Sk54rHyoThexYhPRiF5hH,REJECT,$0,+$165.73K,10d,0%,0,Never-sell accumulator: 1 buy 0 sells; $0 realized; all paper gain; no exit skill,2026-06-22
+2ZXucNfpZRqGzbqQ8shB1xqpdzRoyaMc9dKJjBj6PdVd,REJECT,-$53.35K,-$92.19K,6d,100%,0,Negative realized; net -$145K; 99% of tokens lost; 0 multi-x; consistent loser,2026-06-22
+2yBm91XuRdSGf5tKXrufWVdGD7kapg8RL6p6QrvUuxkS,REJECT,$0,+$248.81K,5d,0%,0,Never-sell accumulator: 1 buy 0 sells; $0 realized; all paper gain; no exit skill,2026-06-22
+f6HNqyD1PBt8ZYsyEBrXei7wY6ctYzj4UyFWyryJ9Xx,REJECT,$0,-$29.43K,19d,50%,0,Never-sell bag-holder: 4 buys 0 sells; $0 realized; -$29K unrealized,2026-06-22
+5aChG9e3oEtANsHxhR2Nbgtbd1yrWA5YyExWwgkmWSb7,REJECT,-$178.9K,-$1.39,2d,100%,0,Negative realized -$179K; net loss; 0 multi-x; WR 33%; consistent loser,2026-06-22
+2msirDs8k4qaMfHSckPixtvqtYR2TUdmtcsn8u4NC2M1,REJECT,+$1.04K,+$7.88K,13d,0%,1>100%,Tiny realized; only 1 token / 1 multi-x; mostly unrealized; fails multiple multi-x criterion,2026-06-22
+38dTQvgrCswTtmcoLC6kEvyxZymir5J8YsWUn5or9Yzx,REJECT,$0,-$195.84K,23d,100%,0,Never-sell bag-holder: 34 buys 0 sells; $0 realized; all unrealized loss,2026-06-22
+Fqjn6nMkomTi3wsi3dkZrrok5HoGV9N2272JKX8KGbzp,REJECT,+$0,-$0,16d,100%,1>500% (dust),"Custody/holding wallet: $0 volume, $0 realized; single dust token; not a trader",2026-06-22
+2tSXsikwbcxJXimYKt5EbihcnTKaYjb1HeCvqoVuprME,REJECT,+$1.59K,-$215.11,26d,0%,0,Tiny realized; 26d holds; 0 multi-x; WR 25%; fails multi-x and hold criteria,2026-06-22
+67Yhv5phuaLcif1xKZYUCNPYoFQM6wS7A1UuStW8JLED,REJECT,+$0,-$0,11d,100%,1>500% (dust),"Custody/holding wallet: $427K value but $0 volume, $0 realized; not a trader",2026-06-22
+92MuH4YuCCwifjRsxaJ7WuVWaZkoCR2qugbBDKjKP38s,REJECT,$0,-$0,12d,100%,0,"Custody/holding wallet: $128K value but $0 volume, $0 realized; not a trader",2026-06-22
+CW7SJ78i4Ug4AvvNbgxaRfBVhmhsft1LU7EYiX1ZhJFa,REJECT,$0,$0,0,100%,0,"Distribution/receiver wallet: 0 buys / 1.13K sells, didnt-buy 100%, $0 realized; not a discretionary trader",2026-06-22
+HPu9ETae5ajFf7R1r36pzpPGBJ2EC8DAtEZahAEiukry,REJECT,+$0,-$0,14d,100%,1>500% (dust),"Custody/holding wallet: $0 volume, $0 realized; single dust token; not a trader",2026-06-22
+8CEZsuwD78hKiYvhkTmX6Pjqzr5mvPWTmNLQpum6VFCS,REJECT,-$0.89,+$79.34K,24h,0%,0,Near-zero/negative realized; total PnL is all unbanked paper; 0 multi-x; no exit skill,2026-06-22
+PARQVsPSbsn1Pm7kdayZpicVu2pBRLYEnqijLP2QC3z,REJECT,$0,+$84.8K,17d,0%,0,Never-sell accumulator: 1 buy 0 sells; $0 realized; all paper gain; no exit skill,2026-06-22
+BSDVCvvXMrtAxuN7fH4hMK62xrB1SBwFohH3g1fzJarL,REJECT,+$0,-$0,8d,100%,1>500% (dust),"Custody/holding wallet: $155K value but $0 volume, $0 realized; not a trader",2026-06-22
+5raXHatw8HzJMTHWZh2jDkJnihr45dZ3n6AkHtzjYNxH,REJECT,$0,-$20.1K,20d,100%,0,Never-sell bag-holder: 1 buy 0 sells; $0 realized; -$20K unrealized,2026-06-22
+3QcmM3a1YbNnjrU3zPZSBFWWM625BrgHZg8BCJQfbiQU,REJECT,+$29.78K,-$26.99K,12d,0%,1>100%,Single token / 1 multi-x; unrealized loss nearly cancels realized (net +$2.8K); fails multiple multi-x,2026-06-22
+D7CiLXbuFhEJ2eMZFC6JUV9KQG4FSs7Yg44bo9Szto9K,REJECT,+$17.21K,-$10.98K,14d,100%,3>100%,Modest realized but 14d hold (swing-trader boundary); unrealized eats ~64% of realized; no >500%; wrong style,2026-06-22
+5i7uT6GWqcQ7rqhe795ao2ZpPDv8ZCBxTd6dMVJii3us,REJECT,-$113.5K,-$5.78K,8d,100%,0,Negative realized; net -$119K; 96% of tokens lost; 0 multi-x; consistent loser,2026-06-22
+4pH28RryccyMaEKbVsgqDVfwMGpp12rz6Ke44e8MV8ei,REJECT,$0,+$3.86K,20d,0%,0,Never-sell accumulator: 2 buys 0 sells; $0 realized; all paper gain; no exit skill,2026-06-22
+2uDmNWdwbnyAJgmYMPqEeNTWmetVLrvBk78MSoFfTFNT,REJECT,-$0.08,+$16.09K,14d,0%,0,Near-zero realized; 149 buys 1 sell; all unrealized paper; no exit skill,2026-06-22
+3EoBkbAVTw3yYQindhp5JbehXQqa45At32GfvodDMUvP,REJECT,-$6.28K,$0,20m,100%,0,Negative realized; single token loser; fast but unprofitable,2026-06-22
+GDf9D7c6pxoPoP5KQJH96oPD4iaSyKeejtciHqomyqEH,REJECT,+$542.03K,-$618.09K,20d,100%,"26>500%,3>100%",Bag-holder: unrealized -$618K exceeds realized +$542K (net -$76K); 20d holds = swing-trader; wrong style,2026-06-22
+EmDewJpfQaxWqxthX1FUyBCCPNGt8Ac5ek4M4pnGTgxC,KEEP,+$8.62M,+$16.41M,1d,5.1%,"1>500%,9>100%","Elite HF trader: +$8.62M banked realized, positive unrealized (no bag), 1d holds, 76% WR, 68% instant-sell, $333M vol",2026-06-22
+9JhVc3FMc9ZRfnmS2ohBZn6VnQMMHn5DTAcTiiXcjGy6,REJECT,$0,-$1.55M,20d,100%,0,Never-sell bag-holder: 284 buys 0 sells; $0 realized; all unrealized loss,2026-06-22
+7fyVcF4D4JV6qMT7eZM2srCfjTPtPnmi5NCZBzTNzDb5,REJECT,+$0,-$0,12d,100%,1>500% (dust),"Custody/holding wallet: $228K value but $0 volume, $0 realized; not a trader",2026-06-22
+GJ59JN2eoRNBJv9fcSNSJUAnuKfQnVo3GRBueGiopNUu,REJECT,+$47.74K,-$90.44K,7d,100%,0,Bag-holder: unrealized -$90K exceeds realized +$48K (net -$43K); 0 multi-x; WR 33%,2026-06-22
+4QKiNGZMSguv672sp6K8E25VSaW93pMAjjjRQ7NgvdBi,REJECT,$0,+$3.56M,3d,0%,0,Never-sell accumulator: 1 buy 0 sells; $0 realized; all paper gain; no exit skill,2026-06-22
+EJkLPk4WNzp9ecmMwwqDhPpSeAVJ4wqJDJZxP8unuUrw,REJECT,$0,-$36.55K,7d,0%,0,Never-sell bag-holder: 1 buy 0 sells; $0 realized; -$37K unrealized,2026-06-22
+EGi2hCjRaSPFmemZHqbBL7cDaqaq4T2u8XQsXtitGEbN,REJECT,$0,+$19.52M,1mo,33.33%,0,$0 realized; all $19.5M unrealized paper; 1mo holds; never banks; no exit skill,2026-06-22
+AYqWyMv4LzcfFTSsuMqodc3VwXP8mnAmaSkLhDAGtUu2,REJECT,+$0,-$0,11d,100%,1>500% (dust),"Custody/holding wallet: $0 volume, $0 realized; single dust token; not a trader",2026-06-22
+DMWURc9cXexodLdKcUpCcZQ9YeeuJjx5Ctsyg511uBY4,REJECT,+$98.82,+$183.43K,2d,80%,0,Realized negligible ($99); total is all unbanked paper; 0 multi-x; no exit skill yet,2026-06-22
+GKxA2UegxDeKwZ9N2FkCAGcD9tWomT2dtsv18ZUaNSQi,REJECT,$0,+$354.96K,5d,0%,0,$0 realized; all unrealized paper gain; never banks; no exit skill,2026-06-22
+E2vg315H7Gu7QTqe3zc7ZTrvzwUT7eEFhpYMgR11Fp47,REJECT,+$0,-$0,5d,100%,1>500% (dust),"Custody/holding wallet: $230M value but $0 volume, $0 realized; not a trader",2026-06-22
+5xp7vS3LTc2GxxmRtdSJTmuqhwYrypAuWYUKoRJPjJnP,REJECT,$0,+$150.51K,10d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no banked profits",2026-06-22
+4PjX6pmLifnTdRetNsDKFhmdM2633EhaqwtDdjbhBCEG,REJECT,-$2.05K,$0,51m,100%,0>500%/0>100%,Negative realized; all 4 tokens <-50%; net loser,2026-06-22
+J4kSQHAxCZ7AoB9e27CvVmaz4iMhwxP4zAFwHLiJw1Fi,REJECT,$0,+$302.63K,20d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+Cn6XwBn7DwBeC1ut3kmjFi9aYwpk6DY4NyaF71uu3JQB,REJECT,-$1.83K,$0,13h,100%,0>500%/0>100%,Negative realized; single token <-50%; net loser,2026-06-22
+AGZKnWucwdX2i3cbYShfaNC2aGMJQd1acyF31wzDHyDr,REJECT,-$318.72K,-$762.03K,3mo,0%,0>500%/0>100%,"Negative realized + deep unrealized loss; 3mo holds; bag-holder, wrong style",2026-06-22
+Cmdcwwfxxeewyvj8bB8NUCDQua7QBDb4nZ8efsW8Fh6G,REJECT,+$0,+$20.31K,9d,0%,1>500%/0>100%,"$0 realized, all unrealized, single token, $0 volume; no banked profits",2026-06-22
+5ysPmQsXZMNsnooc5ZHkZYY2wuwAhARQi8AELtDQo2cD,REJECT,+$20.62K,-$19.3K,2mo,9.09%,0>500%/0>100%,2mo holds swing-trader; 0 multi-x; unrealized nearly cancels realized; wrong style,2026-06-22
+BqiqTBWar8YYxRkmCuuzgJwz35hV8kQVqNfToT5LkvDM,REJECT,-$96.78,-$13.18,15d,50%,0>500%/0>100%,Negative realized; tiny dust wallet; net loser,2026-06-22
+HNWhK5f8RMWBqcA7mXJPaxdTPGrha3rrqUrri7HSKb3T,REJECT,-$9.08,-$6.46M,0,0%,0>500%/0>100%,"Near-zero/negative realized; massive unrealized loss; 16K buys/4 sells; bot-like, no exits",2026-06-22
+5da8wvtBDHFXfXGcdiA3xe1ZPkhWeycMM1x7G8riCsxg,REJECT,+$0,-$0,24d,100%,1>500%/0>100%,"Empty/dust wallet: $0 realized, $0 value, $0 volume; no real activity",2026-06-22
+HGgHUpmWgkaXZTjcwhaYPYbYArDNCGpyS7UoYDcfKaFB,REJECT,$0,$0,4d,0%,0>500%/0>100%,Stablecoin custody/treasury wallet (PYUSD/USDC); $0 realized PnL; no speculative trading,2026-06-22
+DeRVogA99Ufcree6kRfu2B7EpXAbGNm2ngdD3tA19Bye,REJECT,$0,-$66.93K,1mo,100%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 5 buys/0 sells, all underwater, 1mo holds",2026-06-22
+EJtpPvCRb3sYosGL77CwHQjgJ6TdgGeLrRC7yDA5eoHJ,REJECT,-$688.79,-$2.86K,14d,100%,0>500%/0>100%,Negative realized; single token; net loser,2026-06-22
+ANYYY1orwzTcX5yUpRgVLt9qvwt2HbUtXqeKXEQxV1Bh,REJECT,$0,-$8.14K,22d,100%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 1 buy/0 sells, underwater",2026-06-22
+2AoaYmY3KuYu7Pdw6P1NqDEVyWTwwQ1919f6gcXWSY5K,REJECT,+$0,-$0.05,6d,100%,1>500%/0>100%,"Custody/holding wallet: $0 realized, $0.05 dust volume, holds large SOL bal; no real trading",2026-06-22
+jJLMDddYi9Zx6FmdREvnawb7dW7NbeWvEdufXBsvWqg,REJECT,+$9.6K,-$4.28,16m,16.37%,7>500%/15>100%,"Pure MM/HFT bot: 494.6K/494.68K txns, $171M vol, 16m holds, thin per-trade edge; only $9.6K realized",2026-06-22
+9Mxvq7K1iWUvTZrFWiBNsJrWffjecVEsdkDNgy5aLGTE,REJECT,+$187.65K,$0,3h,57.14%,1>500%/0>100%,"Only 1 multi-x win (single big winner); 14% WR, 3 tokens <-50%; fails multiple-multi-x criterion",2026-06-22
+4joYjPfBNgDZtQhVQ28PeL31ecC8fQExMZACpaoy4pqi,REJECT,+$159.87K,$0,55m,100%,1>500%/0>100%,"Single token, 1 multi-x win only; fails multiple-multi-x criterion (one-hit wonder)",2026-06-22
+Ay4Kcp6UKi87WZMvkTvYK9WmgGYm5Rc11N8mLqCrD5Tx,KEEP,+$37.17K,+$495.86K,3d,94.73%,4>500%/4>100%,Positive realized + positive unrealized; 3d holds; 8 multi-x wins; high rug% confirmatory; fresh-mint sniper,2026-06-22
+GZsSZo9VdiP4aNtw7JW15qWLAzrv2yUHM9kAyZAmDcLT,REJECT,$0,+$200.21K,20d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+3XZkNWcg8s6eu7rKPy8eXyWfkkcq4ZQoKYD3CsTUESrs,REJECT,$0,+$160.61K,10d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+BmUSpEoe8EoNpSzroKBSGk93wzy7GnXewoZcdg1U8K1B,REJECT,$0,-$191.07K,18d,100%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 40 buys/0 sells, all underwater",2026-06-22
+3ofxxfC3Tfrv8GBiJzQnL6UsYB5DTQKbFtHkAJctnit3,REJECT,-$9.29K,$0,3h,100%,0>500%/0>100%,Negative realized; all 15 tokens <-50%; net loser,2026-06-22
+Bzj2Hght9cdoYbwMfCtkNyXEmboUwTzx7tn4XAnCVNK7,REJECT,$0,+$183.28K,20d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+QM3ACFu3VD9N6z6dmBseezxrNRP1T4MruGhpJX8B3nC,REJECT,+$1.67M,-$2.67M,7mo,4.34%,0>500%/1>100%,Bag-holder: unrealized loss exceeds realized (net -$991K); 7mo holds; only 1 multi-x; wrong style,2026-06-22
+71isaHd5byjKMAM1kCYaAbjeGYNrzTYBTKtVgUdLBQRb,REJECT,+$0,-$0,6d,100%,1>500%/0>100%,"$0 realized, $0 volume, single token; holding wallet, no banked profits",2026-06-22
+HhP8Kzv64Q5EUCqyrDnoR83Qf49JWxCfRZovvr2g9jng,REJECT,-$60.58K,+$66.89K,3mo,0%,0>500%/0>100%,Negative realized; 3mo holds; 0 multi-x; wrong style,2026-06-22
+2DRrA7i6QwKRU7H7XZ78v4qqsRxoc4pfxFkpmYouDpst,REJECT,$0,+$159.03K,10d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+Esodt4XibhuVoEhtXuzhg5dBBabVyiz58B1B38cHoFps,REJECT,+$0,-$0,9d,100%,1>500%/0>100%,"$0 realized, $0 volume, single token; holding wallet, no banked profits",2026-06-22
+CU7qEKgSySPJoFZkC5FDpgJCoQa9uFM6HBYArvdfsiZT,REJECT,+$559.81,-$6.13K,19d,0%,0>500%/0>100%,Near-zero realized; underwater unrealized; 19d holds; 0 multi-x; net loser,2026-06-22
+BNkLotcqpQRm7mekLwxhMnMXyVp4fhkUJ6Mr6yw7ePxp,REJECT,+$0,-$0,3d,100%,1>500%/0>100%,"$0 realized, $0 volume, single token; holding wallet, no banked profits",2026-06-22
+FgJywy9SnDnDH9g2iW7xjnCXX3JzKuBTqGMzs8JXEboh,REJECT,+$0,-$0.06,7d,100%,3>500%/0>100%,"Custody/holding wallet: $0 realized, $0.06 dust volume, holds large SOL bal; no real trading",2026-06-22
+A2sQj3HVjzmgzieRS2wCUX4vrFgrsZnS9mUJr2dTAPgK,REJECT,+$7.34K,-$404.93,18d,100%,1>500%/0>100%,"Single token, 1 multi-x only; 18d holds (too long); fails multiple-multi-x criterion",2026-06-22
+HFprnJDFAxpwtJyQayCvxqQMgNe9JDwwRWjZcxK13pxk,REJECT,+$84.8,+$936.39K,4d,75%,0>500%/1>100%,Near-zero realized ($84.8); all gains unbanked paper (unrealized); fails realized criterion,2026-06-22
+HtpsxwBgvzrjc32T5eBeUCVmGDZY3AHLvmWBPC3weS8c,REJECT,-$632.88,-$118.39K,20d,50%,0>500%/0>100%,"Negative realized + deep unrealized loss; 20d holds; bag-holder, wrong style",2026-06-22
+B2mUUCMLbaqZ49uaiqPtmWknHDf7LQkBS3ohXM1JTCmi,REJECT,+$0,-$0.01,6d,100%,2>500%/0>100%,"Custody/whale holding wallet ($611M): $0 realized, $0.01 dust volume; no real trading",2026-06-22
+6UF7Bdm7pz9sW2E76QkfZW83hqJ8AgLw8t3UCf3VQChL,REJECT,+$0,-$0.06,7d,100%,2>500%/0>100%,"Custody/holding wallet: $0 realized, $0.06 dust volume, holds large SOL bal; no real trading",2026-06-22
+6LL3fqD5sHZRthyrUqeRfz8iEV7E3XSL1SQzFHJGLCcF,REJECT,$0,-$2.28M,27d,78.46%,0>500%/0>100%,"Massive never-sell bag-holder: $0 realized, 5.79K buys/0 sells, all underwater",2026-06-22
+gasTzr94Pmp4Gf8vknQnqxeYxdgwFjbgdJa4msYRpnB,REJECT,-$6.04M,-$21.97M,2mo,92.95%,615>500%/3.92K>100%,"Deeply negative realized + huge unrealized loss; 1.68M txns, 2mo holds; losing MM-style bot",2026-06-22
+6sJsBkVNEPGUuxkRTZ5ZbHGvqGs1Vj1Uxenzeh3MnQRU,REJECT,-$16.56,$0,5h,100%,0>500%/0>100%,Negative/near-zero realized; single token dust wallet; net loser,2026-06-22
+H3EB9Si3uxaQX8m5otXt8h3fgy5SauTZJbUoSZWxT13g,REJECT,+$808.96,-$4.94K,2d,100%,1>500%/0>100%,Small realized; unrealized loss exceeds it (net negative); single token; net loser,2026-06-22
+DSqMPMsMAbEJVNuPKv1ZFdzt6YvJaDPDddfeW7ajtqds,REJECT,-$283.78K,+$6.09M,21d,49.84%,0>500%/0>100%,"Negative realized; 164K txns, 21d holds, 0 multi-x; bot-style accumulator, wrong style",2026-06-22
+5mTwNJrmhvLPbMigwYjFyqQA9EYC6EkX7eoY3Wd8roE4,REJECT,-$192.6,-$514.9K,22d,25.06%,0>500%/10>100%,"Near-zero/negative realized + deep unrealized loss; 22d holds, 8% WR; bag-holder",2026-06-22
+EBvFQQuWtssbiEy34JQYReuHoeefM6PsX1KYn7NDCjUG,REJECT,$0,$0,0,0%,0>500%/0>100%,Stablecoin custody/treasury wallet (USDG); $0 realized PnL; no speculative trading,2026-06-22
+CHtugvqV7EqAXC1kRiiyKrm9Es3w4nG58V1WvLAW43Zi,REJECT,+$0,-$0.01,22d,100%,2>500%/0>100%,"Custody/whale holding wallet ($212M): $0 realized, $0.01 dust volume; no real trading",2026-06-22
+HYrLJyvCr2aGvCXf6wdrg3AB6ovMBCHxpoYz49uQg7ks,REJECT,-$12.63K,$0,16m,100%,0>500%/0>100%,Negative realized; both tokens <-50%; net loser,2026-06-22
+4HBMLheVrNFEpkyxhEfbKXsazqyfNqfTcEfeddCZD8jP,REJECT,$0,+$890.07K,4d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+G5QWaZviV5EqWXxZJtVUB1wKquSPzR1Q6Y4gyE3fCDLS,REJECT,+$1.77K,-$154.63K,1mo,100%,2>500%/0>100%,Bag-holder: unrealized loss vastly exceeds tiny realized (net -$152K); 1mo holds; wrong style,2026-06-22
+3SDEfPiUQ3BUwcp6paSVTEuD33QA5k9HAd8Q55Krow3M,REJECT,$0,+$181.52K,10d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+Hqb1nHQ7ngdKeM9fwfrkjuEZEYnnR16S36cXfLhHd1Vr,REJECT,-$5.31K,-$934.27K,28d,100%,0>500%/0>100%,"Negative realized + deep unrealized loss; 28d holds, 8% WR; bag-holder, wrong style",2026-06-22
+gGPQCxSEnA2pBHo8L7v6QY5XcZG9U7MQPYaTWizuaGD,REJECT,+$0,-$0,9d,100%,1>500%/0>100%,"$0 realized, $0 volume, single token; holding wallet, no banked profits",2026-06-22
+A5osgN4paV4YE1bCj37Y9nmuGBptMqpre5yTgdFrL9GP,REJECT,+$0,-$0,4d,100%,1>500%/0>100%,"Custody/whale holding wallet ($201M): $0 realized, $0 volume; no real trading",2026-06-22
+HGLsFsHy9NxuYWJe88Lyyrxvw95rDkHfPvid3AUPMbpj,REJECT,$0,$0,0,0%,0>500%/0>100%,Stablecoin custody/treasury wallet (USDC); $0 realized PnL; no speculative trading,2026-06-22
+8vZtqfH2rCdhTMsD5pGWtcz4kXWepgWhS62aRd3qxd7A,REJECT,+$3.46M,-$6.44M,1mo,100%,0>500%/9>100%,Bag-holder: unrealized loss exceeds realized (net -$2.97M); 1mo holds; 107K txns bot-style; wrong style,2026-06-22
+DFkfy5ePMXB6HEZFLd768HFpmrhYxun4tryh3ZntBSCy,REJECT,$0,+$16.9K,24d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 23 buys/0 sells; no exit skill",2026-06-22
+H1mQN7NWPa7AVqnL8HsPx7XTdLV8dkFm1T3rxLHbwFVx,REJECT,$0,-$44.49K,15d,100%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 1 buy/0 sells, underwater",2026-06-22
+8tcqb3ippM1WWYurhnsKvjxhXNPkcuE82EVtGZDQ3D44,REJECT,-$6.38K,$0,23m,100%,0>500%/0>100%,Negative realized; single token <-50%; net loser,2026-06-22
+8mXka51ErTnCjDYR4dUxvDBwzkpfdirRLN11xdLeJmTR,REJECT,$0,-$20.61K,12d,100%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 2 buys/0 sells, underwater",2026-06-22
+BFdNuvVUMAPExXNodk6QjJWgmvuonmUk2gFh6YreePUi,REJECT,$0,+$119.51K,10d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+GMCodcmUqY5JcvCezoSUY6tGyNYn3UN6qv9tJkY27A7N,REJECT,+$28.62K,-$159.96K,6d,100%,0>500%/4>100%,Bag-holder: unrealized loss vastly exceeds realized (net -$131K); short holds but holding losers,2026-06-22
+Fxf7eHuan3QfFhteggoe6bWvPqewDbC4YYTJFaNoV29V,REJECT,-$9.5K,-$1.19K,3d,41.04%,1>500%/3>100%,"Negative realized; 36% WR, 51 tokens <-50%; net loser despite short holds",2026-06-22
+J76BBM8Lh8BzfyQCUekDhGhxThTg7QwUSYiBqoHUoJCc,REJECT,$0,+$246.96K,20d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+5xYw5PMBTT1M2mYehtCjfoRKKFbRQBiwZVgoMzqQfLN,REJECT,-$22.46K,$0,9h,100%,0>500%/0>100%,Negative realized; all 13 tokens <-50%; net loser,2026-06-22
+326fLsBX41A4PJkDbF6ei9ajS6eoB7p4RAUCeCyBTEpv,REJECT,-$11.33K,-$2.03M,19d,100%,1>500%/0>100%,"Negative realized + massive unrealized loss; 19d holds; bag-holder, wrong style",2026-06-22
+pAuPpGL9YNeBUMJTNSkMEfnSb8JSFj2bNLxqMgMHFWW,REJECT,$0,$0,4h,0%,0>500%/0>100%,Stablecoin custody/treasury wallet (USDC); $0 realized PnL; no speculative trading,2026-06-22
+CfyjfkdfVchdvtKyPbBxBoScfSUPBVMwnGbYeXBs5uKw,REJECT,-$957.86,-$224.03,2d,71.4%,1>500%/4>100%,"Negative realized; 31% WR, 114 tokens <-50%; net loser despite short holds",2026-06-22
+Dq95Pq71J9Sq2k2TmwZz9NdzZSu3a9px6DtkhtEr6S4,REJECT,-$872.73K,-$82.51K,2mo,16.47%,0>500%/0>100%,"Deeply negative realized; 2mo holds, 9% WR, 0 multi-x; net loser, wrong style",2026-06-22
+JBVpuKD4cEVUjZ7conFwKZKzdpY92C1hzwCHYr99L54z,REJECT,+$368.48K,-$4.12M,11d,59.17%,866>500%/687>100%,Bag-holder: unrealized loss vastly exceeds realized (net -$3.75M); 387K txns bot-style; wrong style,2026-06-22
+8fXFv9degqBc7UAcKNNQDTDzK75VFWajNaNoW7zLurr3,REJECT,$0,+$180.79K,10d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+HUBtUTZJmiH5ckpMPrqXSbC7LB9MFMHNQXXpU62y42bp,REJECT,+$40.59K,+$30.46K,2mo,36.36%,0>500%/0>100%,2mo holds swing-trader; 0 multi-x wins; wrong style for fast-exit bot,2026-06-22
+5P8QZdPo2pipnpPQ6njUqjLH9kRnRgweDJptdDTu9iZT,REJECT,+$90.93K,-$212.12K,8mo,4.34%,0>500%/0>100%,"Bag-holder: unrealized loss exceeds realized (net -$121K); 8mo holds, 0 multi-x; wrong style",2026-06-22
+DrK7HBFL2jnFQiTCqn5pvJwSPpSp45SuJ12bRE5jRWH6,REJECT,-$28.86K,$0,10h,100%,0>500%/0>100%,Negative realized; all 18 tokens <-50%; net loser,2026-06-22
+F5mPXw1iTiMKhd9bcrNskVXsNRU5KyTTwQvCKM55d8nh,REJECT,-$1.37K,$0,5h,100%,0>500%/0>100%,Negative realized; single token <-50%; net loser,2026-06-22
+FZsYiHBNBFSYCd1oLjFgtwXkAg7vAE9tfjBtCa5CkAVW,REJECT,+$0,-$0,11d,100%,1>500%/0>100%,"$0 realized, $0 volume, single token; holding wallet, no banked profits",2026-06-22
+BEXeRobXJD1EZ9KPYTiHsvZMyLDQ3cnQz5h9cZbzFghs,REJECT,$0,-$20.47K,30d,0%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 1 buy/0 sells, underwater, 30d holds",2026-06-22
+87AaKFkimGLA3gYd1SzLUM9RTmDDpC25q9HbwcYX8ou2,REJECT,$0,+$157.85K,10d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+HNmMquX5nf8xgKWf37ZoSKZqSu7i5a6fRdxuRq2BSuis,REJECT,$0,-$300.92K,1mo,100%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 4 buys/0 sells, all underwater, 1mo holds",2026-06-22
+69aSYrYZVWZJCjbvQeCaY9sQeGXU52AKJGgRkC5dNmzT,REJECT,$0,-$20.51K,25d,0%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 1 buy/0 sells, underwater, 25d holds",2026-06-22
+GxyCaerm38KJxgoT1g5AGnErFrktbA5piFX7u55cPXZg,REJECT,-$730.7K,-$4.13K,9h,99.01%,0>500%/1>100%,"Deeply negative realized; 350K txns, 2% WR; losing bot, net loser",2026-06-22
+Hfa64Y478EjnDQVmUPh4jEg2x2wp2WSeTSQAwAygqCeZ,REJECT,+$99.32,+$424.58K,14d,0%,1>500%/0>100%,Near-zero realized ($99); all gains unbanked paper; 14d holds; fails realized criterion,2026-06-22
+B61E5yrruvSNLKhRCVy8tdxJfBC9RspkMGRjtj9iBKjw,REJECT,-$113.88K,-$12.14K,3d,100%,0>500%/0>100%,Negative realized; 0 multi-x; net loser despite short holds,2026-06-22
+EJt8T6exqjFn29F3izhoFxt4asWj5Cq3uzavHaDcTtYD,REJECT,+$14.5K,-$23.55K,7d,100%,1>500%/0>100%,Bag-holder: unrealized loss exceeds realized (net -$9K); only 1 multi-x; holding losers,2026-06-22
+APg262LwmECfR2W1nyDsiUgXRyKhSzQgneruYJDhh1Kt,REJECT,-$807.32,$0,0,100%,0>500%/0>100%,Negative/near-zero realized; stablecoin (USDS) swapping; no speculative edge,2026-06-22
+GyPR8axkVaGs74Fj4wywVUnUNyX7tX8tAD64L5MttSjG,REJECT,+$443.9K,-$0,8h,0%,1>500%/0>100%,"Single token, 1 multi-x win only; fails multiple-multi-x criterion (one-hit wonder)",2026-06-22
+CygdrZjrrmhQ4NihYXcebVittKtWoNRv3EvxezLp82r6,REJECT,$0,+$172.27K,20d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+5yWC9wjxV72ZNbesMvA5xZFhQLbBedx5YxSSu5VEo5ZD,REJECT,+$0,+$705.13K,16d,0%,1>500%/0>100%,"Never-sell accumulator: $0 realized, $0 volume, single token; no banked profits",2026-06-22
+FK5bj3nQw2SYXw758VXigMd3S8QeVDzK6rQ7jdduvJTN,REJECT,$0,+$180.15K,10d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+ANDj7hq1L5xXSRMJeKgVMW6Ju1Dnzss2vNCQoCSTFKiU,REJECT,-$39.11,-$4.91M,1mo,100%,0>500%/0>100%,Near-zero/negative realized; massive unrealized loss; 4.89K buys/42 sells; never-sell bag-holder,2026-06-22
+4pA3A9MFVWq2EyWjYNofqvPzmLxXz7VxMNNeSodubVZ2,REJECT,$0,-$0,21d,100%,0>500%/0>100%,"$0 realized, $0 volume, single token; holding wallet, no banked profits",2026-06-22
+FV83z7rNdTpu31K8nyhrjYfpBdiovC8pcjFwQTVjASaT,REJECT,$0,+$167.03K,10d,0%,0>500%/0>100%,"Never-sell accumulator: $0 realized, single token, 1 buy/0 sells; no exit skill",2026-06-22
+AsdDLcFbnUaKZfmMgqkF1UfbLjSsB47hb27ALLxyukuj,REJECT,+$37.12K,-$2.12M,21d,100%,3>500%/8>100%,Bag-holder: unrealized loss vastly exceeds realized (net -$2.08M); 21d holds; wrong style,2026-06-22
+36RNgbHZE1UeV2r69nmwjT783xKak1g7rLAW3ypinC6x,REJECT,$0,$0,0,0%,0>500%/0>100%,Stablecoin custody/treasury wallet (jlUSDC/USDC); $0 realized PnL; no speculative trading,2026-06-22
+xqvZG5hkPwsu4GDxX5LbbeMJLE3SJkDrTLZednnb19U,REJECT,+$171.38K,$0,10m,100%,1>500%/0>100%,"Single token, 1 multi-x win only; fails multiple-multi-x criterion (one-hit wonder)",2026-06-22
+5W5kNBc3kNz78QuLXZnGtXVQqos3aaQdfWZTYR9LGJHJ,REJECT,$0,-$47.74K,25d,100%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 1 buy/0 sells, underwater, 25d holds",2026-06-22
+H7BwMFE9PbRxBjzyFC2Ad9phrdX9QvaUHBqr96GX1RWa,REJECT,$0,-$73.46K,20d,100%,0>500%/0>100%,"Never-sell bag-holder: $0 realized, 1 buy/0 sells, underwater, 20d holds",2026-06-22
+2ngWSoJzvY6ZCxWyTPB7FgDWhp1hkD7iqAu9QuZV4WB3,REJECT,-$12.13K,$0,0,100%,0>500%/0>100%,Negative realized; stablecoin (EURC) swapping; no speculative edge; net loser,2026-06-22
+9dGoAxRV4TYVvYz1QouPEh5LmX5ZzQP7Xk1YhLtgg6zL,REJECT,+$135.33K,$0,12m,100%,1>500%/0>100%,"Single token, 1 multi-x win only; fails multiple-multi-x criterion (one-hit wonder)",2026-06-22
+6Ur5xEpjbozbbUBP1MfqT2iZGx6gK3q89qRwseWHgqhx,REJECT,+$1.79K,+$783.53K,3d,0%,0>500%/0>100%,Near-zero realized; single token; gains all unbanked paper; 0 multi-x; fails realized/multi-x,2026-06-22
+7QFyt4hNueSAscEpPWR3k5RmhBxuhayF7QkCwQnmE4TX,REJECT,+$0,-$0,6d,100%,1>500%/0>100%,"$0 realized, $0 volume, single token; holding wallet, no banked profits",2026-06-22
+CDCzqZiAxT7YWP7ApsqmgKhZFz3aTA9N4t3dEJXMmq3q,REJECT,+$14.88K,+$966.88,5d,0%,0>500%/1>100%,"Single token, 1 multi-x win only; fails multiple-multi-x criterion",2026-06-22
+3Aa72W1ccpqcx7chCvEWAYCZCSVPfayG5dwsL9wojS4a,REJECT,$0,+$201.5K,20d,0%,0,Zero realized; all paper gains unsold; 20d hold single token; never-sell accumulator,2026-06-22
+2AeLM6PPGSvLMtBLcmuimdPbR1LX9iCxD2qgj4sSfyPX,REJECT,$0,-$29.93K,4d,0%,0,Zero realized; -$29.93K unrealized bag-holder; net negative,2026-06-22
+5JJLDJ9d7WeP4sz6KGNRF3ueEF33dtbsihGVC5eyQu9D,KEEP,+$715.21K,-$19.52K,6h,97.49%,"14>500%, 511>100%",Strong realized +$715K banked; tiny unrealized; 6h holds; 525 multi-x wins; high rug% confirmatory; fast-exit sniper,2026-06-22
+EveUejR6Rwi4EFJ8fe57dzzsETdBi84NYmhDEqizJJ7u,REJECT,+$0,-$0.15,15d,100%,13>500%,Near-zero realized ($0.15 vol dust); 15d holds; custody/holding wallet not active trader,2026-06-22
+5d8tDay1ZDV4XVUBtTvFvQiLxDe8dz2ZCdsrkmTDcbm5,REJECT,+$4.96M,-$130.65K,4h,50.35%,"292>500%, 399>100%","Pure MM/HFT bot: 629K/629K txns, $748M vol, 91.67% instant sell; two-sided thin-margin trading; wrong style",2026-06-22
+FNVe6oQYGxWF4kS23idC719q3VsKQdpQnQLHdW3NgQ5d,REJECT,-$855.73K,-$1.83M,10mo,4.44%,1>100%,Negative realized -$855K; -$1.83M unrealized; 10mo holds; 14% win rate; losing swing trader,2026-06-22
+5oA5Dat4YLXuPC6AWmwAjJ7vy8RsV7ZhLFpqKSURYgPv,REJECT,-$116.52K,-$1.64,3d,100%,0,Negative realized -$116.52K; 0% win rate; all 6 tokens losses; losing trader,2026-06-22
+DhcPrQCqPNc6uCndiVohhViE8NftXCoUiXourmvyfM2F,REJECT,+$0,-$0,16d,100%,1>500%,"Zero realized; $0 volume; 1 tx; $468M custody/whale holding wallet, not a trader",2026-06-22
+3TK6nTf3bu2o4VTwW2FvyFHv7GUBYmLPcmNokTvodrnF,REJECT,$0,-$286.43K,2mo,0%,0,Zero realized; -$286K unrealized bag; 2mo holds; single token never-sell accumulator,2026-06-22
+RNUxX6cCS4FQPsRrfFkKTNhENg2bg9i7DkQFCVZZj1E,REJECT,+$300.36K,$0,18m,100%,1>500%,"One-hit-wonder: single token, 1 multi-x win; fails multiple multi-x criterion despite strong realized",2026-06-22
+AvdQRq82hfuTLAmFMkkPy2XsTdoNzGmU7mq54vGjGDEZ,REJECT,+$67.33K,-$7.37M,1mo,100%,0,Bag-holder: -$7.37M unrealized vastly exceeds realized; net -$7.3M; 1mo holds; 599K txns bot-style,2026-06-22
+3x4KsC628mdn7UKgiBCh8WDNk65WKswCzAShmqnZQGqD,REJECT,$0,+$113.17K,10d,0%,0,Zero realized; all paper gains unsold; 10d hold single token; never-sell accumulator,2026-06-22
+JBMZgtv57Q5JYVWRZjeKgVWu4grCgPGbzf1r942WGwdH,REJECT,$0,+$105.51K,10d,0%,0,Zero realized; all paper gains unsold; 10d hold single token; never-sell accumulator,2026-06-22
+4Lh4QTqBkLassEWdem6ZGw5QpC5aL7rBVmM6P4Zzp2Ub,REJECT,+$910.4K,-$747.62K,21d,100%,"51>500%, 52>100%","Strong realized + multi-x but 21d avg hold = swing trader, exceeds ~7-14d fast-exit threshold; wrong style",2026-06-22
+F7KLYHGeC6ZAfEetgr5fLmtgXZ589uU51ucYZpB22gjA,REJECT,$0,-$0,26d,100%,0,Zero realized; $0 volume; empty/inactive single-token wallet,2026-06-22
+BwJ66geno1hTSofspeNKHbuNNTJrS8y65bX3NbFSbhPm,REJECT,+$0,-$0.01,9d,100%,1>500%,"Near-zero realized ($0.01 vol dust); custody/holding wallet, not active trader",2026-06-22
+DXMR7EsE7NbQAvrTiYjiTka3zkjX2pGky2R4JKTeJWzn,REJECT,+$2.84K,-$1.43K,2d,45.71%,0,"Near-zero realized +$2.84K; 0 multi-x wins; thin-margin churn, 1.89K/1.32K txns; no edge",2026-06-22
+FG51Bzk4yffJZNFKsoLVx42R14A9C9uRkAmnsW6yTr9A,REJECT,$0,-$408.27K,29d,100%,0,Zero realized; -$408K unrealized bag; 29d holds; never-sell accumulator,2026-06-22
+C17iwNrNkYVfEiBJaMofdGe1NVGSN3JwAsFpvqTmHtsH,REJECT,-$18.61,-$4.23K,5d,58.82%,1>100%,"Near-zero/negative realized -$18.61; 13% win rate; small loser, no edge",2026-06-22
+7R9gTinoU8wLKjB9qpgMu2jKSc1RQitqywTNrG7oDjB5,REJECT,$0,+$218.71K,20d,0%,0,Zero realized; all paper gains unsold; 20d hold single token; never-sell accumulator,2026-06-22
+AX1Yp2poKXVJTv4kFzg5qQYmDqw6qYLSY3s442auFvjB,REJECT,+$269.5K,-$16.26K,3mo,0%,0,3mo avg holds = swing trader; 0 multi-x wins; large-cap style not fresh-mint sniper; wrong style,2026-06-22
+36ZYAV8eChELnoZSqvBFZKvYYDmFtfNyTfArGLVzp3zv,REJECT,$0,$0,8h,0%,0,Zero realized; USDG stablecoin custody/treasury wallet; not a trader,2026-06-22
+aGh7tnKAhMR4G9tZcF4URGmLG76eTeZGqqaS99eNvxn,REJECT,+$0,-$0,7d,100%,1>500%,Near-zero realized; $0 volume; single token; inactive wallet,2026-06-22
+Azz4N3YM7QceaTvuk9iS6WmHsyJvjf9V6AZdNrWoy63x,REJECT,+$0,-$0,10d,100%,1>500%,Near-zero realized; $0 volume; single token; custody/holding wallet,2026-06-22
+ChMQ4r9ziLiDTieWu863og5a7rCSCi31ZRRJHYevZcPr,REJECT,+$506.72,-$152.53K,2d,100%,0,Near-zero realized +$506; -$152.53K unrealized bag; net -$152K; bag-holder,2026-06-22
+5XNySqKY7Tg8rTzUKfUci1KQhq86pLfU5LcCrSuvxojG,REJECT,$0,-$42.37K,13d,0%,0,Zero realized; -$42.37K unrealized bag; 13d holds; never-sell accumulator,2026-06-22
+HHQjCwavfZoGKPfgRZw1XffhyGHZCTkvoubqKZGs3kz3,REJECT,$0,-$167.87K,1mo,100%,0,Zero realized; -$167.87K unrealized bag; 1mo holds; 29 tokens never sold; accumulator,2026-06-22
+DtvmxrTACskMG2W8a6KXgSemUfvyNVeQTgfpJoGvMVKx,REJECT,+$666.51K,-$192.72,35m,37.22%,"18>500%, 83>100%","MM/HFT bot: 193.7K/193.76K symmetric txns, $61.7M vol, 97.57% instant sell, thin per-trade PnL; two-sided automated",2026-06-22
+GFHMc9BegxJXLdHJrABxNVoPRdnmVxXiNeoUCEpgXVHw,REJECT,+$34.64M,-$71.38M,6mo,8.18%,0,"Massive bag-holder: -$71.38M unrealized vs +$34.64M realized, net -$36.74M; 6mo holds; 0.93% win rate",2026-06-22
+AHvdfkZJykHBAQbmKoQMnaCDT8QYLJTMJNAZ7k1xPhs2,REJECT,$0,+$163.93K,20d,0%,0,Zero realized; all paper gains unsold; 20d hold single token; never-sell accumulator,2026-06-22
+Ggxv7uz4RxZfgYL3pAVM28mpQeBfAJWF4DMFWfBydtLR,REJECT,-$30.23,$0,7d,100%,0,Negative dust realized -$30.23; $32 volume; inactive losing wallet,2026-06-22
+Hwv7J6hsd6KizopAjTFzHmLZpxgN9LtUEwtzuU3MFvW,REJECT,$0,+$131.47K,10d,0%,0,Zero realized; all paper gains unsold; 10d hold single token; never-sell accumulator,2026-06-22
+8Pfc5EZMfFTk3HZT53A3LzbUvtyaWe6Wwbpm62QoD97X,REJECT,+$0,+$20.65K,13d,0%,1>500%,Near-zero realized; $0 volume; single token; custody/holding wallet,2026-06-22
+5B3o7TGuDra3XCfR4jrqwQ7xGnbjdJF6RjeFDnMbXM6L,REJECT,+$218.85K,$0,2m,100%,1>500%,"One-hit-wonder: single token, 1 multi-x win; fails multiple multi-x criterion despite strong realized",2026-06-22
+CgAm9b3rLLTn5cQXZbu9c87SgZBv6QqMrW2iFAMseunn,REJECT,+$646.14K,-$3.52M,1mo,0%,0,"Bag-holder: -$3.52M unrealized vs +$646K realized, net -$2.88M; 1mo holds; 4.31K symmetric txns",2026-06-22
+A4hvdDhDLj8nMhoL5v6FKFjhMPx19BsRLj5Yh53A2PZg,REJECT,+$810.16,+$66.58K,3d,80%,1>500%,Near-zero realized +$810; gains mostly unrealized paper; only 1 multi-x; insufficient banked exit skill,2026-06-22
+ATsFmhPYjAwZuMzm9NAhRzown7wPuNhZRLLBSDdN8bm6,REJECT,-$5.64K,-$332.63K,9mo,8.33%,0,Negative realized -$5.64K; -$332.63K unrealized bag; 9mo holds; losing swing trader,2026-06-22
+BhbfNi84vCNq715tLvud7CR8BJAbUcNQRmVHWbnnHbeH,REJECT,$0,+$382.42K,17d,0%,0,Zero realized; all paper gains unsold; 17d hold single token; never-sell accumulator,2026-06-22
+7kSvzR4MUWGYZxu3tNnvqRCUTW39kGrQaSrkCZ9PRkJY,REJECT,$0,-$181.97K,1mo,100%,0,Zero realized; -$181.97K unrealized bag; 1mo holds; 6 tokens never sold; accumulator,2026-06-22
+gasBidSWW5zmwXs3gn8TG2ijzKkrwpyM7ucwjgDQst6,REJECT,+$1.03M,+$109.5K,27d,15.84%,"5>500%, 27>100%",27d avg holds = swing trader; 201K/141K txns gas/MEV bot-style; 18% win rate; wrong style despite strong realized,2026-06-22
+41bVEdn56nNPqENPx4LewYqiiEW6pGG7yt4aXf1HTA9P,REJECT,-$379.47K,+$16.77K,5mo,0%,0,Negative realized -$379.47K; 14% win rate; 5mo holds; 0 multi-x; losing swing trader,2026-06-22
+3cU13q8hXmByFdBGZFEPqBqfwJrEp8UvgyKV8cRr3u6g,REJECT,+$1.34M,-$2.86M,21d,100%,0,"Bag-holder: -$2.86M unrealized vs +$1.34M realized, net -$1.51M; 21d holds; 47K txns; 0 multi-x",2026-06-22
+HXgXhzxiN3aBnPGggyXsY78scg9c3j8QigDfKA3k9KYB,REJECT,$0,+$121.51K,10d,0%,0,Zero realized; all paper gains unsold; 10d hold single token; never-sell accumulator,2026-06-22
+Ar1HrwURVUrDRdGPpLDf22iG89XuehvMS8G34LRgkUmi,REJECT,-$375.89K,-$5.9M,1mo,0%,0,Negative realized -$375.89K; -$5.9M unrealized bag; 1mo holds; net -$6.28M; losing bag-holder,2026-06-22
+7vQXbfff2oY35wY9hXLT6zJZhHxkmSmAApGPGaJ2kGsA,REJECT,+$0,+$24.59K,5d,0%,1>500%,Near-zero realized; $0 volume; single token; custody/holding wallet,2026-06-22
+EQcfkMmUfXbQsDJvJo72Fn6AHVF5YLwDHEKCEhB16Mev,REJECT,+$116.81K,$0,7m,100%,1>500%,"One-hit-wonder: single token, 1 multi-x win; fails multiple multi-x criterion despite strong realized",2026-06-22
+3WGJnqfCxNGKH3voR8SVPjRRbZgKhMfXcRz8Uj4ceFp9,REJECT,-$1.15K,$0,17m,100%,0,Negative realized -$1.15K; dust volume; both tokens losses; inactive losing wallet,2026-06-22
+DcxpkBBkX1tuDMDg63KXFfbXb2XnMWuMjc9L7kaF91NH,REJECT,$0,-$140.52K,18d,0%,0,Zero realized; -$140.52K unrealized bag; 18d holds; 379 buys/0 sells; never-sell accumulator,2026-06-22
+Nybmce1Dg7JGme4rj3D8peSy4UxnmQo5GcAh9v3HmyK,REJECT,+$801.59,+$5.86K,5d,0%,1>100%,Near-zero realized +$801; single token 1 multi-x; insufficient banked profits and no multiple wins,2026-06-22
+FufNeukgAbHtop2GJR2NKdovw2LEhQAUYiijSPtMkat3,REJECT,$0,-$304.59K,26d,100%,0,Zero realized; -$304.59K unrealized bag; 26d holds; 52 tokens never sold; accumulator,2026-06-22
+q6ZQP5swWtHBNiyZXLTbhLKPVAPsvNbn9geti1F2SS3,REJECT,$0,-$91.65K,1mo,100%,0,Zero realized; -$91.65K unrealized bag; 1mo holds; 5 tokens never sold; accumulator,2026-06-22
+9RB3ojop3TUavBTat8ytuTPYyLCCpYGysnzoFDAmQBRS,REJECT,$0,-$10.16K,6d,100%,0,Zero realized; -$10.16K unrealized bag; never-sell; USDC single position,2026-06-22
+Eu8jCZCCvA6gaUMKHC5pvGWpGwNtG9FTaHXLj2jssMp9,REJECT,$0,+$7.36M,18d,0%,0,Zero realized; all paper gains unsold; 18d hold single token; never-sell accumulator,2026-06-22
+7vh4xmMG2m2Ph58LNhyypYS8uEd3bbPdwZwAG62vqo3D,KEEP,+$33.87K,-$19.96K,12d,100%,4>100%,Positive realized +$33.87K; unrealized loss under realized (net +$13.9K); 12d holds; 4 multi-x wins; high rug% confirmatory,2026-06-22
+2FxrBzf25oURJPo6qLqLmzVpnvH85dScCPZFEvti7W5o,REJECT,-$26.86K,-$617.97,8mo,30.95%,2>100%,Negative realized -$26.86K; 25% win rate; 8mo holds; losing swing trader,2026-06-22
+BLwVz5SyXhv38nESJJCyJSeF7FUwcVZm32i9S8CJiH72,REJECT,+$0,-$0,15d,100%,1>500%,Near-zero realized; $0 volume; single token; custody/holding wallet,2026-06-22
+7jpTKdNC2P6nXAj7MSS1CUzDda44CP92yYxxKipXD3Vp,REJECT,-$4.48K,$0,26m,100%,0,Negative realized -$4.48K; single token loss; small losing wallet,2026-06-22
+3cyFV3LCC7ADRJmA3zPaqhCwJjLWEHTFZ2rmvJhDjTnJ,REJECT,+$0,-$0,4d,100%,1>500%,Near-zero realized; $0 volume; single token; custody/holding wallet,2026-06-22
+FU32tEs24w5RDECccRvLB9hakKXYqth1DZrcDuZohzVs,REJECT,$0,+$169.3K,20d,0%,0,Zero realized; all paper gains unsold; 20d hold single token; never-sell accumulator,2026-06-22
+ChoEAvz3D6GJ5ibFm9hMoofF9CJWW1Gp3fnEZT3r3Xon,REJECT,$0,+$2.34M,6d,0%,0,Zero realized; all paper gains unsold; 6d hold single token; never-sell accumulator,2026-06-22
+5gCC9ZJiPMjFsgYdkMcmNeZsqnWivcKghGKJRPpWCQsM,REJECT,$0,-$0,1mo,100%,0,Zero realized; $0 volume; single token; empty/inactive wallet,2026-06-22
+Gbb1ikHBUhjWWpRapSzmdwaWnRbCEfrVCHJzggT8XZRn,REJECT,$0,$0,0,100%,0,"Zero realized; 0 buys/886 sells, Didnt Buy 100%; distribution/receiver wallet not a trader",2026-06-22
+Eo85o5eL9GWNBZMBkYEiYfSoR8z6ZDiU2bvPXaa54FtN,REJECT,+$0,-$0.01,14d,100%,1>500%,"Near-zero realized ($0.01 vol dust); 14d holds; custody/holding wallet, not active trader",2026-06-22
+B2eSVNC1mXnaBZHbMhWctqqqigdzt4zMGmDR23R2Rg6E,REJECT,+$293.88K,-$1.24M,7mo,14.28%,0,"Bag-holder: -$1.24M unrealized vs +$293.88K realized, net -$956K; 7mo holds; 0 multi-x",2026-06-22
+FRVn1hp8cb3RjYNMzpMat8DLN7xjw4oEozYqASVvMS2z,REJECT,+$0,-$0,8d,100%,1>500%,Near-zero realized; $0 volume; single token; custody/holding wallet,2026-06-22
+7DZhNiJ4KYFD7UWLoL6HgKaUUJuGnJyVGaVnLkYSg7yX,REJECT,$0,+$270.08K,13d,0%,0,Zero realized; all paper gains unsold; 13d holds; 129 buys/0 sells; never-sell accumulator,2026-06-22
+6Zb5xoEh8yKgaKeJZ73Q7ZQbrgRBAh8TtnP59Y9zjDCS,REJECT,$0,-$1.04M,2mo,0%,0,Zero realized; -$1.04M unrealized bag; 2mo holds; single token never-sell accumulator,2026-06-22
+GBJ4MZe8fqpA6UVgjh19BwJPMb79KDfMv78XnFVxgH2Q,REJECT,$0,$0,0,0%,0,Zero realized; 0 txns; no trading data; inactive wallet,2026-06-22
+GGzKNLXe6fJmyEq5AY8KG1VWv9BzZiRzsVRd3WzG5zjK,REJECT,$0,+$188.88K,20d,0%,0,Zero realized; all paper gains unsold; 20d hold single token; never-sell accumulator,2026-06-22
+B5mgEEtvuLGna4iBf2nw5YcaV3eK69QtT7KUHDGRn4CB,REJECT,$0,-$385.45K,2d,100%,0,Zero realized; -$385.45K unrealized bag; single token never-sell accumulator,2026-06-22
+51ZbbXnbysy4RfKTp29A2aSJ7MB7nvKNe6XasqYKxPvY,REJECT,+$13.4K,-$83.44K,3mo,4.58%,1>100%,"Bag-holder: -$83.44K unrealized exceeds +$13.4K realized, net -$70K; 3mo holds; 30% win rate",2026-06-22
+BdLZnp17ZQHkNmMEGWDLXvwAaduh4wjApfLFaz7p8Nsu,REJECT,+$0,+$4.54K,12d,0%,1>500%,Near-zero realized; $0 volume; single token; custody/holding wallet,2026-06-22
+82tKaUiLBGzDtg8AKSCyzGH5YvWj9uyrWKuTKyT53qp9,REJECT,-$240.86,-$36.03K,28d,100%,0,Negative realized -$240; -$36.03K unrealized bag; 28d holds; losing accumulator,2026-06-22
+8CfH7KTRyWpujcTwjwSUeoocCexDsno23jChPrSsGWXD,REJECT,-$39.78K,-$19.31K,2mo,2.12%,0,Negative realized -$39.78K; 27.5% win rate; 2mo holds; 0 multi-x; losing swing trader,2026-06-22
+FDGqipVN2xv2VWwdM3ViBgaDdNS2iRNGEA8JgQ5eNABq,REJECT,$0,+$226.85K,20d,0%,0,Zero realized; all paper gains unsold; 20d hold single token; never-sell accumulator,2026-06-22
+J12Zek869DcLfjQqjJkj8f8itziEJ2MEtNaueeuXKbvh,REJECT,+$0,-$0,18d,100%,1>500%,Near-zero realized; $0 volume; single token; $259M custody/whale holding wallet,2026-06-22
+7UhxnKdGnCPia5QEKMkZ3Ck3Vv5GbCHw9VeQKNNvRFLa,REJECT,-$9.57K,-$309.14K,2mo,70.12%,"1>500%, 6>100%",Negative realized -$9.57K; -$309K unrealized bag; 2mo holds; losing swing trader,2026-06-22
+G7XtdBzVcwNijPQgHGHAqD1yM6rJxMJfiLZhQakik3Mz,REJECT,+$143.28K,$0,1h,100%,1>500%,"One-hit-wonder: single token, 1 multi-x win; fails multiple multi-x criterion despite strong realized",2026-06-22
+2W2A6YgmHqJoxL69Z95dwAhc1FqX9WejEZHhozWDJi6B,REJECT,+$0,-$0,9d,100%,1>500%,Near-zero realized; $0 volume; single token; custody/holding wallet,2026-06-22
+BvcaCWat1SJr6bszkcSGbgXVEiHRndhGXUYVZpYiQUpq,REJECT,-$60.59K,-$97.12K,6d,100%,0,Negative realized -$60.59K; -$97.12K unrealized bag; 0 multi-x; losing trader,2026-06-22
+BzDkcaJeQQB3QA3188CpQ3cNdEqD1H4ZHA4Ut2FWPVFN,REJECT,+$0,-$0,9d,100%,1>500%,Near-zero realized; $0 volume; single token; $287M custody/whale holding wallet,2026-06-22
+9znh7xSqksxZdspN3QCnVZhxvCRdcDWELwmFnNXpFEai,REJECT,$0,+$124.2K,10d,0%,0,Zero realized; all paper gains unsold; 10d hold single token; never-sell accumulator,2026-06-22
+41HUUsjBNLAmNM59oJ6F1B6oeNTRJDR2JFHhKTGP1N1c,REJECT,$0,-$25.75K,30d,0%,0,Zero realized; -$25.75K unrealized bag; 30d holds; single token never-sell accumulator,2026-06-22
+EbMyAzwEZNk2QGzZC8LtvrEm5EDKL2bwo7KZbVRyiVzM,REJECT,$0,+$158.59K,13d,0%,0,Zero realized; all paper gains unsold; 13d hold; 6 buys/0 sells; never-sell accumulator,2026-06-22
+Aone1TFb4bVxwfqvK9wGTuxMS8yeJyjLvEXvwHfy1r23,REJECT,+$158.87K,$0,7m,100%,1>500%,"One-hit-wonder: single token, 1 multi-x win; fails multiple multi-x criterion despite strong realized",2026-06-22
+66Q6pbpCh91F67egaaEZKDChDjHgbELaX7yLWdEjVQhX,REJECT,-$41.58K,-$40.15K,4mo,50%,0,Negative realized -$41.58K; -$40.15K unrealized bag; 4mo holds; losing swing trader,2026-06-22
+AUQym6icLvuZn4yeBPdCTcqH52YqxQBKUCCH1bSTMdjV,REJECT,+$7K,-$1.22K,18d,100%,1>500%,Modest realized +$7K; single token 1 multi-x; 18d holds; one-hit-wonder fails multiple-win criterion,2026-06-22
+AHdUMwfSsmdoFhq84XQVqnNhUU3iyN2hokkz6pFtqMnj,REJECT,+$337.04K,$0,14d,0%,0,USDC stablecoin arb/treasury flow ($90M in/out single token); 0 multi-x wins; not fresh-mint sniper,2026-06-22
+BuVgCnywU7Xa2gzRbQKrsHN57U5vMrettq2iE3SnyH2w,REJECT,+$111.14K,$0,10m,0%,1>500%,"One-hit-wonder: single token, 1 multi-x win; fails multiple multi-x criterion despite strong realized",2026-06-22
+FswmEJKzmPa6bdJ3fFdcDYrNaHXZF2eZrNKQnFioHCB7,REJECT,+$520.74,$0,2d,100%,0,Near-zero realized +$520; USDT stablecoin treasury/custody flow; 0 multi-x; not a sniper,2026-06-22
+2gZp1BNbZuXgTnaRxJ62S5qyiL2TwsWBRbtxV85us1uW,REJECT,$0,-$166.74K,24d,100%,0,Zero realized; -$166.74K unrealized bag; 24d holds; 29 tokens never sold; accumulator,2026-06-22
+4moC5GjGm9kNRyWEKcE4ot67dYBTe81WjkwanuSMz6VF,REJECT,$0,-$1.03M,19d,100%,0,Zero realized; -$1.03M unrealized bag; 19d holds; 206 tokens never sold; accumulator,2026-06-22
+75CzkrYwiPENWL2E4ZneNbQ237a835tinnrUfuNd2LW3,REJECT,-$275.47,-$320.21,14d,12.5%,0,Negative realized -$275; 14% win rate; 0 multi-x; small losing trader,2026-06-22
+77WzyRVpGre6L9H7s8AtSB5icGwMniin4pBAk8EkWoe9,REJECT,+$6.84K,-$2.14K,18d,100%,1>500%,Modest realized +$6.84K; single token 1 multi-x; 18d holds; one-hit-wonder fails multiple-win criterion,2026-06-22
+EHp8svnMmLQMygRwqRnBJj98cnn1bANaUXbQniNyUv5U,REJECT,+$0,-$0,7d,100%,1>500%,Near-zero realized; $0 volume; single token; $26M custody/whale holding wallet,2026-06-22
+2JagebSuREVhu6RHdQn3zZpP2qT3VQxzt25HYA3drKAF,REJECT,-$55.83,-$655.23K,21d,99.66%,0,Negative realized -$55; -$655K unrealized bag; 21d holds; 1.29% win rate; bag-holder,2026-06-22
+Gft3xmznZdiMeSDz9m6MpBZCs4Gghk6Vj5pm4HgcsuKb,REJECT,$0,-$92.04M,3mo,0%,0,Zero realized; -$92.04M unrealized bag; 3mo holds; single token never-sell accumulator,2026-06-22
+4DdfLfGp6AhHCe6MdYLX53MXRs1tXbdwYkBZ1j8cQR6f,REJECT,-$16.82M,-$11.86M,5mo,100%,0,Massively negative realized -$16.82M; -$11.86M unrealized; 5mo holds; 0 multi-x; losing whale,2026-06-22
+7V3Ke5VJAQTcy8jLWoLMqHat3ti81LkEcxPgmxhAE1Vn,REJECT,+$6.58K,-$51.14M,8mo,0%,0,Massive bag-holder: -$51.14M unrealized vs +$6.58K realized; 8mo holds; single token,2026-06-22
+2MFTE3KQNDW9zWHDiyVVawJxBVqUBEJ1RZw4mUsK7bh6,REJECT,$0,+$191.99K,20d,0%,0,Zero realized; all paper gains unsold; 20d hold single token; never-sell accumulator,2026-06-22
+7zeQMee4jGKvZLdYP6rZZhr8F1tTrXpnJpcS5M57hsB4,REJECT,$0,-$260.72K,27d,100%,0,"Bag-holder: $0 realized, -$260.72K unrealized, 27d holds, no multi-x wins",2026-06-22
+DZnvSpXGSPsemwoY3vT6y8KejVwxzEr4Yu5Z1X1A5311,REJECT,+$0,-$0,27d,100%,1 (>500%),"Near-zero: +$0 realized, $0 volume, 1/1 txn single token, 27d hold; no banked profits",2026-06-22
+FvANxe5xtCmCZScmgo2NTbAScLprTFvR7GjAwe7aCZPr,REJECT,$0,-$34.24K,8d,0%,0,"Bag-holder: $0 realized, -$34.24K unrealized, single token, no banked profits",2026-06-22
+773VoQznyCc6avGF6d2NatfyocTc2jEoFADVNb228suR,REJECT,$0,+$221.23K,20d,0%,0,"Never-sell accumulator: $0 realized (all $221K is unbanked paper), 20d hold, single token",2026-06-22
+DbA9VRaH2kFkxgRNqhNdji1K7Mw6JXYuMXrzdAp4xgaL,REJECT,-$8.75K,$0,14d,33.33%,0,Negative realized -$8.75K; 14d holds; no multi-x wins; 4y-old whale-style wallet,2026-06-22
+HD6BwewcxwmFiDYgu1YT8NLqV5EfLf5W9SMFc4MjCVZC,REJECT,+$722.93K,-$169.25K,7mo,33.33%,0,"Long-hold swing/whale: 7mo avg hold, only 3 tokens, 0 multi-x wins; wrong style for fast-exit bot",2026-06-22
+DXZCDZRqkBktkPvPVh9TLVBBbRcSYaxEnGkbh6xZwDsP,REJECT,$0,+$193.61K,20d,0%,0,"Never-sell accumulator: $0 realized (all $193K unbanked paper), 20d hold, single token",2026-06-22
+Esq4dyKJgeSET47NoPSH6LXsS3ZnrDLPxusLQyuGhaYL,REJECT,$0,+$183.31K,20d,0%,0,"Never-sell accumulator: $0 realized (all $183K unbanked paper), 20d hold, single token",2026-06-22
+prUWZMpQAbRzmqnRqcoSh8jqcJ1M1g64uxsR7mq9bmv,REJECT,+$488.31K,-$956.85K,15d,3.86%,1 (>100%),Bag-holder + bot: unrealized -$956.85K exceeds realized (net -$468.54K); 361K/332K txns; only 1 multi-x,2026-06-22
+36kdNsJNKb2LwbvTjNU4YQmJiFxHyJmQamviS2gUpizX,REJECT,$0,-$5.86K,14d,100%,0,"Bag-holder: $0 realized, -$5.86K unrealized, single token, no banked profits",2026-06-22
+6frj1VKWfboZqsmPJGLfcpB7MMAryMBwiEM9RUAkoDeH,REJECT,+$157.86K,-$147.83K,2mo,7.14%,0,"Long-hold swing: 2mo avg hold, 0 multi-x wins, unrealized nearly wipes realized (net +$10K); wrong style",2026-06-22
+DnHbGdhiDyaWtMKs8ysDNuuB6gtg8GqmVvwSqLoL1HiQ,REJECT,$0,+$371.22K,2mo,0%,0,"Never-sell accumulator: $0 realized, 208/0 txns (no sells), 2mo hold, value now $0 (-100%)",2026-06-22
+H46Yzgbdk321b1NzeHW9ttL9nqnye3VvrKUeeCKGbc39,REJECT,+$7.96K,-$394.15K,15d,100%,2 (>100%),Deep bag-holder: unrealized -$394K dwarfs realized +$8K (net -$386K); 15d holds,2026-06-22
+AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51,REJECT,-$37.05M,-$73.5M,1mo,89.64%,"148 (>500%), 1.26K (>100%)","Negative realized -$37M + bot/exchange scale (5.89M/4.63M txns, $1.53B vol); net -$110M",2026-06-22
+3bNwNNpbQCd9HKcPiTEXYZcSEvsmMvtopNmnKU6jNtDJ,REJECT,$0,-$170.21K,26d,100%,0,"Bag-holder: $0 realized, -$170.21K unrealized, 26d hold, no banked profits",2026-06-22
+9emnTXA52NXLUoQThc3srJ6bHURA1pUtfMePmkqJMgeJ,REJECT,-$56.42K,-$409.8K,2mo,30%,0,Negative realized -$56K + bag-holder -$410K unrealized; 2mo holds; 0 multi-x,2026-06-22
+9rxikkCYLs4STZGVL7btEYHjCsSgPAjUf8oeAWTGKZit,REJECT,-$8.10,-$11.98,5d,84.61%,0,Negative realized -$8.10; dust/test wallet ($48 volume); 0 multi-x wins,2026-06-22
+6t56KCLpdrgN2KZmzxNTCijCqZKCipPpWcgMtAajAeqx,REJECT,-$1.37K,$0,6h,100%,0,Negative realized -$1.37K; single losing token; no banked profits,2026-06-22
+6XUfMpJmSsSPGFLDdwv1Y9tUZTFwygXTKmsPErV54hEB,KEEP,+$30.38K,+$4.2K,12h,66.94%,"6 (>500%), 26 (>100%)",Banked +$30.38K realized; small positive unrealized; 12h holds; 32 multi-x wins; high rug% confirmatory; fast-exit sniper,2026-06-22
+HF2Lw2tYs4B3y1iqz6iw2f4wTjrn14KppvAezcm7TAT3,KEEP,+$1.89M,-$456.57K,5d,93.86%,"144 (>500%), 1.28K (>100%)",Banked +$1.89M realized far exceeds -$457K unrealized (net +$1.43M); 5d holds; 1.4K+ multi-x wins; high rug% confirmatory,2026-06-22
+GAi1XxNqDBwtSt9zUmx7jDcVjPLvUFkdqExHYdhGvegS,KEEP,+$87.41K,-$40.98K,7d,83.22%,"5 (>500%), 110 (>100%)",Banked +$87.41K realized exceeds -$41K unrealized (net +$46K); 7d holds; 115 multi-x wins; high rug% confirmatory,2026-06-22
+8Q5nm7bBQjshFVfQC6f1fRQmdUbU8UkvbYVeBCgwk4BL,KEEP,+$23.31K,+$2.77K,16h,25%,"1 (>500%), 4 (>100%)",Banked +$23.31K realized; small positive unrealized; 16h holds; 5 multi-x wins; fast-exit profile,2026-06-22
+2X4H5Y9C4Fy6Pf3wpq8Q4gMvLcWvfrrwDv2bdR8AAwQv,KEEP,+$266.26K,-$102.19K,2d,94.3%,"49 (>500%), 247 (>100%)",Banked +$266K realized exceeds -$102K unrealized (net +$164K); 2d holds; 296 multi-x wins; high rug% confirmatory; fast-exit sniper,2026-06-22
+6kiD2FuYrXJwB7AX19Ng3ogfEaRAUho4PbPxUwP4TLQk,KEEP,+$147.54K,-$31.8K,2d,95.14%,"48 (>500%), 303 (>100%)",Banked +$147.54K realized exceeds -$32K unrealized (net +$116K); 2d holds; 351 multi-x wins; high rug% confirmatory; fast-exit sniper,2026-06-22

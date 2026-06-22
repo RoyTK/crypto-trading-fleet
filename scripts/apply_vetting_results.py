@@ -58,7 +58,7 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
         return 2
 
     rows = list(csv.reader(file_path.read_text(encoding="utf-8-sig").splitlines()))
-    kept = rejected = skipped = notfound = bad = 0
+    kept = rejected = skipped = notfound = bad = inserted_new = 0
     now = datetime.now(timezone.utc)
 
     with session_scope() as s:
@@ -74,8 +74,20 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
             verdict = (r[1].strip().upper() if len(r) > 1 else "")
             w = s.get(WalletPool, addr)
             if w is None:
-                print(f"  [not-found] {addr[:14]}…")
-                notfound += 1
+                # Not in the pool. A KEEP here is a NEW vetted wallet (e.g.
+                # Roy's manual finds outside the auto-discovery export) —
+                # insert it at watch/vetted so the cron can promote it. A
+                # REJECT on a wallet that isn't in the pool is a no-op.
+                if verdict == "KEEP":
+                    if not dry_run:
+                        s.add(WalletPool(address=addr, chain="solana",
+                                         tier="watch", source=VETTED_SOURCE,
+                                         added_at=now))
+                    print(f"  KEEP+NEW {addr[:14]}…  inserted -> watch/{VETTED_SOURCE}")
+                    kept += 1
+                    inserted_new += 1
+                else:
+                    notfound += 1
                 continue
 
             if verdict == "KEEP":
@@ -101,8 +113,9 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
                 skipped += 1
 
     action = "would apply" if dry_run else "applied"
-    print(f"\n{action}: {kept} KEEP (->vetted), {rejected} REJECT (->pruned)")
-    print(f"  skipped: {skipped}  not-in-pool: {notfound}  malformed: {bad}")
+    print(f"\n{action}: {kept} KEEP (->vetted, {inserted_new} new inserted), "
+          f"{rejected} REJECT (->pruned)")
+    print(f"  skipped: {skipped}  reject-not-in-pool(noop): {notfound}  malformed: {bad}")
     if not dry_run and (kept or rejected):
         write_audit("wallet_vetting_applied", bot_id="copy", actor="roy",
                     payload={"kept": kept, "rejected": rejected})
