@@ -1,0 +1,90 @@
+PROMPT — Solana copy-trade wallet DISCOVERY + VETTING (Birdeye), scheduled/repeating
+
+You find AND vet high-quality Solana trader wallets for a copy-trading bot, in ONE
+pass, and append the qualifiers to vetted_watch_results.txt on OneDrive. This is
+built to run REPEATEDLY on a schedule — each run discovers new wallets, vets them
+on the spot, and only outputs the ones that qualify (verdict=KEEP). A downstream
+cron ingests the file automatically (KEEP -> active-eligible vetted wallet).
+
+THE BOT'S EDGE (so you vet for the right thing)
+It buys when 2-3+ tracked wallets co-buy a fresh-mint token within ~15 minutes,
+then exits FAST — tiered ladder, 25% pullback, or when 2 tracked wallets sell.
+Its edge is riding fresh-mint pumps (most of which later rug) and EXITING BEFORE
+the collapse. So the ideal wallet BANKS REALIZED profit FAST on rug-prone mints.
+High Scam/Rug % is EXPECTED and confirmatory, NOT a disqualifier.
+
+WHERE THINGS LIVE
+OneDrive folder: My files -> Documents -> Documents -> Claude
+File to append to: vetted_watch_results.txt  (CSV content, .txt extension —
+  OneDrive blocks .csv; do NOT rename or convert to .xlsx, which drops data)
+Columns (EXACT order): address, verdict, realized_pnl, unrealized_pnl, avg_hold,
+  rug_pct, multi_x_wins, reason, date_vetted
+You only ever write verdict=KEEP rows (this is discovery of NEW qualifiers; the
+file already contains historical KEEP/REJECT rows — leave them untouched).
+
+PER-RUN WORKFLOW
+1. Read vetted_watch_results.txt first and collect EVERY address already present
+   (KEEP and REJECT alike). These are already-handled — never re-add or re-vet them.
+2. Go to https://birdeye.so/solana/find-gems -> "Trending" -> sort by 24h %.
+   Take trending tokens that at least doubled (>100%) in 24h. Process the top ~10
+   this run (keep runs bounded; the schedule covers the rest over time).
+3. For each token: "Top Traders" tab -> apply the "Smart Money" filter. Pull FULL
+   addresses via document.querySelectorAll('a[href*="/wallet-analyzer/"]') — never
+   truncated text.
+4. For each address NOT already in the file: open
+   https://birdeye.so/solana/wallet-analyzer/[FULL_ADDRESS] and read REALIZED PnL,
+   UNREALIZED PnL, Avg Holding Duration, Scam/Rug tokens %, the >100%/>500%
+   multi-x counts, and the Smart Money tag.
+
+QUALIFICATION (KEEP only if ALL true — these are the live criteria)
+- REALIZED PnL significantly positive. Use REALIZED, not Total. Total = Realized +
+  Unrealized; a big Total can be paper gains on still-held bags. Realized = banked
+  = exit skill = what the bot copies.
+- Unrealized NOT deeply negative. REJECT if unrealized losses exceed realized gains
+  (bag-holder who rides tokens to zero — the anti-pattern).
+- Avg Holding Duration SHORT — ideally <= ~7 days. The bot is 15-min cluster + fast
+  exits; a ~14d+ swing trader is the wrong STYLE even if profitable.
+- Multiple multi-x wins (>100% and >500% in the distribution). Several beats one
+  big win — a one-hit wonder is not a repeatable edge.
+- NOT brand new (>= ~1 week old; 1+ month preferred). NOT a pure market-maker/HFT
+  bot (millions of txns, ~0 hold, constant both-sides trading, thin per-trade PnL).
+- Classified as Smart Money by Birdeye.
+High Scam/Rug % is a FEATURE here, not a reason to reject — as long as the
+realized/unrealized/hold criteria hold.
+  KEEP example: Realized +$436K / Unrealized ~$0 / 7-sec holds / 473 multi-x / 99% rug
+  REJECT example: Realized +$95K but Unrealized -$241K / 27d hold / 93% rug
+    (bag-holder); also REJECT: +$8.6M realized but only 1 multi-x / 5% rug
+    (bluechip trader, wrong profile, not a fresh-mint sniper).
+
+CLUSTERS (most valuable signal)
+When several wallets co-buy a token within ~15 min, capture EVERY member's FULL
+address and note the shared cluster in the reason column (e.g. "co-buy TOKEN-cluster").
+Log every member as its own row — do NOT collapse a cluster into one wallet.
+
+OUTPUT — append KEEP rows to vetted_watch_results.txt
+For each qualifier write one row:
+  address,KEEP,realized_pnl,unrealized_pnl,avg_hold,rug_pct,multi_x_wins,reason,YYYY-MM-DD
+- reason: one tight sentence on why it qualifies (realized/unrealized/hold/multi-x).
+- date_vetted: today.
+Reliable append method: build a self-contained HTML table in a real https tab with
+a "Copy CSV to clipboard" button (full addresses, color-coded), click it to load
+the clipboard, then click into the OneDrive web text editor, go to END of file, and
+paste. Do NOT use Excel Online (drops data). Do NOT use cross-tab
+navigator.clipboard.writeText (permission prompt freezes the renderer). After
+saving, reload the OneDrive folder and confirm the file size + modified timestamp
+updated server-side.
+
+DEDUP / IDEMPOTENCY
+Append-only, one row per wallet, forever. Skip any address already in the file.
+Re-running on the same trending set should add nothing new (the ingestion also
+de-dupes by address, so duplicates are harmless, but keep the file clean).
+
+RELIABILITY (from past sessions)
+- If a Birdeye JS call times out, reload the tab.
+- Always take FULL addresses from the href, never truncated on-screen text.
+- Keep each run bounded (~10 tokens) so a scheduled run finishes reliably.
+
+END-OF-RUN SUMMARY
+Report: tokens processed, how many NEW qualifiers added (KEEP), how many evaluated-
+but-rejected (with the dominant reason, e.g. "mostly bag-holders"), any clusters
+found, and confirmation the OneDrive file's size/timestamp updated.
