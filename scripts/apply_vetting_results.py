@@ -38,7 +38,9 @@ from framework.audit import write_audit
 from framework.models import WalletPool
 
 
-DEFAULT_FILE = Path(__file__).resolve().parent.parent / "bots" / "copy" / "vetted_watch_results.csv"
+# .txt extension (CSV content) — OneDrive blocks browser-Opus writing .csv,
+# same as curated_wallets.txt. The parser is extension-agnostic.
+DEFAULT_FILE = Path(__file__).resolve().parent.parent / "bots" / "copy" / "vetted_watch_results.txt"
 _B58 = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$")
 VETTED_SOURCE = "browser_opus_vetted"
 
