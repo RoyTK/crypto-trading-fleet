@@ -2,7 +2,7 @@
 # Runs the Solana wallet discovery/vetting prompt via Claude Code (headless), pinned to Opus.
 # Browser drives Birdeye discovery; Claude Code writes qualifying rows to the LOCAL,
 # git-tracked results file with its file tools. THIS wrapper then commits + pushes that
-# file and posts a row-count health signal to Discord. Windows Task Scheduler 09:00/21:00.
+# file and posts a row-count health signal to Discord. Windows Task Scheduler, every 13h.
 #
 # AUTH/BILLING: no --bare (that would force ANTHROPIC_API_KEY = separate API billing).
 # Plain `claude -p` uses your logged-in Max creds. We ALSO clear ANTHROPIC_API_KEY from
@@ -14,11 +14,12 @@
 # notify on +N / 0 / error.
 
 # ----------------------------- CONFIG -----------------------------
-$RepoRoot    = 'C:\Projects\CryptoTradingworkflow'
-$ProjectDir  = Join-Path $RepoRoot 'bots\copy'
-$PromptFile  = Join-Path $ProjectDir 'browser_discovery_vetting_prompt.txt'
-$ResultsFile = Join-Path $ProjectDir 'vetted_watch_results.txt'
-$LogDir      = Join-Path $ProjectDir 'logs'
+$RepoRoot      = 'C:\Projects\CryptoTradingworkflow'
+$CopyDir       = Join-Path $RepoRoot 'bots\copy'
+$AutomationDir = Join-Path $CopyDir 'discovery_automation'
+$PromptFile    = Join-Path $AutomationDir 'browser_discovery_vetting_prompt.txt'
+$ResultsFile   = Join-Path $CopyDir 'vetted_watch_results.txt'   # STAYS in bots/copy (cron cp + apply path)
+$LogDir        = Join-Path $AutomationDir 'logs'
 $Model       = 'opus'      # resolves to current Opus (claude-opus-4-8)
 $MaxTurns    = 200         # browser scraping ~10 tokens is turn-heavy; 2h task timeout is the real guard
 $ClaudeExe   = 'claude'
@@ -84,7 +85,8 @@ try {
     if ($LASTEXITCODE -ne 0) { Write-Log 'git pull --rebase failed (continuing).' }
     $ErrorActionPreference = $eap
 
-    Push-Location $ProjectDir
+    # cwd = bots/copy so the agent's "vetted_watch_results.txt in your working dir" resolves.
+    Push-Location $CopyDir
     $cliArgs = @('-p', $prompt,
                  '--model', $Model,
                  '--max-turns', $MaxTurns,
