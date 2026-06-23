@@ -22,13 +22,33 @@ $ResultsFile   = Join-Path $CopyDir 'vetted_watch_results.txt'   # STAYS in bots
 $LogDir        = Join-Path $AutomationDir 'logs'
 $Model       = 'opus'      # resolves to current Opus (claude-opus-4-8)
 $MaxTurns    = 200         # browser scraping ~10 tokens is turn-heavy; 2h task timeout is the real guard
-$ClaudeExe   = 'claude'
+# claude CLI path. Task Scheduler often launches with a stale PATH that lacks it, so
+# resolve explicitly: an override, then PATH, then known install locations. If none
+# match, paste the output of  (Get-Command claude).Source  into $ClaudeExeOverride.
+$ClaudeExeOverride = ''
+$ClaudeExe = $ClaudeExeOverride
+if (-not $ClaudeExe) {
+    $gc = Get-Command claude -ErrorAction SilentlyContinue
+    if ($gc) { $ClaudeExe = $gc.Source }
+}
+if (-not $ClaudeExe) {
+    foreach ($p in @(
+        (Join-Path $env:APPDATA     'npm\claude.cmd'),
+        (Join-Path $env:USERPROFILE '.local\bin\claude.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\claude\claude.exe')
+    )) { if ($p -and (Test-Path $p)) { $ClaudeExe = $p; break } }
+}
 $GitBranch   = 'main'
 # Browser + in-page JS can't be scoped with --allowedTools, so the browser path needs the skip flag.
 $PermArgs    = @('--dangerously-skip-permissions')
-# Discord webhook for the health signal. Set the COPY_DISCORD_WEBHOOK user env var,
-# or paste the URL here. Leave blank to skip Discord (run still logs locally).
+# Discord webhook for the health signal. Env var first (Task Scheduler may not see a
+# freshly-set User var until re-login), then a gitignored local file (webhook.txt, one
+# line = the URL). Leave both unset to skip Discord (run still logs locally).
 $DiscordWebhook = $env:COPY_DISCORD_WEBHOOK
+if (-not $DiscordWebhook) {
+    $whFile = Join-Path $AutomationDir 'webhook.txt'
+    if (Test-Path $whFile) { $DiscordWebhook = (Get-Content -Raw -LiteralPath $whFile).Trim() }
+}
 # ------------------------------------------------------------------
 
 $ErrorActionPreference = 'Stop'
@@ -77,6 +97,7 @@ $rowsBefore = Count-Rows $ResultsFile
 $code = 1
 try {
     if (-not (Test-Path $PromptFile)) { throw "Prompt file not found: $PromptFile" }
+    if (-not $ClaudeExe) { throw "claude CLI not found on PATH or known locations. Set `$ClaudeExeOverride to the output of (Get-Command claude).Source" }
     $prompt = Get-Content -Raw -Path $PromptFile
 
     # Pull latest first so dedup reads current state. Non-fatal on failure.

@@ -1,0 +1,4 @@
+# Per-run logs + single-instance lock (created at runtime)
+logs/
+# Discord webhook URL (secret — never commit)
+webhook.txt
