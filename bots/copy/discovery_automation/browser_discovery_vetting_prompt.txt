@@ -100,6 +100,16 @@ the file (>> / Add-Content) is simplest and avoids rewriting the whole file; or 
 Edit to insert after the last line. Either way: only ADD rows, never modify or
 reorder existing ones, and skip any address already in the file. Do NOT touch the
 browser, OneDrive, the clipboard, or git here — the wrapper handles commit/push.
+APPEND AS YOU GO + RUN AUTONOMOUSLY (critical for unattended scheduling)
+- Append each token's rows the moment you finish that token's wallets — incrementally,
+  never batched to the very end. If the run is cut short by its turn/time budget, every
+  wallet you already vetted is saved.
+- You do NOT need to vet everything you discover in one run, and you must NOT pause to
+  ask for approval or a "next batch" confirmation — you run unattended with no human to
+  answer. Do a bounded pass (~10 trending tokens), vetting and appending as you go,
+  until you finish them or run low on turns; then write the summary and stop cleanly.
+  The append-only dedup + the repeating 13h schedule cover the rest across future runs
+  automatically — you are never responsible for clearing a whole backlog in one pass.
 If a run finds ZERO new wallets, append nothing and just write the summary — that's a
 valid outcome (the wrapper flags a zero-row pass so I can check the browser).
 
