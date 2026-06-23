@@ -13,12 +13,15 @@ Its edge is riding fresh-mint pumps (most of which later rug) and EXITING BEFORE
 the collapse. So the ideal wallet BANKS REALIZED profit FAST on rug-prone mints.
 High Scam/Rug % is EXPECTED and confirmatory, NOT a disqualifier.
 
-HOW YOU RUN (read this — it changed)
-You run as Claude Code on the local machine, with file tools AND a connected Chrome
-(Claude-in-Chrome). Use the BROWSER for Birdeye discovery ONLY. Use your LOCAL FILE
-TOOLS for everything about the results file — reading it for dedup and appending new
-rows. Do NOT use OneDrive, the clipboard, an in-page HTML table, or git: a wrapper
-script commits + pushes the file and posts a row-count health signal after you exit.
+HOW YOU RUN (two possible surfaces — use the file path that matches yours)
+You may run either as (a) Claude Code with local file tools + a connected Chrome, or
+(b) the consumer browser tool (claude.ai) that drives Chrome but has NO local files.
+Use the BROWSER for Birdeye discovery in BOTH. For OUTPUT:
+  (a) Claude Code: read/append the LOCAL repo file with your file tools; a wrapper
+      script handles git commit/push. Do NOT use OneDrive, the clipboard, or git.
+  (b) Browser tool: read/append the OneDrive copy via the web text editor (the only
+      file you can reach); a human syncs it to the repo afterward.
+Either surface follows the BATCH -> CHECKPOINT -> RESUME pattern below.
 
 WHERE THINGS LIVE
 Results file (LOCAL, in your working directory): vetted_watch_results.txt
@@ -100,18 +103,25 @@ the file (>> / Add-Content) is simplest and avoids rewriting the whole file; or 
 Edit to insert after the last line. Either way: only ADD rows, never modify or
 reorder existing ones, and skip any address already in the file. Do NOT touch the
 browser, OneDrive, the clipboard, or git here — the wrapper handles commit/push.
-APPEND AS YOU GO + RUN AUTONOMOUSLY (critical for unattended scheduling)
-- Append each token's rows the moment you finish that token's wallets — incrementally,
-  never batched to the very end. If the run is cut short by its turn/time budget, every
-  wallet you already vetted is saved.
-- You do NOT need to vet everything you discover in one run, and you must NOT pause to
-  ask for approval or a "next batch" confirmation — you run unattended with no human to
-  answer. Do a bounded pass (~10 trending tokens), vetting and appending as you go,
-  until you finish them or run low on turns; then write the summary and stop cleanly.
-  The append-only dedup + the repeating 13h schedule cover the rest across future runs
-  automatically — you are never responsible for clearing a whole backlog in one pass.
+BATCH -> CHECKPOINT -> RESUME (work in small batches so nothing is ever lost)
+Vet in batches of ~20 wallets. After EACH batch of 20:
+  1. SAVE those ~20 rows to the results file immediately — this is a CHECKPOINT. Do not
+     hold a whole run's rows in memory to write at the end; persist each batch as it
+     completes.
+  2. Dedup as you go: before vetting a wallet, skip it if its address is already in the
+     file. Once a batch is saved, those addresses are "done" for any later read.
+  3. Continue with the next ~20 and repeat until ALL discovered wallets are vetted (or
+     you run out of turn/time budget). Then write the end-of-run summary.
+Why batches + checkpoints: if the run hangs (Cloudflare wall, idle extension, timeout),
+every completed batch of ~20 is already persisted. A manual restart just re-reads the
+results file, dedups against it, and resumes from the first un-vetted wallet — zero
+re-work, zero lost rows, no duplicates. The file IS the checkpoint.
+Run autonomously: do NOT stop to ask for approval or a "next batch" confirmation when
+the environment lets you continue — keep going batch after batch until done or budget-
+limited. (In a tool that hard-gates per batch, the per-batch file checkpoints still let
+any restart resume cleanly from exactly where it stopped.)
 If a run finds ZERO new wallets, append nothing and just write the summary — that's a
-valid outcome (the wrapper flags a zero-row pass so I can check the browser).
+valid outcome.
 
 DEDUP / IDEMPOTENCY
 Append-only, one row per wallet, forever. Skip any address already in the file.
