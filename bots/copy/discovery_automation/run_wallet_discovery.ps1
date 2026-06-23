@@ -9,7 +9,7 @@
 # this process below, so a project key set elsewhere on the box can't silently divert
 # billing to the API.
 #
-# HEALTH: exit code 0 != success — a dead Chrome extension exits clean with zero rows.
+# HEALTH: exit code 0 != success - a dead Chrome extension exits clean with zero rows.
 # The real signal is "did new rows get appended this pass", so we diff the file and
 # notify on +N / 0 / error.
 
@@ -112,13 +112,13 @@ Write-Log "rows before=$rowsBefore after=$rowsAfter delta=$delta"
 
 $pushNote = ''
 if ($delta -gt 0) {
-    # Commit + push ONLY the results file (scoped — never sweep other changes).
+    # Commit + push ONLY the results file (scoped - never sweep other changes).
     $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     & git -C $RepoRoot add -- $ResultsFile *>> $errLog
     & git -C $RepoRoot commit -m "copy: discovery+vet run $stamp (+$delta rows)" *>> $errLog
     & git -C $RepoRoot push origin $GitBranch *>> $errLog
     if ($LASTEXITCODE -eq 0) { $pushNote = ' pushed' }
-    else { $pushNote = ' PUSH FAILED (rows committed locally — resolve manually)' }
+    else { $pushNote = ' PUSH FAILED (rows committed locally - resolve manually)' }
     $ErrorActionPreference = $eap
 }
 
