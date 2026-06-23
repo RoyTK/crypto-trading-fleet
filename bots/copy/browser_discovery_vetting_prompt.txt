@@ -13,10 +13,17 @@ Its edge is riding fresh-mint pumps (most of which later rug) and EXITING BEFORE
 the collapse. So the ideal wallet BANKS REALIZED profit FAST on rug-prone mints.
 High Scam/Rug % is EXPECTED and confirmatory, NOT a disqualifier.
 
+HOW YOU RUN (read this — it changed)
+You run as Claude Code on the local machine, with file tools AND a connected Chrome
+(Claude-in-Chrome). Use the BROWSER for Birdeye discovery ONLY. Use your LOCAL FILE
+TOOLS for everything about the results file — reading it for dedup and appending new
+rows. Do NOT use OneDrive, the clipboard, an in-page HTML table, or git: a wrapper
+script commits + pushes the file and posts a row-count health signal after you exit.
+
 WHERE THINGS LIVE
-OneDrive folder: My files -> Documents -> Documents -> Claude
-File to append to: vetted_watch_results.txt  (CSV content, .txt extension —
-  OneDrive blocks .csv; do NOT rename or convert to .xlsx, which drops data)
+Results file (LOCAL, in your working directory): vetted_watch_results.txt
+  This is the git-tracked repo file (bots/copy/vetted_watch_results.txt). CSV content,
+  .txt extension. Append new rows to the END; preserve every existing row exactly.
 Columns (EXACT order): address, verdict, realized_pnl, unrealized_pnl, avg_hold,
   rug_pct, multi_x_wins, reason, date_vetted
 Verdicts you write:
@@ -27,8 +34,9 @@ Verdicts you write:
 Leave the file's historical rows untouched.
 
 PER-RUN WORKFLOW
-1. Read vetted_watch_results.txt first and collect EVERY address already present
-   (KEEP and REJECT alike). These are already-handled — never re-add or re-vet them.
+1. Read the LOCAL vetted_watch_results.txt (your Read tool, or grep/Get-Content)
+   and collect EVERY address already present (KEEP / REJECT / TOO_FAST alike). These
+   are already-handled — never re-add or re-vet them.
 2. Go to https://birdeye.so/solana/find-gems -> "Trending" -> sort by 24h %.
    Take trending tokens that at least doubled (>100%) in 24h. Process the top ~10
    this run (keep runs bounded; the schedule covers the rest over time).
@@ -76,20 +84,24 @@ When several wallets co-buy a token within ~15 min, capture EVERY member's FULL
 address and note the shared cluster in the reason column (e.g. "co-buy TOKEN-cluster").
 Log every member as its own row — do NOT collapse a cluster into one wallet.
 
-OUTPUT — append rows to vetted_watch_results.txt
+OUTPUT — append rows to the LOCAL file with your file tools (NOT the browser)
 For each followable qualifier write one row:
   address,KEEP,realized_pnl,unrealized_pnl,avg_hold,rug_pct,multi_x_wins,reason,YYYY-MM-DD
-For an otherwise-great wallet that holds sub-~15-min, write it as TOO_FAST instead
-of KEEP (same columns) — note "too fast for COPY latency; future fast-bot" in reason.
-- reason: one tight sentence (realized/unrealized/hold/multi-x, or the too-fast flag).
-- date_vetted: today.
-Reliable append method: build a self-contained HTML table in a real https tab with
-a "Copy CSV to clipboard" button (full addresses, color-coded), click it to load
-the clipboard, then click into the OneDrive web text editor, go to END of file, and
-paste. Do NOT use Excel Online (drops data). Do NOT use cross-tab
-navigator.clipboard.writeText (permission prompt freezes the renderer). After
-saving, reload the OneDrive folder and confirm the file size + modified timestamp
-updated server-side.
+For an otherwise-great wallet that holds sub-~15-min, write TOO_FAST instead of KEEP
+(same columns) — note "too fast for COPY latency; future fast-bot" in reason.
+Also write REJECT rows for wallets you evaluated and rejected — the REJECT ledger is
+what stops the next run re-vetting the same junk, so it is REQUIRED, not optional.
+- reason: one tight sentence (realized/unrealized/hold/multi-x, or the flag).
+- date_vetted: today (YYYY-MM-DD).
+- CSV validity: quote any field containing a comma — the multi_x_wins and reason
+  columns — e.g.  ...,"0 (>500%), 0 (>100%)","Bag-holder: ...",2026-06-23
+How to append (use the reliable path): a shell append of the new rows to the END of
+the file (>> / Add-Content) is simplest and avoids rewriting the whole file; or use
+Edit to insert after the last line. Either way: only ADD rows, never modify or
+reorder existing ones, and skip any address already in the file. Do NOT touch the
+browser, OneDrive, the clipboard, or git here — the wrapper handles commit/push.
+If a run finds ZERO new wallets, append nothing and just write the summary — that's a
+valid outcome (the wrapper flags a zero-row pass so I can check the browser).
 
 DEDUP / IDEMPOTENCY
 Append-only, one row per wallet, forever. Skip any address already in the file.
