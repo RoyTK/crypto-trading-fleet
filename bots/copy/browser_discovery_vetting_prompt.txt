@@ -62,7 +62,11 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
 - Classified as Smart Money by Birdeye.
 High Scam/Rug % is a FEATURE here, not a reason to reject — as long as the
 realized/unrealized/hold criteria hold.
-  KEEP example: Realized +$436K / Unrealized ~$0 / 7-sec holds / 473 multi-x / 99% rug
+  KEEP example: Realized +$1.16M / Unrealized -$428K / 6d hold / 162 multi-x / 99% rug
+    (banks far more than the bag; hold is in the followable ~30min-7d window).
+  TOO_FAST example: Realized +$436K / Unrealized ~$0 / 7-sec holds / 473 multi-x / 99% rug
+    (an ELITE wallet on its own merits, but COPY cannot enter inside a 7-second hold —
+    it would buy the dump. Mark verdict=TOO_FAST, NOT KEEP. Logged for a future fast bot.)
   REJECT example: Realized +$95K but Unrealized -$241K / 27d hold / 93% rug
     (bag-holder); also REJECT: +$8.6M realized but only 1 multi-x / 5% rug
     (bluechip trader, wrong profile, not a fresh-mint sniper).
