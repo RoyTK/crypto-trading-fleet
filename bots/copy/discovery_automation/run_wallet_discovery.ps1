@@ -25,7 +25,7 @@ $MaxTurns    = 200         # browser scraping ~10 tokens is turn-heavy; 2h task 
 # claude CLI path. Task Scheduler often launches with a stale PATH that lacks it, so
 # resolve explicitly: an override, then PATH, then known install locations. If none
 # match, paste the output of  (Get-Command claude).Source  into $ClaudeExeOverride.
-$ClaudeExeOverride = ''
+$ClaudeExeOverride = 'C:\Users\Roy\AppData\Roaming\npm\claude.ps1'   # npm shim (from Get-Command claude)
 $ClaudeExe = $ClaudeExeOverride
 if (-not $ClaudeExe) {
     $gc = Get-Command claude -ErrorAction SilentlyContinue
@@ -108,12 +108,15 @@ try {
 
     # cwd = bots/copy so the agent's "vetted_watch_results.txt in your working dir" resolves.
     Push-Location $CopyDir
-    $cliArgs = @('-p', $prompt,
+    # Pipe the prompt via stdin (NOT as a -p arg): a multi-KB prompt with % / & / > chars
+    # can hit the Windows command-line length limit or get mangled by shell parsing as an
+    # argument. The npm claude.ps1 shim forwards piped input to node, so -p reads stdin.
+    $cliArgs = @('-p',
                  '--model', $Model,
                  '--max-turns', $MaxTurns,
                  '--output-format', 'json') + $PermArgs
 
-    & $ClaudeExe @cliArgs 1> $outLog 2> $errLog
+    $prompt | & $ClaudeExe @cliArgs 1> $outLog 2> $errLog
     $code = $LASTEXITCODE
     Write-Log "claude exited $code. stdout=$outLog"
 }
