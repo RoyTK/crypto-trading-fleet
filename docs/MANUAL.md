@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-24 20:12 UTC.*
+*Last built: 2026-06-24 20:13 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -166,8 +166,9 @@ at the top of the built document) or Ctrl-F.
 
 _Fill this in and keep it current:_
 
-- **Owner:** Roy — _phone / email: _______________________
-- **If Roy is unavailable, the technical contact is:** _______________________
+<p>- <b>Owner:</b> Roy &mdash; phone / email: <span class="fill"></span></p>
+<p>- <b>If Roy is unavailable, the technical contact is:</b> <span class="fill"></span></p>
+
 - **Server provider:** Hetzner (account login on the Access Sheet)
 - **Where the passwords live:** the printed **Access Sheet** (section 3.4) + your family
   password sheets.
@@ -1246,7 +1247,7 @@ last page before writing them.**
 trusted person besides Roy is configured** (`DISCORD_OWNER_USER_ID` /
 `TELEGRAM_OWNER_USER_ID`). Record them here:
 
-**Person 1:** ___________________________________   **Person 2:** ___________________________________
+<p><b>Person 1:</b> <span class="fill"></span> &nbsp;&nbsp; <b>Person 2:</b> <span class="fill"></span></p>
 
 <div class="page-break"></div>
 

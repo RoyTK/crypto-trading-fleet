@@ -53,7 +53,7 @@ last page before writing them.**
 trusted person besides Roy is configured** (`DISCORD_OWNER_USER_ID` /
 `TELEGRAM_OWNER_USER_ID`). Record them here:
 
-**Person 1:** ___________________________________   **Person 2:** ___________________________________
+<p><b>Person 1:</b> <span class="fill"></span> &nbsp;&nbsp; <b>Person 2:</b> <span class="fill"></span></p>
 
 <div class="page-break"></div>
 

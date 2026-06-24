@@ -50,8 +50,9 @@ at the top of the built document) or Ctrl-F.
 
 _Fill this in and keep it current:_
 
-- **Owner:** Roy — _phone / email: _______________________
-- **If Roy is unavailable, the technical contact is:** _______________________
+<p>- <b>Owner:</b> Roy &mdash; phone / email: <span class="fill"></span></p>
+<p>- <b>If Roy is unavailable, the technical contact is:</b> <span class="fill"></span></p>
+
 - **Server provider:** Hetzner (account login on the Access Sheet)
 - **Where the passwords live:** the printed **Access Sheet** (section 3.4) + your family
   password sheets.
