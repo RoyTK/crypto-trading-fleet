@@ -52,11 +52,15 @@ is intentionally **not** in git and **cannot be regenerated** if lost. To keep a
 backup:
 
 ```bash
-ssh fleet hetzner.com 'cat ~/crypto-fleet/.env'    # then print/save the output offline
+# inside your normal SSH session on the server:
+cat ~/crypto-fleet/.env
+# ...or as a one-shot from your PC (use your usual SSH target):
+ssh fleet 'cat ~/crypto-fleet/.env'
 ```
 
-Store the printed `.env` **with this Access Sheet**, securely. Treat it like the keys to a
-safe — anyone with it can move money once live trading is on.
+Copy/print the output, then **delete any digital copy**. Store the printed `.env` **with
+this Access Sheet**, securely. Treat it like the keys to a safe — anyone with it can move
+money once live trading is on.
 
 ### Who can use the emergency stop
 

@@ -266,10 +266,14 @@ If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
 <p>The server's <code>~/crypto-fleet/.env</code> holds <strong>every API key and the trading-wallet secret</strong>. It
 is intentionally <strong>not</strong> in git and <strong>cannot be regenerated</strong> if lost. To keep a physical
 backup:</p>
-<pre><code class="language-bash">ssh fleet hetzner.com 'cat ~/crypto-fleet/.env'    # then print/save the output offline
+<pre><code class="language-bash"># inside your normal SSH session on the server:
+cat ~/crypto-fleet/.env
+# ...or as a one-shot from your PC (use your usual SSH target):
+ssh fleet 'cat ~/crypto-fleet/.env'
 </code></pre>
-<p>Store the printed <code>.env</code> <strong>with this Access Sheet</strong>, securely. Treat it like the keys to a
-safe — anyone with it can move money once live trading is on.</p>
+<p>Copy/print the output, then <strong>delete any digital copy</strong>. Store the printed <code>.env</code> <strong>with
+this Access Sheet</strong>, securely. Treat it like the keys to a safe — anyone with it can move
+money once live trading is on.</p>
 <h3>Who can use the emergency stop</h3>
 <p><code>/panic</code> only works for authorized Discord/Telegram users (by user ID). <strong>Make sure at
 least one trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /

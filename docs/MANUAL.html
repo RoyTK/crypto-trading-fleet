@@ -21,7 +21,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-06-24 18:41 UTC.</em></p>
+<em>Last built: 2026-06-24 19:16 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -142,6 +142,10 @@ or Ctrl-F to jump around.</p>
 <li><a href="#accounts-consoles">Accounts &amp; consoles</a></li>
 <li><a href="#crypto-wallets-recovery-phrases-the-most-sensitive-items">Crypto wallets &amp; recovery phrases (the MOST sensitive items)</a></li>
 <li><a href="#the-live-env-the-master-key-file">The live <code>.env</code> (the master key file)</a></li>
+</ul>
+</li>
+<li><strong><a href="#inside-your-normal-ssh-session-on-the-server">inside your normal SSH session on the server:</a></strong></li>
+<li><strong><a href="#or-as-a-one-shot-from-your-pc-use-your-usual-ssh-target">...or as a one-shot from your PC (use your usual SSH target):</a></strong><ul>
 <li><a href="#who-can-use-the-emergency-stop">Who can use the emergency stop</a></li>
 </ul>
 </li>
@@ -1654,10 +1658,14 @@ If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
 <p>The server's <code>~/crypto-fleet/.env</code> holds <strong>every API key and the trading-wallet secret</strong>. It
 is intentionally <strong>not</strong> in git and <strong>cannot be regenerated</strong> if lost. To keep a physical
 backup:</p>
-<pre><code class="language-bash">ssh fleet hetzner.com 'cat ~/crypto-fleet/.env'    # then print/save the output offline
+<pre><code class="language-bash"># inside your normal SSH session on the server:
+cat ~/crypto-fleet/.env
+# ...or as a one-shot from your PC (use your usual SSH target):
+ssh fleet 'cat ~/crypto-fleet/.env'
 </code></pre>
-<p>Store the printed <code>.env</code> <strong>with this Access Sheet</strong>, securely. Treat it like the keys to a
-safe — anyone with it can move money once live trading is on.</p>
+<p>Copy/print the output, then <strong>delete any digital copy</strong>. Store the printed <code>.env</code> <strong>with
+this Access Sheet</strong>, securely. Treat it like the keys to a safe — anyone with it can move
+money once live trading is on.</p>
 <h3 id="who-can-use-the-emergency-stop">Who can use the emergency stop</h3>
 <p><code>/panic</code> only works for authorized Discord/Telegram users (by user ID). <strong>Make sure at
 least one trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /

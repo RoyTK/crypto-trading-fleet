@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-24 18:41 UTC.*
+*Last built: 2026-06-24 19:16 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -101,6 +101,8 @@
     - [Accounts & consoles](#accounts-consoles)
     - [Crypto wallets & recovery phrases (the MOST sensitive items)](#crypto-wallets-recovery-phrases-the-most-sensitive-items)
     - [The live `.env` (the master key file)](#the-live-env-the-master-key-file)
+- **[inside your normal SSH session on the server:](#inside-your-normal-ssh-session-on-the-server)**
+- **[...or as a one-shot from your PC (use your usual SSH target):](#or-as-a-one-shot-from-your-pc-use-your-usual-ssh-target)**
     - [Who can use the emergency stop](#who-can-use-the-emergency-stop)
   - [3.4 Appendix](#34-appendix)
     - [Crontab inventory (server, UTC)](#crontab-inventory-server-utc)
@@ -1244,11 +1246,15 @@ is intentionally **not** in git and **cannot be regenerated** if lost. To keep a
 backup:
 
 ```bash
-ssh fleet hetzner.com 'cat ~/crypto-fleet/.env'    # then print/save the output offline
+# inside your normal SSH session on the server:
+cat ~/crypto-fleet/.env
+# ...or as a one-shot from your PC (use your usual SSH target):
+ssh fleet 'cat ~/crypto-fleet/.env'
 ```
 
-Store the printed `.env` **with this Access Sheet**, securely. Treat it like the keys to a
-safe — anyone with it can move money once live trading is on.
+Copy/print the output, then **delete any digital copy**. Store the printed `.env` **with
+this Access Sheet**, securely. Treat it like the keys to a safe — anyone with it can move
+money once live trading is on.
 
 ### Who can use the emergency stop
 
