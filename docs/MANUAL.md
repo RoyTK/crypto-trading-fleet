@@ -1,11 +1,11 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-24 18:05 UTC.*
+*Last built: 2026-06-24 18:28 UTC.*
 
-> **How to read this:** the **Operator track** (sections 1x) is plain-language —
-> for keeping the system alive day to day. The **Engineer track** (2x) is technical —
-> for understanding and changing it. **Reference** (3x) holds tools, decisions,
+> **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
+> for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
+> for understanding and changing it. **Part 3 — Reference (3.x)** holds tools, decisions,
 > troubleshooting, the access sheet, and the appendix. Use the table of contents
 > or Ctrl-F to jump around.
 
@@ -13,37 +13,38 @@
 
 ## Table of Contents
 
-- [Crypto Trading Fleet — Maintenance Manual](#crypto-trading-fleet-maintenance-manual)
   - [Summary](#summary)
   - [Who reads what](#who-reads-what)
   - [In an emergency](#in-an-emergency)
   - [What this is NOT](#what-this-is-not)
   - [Contacts & escalation](#contacts-escalation)
-  - [Project Overview](#project-overview)
+- **[Part 1 · Operator Track — Keeping It Alive (plain language)](#part-1-operator-track-keeping-it-alive-plain-language)**
+  - [1.0 Project Overview](#10-project-overview)
     - [What the project is](#what-the-project-is)
     - [The two bots](#the-two-bots)
     - [Current status (keep this updated)](#current-status-keep-this-updated)
     - [The core philosophy (please respect these)](#the-core-philosophy-please-respect-these)
     - [How it stays alive without Roy](#how-it-stays-alive-without-roy)
-  - [Operator Basics — Keeping It Alive](#operator-basics-keeping-it-alive)
+  - [1.1 Operator Basics — Keeping It Alive](#11-operator-basics-keeping-it-alive)
     - [What's running, and where](#whats-running-and-where)
     - [How to tell it's healthy (your 2-minute daily check)](#how-to-tell-its-healthy-your-2-minute-daily-check)
     - [The alert levels — and what to do](#the-alert-levels-and-what-to-do)
     - [The emergency stop: `/panic`](#the-emergency-stop-panic)
     - [What NOT to touch](#what-not-to-touch)
     - [The rhythm of the job](#the-rhythm-of-the-job)
-  - [Ask Claude — Your Built-In Expert](#ask-claude-your-built-in-expert)
+  - [1.2 Ask Claude — Your Built-In Expert](#12-ask-claude-your-built-in-expert)
     - [How to start Claude on this project (one-time-per-session)](#how-to-start-claude-on-this-project-one-time-per-session)
     - [What to ask it](#what-to-ask-it)
     - [Good habits](#good-habits)
-  - [Recurring Tasks — Step by Step](#recurring-tasks-step-by-step)
+  - [1.3 Recurring Tasks — Step by Step](#13-recurring-tasks-step-by-step)
     - [A. Run a wallet discovery + vetting pass (the main chore)](#a-run-a-wallet-discovery-vetting-pass-the-main-chore)
     - [B. Sync vetting results into the live system](#b-sync-vetting-results-into-the-live-system)
     - [C. Check Helius credit usage (watch the bill)](#c-check-helius-credit-usage-watch-the-bill)
     - [D. Responding to alerts](#d-responding-to-alerts)
     - [E. Quarterly whale-list refresh (STRUCTURE) — review only](#e-quarterly-whale-list-refresh-structure-review-only)
-  - [Glossary (plain language)](#glossary-plain-language)
-  - [Architecture & Codebase Map](#architecture-codebase-map)
+  - [1.4 Glossary (plain language)](#14-glossary-plain-language)
+- **[Part 2 · Engineer Track — Understand & Continue (technical)](#part-2-engineer-track-understand-continue-technical)**
+  - [2.0 Architecture & Codebase Map](#20-architecture-codebase-map)
     - [High-level shape](#high-level-shape)
     - [The bots](#the-bots)
     - [COPY data flow (webhook → trade → measurement)](#copy-data-flow-webhook-trade-measurement)
@@ -51,7 +52,7 @@
     - [The framework](#the-framework)
     - [Monitoring](#monitoring)
     - [Where to look for X](#where-to-look-for-x)
-  - [Deployment & Infrastructure](#deployment-infrastructure)
+  - [2.1 Deployment & Infrastructure](#21-deployment-infrastructure)
     - [Topology](#topology)
     - [How code reaches the server (auto-pull deploy)](#how-code-reaches-the-server-auto-pull-deploy)
     - [Canonical manual deploy (when you must rebuild)](#canonical-manual-deploy-when-you-must-rebuild)
@@ -59,31 +60,32 @@
     - [Migrations (Alembic)](#migrations-alembic)
     - [Fresh-server setup (rebuilding from nothing)](#fresh-server-setup-rebuilding-from-nothing)
     - [Local development](#local-development)
-  - [Operations (Technical)](#operations-technical)
+  - [2.2 Operations (Technical)](#22-operations-technical)
     - [Scheduled jobs](#scheduled-jobs)
     - [Key scripts (`scripts/`)](#key-scripts-scripts)
     - [Logs & state](#logs-state)
     - [Monitoring internals](#monitoring-internals)
     - [Wallet vetting — applying results manually](#wallet-vetting-applying-results-manually)
-  - [Changing Safely](#changing-safely)
+  - [2.3 Changing Safely](#23-changing-safely)
     - [The kill-criteria window lock](#the-kill-criteria-window-lock)
     - [Paper → shadow → live (the money switches)](#paper-shadow-live-the-money-switches)
     - [The trust/safety guardrails already in the code (don't remove)](#the-trustsafety-guardrails-already-in-the-code-dont-remove)
     - [Process for any change](#process-for-any-change)
     - [Going live with the manual edits to this doc](#going-live-with-the-manual-edits-to-this-doc)
-  - [Disaster Recovery](#disaster-recovery)
+  - [2.4 Disaster Recovery](#24-disaster-recovery)
     - [What can break, and how bad it is](#what-can-break-and-how-bad-it-is)
     - [Restore the database](#restore-the-database)
     - [Rebuild the whole server](#rebuild-the-whole-server)
     - [Rotate a leaked credential](#rotate-a-leaked-credential)
     - ["I don't know what's wrong" — safe default](#i-dont-know-whats-wrong-safe-default)
-  - [Tools & Resources](#tools-resources)
+- **[Part 3 · Reference](#part-3-reference)**
+  - [3.0 Tools & Resources](#30-tools-resources)
     - [Services](#services)
     - [Payments & crypto wallets (mostly for the eventual live phase)](#payments-crypto-wallets-mostly-for-the-eventual-live-phase)
     - [Reaching the Helius dashboard (the SOCKS tunnel)](#reaching-the-helius-dashboard-the-socks-tunnel)
     - [How we get vetted wallets (the discovery → trade pipeline)](#how-we-get-vetted-wallets-the-discovery-trade-pipeline)
-  - [Why It Is The Way It Is](#why-it-is-the-way-it-is)
-  - [Troubleshooting](#troubleshooting)
+  - [3.1 Why It Is The Way It Is](#31-why-it-is-the-way-it-is)
+  - [3.2 Troubleshooting](#32-troubleshooting)
     - ["A discovery pass added 0 rows" / Discord shows ⚠ 0-rows](#a-discovery-pass-added-0-rows-discord-shows-0-rows)
     - ["claude is not recognized" (in a scheduled/script run)](#claude-is-not-recognized-in-a-scheduledscript-run)
     - ["Heartbeat silent" / a service went quiet (P1)](#heartbeat-silent-a-service-went-quiet-p1)
@@ -95,12 +97,12 @@
     - ["A deploy broke something"](#a-deploy-broke-something)
     - ["Helius dashboard won't load"](#helius-dashboard-wont-load)
     - [Known non-obvious gotchas (catalog)](#known-non-obvious-gotchas-catalog)
-  - [Access Sheet (PRINT THIS — fill by hand)](#access-sheet-print-this-fill-by-hand)
+  - [3.3 Access Sheet (PRINT THIS — fill by hand)](#33-access-sheet-print-this-fill-by-hand)
     - [Accounts & consoles](#accounts-consoles)
     - [Crypto wallets & recovery phrases (the MOST sensitive items)](#crypto-wallets-recovery-phrases-the-most-sensitive-items)
     - [The live `.env` (the master key file)](#the-live-env-the-master-key-file)
     - [Who can use the emergency stop](#who-can-use-the-emergency-stop)
-  - [Appendix](#appendix)
+  - [3.4 Appendix](#34-appendix)
     - [Crontab inventory (server, UTC)](#crontab-inventory-server-utc)
     - [Env-var reference (names + purpose only — values live in `.env`)](#env-var-reference-names-purpose-only-values-live-in-env)
     - [Key files](#key-files)
@@ -110,8 +112,6 @@
 
 
 ---
-
-# Crypto Trading Fleet — Maintenance Manual
 
 _Last reviewed: 2026-06-24_
 
@@ -173,7 +173,11 @@ _Fill this in and keep it current:_
 
 ---
 
-## Project Overview
+# Part 1 · Operator Track — Keeping It Alive (plain language)
+
+---
+
+## 1.0 Project Overview
 
 _Last reviewed: 2026-06-24_
 
@@ -240,7 +244,7 @@ These principles are the whole point of the project. A maintainer should **not**
 
 ---
 
-## Operator Basics — Keeping It Alive
+## 1.1 Operator Basics — Keeping It Alive
 
 _Last reviewed: 2026-06-24_
 
@@ -321,7 +325,7 @@ When unsure, the safe move is always: **halt with `/panic`, then ask.**
 
 ---
 
-## Ask Claude — Your Built-In Expert
+## 1.2 Ask Claude — Your Built-In Expert
 
 _Last reviewed: 2026-06-24_
 
@@ -373,7 +377,7 @@ Talk to it like a knowledgeable colleague. For example:
 
 ---
 
-## Recurring Tasks — Step by Step
+## 1.3 Recurring Tasks — Step by Step
 
 _Last reviewed: 2026-06-24_
 
@@ -475,7 +479,7 @@ the list is a small code change they make.
 
 ---
 
-## Glossary (plain language)
+## 1.4 Glossary (plain language)
 
 _Last reviewed: 2026-06-24_
 
@@ -529,7 +533,11 @@ Terms you'll meet in this manual, the dashboards, and Discord — in everyday la
 
 ---
 
-## Architecture & Codebase Map
+# Part 2 · Engineer Track — Understand & Continue (technical)
+
+---
+
+## 2.0 Architecture & Codebase Map
 
 _Last reviewed: 2026-06-24_
 
@@ -649,7 +657,7 @@ focus. Key files:
 
 ---
 
-## Deployment & Infrastructure
+## 2.1 Deployment & Infrastructure
 
 _Last reviewed: 2026-06-24_
 
@@ -749,7 +757,7 @@ If you must stand up a new host:
 
 ---
 
-## Operations (Technical)
+## 2.2 Operations (Technical)
 
 _Last reviewed: 2026-06-24_
 
@@ -846,7 +854,7 @@ host file otherwise.)
 
 ---
 
-## Changing Safely
+## 2.3 Changing Safely
 
 _Last reviewed: 2026-06-24_
 
@@ -917,7 +925,7 @@ real-money bot needs a person in the loop.
 
 ---
 
-## Disaster Recovery
+## 2.4 Disaster Recovery
 
 _Last reviewed: 2026-06-24_
 
@@ -972,7 +980,11 @@ and for Helius re-run `helius_webhook_setup`. Never put the new secret in git.
 
 ---
 
-## Tools & Resources
+# Part 3 · Reference
+
+---
+
+## 3.0 Tools & Resources
 
 _Last reviewed: 2026-06-24_
 
@@ -1045,7 +1057,7 @@ fresh-mint pumps and exiting before they collapse. ~90% of candidates are REJECT
 
 ---
 
-## Why It Is The Way It Is
+## 3.1 Why It Is The Way It Is
 
 _Last reviewed: 2026-06-24_
 
@@ -1106,7 +1118,7 @@ in `memory/project_decision_log.md` and `memory/project_fleet_design_state.md`.
 
 ---
 
-## Troubleshooting
+## 3.2 Troubleshooting
 
 _Last reviewed: 2026-06-24_
 
@@ -1174,7 +1186,7 @@ When something weird happens, check there.
 
 ---
 
-## Access Sheet (PRINT THIS — fill by hand)
+## 3.3 Access Sheet (PRINT THIS — fill by hand)
 
 _Last reviewed: 2026-06-24_
 
@@ -1242,7 +1254,7 @@ least one trusted person besides Roy is configured** (`DISCORD_OWNER_USER_ID` /
 
 ---
 
-## Appendix
+## 3.4 Appendix
 
 _Last reviewed: 2026-06-24_
 

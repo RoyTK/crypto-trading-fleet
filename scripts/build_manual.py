@@ -56,32 +56,69 @@ def _section_files() -> list[Path]:
     return files
 
 
+# Part banners inserted before the first section of each track (by filename leading digit).
+TRACK_BANNERS = {
+    "1": "Part 1 · Operator Track — Keeping It Alive (plain language)",
+    "2": "Part 2 · Engineer Track — Understand & Continue (technical)",
+    "3": "Part 3 · Reference",
+}
+
+
+def _label_first_h2(text: str, label: str) -> str:
+    """Prefix the FIRST `## ` heading in a section with its section number (e.g. 1.1)."""
+    out, done = [], False
+    for line in text.split("\n"):
+        if not done:
+            m = re.match(r"^##\s+(.*\S)\s*$", line)
+            if m:
+                line = f"## {label} {m.group(1).strip()}"
+                done = True
+        out.append(line)
+    return "\n".join(out)
+
+
 def build_markdown(files: list[Path]) -> str:
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    bodies: list[str] = []
-    toc: list[str] = []
-    seen: dict[str, int] = {}
+    parts: list[str] = []
+    current_track: str | None = None
 
     for f in files:
+        prefix = f.name[:2]
+        track = prefix[0] if prefix.isdigit() else None
+        # 10 -> "1.0", 11 -> "1.1", 34 -> "3.4"; front matter (0x) gets no number.
+        label = f"{prefix[0]}.{prefix[1]}" if (track and track != "0") else None
+        if track in ("1", "2", "3") and track != current_track:
+            parts.append(f"# {TRACK_BANNERS[track]}")
+            current_track = track
         raw = f.read_text(encoding="utf-8").rstrip("\n")
-        bodies.append(raw)
-        for line in raw.splitlines():
-            m = re.match(r"^(#{1,3})\s+(.*\S)\s*$", line)
-            if not m:
-                continue
-            level = len(m.group(1))
-            heading = m.group(2).strip()
-            anchor = _slug(heading, seen)
-            indent = "  " * (level - 1)
-            toc.append(f"{indent}- [{heading}](#{anchor})")
+        if label:
+            raw = _label_first_h2(raw, label)
+        parts.append(raw)
+
+    body = "\n\n---\n\n".join(parts)
+
+    # Build the TOC from the assembled body, so Part banners and the numbered
+    # section headings both appear (and anchors match the rendered headings).
+    toc: list[str] = []
+    seen: dict[str, int] = {}
+    for line in body.splitlines():
+        m = re.match(r"^(#{1,3})\s+(.*\S)\s*$", line)
+        if not m:
+            continue
+        level = len(m.group(1))
+        heading = m.group(2).strip()
+        anchor = _slug(heading, seen)
+        indent = "  " * (level - 1)
+        link = f"[{heading}](#{anchor})"
+        toc.append(f"{indent}- " + (f"**{link}**" if level == 1 else link))
 
     header = (
         f"# {TITLE}\n\n"
         f"*Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  \n"
         f"*Last built: {stamp}.*\n\n"
-        "> **How to read this:** the **Operator track** (sections 1x) is plain-language —\n"
-        "> for keeping the system alive day to day. The **Engineer track** (2x) is technical —\n"
-        "> for understanding and changing it. **Reference** (3x) holds tools, decisions,\n"
+        "> **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,\n"
+        "> for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,\n"
+        "> for understanding and changing it. **Part 3 — Reference (3.x)** holds tools, decisions,\n"
         "> troubleshooting, the access sheet, and the appendix. Use the table of contents\n"
         "> or Ctrl-F to jump around.\n\n"
         "---\n\n"
@@ -89,8 +126,7 @@ def build_markdown(files: list[Path]) -> str:
         + "\n".join(toc)
         + "\n"
     )
-    divider = "\n\n---\n\n"
-    return header + divider + divider.join(bodies) + "\n"
+    return header + "\n\n---\n\n" + body + "\n"
 
 
 def build_html(markdown_text: str) -> str | None:

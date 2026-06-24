@@ -1,5 +1,3 @@
-# Crypto Trading Fleet — Maintenance Manual
-
 _Last reviewed: 2026-06-24_
 
 ## Summary
