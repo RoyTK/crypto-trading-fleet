@@ -216,7 +216,7 @@ class CopySettings(BaseSettings):
     # swap_in mass-churns (the 2026-06-21 bug: code said 75, active was 124,
     # so swap_in fired 24-92x/day). Birdeye CU scales with active size; at
     # current usage (2.5% of 2.5M) there's headroom, but watch this as it grows.
-    copy_active_list_target: int = Field(default=125)
+    copy_active_list_target: int = Field(default=300)
     # Vetted-only promotion (2026-06-22). Only browser_opus* (curated/vetted)
     # wallets get promoted to active. Set false to revert to the old
     # activity-ranked promotion of any watch wallet. See wallet_pool_manager.

@@ -3,8 +3,9 @@
 Browser-Opus vets unvetted watch wallets (see the vetting prompt) and writes
 vetted_watch_results.csv with a verdict per wallet. This script applies them:
 
-  KEEP   -> source='browser_opus_vetted'  (promotion priority 0, ahead of
-            raw birdeye_gainers; tier unchanged — the daily cron promotes it)
+  KEEP   -> tier='active' + source='browser_opus_vetted' (used immediately —
+            a vetted wallet should be active and analyzed, not parked cold;
+            new wallets are inserted directly at active)
   REJECT -> tier='pruned' + demoted_at=now (unsubscribed from Helius next
             cron sync; row kept for re-discovery dedup)
 
@@ -74,16 +75,17 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
             verdict = (r[1].strip().upper() if len(r) > 1 else "")
             w = s.get(WalletPool, addr)
             if w is None:
-                # Not in the pool. A KEEP here is a NEW vetted wallet (e.g.
-                # Roy's manual finds outside the auto-discovery export) —
-                # insert it at watch/vetted so the cron can promote it. A
-                # REJECT on a wallet that isn't in the pool is a no-op.
+                # Not in the pool. A KEEP here is a NEW vetted wallet (the common
+                # case for browser-discovery output). Insert it DIRECTLY at
+                # active/vetted — a vetted wallet should be used and analyzed, not
+                # parked cold (Roy 2026-06-24). A REJECT on a wallet not in the
+                # pool is a no-op.
                 if verdict == "KEEP":
                     if not dry_run:
                         s.add(WalletPool(address=addr, chain="solana",
-                                         tier="watch", source=VETTED_SOURCE,
-                                         added_at=now))
-                    print(f"  KEEP+NEW {addr[:14]}…  inserted -> watch/{VETTED_SOURCE}")
+                                         tier="active", source=VETTED_SOURCE,
+                                         added_at=now, promoted_at=now))
+                    print(f"  KEEP+NEW {addr[:14]}…  inserted -> active/{VETTED_SOURCE}")
                     kept += 1
                     inserted_new += 1
                 else:
@@ -92,12 +94,17 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
 
             if verdict == "KEEP":
                 if w.tier == "pruned":
+                    # Don't auto-resurrect a wallet pruned for cause (e.g. a COPY
+                    # underperformer). Leaving pruned; revisit re-vetting policy.
                     print(f"  [skip] {addr[:14]}… KEEP but already pruned — leaving pruned")
                     skipped += 1
                     continue
                 if not dry_run:
                     w.source = VETTED_SOURCE
-                print(f"  KEEP   {addr[:14]}…  source -> {VETTED_SOURCE}")
+                    if w.tier != "active":
+                        w.tier = "active"
+                        w.promoted_at = now
+                print(f"  KEEP   {addr[:14]}…  tier -> active / {VETTED_SOURCE}")
                 kept += 1
             elif verdict == "REJECT":
                 if w.tier == "pruned":
