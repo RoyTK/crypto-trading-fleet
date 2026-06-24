@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-24 20:07 UTC.*
+*Last built: 2026-06-24 20:12 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -1246,9 +1246,7 @@ last page before writing them.**
 trusted person besides Roy is configured** (`DISCORD_OWNER_USER_ID` /
 `TELEGRAM_OWNER_USER_ID`). Record them here:
 
-- **Person 1:** _______________________________________________________________________
-
-- **Person 2:** _______________________________________________________________________
+**Person 1:** ___________________________________   **Person 2:** ___________________________________
 
 <div class="page-break"></div>
 
