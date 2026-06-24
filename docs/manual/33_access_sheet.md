@@ -13,37 +13,52 @@ _Last reviewed: 2026-06-24_
 
 ### Accounts & consoles
 
-| # | Service | What it unlocks | Console / login URL | Account / email | Username | Password | 2FA? | Notes |
-|---|---|---|---|---|---|---|---|---|
-| 1 | **Hetzner** | The server + backups | console.hetzner.cloud | __________ | __________ | __________ | ☐ | also need SSH key for the box |
-| 2 | **SSH key (server)** | Logging into the server | (key file on the PC) | n/a | `fleet` | (key passphrase) ____ | ☐ | connect: `ssh fleet hetzner.com` |
-| 3 | **GitHub** | Code; push = deploy | github.com | __________ | __________ | __________ | ☐ | repo: RoyTK/crypto-trading-fleet |
-| 4 | **Helius** | Solana webhooks (COPY) | dashboard.helius.dev | __________ | __________ | __________ | ☐ | **open via SSH SOCKS tunnel** (see Tools) |
-| 5 | **Cielo** | Wallet PnL stats | app.cielo.finance | __________ | __________ | __________ | ☐ | |
-| 6 | **Birdeye** | Token data / discovery | birdeye.so | __________ | __________ | __________ | ☐ | keep Chrome logged in for discovery |
-| 7 | **Discord** | Alerts + `/panic` | discord.com | __________ | __________ | __________ | ☐ | note the server + #alerts channel |
-| 8 | **Telegram** | Backup alert channel | t.me | __________ | __________ | __________ | ☐ | |
-| 9 | **Twilio** | Emergency SMS | console.twilio.com | _(not set up)_ | — | — | — | NOT configured (no SMS in paper phase) |
-| 9b | **Privacy.com** | Pays for some services (Helius etc.) | privacy.com | __________ | __________ | __________ | ☐ | virtual cards |
-| 10 | **Cloudflare** | Remote access tunnel | one.dash.cloudflare.com | __________ | __________ | __________ | ☐ | |
-| 11 | **Microsoft / OneDrive** | Vetting result files | onedrive.com | __________ | __________ | __________ | ☐ | files: `OneDrive\Documents\Claude\` |
-| 12 | **Claude (Max)** | Runs wallet discovery | claude.ai | __________ | __________ | __________ | ☐ | Max subscription |
-| 13 | **Email (for reports)** | Daily report email / SMTP | __________ | __________ | __________ | __________ | ☐ | |
-| 14 | **Recovery codes** | 2FA backups for the above | (store with this sheet) | | | | | one-time codes |
+The **Account/email, Username, Password** columns are intentionally wide and left **blank** —
+fill them by hand. Tick **2FA** if enabled.
 
-### Crypto wallets & recovery phrases (the MOST sensitive items)
+<table class="sheet">
+<colgroup>
+<col style="width:3%"><col style="width:11%"><col style="width:14%"><col style="width:20%"><col style="width:18%"><col style="width:20%"><col style="width:4%"><col style="width:10%">
+</colgroup>
+<thead><tr><th>#</th><th>Service</th><th>Console / login URL</th><th>Account / email</th><th>Username</th><th>Password</th><th>2FA</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><b>Hetzner</b></td><td>console.hetzner.cloud</td><td></td><td></td><td></td><td>☐</td><td>+ SSH key</td></tr>
+<tr><td>2</td><td><b>SSH key</b> (server)</td><td>(key file on the PC)</td><td></td><td></td><td></td><td>☐</td><td>connect: <code>ssh fleet</code> + passphrase</td></tr>
+<tr><td>3</td><td><b>GitHub</b></td><td>github.com</td><td></td><td></td><td></td><td>☐</td><td>RoyTK/crypto-trading-fleet</td></tr>
+<tr><td>4</td><td><b>Helius</b></td><td>dashboard.helius.dev</td><td></td><td></td><td></td><td>☐</td><td>via SSH SOCKS tunnel; bills &rarr; roytkelly@gmail.com</td></tr>
+<tr><td>5</td><td><b>Cielo</b></td><td>app.cielo.finance</td><td></td><td></td><td></td><td>☐</td><td></td></tr>
+<tr><td>6</td><td><b>Birdeye</b></td><td>birdeye.so</td><td></td><td></td><td></td><td>☐</td><td>keep Chrome logged in</td></tr>
+<tr><td>7</td><td><b>Discord</b></td><td>discord.com</td><td></td><td></td><td></td><td>☐</td><td>#alerts + /panic</td></tr>
+<tr><td>8</td><td><b>Telegram</b></td><td>t.me</td><td></td><td></td><td></td><td>☐</td><td>backup alerts</td></tr>
+<tr><td>9</td><td><b>Twilio</b> &mdash; not set up</td><td>console.twilio.com</td><td></td><td></td><td></td><td>☐</td><td>no SMS (paper phase)</td></tr>
+<tr><td>10</td><td><b>Privacy.com</b></td><td>privacy.com</td><td></td><td></td><td></td><td>☐</td><td>virtual cards (pays Helius etc.)</td></tr>
+<tr><td>11</td><td><b>Cloudflare</b></td><td>one.dash.cloudflare.com</td><td></td><td></td><td></td><td>☐</td><td>remote-access tunnel</td></tr>
+<tr><td>12</td><td><b>Microsoft / OneDrive</b></td><td>onedrive.com</td><td></td><td></td><td></td><td>☐</td><td>Documents\Claude\</td></tr>
+<tr><td>13</td><td><b>Claude (Max)</b></td><td>claude.ai</td><td></td><td></td><td></td><td>☐</td><td>runs discovery</td></tr>
+<tr><td>14</td><td><b>Email</b> (reports)</td><td>(SMTP provider)</td><td></td><td></td><td></td><td>☐</td><td>trading@generalaisystems.com</td></tr>
+<tr><td>15</td><td><b>2FA recovery codes</b></td><td>(store with this sheet)</td><td></td><td></td><td></td><td></td><td>one-time codes</td></tr>
+</tbody>
+</table>
+
+### Crypto wallets — usernames, passwords & recovery phrases (the MOST sensitive items)
 
 > ⚠️ **A 12-word recovery phrase IS the money.** Anyone who has it can drain that wallet.
 > Write these by hand on the printed sheet ONLY, store them in a safe/lockbox, and **never**
 > type or photograph them or store them on any computer, phone, cloud, or in this project.
 > If a phrase is ever exposed, move the funds to a new wallet immediately.
 
-| Wallet | Type / chain | Used for | Address (public, ok to write) | 12-word recovery phrase (store securely) | Notes |
-|---|---|---|---|---|---|
-| **Phantom** (phantom.com) | Solana | COPY trading / funding | __________ | 1.____ 2.____ 3.____ … 12.____ | |
-| **Rabby** (rabby.io) | EVM (Base/Arbitrum/ETH) | EVM trading / funding | __________ | 1.____ 2.____ 3.____ … 12.____ | |
-| **MetaMask** | EVM | EVM trading / funding | __________ | 1.____ 2.____ 3.____ … 12.____ | |
-| **Kraken** (kraken.com) | Exchange | On-ramp / hold capital | (account, not a phrase) | login on the accounts table above | enable 2FA |
+<table class="sheet">
+<colgroup>
+<col style="width:12%"><col style="width:11%"><col style="width:16%"><col style="width:16%"><col style="width:37%"><col style="width:8%">
+</colgroup>
+<thead><tr><th>Wallet</th><th>Type / chain</th><th>Username</th><th>Password</th><th>12-word recovery phrase</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><b>Phantom</b></td><td>Solana</td><td></td><td></td><td></td><td>phantom.com</td></tr>
+<tr><td><b>Rabby</b></td><td>EVM</td><td></td><td></td><td></td><td>rabby.io</td></tr>
+<tr><td><b>MetaMask</b></td><td>EVM</td><td></td><td></td><td></td><td>metamask.io</td></tr>
+<tr><td><b>Kraken</b></td><td>Exchange</td><td></td><td></td><td></td><td>kraken.com &mdash; no seed; enable 2FA</td></tr>
+</tbody>
+</table>
 
 ### The live `.env` (the master key file)
 

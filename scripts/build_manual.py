@@ -180,9 +180,12 @@ def build_access_sheet_html() -> bool:
     @page { size: A4 landscape; margin: 1cm; }
     body { font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 1rem; line-height: 1.4; color: #1a1a1a; }
     h2 { border-bottom: 2px solid #333; padding-bottom: .2em; }
-    table { border-collapse: collapse; width: 100%; font-size: .85em; }
-    th, td { border: 1px solid #999; padding: .55em .5em; text-align: left; vertical-align: top; }
+    table { border-collapse: collapse; width: 100%; font-size: .82em; }
+    th, td { border: 1px solid #999; padding: .4em .45em; text-align: left; vertical-align: top; }
     th { background: #eee; }
+    /* Access-sheet tables: honor the colgroup widths, give blank cells writing room. */
+    table.sheet { table-layout: fixed; }
+    table.sheet td { height: 2.4em; word-wrap: break-word; overflow-wrap: break-word; }
     blockquote { border-left: 4px solid #c0392b; background: #fdf3f2; margin: 1em 0; padding: .4em 1em; }
     code { background: #f3f3f3; padding: .1em .3em; border-radius: 3px; }
     """
