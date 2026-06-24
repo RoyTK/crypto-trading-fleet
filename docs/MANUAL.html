@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8'>
+<title>Crypto Trading Fleet — Maintenance Manual</title>
+<style>
+    @media print { h1, h2 { page-break-before: always; } h1:first-of-type { page-break-before: avoid; } a { color: inherit; text-decoration: none; } }
+    body { font-family: Georgia, 'Times New Roman', serif; max-width: 50rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; color: #1a1a1a; }
+    h1, h2, h3 { font-family: -apple-system, Segoe UI, Arial, sans-serif; line-height: 1.25; }
+    h1 { border-bottom: 2px solid #333; padding-bottom: .2em; }
+    h2 { border-bottom: 1px solid #ccc; padding-bottom: .15em; margin-top: 1.6em; }
+    code { background: #f3f3f3; padding: .1em .3em; border-radius: 3px; font-size: .9em; }
+    pre { background: #f6f6f6; padding: .8em; border-radius: 5px; overflow-x: auto; }
+    pre code { background: none; padding: 0; }
+    table { border-collapse: collapse; width: 100%; font-size: .92em; }
+    th, td { border: 1px solid #ccc; padding: .4em .6em; text-align: left; vertical-align: top; }
+    th { background: #f0f0f0; }
+    blockquote { border-left: 4px solid #bbb; margin: 1em 0; padding: .2em 1em; color: #444; background: #fafafa; }
+    </style>
+</head>
+<body>
+<h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
+<p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
+<em>Last built: 2026-06-24 16:20 UTC.</em></p>
+<blockquote>
+<p><strong>How to read this:</strong> the <strong>Operator track</strong> (sections 1x) is plain-language —
+for keeping the system alive day to day. The <strong>Engineer track</strong> (2x) is technical —
+for understanding and changing it. <strong>Reference</strong> (3x) holds tools, decisions,
+troubleshooting, the access sheet, and the appendix. Use the table of contents
+or Ctrl-F to jump around.</p>
+</blockquote>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</a></li>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#who-reads-what">Who reads what</a></li>
+<li><a href="#in-an-emergency">In an emergency</a></li>
+<li><a href="#what-this-is-not">What this is NOT</a></li>
+<li><a href="#contacts-escalation">Contacts &amp; escalation</a></li>
+<li><a href="#project-overview">Project Overview</a><ul>
+<li><a href="#what-the-project-is">What the project is</a></li>
+<li><a href="#the-two-bots">The two bots</a></li>
+<li><a href="#current-status-keep-this-updated">Current status (keep this updated)</a></li>
+<li><a href="#the-core-philosophy-please-respect-these">The core philosophy (please respect these)</a></li>
+<li><a href="#how-it-stays-alive-without-roy">How it stays alive without Roy</a></li>
+</ul>
+</li>
+<li><a href="#operator-basics-keeping-it-alive">Operator Basics — Keeping It Alive</a><ul>
+<li><a href="#whats-running-and-where">What's running, and where</a></li>
+<li><a href="#how-to-tell-its-healthy-your-2-minute-daily-check">How to tell it's healthy (your 2-minute daily check)</a></li>
+<li><a href="#the-alert-levels-and-what-to-do">The alert levels — and what to do</a></li>
+<li><a href="#the-emergency-stop-panic">The emergency stop: <code>/panic</code></a></li>
+<li><a href="#what-not-to-touch">What NOT to touch</a></li>
+<li><a href="#the-rhythm-of-the-job">The rhythm of the job</a></li>
+</ul>
+</li>
+<li><a href="#recurring-tasks-step-by-step">Recurring Tasks — Step by Step</a><ul>
+<li><a href="#a-run-a-wallet-discovery-vetting-pass-the-main-chore">A. Run a wallet discovery + vetting pass (the main chore)</a></li>
+<li><a href="#b-sync-vetting-results-into-the-live-system">B. Sync vetting results into the live system</a></li>
+<li><a href="#c-check-helius-credit-usage-watch-the-bill">C. Check Helius credit usage (watch the bill)</a></li>
+<li><a href="#d-responding-to-alerts">D. Responding to alerts</a></li>
+<li><a href="#e-quarterly-whale-list-refresh-structure-review-only">E. Quarterly whale-list refresh (STRUCTURE) — review only</a></li>
+</ul>
+</li>
+<li><a href="#glossary-plain-language">Glossary (plain language)</a></li>
+<li><a href="#architecture-codebase-map">Architecture &amp; Codebase Map</a><ul>
+<li><a href="#high-level-shape">High-level shape</a></li>
+<li><a href="#the-bots">The bots</a></li>
+<li><a href="#copy-data-flow-webhook-trade-measurement">COPY data flow (webhook → trade → measurement)</a></li>
+<li><a href="#the-wallet-pool-lifecycle">The wallet pool lifecycle</a></li>
+<li><a href="#the-framework">The framework</a></li>
+<li><a href="#monitoring">Monitoring</a></li>
+<li><a href="#where-to-look-for-x">Where to look for X</a></li>
+</ul>
+</li>
+<li><a href="#deployment-infrastructure">Deployment &amp; Infrastructure</a><ul>
+<li><a href="#topology">Topology</a></li>
+<li><a href="#how-code-reaches-the-server-auto-pull-deploy">How code reaches the server (auto-pull deploy)</a></li>
+<li><a href="#canonical-manual-deploy-when-you-must-rebuild">Canonical manual deploy (when you must rebuild)</a></li>
+<li><a href="#pausing-auto-deploy-for-debugging">Pausing auto-deploy (for debugging)</a></li>
+<li><a href="#migrations-alembic">Migrations (Alembic)</a></li>
+<li><a href="#fresh-server-setup-rebuilding-from-nothing">Fresh-server setup (rebuilding from nothing)</a></li>
+<li><a href="#local-development">Local development</a></li>
+</ul>
+</li>
+<li><a href="#operations-technical">Operations (Technical)</a><ul>
+<li><a href="#scheduled-jobs">Scheduled jobs</a></li>
+<li><a href="#key-scripts-scripts">Key scripts (<code>scripts/</code>)</a></li>
+<li><a href="#logs-state">Logs &amp; state</a></li>
+<li><a href="#monitoring-internals">Monitoring internals</a></li>
+<li><a href="#wallet-vetting-applying-results-manually">Wallet vetting — applying results manually</a></li>
+</ul>
+</li>
+<li><a href="#changing-safely">Changing Safely</a><ul>
+<li><a href="#the-kill-criteria-window-lock">The kill-criteria window lock</a></li>
+<li><a href="#paper-shadow-live-the-money-switches">Paper → shadow → live (the money switches)</a></li>
+<li><a href="#the-trustsafety-guardrails-already-in-the-code-dont-remove">The trust/safety guardrails already in the code (don't remove)</a></li>
+<li><a href="#process-for-any-change">Process for any change</a></li>
+<li><a href="#going-live-with-the-manual-edits-to-this-doc">Going live with the manual edits to this doc</a></li>
+</ul>
+</li>
+<li><a href="#disaster-recovery">Disaster Recovery</a><ul>
+<li><a href="#what-can-break-and-how-bad-it-is">What can break, and how bad it is</a></li>
+<li><a href="#restore-the-database">Restore the database</a></li>
+<li><a href="#rebuild-the-whole-server">Rebuild the whole server</a></li>
+<li><a href="#rotate-a-leaked-credential">Rotate a leaked credential</a></li>
+<li><a href="#i-dont-know-whats-wrong-safe-default">"I don't know what's wrong" — safe default</a></li>
+</ul>
+</li>
+<li><a href="#tools-resources">Tools &amp; Resources</a><ul>
+<li><a href="#services">Services</a></li>
+<li><a href="#reaching-the-helius-dashboard-the-socks-tunnel">Reaching the Helius dashboard (the SOCKS tunnel)</a></li>
+<li><a href="#how-we-get-vetted-wallets-the-discovery-trade-pipeline">How we get vetted wallets (the discovery → trade pipeline)</a></li>
+</ul>
+</li>
+<li><a href="#why-it-is-the-way-it-is">Why It Is The Way It Is</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a><ul>
+<li><a href="#a-discovery-pass-added-0-rows-discord-shows-0-rows">"A discovery pass added 0 rows" / Discord shows ⚠ 0-rows</a></li>
+<li><a href="#claude-is-not-recognized-in-a-scheduledscript-run">"claude is not recognized" (in a scheduled/script run)</a></li>
+<li><a href="#heartbeat-silent-a-service-went-quiet-p1">"Heartbeat silent" / a service went quiet (P1)</a></li>
+<li><a href="#kill-criterion-fired-p1">"kill criterion fired" (P1)</a></li>
+<li><a href="#helius-credits-spiking-approaching-the-30m-cap">"Helius credits spiking" / approaching the 30M cap</a></li>
+<li><a href="#helius-webhook-400-sync-errors">"Helius webhook 400 / sync errors"</a></li>
+<li><a href="#a-trade-booked-a-fake-profit-on-a-rugged-token">"A trade booked a fake profit on a rugged token"</a></li>
+<li><a href="#i-changed-env-but-nothing-happened">"I changed <code>.env</code> but nothing happened"</a></li>
+<li><a href="#a-deploy-broke-something">"A deploy broke something"</a></li>
+<li><a href="#helius-dashboard-wont-load">"Helius dashboard won't load"</a></li>
+<li><a href="#known-non-obvious-gotchas-catalog">Known non-obvious gotchas (catalog)</a></li>
+</ul>
+</li>
+<li><a href="#access-sheet-print-this-fill-by-hand">Access Sheet (PRINT THIS — fill by hand)</a><ul>
+<li><a href="#accounts-consoles">Accounts &amp; consoles</a></li>
+<li><a href="#the-live-env-the-master-key-file">The live <code>.env</code> (the master key file)</a></li>
+<li><a href="#who-can-use-the-emergency-stop">Who can use the emergency stop</a></li>
+</ul>
+</li>
+<li><a href="#appendix">Appendix</a><ul>
+<li><a href="#crontab-inventory-server-utc">Crontab inventory (server, UTC)</a></li>
+<li><a href="#env-var-reference-names-purpose-only-values-live-in-env">Env-var reference (names + purpose only — values live in <code>.env</code>)</a></li>
+<li><a href="#key-files">Key files</a></li>
+<li><a href="#db-tables-quick-map">DB tables (quick map)</a></li>
+<li><a href="#deeper-docs-read-these-for-detail-this-manual-summarizes">Deeper docs (read these for detail this manual summarizes)</a></li>
+<li><a href="#maintaining-this-manual">Maintaining this manual</a></li>
+</ul>
+</li>
+</ul>
+<hr />
+<h1 id="crypto-trading-fleet-maintenance-manual_1">Crypto Trading Fleet — Maintenance Manual</h1>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<h2 id="summary">Summary</h2>
+<p>This project is a small <strong>fleet of automated crypto-trading "bots"</strong> that Roy built. It is
+deliberately running in <strong>paper mode</strong> (simulated money) plus a tiny "shadow" sample of
+real trades — it is <strong>not</strong> trading meaningful real money yet, by design. The system runs
+on a rented Linux server ("Hetzner"), watches crypto markets and wallets, and records how
+it <em>would</em> have traded so its edge can be measured before any real capital is risked.</p>
+<p>This manual exists so that <strong>someone other than Roy can keep it alive and continue it.</strong>
+It is written in two layers: a plain-language <strong>Operator track</strong> for keeping things running,
+and a technical <strong>Engineer track</strong> for understanding and changing the code.</p>
+<h2 id="who-reads-what">Who reads what</h2>
+<table>
+<thead>
+<tr>
+<th>You are…</th>
+<th>Start here</th>
+<th>Goal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Keeping it alive</strong> (non-technical)</td>
+<td>Operator track — sections <strong>1.x</strong></td>
+<td>Know it's healthy, do the recurring tasks, react to alerts, don't break anything</td>
+</tr>
+<tr>
+<td><strong>Continuing development</strong> (engineer)</td>
+<td>Engineer track — sections <strong>2.x</strong></td>
+<td>Understand the architecture, deploy changes safely, set up a new server</td>
+</tr>
+<tr>
+<td><strong>Looking something up</strong></td>
+<td>Reference — sections <strong>3.x</strong></td>
+<td>Tools/costs/access, why decisions were made, troubleshooting, the access sheet</td>
+</tr>
+</tbody>
+</table>
+<p>You do <strong>not</strong> need to read this top to bottom. Use the Table of Contents (auto-generated
+at the top of the built document) or Ctrl-F.</p>
+<h2 id="in-an-emergency">In an emergency</h2>
+<blockquote>
+<p><strong>To stop ALL trading immediately:</strong> in Discord, type <strong><code>/panic</code></strong> (Roy is the
+authorized user; another authorized user must be configured to use it). This halts every
+bot, cancels open orders, and closes positions. It is safe to use — the system is built
+to be stopped.</p>
+<p><strong>If something looks wrong but isn't urgent:</strong> check the <strong>#alerts Discord channel</strong> and
+the <strong>Grafana dashboard</strong> first (see <em>Operator Basics</em>). Most problems announce
+themselves there. Nothing here trades real money without a deliberate switch being
+flipped, so when in doubt, <strong>stop it and ask</strong> — a halted bot loses nothing.</p>
+</blockquote>
+<h2 id="what-this-is-not">What this is NOT</h2>
+<ul>
+<li>It is <strong>not</strong> investment advice or a guaranteed money-maker. It is an experiment to
+  measure whether a trading edge exists <em>before</em> risking real money.</li>
+<li>It does <strong>not</strong> trade your savings. Real-money trading is gated behind explicit flags
+  that are currently <strong>off</strong> (see <em>Changing Safely</em>).</li>
+</ul>
+<h2 id="contacts-escalation">Contacts &amp; escalation</h2>
+<p><em>Fill this in and keep it current:</em></p>
+<ul>
+<li><strong>Owner:</strong> Roy — _phone / email: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</li>
+<li><strong>If Roy is unavailable, the technical contact is:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</li>
+<li><strong>Server provider:</strong> Hetzner (account login on the Access Sheet)</li>
+<li><strong>Where the passwords live:</strong> the printed <strong>Access Sheet</strong> (section 3.4) + your family
+  password sheets.</li>
+</ul>
+<hr />
+<h2 id="project-overview">Project Overview</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<h3 id="what-the-project-is">What the project is</h3>
+<p>It is an <strong>automated crypto-trading system</strong> — a set of programs ("bots") that watch
+cryptocurrency markets and trader wallets around the clock and decide when they <em>would</em>
+buy and sell. Right now it trades on <strong>paper</strong> (pretend money) and records the results, so
+Roy can see whether the strategies actually make money before risking real funds.</p>
+<p>Think of it like a flight simulator for trading: the controls are real and the decisions
+are real, but it is not yet flying a real plane.</p>
+<h3 id="the-two-bots">The two bots</h3>
+<p>There are two bots, each a different strategy:</p>
+<ul>
+<li>
+<p><strong>STRUCTURE</strong> — trades <strong>Hyperliquid perpetual futures</strong> (a derivatives exchange for
+  large coins like Bitcoin and Ethereum). It looks for unusual market conditions (e.g.
+  lots of forced selling) and bets on a bounce. <em>Lower activity; the quieter of the two.</em></p>
+</li>
+<li>
+<p><strong>COPY</strong> — trades <strong>Solana "memecoins"</strong> (tiny, very risky new tokens). It watches a
+  curated list of skilled trader wallets; when several of them buy the same brand-new token
+  within ~15 minutes, COPY buys too, then sells quickly to lock in gains before the token
+  (often) collapses. <em>This is the more active bot and the one most of the day-to-day work
+  is about.</em></p>
+</li>
+</ul>
+<h3 id="current-status-keep-this-updated">Current status (keep this updated)</h3>
+<ul>
+<li><strong>Mode:</strong> Paper + a small "shadow" sample of real trades. <strong>No meaningful real money is
+  at risk.</strong></li>
+<li><strong>COPY</strong> is the active focus: it trades on a <strong>curated, vetted</strong> list of ~150+ wallets
+  that grows as Roy runs wallet discovery. Buying is currently <strong>ON</strong>.</li>
+<li><strong>STRUCTURE</strong> is running quietly in the background.</li>
+<li>The system is being <strong>measured</strong> against pass/fail criteria (the "kill criteria") over a
+  ~60–90 day window before any decision to use real money.</li>
+</ul>
+<h3 id="the-core-philosophy-please-respect-these">The core philosophy (please respect these)</h3>
+<p>These principles are the whole point of the project. A maintainer should <strong>not</strong> undo them:</p>
+<ol>
+<li><strong>Paper first.</strong> Nothing trades real money until the data proves an edge AND Roy
+   deliberately flips the live switches. Those switches are <strong>off</strong>.</li>
+<li><strong>Human in the loop.</strong> When the system thinks a bot is failing, it <strong>alerts a human</strong> —
+   it does <strong>not</strong> automatically shut a bot down for strategy reasons. A person decides.
+   (It <em>does</em> automatically stop on severe loss limits and emergencies.)</li>
+<li><strong>Measure before tuning.</strong> During the measurement window, the strategy settings are
+   "locked." Changing them resets the measurement clock. Don't fiddle.</li>
+<li><strong>Quality over quantity.</strong> The wallet list COPY follows is carefully vetted; ~90% of
+   candidate wallets are rejected. We add <em>good</em> wallets, not <em>many</em> wallets.</li>
+</ol>
+<h3 id="how-it-stays-alive-without-roy">How it stays alive without Roy</h3>
+<ul>
+<li>It runs on a rented server that is always on.</li>
+<li>It <strong>announces its health</strong> in Discord (alerts) and on a Grafana dashboard.</li>
+<li>Most maintenance is: glance at the alerts, occasionally run a wallet-discovery pass, and
+  respond if something turns red. The Operator track sections that follow walk through
+  each of these.</li>
+</ul>
+<hr />
+<h2 id="operator-basics-keeping-it-alive">Operator Basics — Keeping It Alive</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<p>This section is for the day-to-day "is it healthy, and what do I do if not" job. You do
+<strong>not</strong> need to understand the code.</p>
+<h3 id="whats-running-and-where">What's running, and where</h3>
+<p>Everything runs on a <strong>rented Linux server from Hetzner</strong> (a company in Germany), inside
+"containers" managed by a tool called <strong>Docker</strong>. You normally never touch the server —
+it runs by itself. The pieces are: the two bots, a database (stores all the trades), a
+dashboard (Grafana), and an alerter (sends Discord messages). The wallet-discovery work is
+the one task done from <strong>Roy's office Windows PC</strong>, not the server.</p>
+<h3 id="how-to-tell-its-healthy-your-2-minute-daily-check">How to tell it's healthy (your 2-minute daily check)</h3>
+<ol>
+<li><strong>Discord #alerts channel</strong> — this is the heartbeat. If it's quiet or only shows routine
+   green/blue messages, things are fine. Red/urgent messages need attention (see <em>Alerts</em>
+   below).</li>
+<li><strong>The daily digest</strong> — once a day a summary of COPY's last 24 hours is posted to Discord.
+   Skim it.</li>
+<li><strong>Grafana dashboard</strong> (a web page; login on the Access Sheet) — shows charts of each
+   bot's health. You don't need to interpret every chart; just confirm it's loading and
+   nothing is screaming red.</li>
+</ol>
+<p>If all three look normal, you're done. That's the whole daily job most days.</p>
+<h3 id="the-alert-levels-and-what-to-do">The alert levels — and what to do</h3>
+<p>Alerts come with a severity. <strong>The level tells you how fast to react:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>How it reaches you</th>
+<th>What it means</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0</strong></td>
+<td><strong>Text message (SMS)</strong> + Discord ping</td>
+<td>Emergency — trading halted, an emergency stop fired, or a big loss limit hit</td>
+<td><strong>Look now.</strong> Open Discord, read the message. If unsure, it's safe to leave the bots halted and call the technical contact.</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td>Discord ping (mention)</td>
+<td>A bot was stopped, the system went quiet, or a "is this strategy failing?" warning fired</td>
+<td><strong>Look within an hour.</strong> Read the message. A "kill-criteria" warning is informational — it does <strong>not</strong> require you to do anything except be aware (a human decides later).</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>Discord message (no ping)</td>
+<td>Routine but worth noting — wallets added, a credit snapshot, a minor anomaly</td>
+<td>Read when convenient.</td>
+</tr>
+<tr>
+<td><strong>P3</strong></td>
+<td>Folded into the daily digest</td>
+<td>Pure information</td>
+<td>No action.</td>
+</tr>
+</tbody>
+</table>
+<p>When in doubt about any alert: <strong>a stopped bot is safe</strong>. Nothing bad happens by halting.</p>
+<h3 id="the-emergency-stop-panic">The emergency stop: <code>/panic</code></h3>
+<p>In Discord, typing <strong><code>/panic</code></strong> immediately halts every bot, cancels open orders, and
+closes positions. Use it any time something feels wrong and you can't reach Roy. It is
+designed to be used. (Only authorized Discord users can run it — make sure at least one
+person besides Roy is set up; see the Engineer track if not.)</p>
+<h3 id="what-not-to-touch">What NOT to touch</h3>
+<p>These are the few ways a non-expert could actually cause harm. Avoid them unless an
+engineer is guiding you:</p>
+<ul>
+<li><strong>Do not flip the "live money" switches.</strong> There are settings named like
+  <code>COPY_LIVE_ENABLED</code> / <code>COPY_LIVE_FULL_ENABLED</code> / <code>COPY_SOLANA_PRIVATE_KEY</code>. They are
+  <strong>off/empty</strong> on purpose. Turning them on makes the bot trade <strong>real money</strong>.</li>
+<li><strong>Do not change the bots' strategy settings</strong> (the <code>config.py</code> files) during the
+  measurement window. It corrupts the experiment.</li>
+<li><strong>Do not delete the database</strong> or the server.</li>
+<li><strong>Do not commit passwords</strong> anywhere (more in the Access Sheet section).</li>
+</ul>
+<p>When unsure, the safe move is always: <strong>halt with <code>/panic</code>, then ask.</strong></p>
+<h3 id="the-rhythm-of-the-job">The rhythm of the job</h3>
+<ul>
+<li><strong>Daily:</strong> the 2-minute health check above.</li>
+<li><strong>Every few days:</strong> run a <strong>wallet discovery pass</strong> to keep COPY's wallet list fresh
+  (see <em>Recurring Tasks</em>). This is the main recurring chore.</li>
+<li><strong>Occasionally:</strong> check Helius credit usage so the monthly bill stays in budget (see
+  <em>Recurring Tasks</em>).</li>
+<li><strong>Quarterly:</strong> a whale-list refresh for STRUCTURE runs automatically; you just review it.</li>
+<li><strong>On a red alert:</strong> follow the table above.</li>
+</ul>
+<hr />
+<h2 id="recurring-tasks-step-by-step">Recurring Tasks — Step by Step</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<p>These are the hands-on chores. Each is written as a recipe. They assume you can open a
+terminal and Discord; the engineer sections explain the commands in more depth.</p>
+<h3 id="a-run-a-wallet-discovery-vetting-pass-the-main-chore">A. Run a wallet discovery + vetting pass (the main chore)</h3>
+<p><strong>Why:</strong> COPY only trades on a curated list of skilled wallets. Wallets go stale over time,
+so we periodically find new good ones. This is done <strong>attended</strong> (you start it and let it
+run) from Roy's office PC, because it drives a web browser.</p>
+<p><strong>Important reality:</strong> this is <strong>not</strong> a hands-off scheduled job. An attempt to run it fully
+automatically (Windows Task Scheduler + headless Claude) does <strong>not</strong> work, because the
+browser tool only exists in an <em>interactive</em> Claude session. So you run it yourself.</p>
+<p><strong>Steps:</strong>
+1. On Roy's office PC, make sure <strong>Chrome is open and logged in to Birdeye</strong>
+   (birdeye.so). It usually already is.
+2. Open <strong>Claude</strong> (the VS Code extension, or an interactive <code>claude</code> session with the
+   Chrome connection enabled via <code>/chrome</code>).
+3. Give it the discovery prompt:
+   <code>C:\Projects\CryptoTradingworkflow\bots\copy\discovery_automation\browser_discovery_vetting_prompt.txt</code>
+   (open that file and paste its contents, or point Claude at it).
+4. Let it run. It will browse Birdeye's trending tokens, look at the top traders, and
+   <strong>vet each wallet</strong> — marking each KEEP / REJECT / TOO_FAST. It works in batches of ~20
+   and saves as it goes, so it can be stopped and restarted without losing work.
+5. Results are written to the OneDrive file:
+   <code>C:\Users\Roy\OneDrive\Documents\Claude\vetted_watch_results.txt</code>.</p>
+<p><strong>Then sync the results into the system — see task B.</strong></p>
+<h3 id="b-sync-vetting-results-into-the-live-system">B. Sync vetting results into the live system</h3>
+<p>The discovery pass writes to OneDrive. The live bot reads from the project's git repo. So
+new results must be copied over and "applied."</p>
+<p>The simplest reliable way (the way Roy and Claude have been doing it):
+1. In a Claude session <strong>in the project</strong> (<code>C:\Projects\CryptoTradingworkflow</code>), ask it to
+   "sync the OneDrive vetting file into the repo." It will compare
+   <code>C:\Users\Roy\OneDrive\Documents\Claude\vetted_watch_results.txt</code> against the repo's
+   <code>bots/copy/vetted_watch_results.txt</code>, append only the <strong>new</strong> rows (de-duplicated), and
+   commit + push.
+2. Pushing to git auto-deploys to the server within ~1 minute.
+3. The server's daily job then <strong>applies</strong> the verdicts: KEEP wallets become <strong>active</strong>
+   (the bot starts following them), REJECT wallets are removed, TOO_FAST are logged only.
+   - To apply immediately instead of waiting for the daily job, an engineer runs on the
+     server: <code>docker compose exec -T framework python -m scripts.apply_vetting_results --file /tmp/vw.txt</code>
+     (after copying the file in — see the Engineer track).</p>
+<p>You'll see a Discord summary when wallets are applied.</p>
+<h3 id="c-check-helius-credit-usage-watch-the-bill">C. Check Helius credit usage (watch the bill)</h3>
+<p><strong>Why:</strong> the COPY bot uses a paid service called <strong>Helius</strong> to receive wallet activity.
+Cost is driven almost entirely by how many wallets it watches and how active they are. The
+budget cap is <strong>30 million credits/month (~$149)</strong>. You want to make sure adding wallets
+isn't blowing the budget.</p>
+<p><strong>Two ways:</strong></p>
+<p><strong>Quick (no login) — how many credits we're burning, from our own data:</strong> an engineer runs
+on the server: <code>docker compose exec -T framework python -m scripts.credit_pool_snapshot</code>.
+It posts a Discord summary (wallets, daily "deliveries" ≈ daily credit burn, and a
+projection vs the 30M cap). This also runs automatically each day.</p>
+<p><strong>Full (the dashboard) — the actual bill:</strong> the Helius dashboard must be opened <strong>through
+the server</strong> (the account was created from the server's German internet connection). The
+method is an <strong>SSH SOCKS tunnel</strong>:
+1. On your PC, open a terminal and run (keep it open while browsing):
+   <code>ssh -D 9999 -N fleet hetzner.com</code>
+   <em>(Use this exact form — <code>fleet</code> then a space then <code>hetzner.com</code>, port 9999. The
+   "obvious" <code>fleet@hetzner.com</code> version does not work.)</em>
+2. In <strong>Firefox</strong>, set a SOCKS proxy: Settings → search "proxy" → Manual proxy → SOCKS Host
+   <code>127.0.0.1</code>, Port <code>9999</code>, choose <strong>SOCKS v5</strong>, check <strong>"Proxy DNS when using SOCKS v5"</strong>.
+3. Visit <code>https://ifconfig.me</code> to confirm you're now coming from the German server IP, then
+   open <code>https://dashboard.helius.dev</code> → log in (Access Sheet) → <strong>Usage</strong> shows credits
+   used vs the cap.
+4. When done, <strong>turn the Firefox proxy back off</strong> so normal browsing works.</p>
+<p>If credits are trending toward the 30M cap, slow down how often you run discovery (task A),
+or talk to the engineer about raising the budget.</p>
+<h3 id="d-responding-to-alerts">D. Responding to alerts</h3>
+<p>See the alert table in <em>Operator Basics</em>. In short:
+- <strong>P0 (text message):</strong> look immediately; if unsure, leave bots halted and call the
+  technical contact.
+- <strong>P1 (Discord ping):</strong> look within the hour; a "kill-criteria" warning is just
+  information.
+- <strong>P2/P3:</strong> read when convenient.</p>
+<h3 id="e-quarterly-whale-list-refresh-structure-review-only">E. Quarterly whale-list refresh (STRUCTURE) — review only</h3>
+<p>Four times a year (Feb/May/Aug/Nov 1) the server automatically re-checks STRUCTURE's
+"whale" wallet list and posts a Discord summary. <strong>You don't have to run anything</strong> — just
+read the summary. If it flags that many whales have gone bad, tell the engineer; updating
+the list is a small code change they make.</p>
+<hr />
+<h2 id="glossary-plain-language">Glossary (plain language)</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<p>Terms you'll meet in this manual, the dashboards, and Discord — in everyday language.</p>
+<ul>
+<li><strong>Bot</strong> — a program that trades automatically by following fixed rules. We have two:
+  STRUCTURE and COPY.</li>
+<li><strong>Paper trading</strong> — pretend trading. The bot records what it <em>would</em> have done, with no
+  real money. This is the current mode.</li>
+<li><strong>Shadow trading</strong> — a small fraction (~10%) of paper trades are also done for real with
+  tiny amounts, just to check the simulation is realistic. Still not meaningful money.</li>
+<li><strong>Live trading</strong> — real money. Currently <strong>off</strong>, gated behind explicit switches.</li>
+<li><strong>STRUCTURE</strong> — the bot trading Hyperliquid perpetual futures (big coins, derivatives).</li>
+<li><strong>COPY</strong> — the bot trading Solana memecoins by copying skilled wallets.</li>
+<li><strong>Wallet</strong> — a crypto account, identified by a long string of letters/numbers (an
+  "address"). COPY watches a curated list of <em>skilled</em> wallets.</li>
+<li><strong>Cluster</strong> — the core COPY signal: when <strong>several tracked wallets buy the same new token
+  within ~15 minutes</strong>, that "cluster" of buys is the cue for COPY to buy too.</li>
+<li><strong>Vetting</strong> — checking whether a candidate wallet is actually good to follow. Each gets a
+  verdict:</li>
+<li><strong>KEEP</strong> — good; the bot should follow it (becomes "active").</li>
+<li><strong>REJECT</strong> — bad (a bag-holder, a bot, junk); discard.</li>
+<li><strong>TOO_FAST</strong> — genuinely skilled but trades <em>so</em> fast (seconds) that COPY can't keep
+    up; logged for a possible future faster bot, not used now.</li>
+<li><strong>Active / Watch / Pruned</strong> — the three "tiers" a wallet can be in:</li>
+<li><strong>Active</strong> — followed; its buys can trigger trades.</li>
+<li><strong>Watch</strong> — observed but not driving trades (mostly empty now; vetted wallets go
+    straight to active).</li>
+<li><strong>Pruned</strong> — dropped; no longer watched.</li>
+<li><strong>Kill criteria</strong> — the pass/fail scorecard for each bot over the measurement window
+  (win rate, profit, risk-adjusted "Sharpe" number). If a bot trips a criterion, the system
+  <strong>warns a human</strong>; it does not auto-shut-down for this.</li>
+<li><strong>Sharpe</strong> — a number measuring profit <em>relative to</em> how bumpy the ride was. Higher is
+  better; it's the headline "is this strategy actually good" metric.</li>
+<li><strong>Webhook</strong> — a way for the Helius service to instantly notify our system whenever a
+  watched wallet trades. Each notification ("delivery") costs a small credit.</li>
+<li><strong>Credits</strong> — the unit Helius bills in. Our budget is 30 million/month (~$149). Watching
+  more/active wallets uses more credits.</li>
+<li><strong>Rug / rug-pull</strong> — when a memecoin's creators pull out all the money and the token
+  collapses to zero. Common; COPY's whole edge is selling <em>before</em> this happens.</li>
+<li><strong>Hetzner</strong> — the company we rent the always-on server from (located in Germany).</li>
+<li><strong>Docker / container</strong> — the technology that runs each part of the system in its own
+  tidy box on the server.</li>
+<li><strong>Grafana</strong> — the dashboard web page showing health charts.</li>
+<li><strong>Discord / Telegram</strong> — chat apps the system posts alerts to. <code>/panic</code> is typed here.</li>
+<li><strong><code>/panic</code></strong> — the emergency stop command (halts all bots).</li>
+<li><strong>Git / push / deploy</strong> — git is where the code lives; "pushing" a change automatically
+  updates ("deploys") the server within about a minute.</li>
+<li><strong><code>.env</code></strong> — a private settings file on the server holding all the passwords/keys. Never
+  shared or committed to git.</li>
+</ul>
+<hr />
+<h2 id="architecture-codebase-map">Architecture &amp; Codebase Map</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<p>For an engineer who has never seen the repo. Deeper, frozen design rationale lives in
+<code>design_state_2026-04-26.md</code> (a snapshot — treat as history, not current truth).</p>
+<h3 id="high-level-shape">High-level shape</h3>
+<p>A shared <strong>framework</strong> + two <strong>bots</strong>, all Python, all running as Docker containers on one
+Hetzner host, backed by <strong>PostgreSQL</strong> (state) and <strong>Redis</strong> (pubsub/dedup). Code reaches
+the server by <code>git push</code> (auto-pull deploy). Monitoring is <strong>Grafana/Prometheus</strong> +
+multi-channel alerting (Discord/Telegram/Twilio).</p>
+<pre><code>                 ┌────────── framework/ (shared) ──────────┐
+                 │ DB models, kill-criteria, alerts, audit, │
+                 │ heartbeat/watchdog, reconciliation,      │
+                 │ scoring, reporting                       │
+                 └──────────────────────────────────────────┘
+   bots/structure/  (Hyperliquid perps)     bots/copy/  (Solana memecoins)
+            │                                       │
+        Postgres  ◄───────── shared ───────────►  Redis
+            │                                       │
+   monitoring/ (webhook_receiver, alerting dispatcher, dashboards, prometheus)
+</code></pre>
+<h3 id="the-bots">The bots</h3>
+<p><strong>STRUCTURE</strong> (<code>bots/structure/</code>) — Hyperliquid perpetual futures. Signals in
+<code>bots/structure/signals/</code>: <code>funding_fade</code>, <code>liquidation_cascade</code>, <code>whale_flip</code>,
+<code>hl_oi_divergence</code>. Reads market data via the Hyperliquid Info API (<code>venue.py</code>). Paper +
+~10% shadow. Quieter bot.</p>
+<p><strong>COPY</strong> (<code>bots/copy/</code>) — Solana memecoins via wallet-cluster copying. This is the active
+focus. Key files:
+- <code>main.py</code> — the loop: subscribes to wallet events, runs cluster detection, manages
+  positions.
+- <code>signals/cluster.py</code> — the buy signal (≥3 distinct active wallets buy the same token
+  within a 15-min rolling window, ≥$1k each).
+- <code>signals/sell_cluster.py</code> — the defensive exit (≥2 tracked wallets selling).
+- <code>trailing_stop.py</code> — tiered partial-exit ladder + price-scale anomaly guard.
+- <code>wallet_pool_manager.py</code> — <strong>pure logic</strong> for active/watch/pruned tier decisions.
+- <code>venue/</code> — external integrations: <code>helius_webhooks.py</code>, <code>helius_solana.py</code>, <code>birdeye.py</code>,
+  <code>dex_quoter.py</code>, <code>jupiter_swap.py</code>, <code>cielo.py</code>.
+- <code>config.py</code> — locked thresholds (see <em>Changing Safely</em>). <strong>Current state: cluster buys
+  ENABLED; <code>copy_active_list_target = 300</code>; KEEP wallets go directly to <code>active</code>.</strong></p>
+<h3 id="copy-data-flow-webhook-trade-measurement">COPY data flow (webhook → trade → measurement)</h3>
+<ol>
+<li>A tracked wallet trades on Solana → <strong>Helius</strong> sends a webhook to
+   <code>monitoring/webhook_receiver/main.py</code> (one endpoint for <code>active</code>, one for <code>watch</code>).</li>
+<li>The receiver validates the auth header, logs a row to <code>wallet_events_log</code>
+   (<code>source_webhook</code> = active|watch), and for <strong>active</strong> wallets publishes a buy/sell event
+   to Redis (<code>copy:buys</code> / <code>copy:sells</code>).</li>
+<li><code>bots/copy/main.py</code> subscribes, feeds buys to <code>signals/cluster.py</code> (in-memory 15-min
+   rolling window per token).</li>
+<li>When ≥3 distinct active wallets cluster on a token, a signal fires → de-duped via the
+   <code>cluster_detections</code> table → a paper trade is opened (<code>executor.py</code> → <code>trades</code> row),
+   optionally a ~10% <strong>shadow</strong> swap via Jupiter.</li>
+<li>Positions are managed every ~60s: price via Birdeye/Jupiter, tiered partial exits,
+   stops, <strong>rug check</strong> (Birdeye liquidity &lt; floor → book ~total loss), sell-cluster exit.</li>
+<li>On close, <strong>PnL is attributed</strong> equally to the wallets in the cluster
+   (<code>wallet_attributions</code>) — this feeds wallet promotion/demotion and the leaderboard.</li>
+<li><strong>kill-criteria</strong> (<code>framework/kill_criteria_monitor.py</code>) reads closed trades and scores
+   the bot (N, win rate, net PnL, Sharpe) against its window.</li>
+</ol>
+<h3 id="the-wallet-pool-lifecycle">The wallet pool lifecycle</h3>
+<ul>
+<li>New wallets enter <strong>already vetted</strong> (via browser discovery) and go <strong>straight to
+  <code>active</code></strong> (KEEP), applied by <code>scripts/apply_vetting_results.py</code>.</li>
+<li>The daily job <code>scripts/wallet_pool_daily_cron.py</code> recomputes activity, <strong>demotes</strong> proven
+  losers (by attributed PnL, not raw activity), <strong>prunes</strong> persistent losers, and <strong>syncs</strong>
+  the active+watch address lists to Helius (<code>venue/helius_webhooks.py::sync_pool_tiers</code>).
+  Both active and watch are webhook-subscribed (so both cost Helius credits).</li>
+<li><code>wallet_pool_manager.decide_tier_changes()</code> is the pure decision function (well tested in
+  <code>tests/test_wallet_pool_manager.py</code>). Promotion is <strong>vetted-only</strong>
+  (<code>copy_promote_vetted_only</code>).</li>
+</ul>
+<h3 id="the-framework">The framework</h3>
+<ul>
+<li><code>framework/models.py</code> — all DB tables (see Appendix for the table list). Key ones:
+  <code>trades</code>, <code>signals</code>, <code>wallet_pool</code>, <code>wallet_events_log</code>, <code>wallet_attributions</code>,
+  <code>cluster_detections</code>, <code>bot_state</code> (holds <code>kill_criteria_status</code> JSON), <code>halts</code>, <code>scores</code>,
+  <code>audit_log</code>, <code>heartbeats</code>.</li>
+<li><code>kill_criteria_monitor.py</code> — window dates + scoring; <strong>alerts only, no auto-halt</strong> for
+  strategy criteria.</li>
+<li><code>dd_monitor.py</code> / <code>halt_state.py</code> — drawdown limits that <strong>do</strong> auto-halt; <code>/panic</code>.</li>
+<li><code>alerts.py</code> (<code>emit_alert</code>) → Redis <code>alerts:emit</code> → <code>monitoring/alerting/dispatcher.py</code> →
+  Discord/Telegram/Twilio connectors.</li>
+<li><code>audit.py</code> (<code>write_audit</code>) → append-only <code>audit_log</code>.</li>
+<li><code>heartbeat.py</code> / <code>watchdog.py</code> — every process pings every 30s; watchdog escalates
+  staleness.</li>
+<li><code>reconciliation.py</code> — periodic paper-vs-venue consistency check.</li>
+<li><code>scoring/</code> — promotion score; <code>reporting/</code> — daily report + digest.</li>
+</ul>
+<h3 id="monitoring">Monitoring</h3>
+<ul>
+<li><code>monitoring/webhook_receiver/</code> — the public HTTPS endpoint Helius calls.</li>
+<li><code>monitoring/alerting/</code> — taxonomy (P0–P3), dispatcher, connectors.</li>
+<li><code>monitoring/dashboards/*.json</code> — Grafana (fleet-overview, structure-detail, copy-detail,
+  cluster diagnostics); auto-reloaded, no restart needed.</li>
+<li><code>monitoring/prometheus/</code> — scrape config.</li>
+</ul>
+<h3 id="where-to-look-for-x">Where to look for X</h3>
+<table>
+<thead>
+<tr>
+<th>Want to…</th>
+<th>Look in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Change a COPY threshold</td>
+<td><code>bots/copy/config.py</code> (locked — read <em>Changing Safely</em> first)</td>
+</tr>
+<tr>
+<td>Understand the buy signal</td>
+<td><code>bots/copy/signals/cluster.py</code></td>
+</tr>
+<tr>
+<td>Change wallet promote/demote logic</td>
+<td><code>bots/copy/wallet_pool_manager.py</code> + <code>tests/test_wallet_pool_manager.py</code></td>
+</tr>
+<tr>
+<td>Add/inspect a DB table</td>
+<td><code>framework/models.py</code> + <code>framework/alembic/versions/</code></td>
+</tr>
+<tr>
+<td>Change alert routing</td>
+<td><code>monitoring/alerting/</code></td>
+</tr>
+<tr>
+<td>Add a scheduled job</td>
+<td><code>scripts/</code> + the crontab (see <em>Operations (technical)</em>)</td>
+</tr>
+<tr>
+<td>The wallet discovery prompt/automation</td>
+<td><code>bots/copy/discovery_automation/</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="deployment-infrastructure">Deployment &amp; Infrastructure</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<h3 id="topology">Topology</h3>
+<p>One Hetzner VPS runs everything via <code>docker-compose.yml</code>: <code>postgres</code>, <code>redis</code>,
+<code>prometheus</code>, <code>grafana</code>, <code>framework</code>, <code>scoring</code>, <code>alerting</code>, <code>report_cron</code>,
+<code>bot_structure</code>, <code>bot_copy</code>, <code>bot_copy_webhook_receiver</code>, and a one-shot <code>migrate</code>
+(profile <code>tools</code>). A single <code>framework/Dockerfile</code> builds the Python image used by all
+app services.</p>
+<h3 id="how-code-reaches-the-server-auto-pull-deploy">How code reaches the server (auto-pull deploy)</h3>
+<p>A cron on the server runs <code>scripts/hetzner_autopull.sh</code> <strong>every minute</strong>. It:
+1. <code>git fetch origin main</code>; if <code>origin/main</code> is ahead, <code>git reset --hard origin/main</code>.
+2. Detects changed files and restarts only affected services (mapping below).
+3. Runs <code>alembic upgrade head</code> if new migration files appeared.</p>
+<p>So the normal deploy is just: <strong>commit and push to <code>main</code></strong> → live within ~60s.</p>
+<blockquote>
+<p><strong>Consequence — untracked files get wiped.</strong> <code>reset --hard</code> discards anything not
+committed. Files the bot needs must be <strong>committed</strong>, not <code>scp</code>-ed in. (This is why the
+vetting results live in the repo.)</p>
+</blockquote>
+<p><strong>Changed-file → restart mapping (approximate):</strong>
+| Changed path | Restarts |
+|---|---|
+| <code>bots/copy/**</code> | <code>bot_copy</code> + <code>bot_copy_webhook_receiver</code> |
+| <code>bots/structure/**</code> | <code>bot_structure</code> |
+| <code>framework/scoring/</code>, <code>kill_criteria_monitor.py</code>, etc. | <code>scoring</code> |
+| <code>framework/alembic/versions/**</code> | run migrations, then <code>scoring</code> |
+| shared framework (<code>models.py</code>, <code>db.py</code>, <code>alerts.py</code>, …) | all services |
+| <code>monitoring/alerting/**</code> | <code>alerting</code> |
+| <code>monitoring/dashboards/**</code> | nothing (Grafana auto-reloads) |
+| <code>scripts/**</code>, <code>tests/**</code>, <code>*.md</code>, <code>docs/**</code>, <code>memory/**</code> | nothing |</p>
+<h3 id="canonical-manual-deploy-when-you-must-rebuild">Canonical manual deploy (when you must rebuild)</h3>
+<p>Auto-pull does NOT handle changes to <code>docker-compose.yml</code>, the <code>Dockerfile</code>, or
+<code>requirements.txt</code>, and it does NOT re-read <code>.env</code>. For those, on the server:</p>
+<pre><code class="language-bash">cd ~/crypto-fleet &amp;&amp; git pull origin main &amp;&amp; \
+  docker compose build &lt;services...&gt; &amp;&amp; \
+  docker compose up -d --force-recreate &lt;services...&gt;
+</code></pre>
+<p>Common full form used this project:</p>
+<pre><code class="language-bash">cd ~/crypto-fleet &amp;&amp; git pull origin main &amp;&amp; \
+  docker compose build framework bot_copy scoring &amp;&amp; \
+  docker compose up -d --force-recreate framework bot_copy scoring
+</code></pre>
+<blockquote>
+<p><strong><code>.env</code> gotcha:</strong> <code>docker compose restart</code> does <strong>not</strong> re-read <code>.env</code>. After editing
+<code>.env</code> you must <code>docker compose up -d --force-recreate &lt;service&gt;</code> and verify with
+<code>docker compose exec &lt;service&gt; printenv VAR</code>.</p>
+</blockquote>
+<h3 id="pausing-auto-deploy-for-debugging">Pausing auto-deploy (for debugging)</h3>
+<pre><code class="language-bash">touch ~/crypto-fleet/.autopull_paused   # pause
+rm    ~/crypto-fleet/.autopull_paused   # resume
+tail -f ~/autopull.log                  # watch deploys
+</code></pre>
+<h3 id="migrations-alembic">Migrations (Alembic)</h3>
+<p>Schema is versioned in <code>framework/alembic/versions/</code>. Auto-pull runs <code>alembic upgrade head</code>
+when a new migration lands. Manually: <code>docker compose run --rm migrate</code>. To add one, write
+a revision, test locally, commit — it deploys and applies automatically.</p>
+<h3 id="fresh-server-setup-rebuilding-from-nothing">Fresh-server setup (rebuilding from nothing)</h3>
+<p>If you must stand up a new host:
+1. Provision a Hetzner VPS (CPX32-class), add your SSH key, harden SSH.
+2. Install Docker + Docker Compose plugin and <code>git</code>.
+3. <code>git clone</code> the repo to <code>~/crypto-fleet</code>.
+4. Create <code>~/crypto-fleet/.env</code> from <code>.env.example</code> and fill <strong>every</strong> secret (from the
+   Access Sheet / your offline <code>.env</code> printout). This is the critical, manual step.
+5. <code>docker compose build &amp;&amp; docker compose up -d</code> (postgres/redis first via healthchecks).
+6. <code>docker compose run --rm migrate</code> to create the schema.
+7. Re-create the Helius webhooks: <code>docker compose exec framework python -m scripts.helius_webhook_setup</code>.
+8. Re-install the server crontab (see <em>Operations (technical)</em> for the lines), including
+   <code>hetzner_autopull.sh</code> every minute.
+9. Re-establish remote access (Cloudflare Tunnel — see <code>monitoring/cloudflared/README.md</code>).
+10. Confirm Discord/Grafana/heartbeats are green.</p>
+<h3 id="local-development">Local development</h3>
+<ul>
+<li><code>cp .env.example .env</code> and fill at least the DB/Redis vars (external API keys optional
+  for unit tests).</li>
+<li><code>docker compose up -d postgres redis</code> for a local DB, or point at a throwaway DB.</li>
+<li>Run tests: <code>python -m pytest</code> (e.g. <code>tests/test_wallet_pool_manager.py</code>).</li>
+<li>Most logic (tier decisions, signals) is unit-testable without live services — prefer
+  that over hitting real APIs.</li>
+</ul>
+<hr />
+<h2 id="operations-technical">Operations (Technical)</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<h3 id="scheduled-jobs">Scheduled jobs</h3>
+<p>Two layers: <strong>APScheduler</strong> inside the <code>scoring</code>/<code>report_cron</code> containers (drawdown checks
+every 5 min, kill-criteria every 60 min, scoring, daily report ~07:00 local), and the
+<strong>server OS crontab</strong> for <code>docker compose exec</code> scripts. Verify the live crontab with
+<code>crontab -l</code>. As of this writing it contains (Hetzner, UTC):</p>
+<table>
+<thead>
+<tr>
+<th>Schedule</th>
+<th>Job</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>* * * * *</code></td>
+<td><code>scripts/hetzner_autopull.sh</code></td>
+<td>auto-deploy</td>
+</tr>
+<tr>
+<td><code>0 7 * * *</code></td>
+<td><code>scripts.wallet_pool_daily_cron</code></td>
+<td>recompute activity, demote/prune, <strong>sync Helius</strong></td>
+</tr>
+<tr>
+<td><code>30 7 * * *</code></td>
+<td><code>scripts.apply_vetting_results</code></td>
+<td>ingest vetting verdicts (after <code>docker compose cp</code> of the file)</td>
+</tr>
+<tr>
+<td><code>15 13 * * *</code></td>
+<td><code>scripts.credit_pool_snapshot</code></td>
+<td>daily Helius credit/pool snapshot → audit_log + Discord</td>
+</tr>
+<tr>
+<td><code>~13:00</code></td>
+<td><code>scripts.daily_digest</code></td>
+<td>COPY 24h summary (verify it's installed)</td>
+</tr>
+<tr>
+<td>every 5h</td>
+<td>whale_pool_growth (STRUCTURE)</td>
+<td></td>
+</tr>
+<tr>
+<td>weekly</td>
+<td>whale_graduation_scan (STRUCTURE)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>0 14 1 2,5,8,11 *</code></td>
+<td><code>scripts.quarterly_whale_refresh</code></td>
+<td>quarterly whale review</td>
+</tr>
+<tr>
+<td><code>0 6/14/22 * * *</code></td>
+<td>3× <code>scripts.wallet_pool_discovery</code></td>
+<td><strong>PAUSED</strong> (commented out — 0% keepers; replaced by browser discovery)</td>
+</tr>
+</tbody>
+</table>
+<p>To re-pause/resume a cron line, edit non-interactively, e.g.:
+<code>(crontab -l; echo '&lt;line&gt;') | crontab -</code> — never paste a cron line straight into the shell.</p>
+<h3 id="key-scripts-scripts">Key scripts (<code>scripts/</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hetzner_autopull.sh</code></td>
+<td>the per-minute deploy loop</td>
+</tr>
+<tr>
+<td><code>wallet_pool_daily_cron.py</code></td>
+<td>daily pool reconcile + Helius sync</td>
+</tr>
+<tr>
+<td><code>apply_vetting_results.py</code></td>
+<td>KEEP→active, REJECT→pruned, TOO_FAST→logged; idempotent; <code>--dry-run</code></td>
+</tr>
+<tr>
+<td><code>credit_pool_snapshot.py</code></td>
+<td>credits-vs-wallets curve into audit_log (proxy = <code>wallet_events_log</code> count)</td>
+</tr>
+<tr>
+<td><code>helius_webhook_setup.py</code></td>
+<td>create/sync/<code>--list</code>/<code>--delete</code> Helius webhooks</td>
+</tr>
+<tr>
+<td><code>daily_digest.py</code></td>
+<td>COPY daily Discord summary</td>
+</tr>
+<tr>
+<td><code>quarterly_whale_refresh.py</code></td>
+<td>STRUCTURE whale re-check (review-only output)</td>
+</tr>
+<tr>
+<td><code>correct_rug_trade.py</code></td>
+<td>fix a fictitious post-rug paper exit (targeted, audited)</td>
+</tr>
+<tr>
+<td><code>build_manual.py</code></td>
+<td><strong>this manual's builder</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Run any with: <code>docker compose exec -T framework python -m scripts.&lt;name&gt; [args]</code>.</p>
+<h3 id="logs-state">Logs &amp; state</h3>
+<pre><code class="language-bash">docker compose ps                                   # what's running
+docker compose logs -f --tail=50 bot_copy           # follow a service
+docker compose exec -T postgres psql -U fleet -d fleet -c &quot;&lt;SQL&gt;&quot;   # query DB
+tail -f ~/autopull.log                              # deploys
+</code></pre>
+<p>Useful SQL:</p>
+<pre><code class="language-sql">-- bot state + kill-criteria snapshot
+SELECT bot_id, state, halted_until, halt_reason,
+       kill_criteria_status-&gt;&gt;'n' AS n,
+       kill_criteria_status-&gt;&gt;'wr' AS wr,
+       kill_criteria_status-&gt;&gt;'sharpe' AS sharpe
+FROM bot_state;
+
+-- wallet pool composition
+SELECT tier, COUNT(*) FROM wallet_pool WHERE chain='solana' GROUP BY tier;
+
+-- recent COPY trades
+SELECT entry_at, asset, size_usd, exit_reason, pnl_usd
+FROM trades WHERE bot_id='copy' ORDER BY entry_at DESC LIMIT 20;
+
+-- is it alive?
+SELECT process_name, last_ping_at FROM heartbeats ORDER BY last_ping_at DESC;
+</code></pre>
+<h3 id="monitoring-internals">Monitoring internals</h3>
+<ul>
+<li><strong>Alert pipeline:</strong> any code calls <code>framework.alerts.emit_alert(severity, title, body,…)</code>
+  → Redis <code>alerts:emit</code> → <code>monitoring/alerting/dispatcher.py</code> → connectors
+  (<code>discord_connector</code>, <code>telegram_connector</code>, <code>twilio_connector</code>). Severity → channel
+  routing is in <code>monitoring/alerting/taxonomy.py</code>.</li>
+<li><strong>Heartbeats:</strong> each process writes <code>heartbeats(process_name, last_ping_at)</code> every 30s;
+  <code>framework/watchdog.py</code> escalates staleness (P1 → restart attempt → P0).</li>
+<li><strong>Grafana:</strong> dashboards in <code>monitoring/dashboards/*.json</code>, auto-reloaded. The
+  kill-criteria status is on the per-bot detail dashboards.</li>
+<li><strong>Health truth for COPY discovery:</strong> "did a discovery pass produce rows" is the real
+  signal (a dead browser exits cleanly with 0 rows) — that's why discovery reports a
+  row-count to Discord.</li>
+</ul>
+<h3 id="wallet-vetting-applying-results-manually">Wallet vetting — applying results manually</h3>
+<pre><code class="language-bash">cd ~/crypto-fleet &amp;&amp; git pull origin main &amp;&amp; \
+  docker compose cp bots/copy/vetted_watch_results.txt framework:/tmp/vw.txt &amp;&amp; \
+  docker compose exec -T framework python -m scripts.apply_vetting_results --file /tmp/vw.txt
+</code></pre>
+<p>(<code>docker compose cp</code> is required because the container runs <strong>baked</strong> code and can't see a
+host file otherwise.)</p>
+<hr />
+<h2 id="changing-safely">Changing Safely</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<p>The system is a <strong>measurement experiment</strong>. Careless changes either corrupt the
+measurement or risk real money. These are the guardrails.</p>
+<h3 id="the-kill-criteria-window-lock">The kill-criteria window lock</h3>
+<p>Each bot is being scored over a fixed window (see <code>framework/kill_criteria_monitor.py</code> and
+the <code>config.py</code> headers). <strong>The strategy constants in <code>bots/*/config.py</code> are LOCKED during
+the window.</strong></p>
+<ul>
+<li>Changing a locked threshold <strong>resets the measurement clock</strong> — unless the change is a
+  legitimate data-driven correction that meets ALL of: (1) justification written to
+  <code>audit_log</code> <em>before</em> the change, (2) it names the observation forcing it, (3) it
+  <em>shrinks</em> behavior space (more conservative, not more permissive), (4) at most once per
+  parameter per window.</li>
+<li>Changes that do <strong>not</strong> reset the window: bug fixes, logging/dashboards/monitoring,
+  docs, and the wallet pool churning through its normal tier rules.</li>
+<li><strong>Materially changing the wallet pool</strong> (e.g., raising <code>copy_active_list_target</code>) shifts
+  which signals fire — note it in <code>audit_log</code> as a pool-expansion marker so before/after
+  data isn't conflated.</li>
+</ul>
+<p>If you're unsure whether a change resets the window: assume it does, and ask.</p>
+<h3 id="paper-shadow-live-the-money-switches">Paper → shadow → live (the money switches)</h3>
+<p>Real money is gated behind explicit flags, currently <strong>off</strong>:
+- <code>COPY_LIVE_ENABLED</code> — enables the real-swap signing path (shadow).
+- <code>COPY_LIVE_FULL_ENABLED</code> — full-size real swaps.
+- <code>COPY_SOLANA_PRIVATE_KEY</code> — the funded wallet's secret (empty now).
+- STRUCTURE: <code>HYPERLIQUID_AGENT_PRIVATE_KEY</code> (trade-only agent key).</p>
+<p><strong>Do not flip these casually.</strong> The go-live procedure (only after the data justifies it and
+Roy decides) is roughly: generate/fund a wallet → set the key in <code>.env</code> →
+<code>COPY_LIVE_ENABLED=true</code> with <code>COPY_LIVE_FULL_ENABLED=false</code> (shadow only) → watch
+calibration → only then <code>COPY_LIVE_FULL_ENABLED=true</code>. Each step is deliberate and
+monitored.</p>
+<h3 id="the-trustsafety-guardrails-already-in-the-code-dont-remove">The trust/safety guardrails already in the code (don't remove)</h3>
+<ul>
+<li><strong>Rug check before closing a paper trade</strong> — if Birdeye liquidity has collapsed, the bot
+  books a ~total loss instead of a fictitious profit at a stale price.</li>
+<li><strong>Price-scale anomaly guard</strong> (<code>trailing_stop.py</code>) — skips a management cycle if the
+  price ratio is absurd (&gt;10,000×), catching oracle/decimals glitches.</li>
+<li><strong>Slippage floor</strong> — paper fills assume a minimum realistic slippage (150 bps) so
+  results aren't rosy.</li>
+<li><strong>Vetting-before-ingest</strong> — wallets are validated (base58, vetted source) before they can
+  drive trades; discovery output is bounded per run.</li>
+<li><strong>kill-criteria = alerts only</strong> — strategy failure warns a human; it does not auto-trade
+  or auto-promote.</li>
+</ul>
+<h3 id="process-for-any-change">Process for any change</h3>
+<ol>
+<li>Make it on a branch or commit to <code>main</code> only when ready (push = deploy in ~60s).</li>
+<li>Run the relevant tests (<code>python -m pytest tests/...</code>). The wallet-pool logic is well
+   covered — keep it that way.</li>
+<li>If it touches locked config, write the <code>audit_log</code> justification <strong>first</strong>.</li>
+<li>After deploy, verify: <code>docker compose ps</code>, logs, the relevant Discord/Grafana signal.</li>
+<li>Never skip git hooks or commit secrets.</li>
+</ol>
+<h3 id="going-live-with-the-manual-edits-to-this-doc">Going live with the manual edits to this doc</h3>
+<p>Remember the Access Sheet warning: when COPY eventually trades real money, the wallet
+discovery → auto-commit-to-<code>main</code> pipeline should gain a <strong>human review gate</strong> (commit to a
+branch, merge after a glance) instead of auto-pushing — untrusted page content feeding a
+real-money bot needs a person in the loop.</p>
+<hr />
+<h2 id="disaster-recovery">Disaster Recovery</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<h3 id="what-can-break-and-how-bad-it-is">What can break, and how bad it is</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Severity</th>
+<th>Recoverable?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A container crashed / went silent</td>
+<td>Low</td>
+<td>Yes — watchdog tries to restart; else <code>docker compose up -d &lt;svc&gt;</code></td>
+</tr>
+<tr>
+<td>Bad deploy</td>
+<td>Low</td>
+<td>Yes — revert the commit and push; auto-pull rolls forward</td>
+</tr>
+<tr>
+<td>Database lost</td>
+<td>High</td>
+<td>Yes if backups exist — restore (below). Trade history is the main loss</td>
+</tr>
+<tr>
+<td>Whole server lost</td>
+<td>High</td>
+<td>Yes — rebuild a fresh server (see <em>Deployment → Fresh-server setup</em>) + restore DB</td>
+</tr>
+<tr>
+<td><code>.env</code> / secrets lost</td>
+<td><strong>Critical</strong></td>
+<td>Only if you have the offline copy — <strong>this is the one thing git cannot recover</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The single most important disaster-prep fact: <strong>secrets are not in git.</strong> If the server and
+your offline <code>.env</code>/Access Sheet are both gone, the API keys and wallet keys are gone. Keep
+the printed Access Sheet and a printed/encrypted <code>.env</code> somewhere safe and separate.</p>
+<h3 id="restore-the-database">Restore the database</h3>
+<p>Hetzner provides automated daily VPS snapshots/backups (enable in the Hetzner console; ~$4/mo).
+To recover:
+1. Restore the VPS from the most recent Hetzner snapshot <strong>or</strong> stand up a fresh server and
+   restore just Postgres from a <code>pg_dump</code> if you keep one.
+2. If using a logical dump: <code>docker compose up -d postgres</code>, then
+   <code>cat backup.sql | docker compose exec -T postgres psql -U fleet -d fleet</code> (include an
+   explicit <code>COMMIT;</code> in SQL files — session-EOF behavior is unreliable here).
+3. Bring up the rest: <code>docker compose up -d</code>.
+4. Re-sync Helius webhooks: <code>docker compose exec framework python -m scripts.helius_webhook_setup</code>.
+5. Verify: <code>docker compose exec postgres psql -U fleet -d fleet -c "SELECT count(*) FROM trades;"</code>
+   and confirm heartbeats are fresh.</p>
+<blockquote>
+<p>Recommended hygiene: a monthly "restore to scratch" test so you <em>know</em> the backup works.</p>
+</blockquote>
+<h3 id="rebuild-the-whole-server">Rebuild the whole server</h3>
+<p>Follow <strong>Deployment → Fresh-server setup</strong>. The only inputs you cannot regenerate are the
+<strong>secrets</strong> (<code>.env</code>) — everything else (code, schema, dashboards) is in git. Budget a few
+hours; the gating step is filling <code>.env</code> correctly from the Access Sheet.</p>
+<h3 id="rotate-a-leaked-credential">Rotate a leaked credential</h3>
+<p>If an API key or webhook secret leaks: rotate it in that service's console (Access Sheet
+has the URLs), update <code>.env</code> on the server, <code>docker compose up -d --force-recreate &lt;svc&gt;</code>,
+and for Helius re-run <code>helius_webhook_setup</code>. Never put the new secret in git.</p>
+<h3 id="i-dont-know-whats-wrong-safe-default">"I don't know what's wrong" — safe default</h3>
+<ol>
+<li><code>/panic</code> in Discord (halts all trading; loses nothing — it's paper).</li>
+<li><code>docker compose ps</code> and <code>docker compose logs --tail=100 &lt;noisy service&gt;</code>.</li>
+<li>If a deploy caused it, <code>git revert</code> the last commit and push.</li>
+<li>Call the technical contact. A halted, paper-only system is in no danger sitting still.</li>
+</ol>
+<hr />
+<h2 id="tools-resources">Tools &amp; Resources</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<p>Every external service the project depends on — what it's for, what it costs, where its
+console is, how to get in, and the <code>.env</code> variable name(s). <strong>Actual passwords/keys are on
+the Access Sheet, never here.</strong></p>
+<h3 id="services">Services</h3>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>What it's for</th>
+<th>~Cost/mo</th>
+<th>Console</th>
+<th>Access notes</th>
+<th>Env var(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hetzner</strong></td>
+<td>The always-on server (and backups)</td>
+<td>~$25 + $4 backup</td>
+<td>console.hetzner.cloud</td>
+<td>Account login; SSH key for the box</td>
+<td>(SSH key, not in <code>.env</code>)</td>
+</tr>
+<tr>
+<td><strong>GitHub</strong></td>
+<td>Source code; <code>git push</code> = deploy</td>
+<td>Free</td>
+<td>github.com/RoyTK/crypto-trading-fleet</td>
+<td>SSH key with push to <code>main</code></td>
+<td>(SSH key)</td>
+</tr>
+<tr>
+<td><strong>Helius</strong></td>
+<td>Solana wallet webhooks (COPY's lifeblood)</td>
+<td><strong>$49</strong> Developer (10M credits) + autoscale $5/1M, <strong>$149 cap = 30M</strong></td>
+<td>dashboard.helius.dev</td>
+<td><strong>Reach via the SSH SOCKS tunnel</strong> (account is German-IP bound) — see below</td>
+<td><code>HELIUS_API_KEY</code>, <code>HELIUS_WEBHOOK_AUTH_SECRET</code>, <code>HELIUS_RPC_URL</code></td>
+</tr>
+<tr>
+<td><strong>Cielo</strong></td>
+<td>Wallet PnL/win-rate stats (curation)</td>
+<td>$65 Pro</td>
+<td>app.cielo.finance</td>
+<td>Account login</td>
+<td><code>CIELO_API_KEY</code></td>
+</tr>
+<tr>
+<td><strong>Birdeye</strong></td>
+<td>Token prices, liquidity, trader discovery</td>
+<td>Free/Lite (~$0–19)</td>
+<td>birdeye.so</td>
+<td>Logged-in Chrome session (used by discovery) + API key</td>
+<td><code>BIRDEYE_API_KEY</code></td>
+</tr>
+<tr>
+<td><strong>Jupiter</strong></td>
+<td>Solana DEX quotes/swaps</td>
+<td>Free</td>
+<td>jup.ag</td>
+<td>Public API, no key</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><strong>Coinglass</strong></td>
+<td>Liquidation data (STRUCTURE)</td>
+<td>$0 (disabled)</td>
+<td>coinglass.com</td>
+<td>Disabled via <code>STRUCTURE_LIQ_CASCADE_ENABLED=false</code></td>
+<td><code>COINGLASS_API_KEY</code></td>
+</tr>
+<tr>
+<td><strong>Discord</strong></td>
+<td>Alerts + <code>/panic</code> + <code>/status</code></td>
+<td>Free</td>
+<td>discord.com</td>
+<td>Bot in the server; owner ID authorizes <code>/panic</code></td>
+<td><code>DISCORD_BOT_TOKEN</code>, <code>DISCORD_*_CHANNEL_ID</code>, <code>DISCORD_OWNER_USER_ID</code>, <code>COPY_DISCORD_WEBHOOK</code></td>
+</tr>
+<tr>
+<td><strong>Telegram</strong></td>
+<td>Alerts + <code>/panic</code> (backup channel)</td>
+<td>Free</td>
+<td>t.me</td>
+<td>Bot via BotFather; owner ID</td>
+<td><code>TELEGRAM_BOT_TOKEN</code>, <code>TELEGRAM_OWNER_USER_ID</code></td>
+</tr>
+<tr>
+<td><strong>Twilio</strong></td>
+<td>P0 emergency SMS</td>
+<td>~$5</td>
+<td>console.twilio.com</td>
+<td>Account; from/to numbers</td>
+<td><code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code>, <code>TWILIO_FROM_NUMBER</code>, <code>TWILIO_TO_NUMBER</code></td>
+</tr>
+<tr>
+<td><strong>OneDrive</strong></td>
+<td>Where browser discovery writes vetting results</td>
+<td>Included (M365)</td>
+<td>onedrive.com</td>
+<td>Roy's account; files at <code>C:\Users\Roy\OneDrive\Documents\Claude\</code></td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><strong>Claude Max</strong></td>
+<td>Runs the browser wallet-discovery/vetting</td>
+<td>Included (Max sub)</td>
+<td>claude.ai</td>
+<td>Max subscription; the discovery uses Max quota, not an API key</td>
+<td>(uses Max login, not <code>.env</code>)</td>
+</tr>
+<tr>
+<td><strong>Cloudflare</strong></td>
+<td>Secure remote access to the server</td>
+<td>Free</td>
+<td>one.dash.cloudflare.com</td>
+<td>Tunnel token</td>
+<td><code>CLOUDFLARE_TUNNEL_TOKEN</code></td>
+</tr>
+</tbody>
+</table>
+<p>Rough monthly total today: <strong>~$140–150</strong> (Hetzner + Helius + Cielo + Birdeye + small SMS).
+The Helius bill is the variable one — it scales with how many/active wallets COPY watches.</p>
+<h3 id="reaching-the-helius-dashboard-the-socks-tunnel">Reaching the Helius dashboard (the SOCKS tunnel)</h3>
+<p>The Helius account is tied to the server's German IP, so the dashboard must be opened
+<em>through</em> the server:
+1. <code>ssh -D 9999 -N fleet hetzner.com</code> (exact form; keep open).
+2. Firefox → SOCKS5 proxy <code>127.0.0.1:9999</code>, "Proxy DNS when using SOCKS v5".
+3. Verify at <code>ifconfig.me</code> (should show the server IP), then <code>dashboard.helius.dev</code>.
+4. Turn the proxy back off when done.
+For just the <em>subscription count</em> you can skip the tunnel:
+<code>docker compose exec -T framework python -m scripts.helius_webhook_setup --list</code>.</p>
+<h3 id="how-we-get-vetted-wallets-the-discovery-trade-pipeline">How we get vetted wallets (the discovery → trade pipeline)</h3>
+<pre><code>Browser-Opus on office PC  →  vets Birdeye trending traders  →  KEEP/REJECT/TOO_FAST
+   → OneDrive vetted_watch_results.txt
+   → synced into repo bots/copy/vetted_watch_results.txt  (git push → deploy)
+   → server: apply_vetting_results.py  → KEEP becomes ACTIVE
+   → daily cron syncs active+watch to Helius webhooks
+   → COPY trades on clusters of active wallets
+</code></pre>
+<p><strong>Vetting criteria (why a wallet is KEEP):</strong> strongly positive <strong>realized</strong> PnL (banked,
+not paper), unrealized losses not deeper than gains (not a bag-holder), <strong>followable hold
+time ~30 min–7 days</strong> (faster = TOO_FAST, slower = swing/REJECT), multiple multi-x wins,
+not a market-maker bot. A high rug-rate is <em>expected and good</em> — the edge is riding
+fresh-mint pumps and exiting before they collapse. ~90% of candidates are REJECTed.</p>
+<hr />
+<h2 id="why-it-is-the-way-it-is">Why It Is The Way It Is</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<p>The load-bearing decisions behind the design. A maintainer should understand these before
+changing anything — several look like "inefficiencies" but are deliberate. Full history is
+in <code>memory/project_decision_log.md</code> and <code>memory/project_fleet_design_state.md</code>.</p>
+<ul>
+<li>
+<p><strong>Paper-first, with a kill-criteria window.</strong> The entire point is to <em>measure</em> whether an
+  edge exists before risking money. Hence locked config during the window, and a Sharpe/win-rate
+  scorecard. Don't short-circuit it by going live early or tuning mid-window.</p>
+</li>
+<li>
+<p><strong>kill-criteria alerts a human; it does not auto-halt for strategy.</strong> Deliberate — to
+  keep human judgment in the loop and avoid bots reacting to bots. (Severe drawdown limits
+  <em>do</em> auto-halt; that's different.)</p>
+</li>
+<li>
+<p><strong>COPY's edge is "ride the pump, exit before the rug."</strong> This is why a high rug-rate on a
+  wallet is <em>good</em>, why vetting rewards <strong>realized</strong> PnL and short holds, and why fast
+  mechanical exits (tiered ladder, sell-cluster, rug check) exist. Don't "fix" the bot to
+  avoid rug-prone tokens — that's the opposite of the strategy.</p>
+</li>
+<li>
+<p><strong>Vetted-only, quality-over-quantity wallet pool.</strong> Auto-discovery is ~90% noise, so
+  wallets are vetted before they can trade, and the raw discovery crons are <strong>paused</strong>.
+  Vetted KEEP wallets go <strong>straight to active</strong> (vetted wallets should be <em>used</em>, not parked
+  cold). The active target is <strong>300</strong>, grown deliberately and watched against the Helius
+  credit budget.</p>
+</li>
+<li>
+<p><strong>The "too fast / too slow" wallet brackets.</strong> COPY can only follow wallets it can
+  realistically execute alongside: ~30 min–7 day holds. Faster snipers (seconds) are
+  flagged <strong>TOO_FAST</strong> (logged for a possible future MEV-grade bot, not used). Slow swing
+  whales are parked as a separate "SWING-COPY" idea. A wallet being <em>profitable for itself</em>
+  is not the same as <em>profitable for COPY to follow</em> — that distinction drove unpinning the
+  ultra-fast wallets.</p>
+</li>
+<li>
+<p><strong>Wallet demotion is by attributed PnL, not raw activity.</strong> The best wallet does ~1,500
+  swaps/day; an activity filter would wrongly kill it. So losers are culled by their COPY
+  attributed PnL, with "one rug ≠ a loser" protection (judge excluding the single worst
+  trade).</p>
+</li>
+<li>
+<p><strong>Helius cost is webhook deliveries (~99.7%).</strong> Cost scales with subscribed wallets ×
+  their activity; MM/HFT bots are the expensive ones (and bad signal), so the vetting that
+  rejects them is also the budget control. Both active and watch tiers are subscribed.</p>
+</li>
+<li>
+<p><strong>Browser discovery is attended, not headless.</strong> Headless <code>claude -p</code> has no
+  Claude-in-Chrome tools, so a scheduled fully-automated browser run is impossible with this
+  toolchain. The truly-unattended path would be a paid Birdeye API tier (declined on cost).
+  So discovery is a person-initiated task.</p>
+</li>
+<li>
+<p><strong>Auto-pull deploy + commit-don't-scp.</strong> <code>git push</code> deploys in ~60s; <code>reset --hard</code> wipes
+  untracked files, so anything the bot needs is committed, not copied onto the server.</p>
+</li>
+<li>
+<p><strong>No secrets in git.</strong> All keys live in the server <code>.env</code> (gitignored) and on the offline
+  Access Sheet. This is why disaster recovery hinges on the offline copy.</p>
+</li>
+</ul>
+<hr />
+<h2 id="troubleshooting">Troubleshooting</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<p>Symptom → likely cause → fix. Start with the symptom you see in Discord/logs.</p>
+<h3 id="a-discovery-pass-added-0-rows-discord-shows-0-rows">"A discovery pass added 0 rows" / Discord shows ⚠ 0-rows</h3>
+<ul>
+<li><strong>Cause:</strong> the browser session wasn't actually driving Birdeye — usually the Chrome
+  extension's service worker went idle, or a Cloudflare/login wall appeared.</li>
+<li><strong>Fix:</strong> re-open/reconnect Chrome (and <code>/chrome</code> if using the CLI), confirm Birdeye is
+  logged in, re-run. The file-as-checkpoint means completed batches were already saved.</li>
+</ul>
+<h3 id="claude-is-not-recognized-in-a-scheduledscript-run">"claude is not recognized" (in a scheduled/script run)</h3>
+<ul>
+<li><strong>Cause:</strong> the Claude Code CLI isn't on that process's PATH (Task Scheduler launches with
+  a stale env), or it isn't installed as a standalone CLI.</li>
+<li><strong>Fix:</strong> install/locate the CLI (<code>(Get-Command claude).Source</code>) and hardcode the path; but
+  note the headless browser path doesn't work anyway — run discovery <strong>attended</strong>.</li>
+</ul>
+<h3 id="heartbeat-silent-a-service-went-quiet-p1">"Heartbeat silent" / a service went quiet (P1)</h3>
+<ul>
+<li><strong>Cause:</strong> a container crashed or wedged.</li>
+<li><strong>Fix:</strong> <code>docker compose ps</code>; <code>docker compose logs --tail=100 &lt;svc&gt;</code>;
+  <code>docker compose up -d &lt;svc&gt;</code> (or <code>--force-recreate</code>). The watchdog also auto-tries a
+  restart; a P0 follows if that fails.</li>
+</ul>
+<h3 id="kill-criterion-fired-p1">"kill criterion fired" (P1)</h3>
+<ul>
+<li><strong>Cause:</strong> a strategy metric (win rate, consecutive losses, Sharpe) crossed a threshold.</li>
+<li><strong>Fix:</strong> <strong>none required automatically</strong> — it's informational. Note it; a human decides
+  later whether to continue/halt/extend. Do <strong>not</strong> start tuning config in response (resets
+  the window).</li>
+</ul>
+<h3 id="helius-credits-spiking-approaching-the-30m-cap">"Helius credits spiking" / approaching the 30M cap</h3>
+<ul>
+<li><strong>Cause:</strong> too many or too-active subscribed wallets (often an MM/HFT wallet slipped in).</li>
+<li><strong>Fix:</strong> check <code>credit_pool_snapshot</code> (top heavy-hitters) and the Helius dashboard; prune
+  the offender, slow discovery, or raise the budget. Remember both active + watch cost
+  credits.</li>
+</ul>
+<h3 id="helius-webhook-400-sync-errors">"Helius webhook 400 / sync errors"</h3>
+<ul>
+<li><strong>Cause:</strong> address-list churn or a malformed sync.</li>
+<li><strong>Fix:</strong> <code>docker compose exec -T framework python -m scripts.helius_webhook_setup --list</code>
+  to inspect; re-run the daily sync; check <code>HELIUS_*</code> env vars are set.</li>
+</ul>
+<h3 id="a-trade-booked-a-fake-profit-on-a-rugged-token">"A trade booked a fake profit on a rugged token"</h3>
+<ul>
+<li><strong>Cause:</strong> a pre-fix orphan, or a stale price at close.</li>
+<li><strong>Fix:</strong> the rug check now prevents new cases; for a historical one, use
+  <code>scripts/correct_rug_trade.py</code> (targeted, audited) — do <strong>not</strong> bulk-edit trades.</li>
+</ul>
+<h3 id="i-changed-env-but-nothing-happened">"I changed <code>.env</code> but nothing happened"</h3>
+<ul>
+<li><strong>Cause:</strong> <code>restart</code> doesn't re-read <code>.env</code>.</li>
+<li><strong>Fix:</strong> <code>docker compose up -d --force-recreate &lt;svc&gt;</code>; verify <code>docker compose exec &lt;svc&gt; printenv VAR</code>.</li>
+</ul>
+<h3 id="a-deploy-broke-something">"A deploy broke something"</h3>
+<ul>
+<li><strong>Fix:</strong> <code>git revert &lt;commit&gt; &amp;&amp; git push</code> — auto-pull rolls it forward in ~60s. Or
+  <code>touch ~/crypto-fleet/.autopull_paused</code> to freeze while you investigate.</li>
+</ul>
+<h3 id="helius-dashboard-wont-load">"Helius dashboard won't load"</h3>
+<ul>
+<li><strong>Cause:</strong> not tunneling through the server (account is German-IP bound), or the proxy is
+  still on after you finished.</li>
+<li><strong>Fix:</strong> use <code>ssh -D 9999 -N fleet hetzner.com</code> + Firefox SOCKS5 <code>127.0.0.1:9999</code>; verify
+  via <code>ifconfig.me</code>; turn the proxy off afterward.</li>
+</ul>
+<h3 id="known-non-obvious-gotchas-catalog">Known non-obvious gotchas (catalog)</h3>
+<p>The full, evolving list of subtle pitfalls lives in <code>memory/project_ops_gotchas.md</code>
+(e.g. container runs <em>baked</em> code so data files need <code>docker compose cp</code>; auto-pull wipes
+untracked files; <code>restart</code> ignores <code>.env</code>; PowerShell 5.1 mangles non-ASCII in <code>.ps1</code>).
+When something weird happens, check there.</p>
+<hr />
+<h2 id="access-sheet-print-this-fill-by-hand">Access Sheet (PRINT THIS — fill by hand)</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<blockquote>
+<p><strong>This page is a blank template.</strong> It contains <strong>no passwords</strong> and never should — it is
+in git. <strong>Print it, then write the credentials in by hand</strong> and store it with your family
+password sheets, somewhere safe and offline. Whoever maintains the project needs this
+sheet plus the printed <code>.env</code> (see bottom).</p>
+</blockquote>
+<h3 id="accounts-consoles">Accounts &amp; consoles</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Service</th>
+<th>What it unlocks</th>
+<th>Console / login URL</th>
+<th>Account / email</th>
+<th>Username</th>
+<th>Password</th>
+<th>2FA?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Hetzner</strong></td>
+<td>The server + backups</td>
+<td>console.hetzner.cloud</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>also need SSH key for the box</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>SSH key (server)</strong></td>
+<td>Logging into the server</td>
+<td>(key file on the PC)</td>
+<td>n/a</td>
+<td><code>fleet</code></td>
+<td>(key passphrase) ____</td>
+<td>☐</td>
+<td>connect: <code>ssh fleet hetzner.com</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>GitHub</strong></td>
+<td>Code; push = deploy</td>
+<td>github.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>repo: RoyTK/crypto-trading-fleet</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Helius</strong></td>
+<td>Solana webhooks (COPY)</td>
+<td>dashboard.helius.dev</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td><strong>open via SSH SOCKS tunnel</strong> (see Tools)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Cielo</strong></td>
+<td>Wallet PnL stats</td>
+<td>app.cielo.finance</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Birdeye</strong></td>
+<td>Token data / discovery</td>
+<td>birdeye.so</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>keep Chrome logged in for discovery</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Discord</strong></td>
+<td>Alerts + <code>/panic</code></td>
+<td>discord.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>note the server + #alerts channel</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Telegram</strong></td>
+<td>Backup alert channel</td>
+<td>t.me</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td></td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Twilio</strong></td>
+<td>Emergency SMS</td>
+<td>console.twilio.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Cloudflare</strong></td>
+<td>Remote access tunnel</td>
+<td>one.dash.cloudflare.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td></td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>Microsoft / OneDrive</strong></td>
+<td>Vetting result files</td>
+<td>onedrive.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>files: <code>OneDrive\Documents\Claude\</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>Claude (Max)</strong></td>
+<td>Runs wallet discovery</td>
+<td>claude.ai</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>Max subscription</td>
+</tr>
+<tr>
+<td>13</td>
+<td><strong>Email (for reports)</strong></td>
+<td>Daily report email / SMTP</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td><strong>Recovery codes</strong></td>
+<td>2FA backups for the above</td>
+<td>(store with this sheet)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>one-time codes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-live-env-the-master-key-file">The live <code>.env</code> (the master key file)</h3>
+<p>The server's <code>~/crypto-fleet/.env</code> holds <strong>every API key and the trading-wallet secret</strong>. It
+is intentionally <strong>not</strong> in git and <strong>cannot be regenerated</strong> if lost. To keep a physical
+backup:</p>
+<pre><code class="language-bash">ssh fleet hetzner.com 'cat ~/crypto-fleet/.env'    # then print/save the output offline
+</code></pre>
+<p>Store the printed <code>.env</code> <strong>with this Access Sheet</strong>, securely. Treat it like the keys to a
+safe — anyone with it can move money once live trading is on.</p>
+<h3 id="who-can-use-the-emergency-stop">Who can use the emergency stop</h3>
+<p><code>/panic</code> only works for authorized Discord/Telegram users (by user ID). <strong>Make sure at
+least one trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /
+<code>TELEGRAM_OWNER_USER_ID</code>). Record who: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2 id="appendix">Appendix</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<h3 id="crontab-inventory-server-utc">Crontab inventory (server, UTC)</h3>
+<p>Verify the live set with <code>crontab -l</code>. Expected:
+- <code>* * * * *</code> — <code>scripts/hetzner_autopull.sh</code> (auto-deploy)
+- <code>0 7 * * *</code> — <code>scripts.wallet_pool_daily_cron</code> (pool reconcile + Helius sync)
+- <code>30 7 * * *</code> — <code>scripts.apply_vetting_results</code> (ingest vetting)
+- <code>15 13 * * *</code> — <code>scripts.credit_pool_snapshot</code> (credit/pool curve)
+- <code>~13:00</code> — <code>scripts.daily_digest</code> (COPY 24h summary — verify installed)
+- every 5h — STRUCTURE whale_pool_growth
+- weekly — STRUCTURE whale_graduation_scan
+- <code>0 14 1 2,5,8,11 *</code> — <code>scripts.quarterly_whale_refresh</code>
+- <code>0 6/14/22 * * *</code> — 3× <code>scripts.wallet_pool_discovery</code> — <strong>PAUSED</strong> (commented)</p>
+<h3 id="env-var-reference-names-purpose-only-values-live-in-env">Env-var reference (names + purpose only — values live in <code>.env</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Var</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELIUS_API_KEY</code>, <code>HELIUS_RPC_URL</code>, <code>HELIUS_WEBHOOK_AUTH_SECRET</code></td>
+<td>Solana webhooks/RPC + receiver auth</td>
+</tr>
+<tr>
+<td><code>CIELO_API_KEY</code></td>
+<td>wallet PnL stats</td>
+</tr>
+<tr>
+<td><code>BIRDEYE_API_KEY</code></td>
+<td>token data</td>
+</tr>
+<tr>
+<td><code>COPY_LIVE_ENABLED</code>, <code>COPY_LIVE_FULL_ENABLED</code></td>
+<td>real-money gates (OFF)</td>
+</tr>
+<tr>
+<td><code>COPY_SOLANA_PRIVATE_KEY</code></td>
+<td>COPY trading wallet secret (empty until live)</td>
+</tr>
+<tr>
+<td><code>COPY_CLUSTER_BUY_ENABLED</code></td>
+<td>COPY buying on/off (currently ON)</td>
+</tr>
+<tr>
+<td><code>COPY_DISCORD_WEBHOOK</code></td>
+<td>discovery health pings</td>
+</tr>
+<tr>
+<td><code>HYPERLIQUID_AGENT_PRIVATE_KEY</code>, <code>HYPERLIQUID_*</code></td>
+<td>STRUCTURE venue (trade-only key)</td>
+</tr>
+<tr>
+<td><code>COINGLASS_API_KEY</code>, <code>STRUCTURE_LIQ_CASCADE_ENABLED</code></td>
+<td>liquidation feed (disabled)</td>
+</tr>
+<tr>
+<td><code>DISCORD_*</code>, <code>TELEGRAM_*</code>, <code>TWILIO_*</code>, <code>SMTP_*</code></td>
+<td>alerting channels</td>
+</tr>
+<tr>
+<td><code>CLOUDFLARE_TUNNEL_TOKEN</code></td>
+<td>remote access</td>
+</tr>
+<tr>
+<td>drawdown/halt knobs (<code>*_DD_*_PCT</code>, <code>CONSECUTIVE_LOSS_*</code>, <code>FLEET_*</code>)</td>
+<td>risk limits</td>
+</tr>
+</tbody>
+</table>
+<p>See <code>.env.example</code> for the full list.</p>
+<h3 id="key-files">Key files</h3>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker-compose.yml</code></td>
+<td>all services</td>
+</tr>
+<tr>
+<td><code>scripts/hetzner_autopull.sh</code></td>
+<td>auto-deploy</td>
+</tr>
+<tr>
+<td><code>bots/copy/config.py</code>, <code>bots/structure/config.py</code></td>
+<td>locked thresholds</td>
+</tr>
+<tr>
+<td><code>bots/copy/wallet_pool_manager.py</code></td>
+<td>tier-decision logic</td>
+</tr>
+<tr>
+<td><code>scripts/apply_vetting_results.py</code></td>
+<td>vetting → pool</td>
+</tr>
+<tr>
+<td><code>scripts/credit_pool_snapshot.py</code></td>
+<td>credit/pool snapshot</td>
+</tr>
+<tr>
+<td><code>bots/copy/discovery_automation/</code></td>
+<td>wallet discovery prompt + (attended) wrapper</td>
+</tr>
+<tr>
+<td><code>framework/models.py</code></td>
+<td>DB tables</td>
+</tr>
+<tr>
+<td><code>framework/kill_criteria_monitor.py</code></td>
+<td>scorecard + window dates</td>
+</tr>
+</tbody>
+</table>
+<h3 id="db-tables-quick-map">DB tables (quick map)</h3>
+<p><code>bot_state</code> (state + kill-criteria JSON), <code>trades</code>, <code>signals</code>, <code>wallet_pool</code>,
+<code>wallet_events_log</code>, <code>wallet_attributions</code>, <code>cluster_detections</code>, <code>shadow_signals</code>,
+<code>copy_signal_shadow_log</code>, <code>structure_whale_pool</code>, <code>halts</code>, <code>scores</code>, <code>audit_log</code>,
+<code>heartbeats</code>.</p>
+<h3 id="deeper-docs-read-these-for-detail-this-manual-summarizes">Deeper docs (read these for detail this manual summarizes)</h3>
+<ul>
+<li><code>OPERATIONS.md</code> — full ops runbook (phases, costs, deploy, backups, /panic).</li>
+<li><code>OPS_CHEATSHEET.md</code> — dense quick reference (window rules, commands, services).</li>
+<li><code>design_state_2026-04-26.md</code> — frozen original design snapshot (history, not current).</li>
+<li><code>bots/copy/discovery_automation/README.md</code> — discovery automation specifics.</li>
+<li><code>memory/</code> (Claude's notes): <code>project_decision_log.md</code>, <code>project_fleet_design_state.md</code>,
+  <code>project_ops_gotchas.md</code>, <code>reference_helius_dashboard_access.md</code>,
+  <code>reference_onedrive_vetting_files.md</code>, <code>feedback_wallet_curation_criteria.md</code>.</li>
+</ul>
+<h3 id="maintaining-this-manual">Maintaining this manual</h3>
+<p>Edit the section files in <code>docs/manual/</code>, run <code>python scripts/build_manual.py</code>, commit the
+sources + rebuilt <code>docs/MANUAL.md</code> (and <code>.html</code>). Docs changes don't restart anything. See
+<code>docs/manual/README.md</code>.</p>
+</body>
+</html>
