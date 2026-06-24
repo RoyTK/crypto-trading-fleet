@@ -30,7 +30,9 @@ multi-channel alerting (Discord/Telegram/Twilio).
 **STRUCTURE** (`bots/structure/`) — Hyperliquid perpetual futures. Signals in
 `bots/structure/signals/`: `funding_fade`, `liquidation_cascade`, `whale_flip`,
 `hl_oi_divergence`. Reads market data via the Hyperliquid Info API (`venue.py`). Paper +
-~10% shadow. Quieter bot.
+~10% shadow. **Currently PAUSED** — it was losing paper money; the suspected fix needs a
+~$500/mo real-time data-feed upgrade (e.g. the Coinglass liquidation tier feeding
+`liquidation_cascade`), not justified in the paper phase. Code is intact; revisit later.
 
 **COPY** (`bots/copy/`) — Solana memecoins via wallet-cluster copying. This is the active
 focus. Key files:

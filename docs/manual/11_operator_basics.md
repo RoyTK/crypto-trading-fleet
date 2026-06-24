@@ -18,8 +18,9 @@ the one task done from **Roy's office Windows PC**, not the server.
 1. **Discord #alerts channel** — this is the heartbeat. If it's quiet or only shows routine
    green/blue messages, things are fine. Red/urgent messages need attention (see *Alerts*
    below).
-2. **The daily digest** — once a day a summary of COPY's last 24 hours is posted to Discord.
-   Skim it.
+2. **The daily digest** — once a day a summary of COPY's last 24 hours is posted to Discord
+   **and emailed to `trading@generalaisystems.com`**. Skim it (check that inbox if you
+   don't watch Discord closely).
 3. **Grafana dashboard** (a web page; login on the Access Sheet) — shows charts of each
    bot's health. You don't need to interpret every chart; just confirm it's loading and
    nothing is screaming red.
@@ -32,10 +33,15 @@ Alerts come with a severity. **The level tells you how fast to react:**
 
 | Level | How it reaches you | What it means | What to do |
 |---|---|---|---|
-| **P0** | **Text message (SMS)** + Discord ping | Emergency — trading halted, an emergency stop fired, or a big loss limit hit | **Look now.** Open Discord, read the message. If unsure, it's safe to leave the bots halted and call the technical contact. |
+| **P0** | **Discord ping** + Telegram | Emergency — trading halted, an emergency stop fired, or a big loss limit hit | **Look now.** Open Discord, read the message. If unsure, it's safe to leave the bots halted and call the technical contact. |
 | **P1** | Discord ping (mention) | A bot was stopped, the system went quiet, or a "is this strategy failing?" warning fired | **Look within an hour.** Read the message. A "kill-criteria" warning is informational — it does **not** require you to do anything except be aware (a human decides later). |
 | **P2** | Discord message (no ping) | Routine but worth noting — wallets added, a credit snapshot, a minor anomaly | Read when convenient. |
 | **P3** | Folded into the daily digest | Pure information | No action. |
+
+> **Note:** **SMS text alerts are NOT set up** (the Twilio service wasn't worth paying for
+> during the paper phase). So even a P0 emergency reaches you via **Discord + Telegram**,
+> not a text message. Keep Discord notifications on. If real-money trading is ever turned
+> on, adding SMS is worth reconsidering.
 
 When in doubt about any alert: **a stopped bot is safe**. Nothing bad happens by halting.
 

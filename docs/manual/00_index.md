@@ -25,6 +25,10 @@ and a technical **Engineer track** for understanding and changing the code.
 You do **not** need to read this top to bottom. Use the Table of Contents (auto-generated
 at the top of the built document) or Ctrl-F.
 
+> **If in doubt, ask Claude.** The fastest way to understand or run anything here is to open
+> VS Code, open Claude, and ask it in plain English — it can read this whole project. See
+> **"Ask Claude — Your Built-In Expert."** You are never alone with this system.
+
 ## In an emergency
 
 > **To stop ALL trading immediately:** in Discord, type **`/panic`** (Roy is the

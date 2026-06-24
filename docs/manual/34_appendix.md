@@ -28,7 +28,9 @@ Verify the live set with `crontab -l`. Expected:
 | `COPY_DISCORD_WEBHOOK` | discovery health pings |
 | `HYPERLIQUID_AGENT_PRIVATE_KEY`, `HYPERLIQUID_*` | STRUCTURE venue (trade-only key) |
 | `COINGLASS_API_KEY`, `STRUCTURE_LIQ_CASCADE_ENABLED` | liquidation feed (disabled) |
-| `DISCORD_*`, `TELEGRAM_*`, `TWILIO_*`, `SMTP_*` | alerting channels |
+| `DISCORD_*`, `TELEGRAM_*` | alerting channels (active) |
+| `TWILIO_*` | SMS — **not configured** (no SMS in paper phase) |
+| `SMTP_*`, `SMTP_TO` | email digest/report; `SMTP_TO` = `trading@generalaisystems.com` |
 | `CLOUDFLARE_TUNNEL_TOKEN` | remote access |
 | drawdown/halt knobs (`*_DD_*_PCT`, `CONSECUTIVE_LOSS_*`, `FLEET_*`) | risk limits |
 

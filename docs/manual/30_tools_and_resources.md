@@ -16,16 +16,30 @@ the Access Sheet, never here.**
 | **Cielo** | Wallet PnL/win-rate stats (curation) | $65 Pro | app.cielo.finance | Account login | `CIELO_API_KEY` |
 | **Birdeye** | Token prices, liquidity, trader discovery | Free/Lite (~$0–19) | birdeye.so | Logged-in Chrome session (used by discovery) + API key | `BIRDEYE_API_KEY` |
 | **Jupiter** | Solana DEX quotes/swaps | Free | jup.ag | Public API, no key | (none) |
-| **Coinglass** | Liquidation data (STRUCTURE) | $0 (disabled) | coinglass.com | Disabled via `STRUCTURE_LIQ_CASCADE_ENABLED=false` | `COINGLASS_API_KEY` |
+| **Coinglass** | Liquidation data (STRUCTURE) | $0 (disabled) | coinglass.com | Disabled via `STRUCTURE_LIQ_CASCADE_ENABLED=false`; its **real-time tier (~$500/mo)** is the upgrade STRUCTURE would need to be revived — not justified in paper phase | `COINGLASS_API_KEY` |
 | **Discord** | Alerts + `/panic` + `/status` | Free | discord.com | Bot in the server; owner ID authorizes `/panic` | `DISCORD_BOT_TOKEN`, `DISCORD_*_CHANNEL_ID`, `DISCORD_OWNER_USER_ID`, `COPY_DISCORD_WEBHOOK` |
 | **Telegram** | Alerts + `/panic` (backup channel) | Free | t.me | Bot via BotFather; owner ID | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_USER_ID` |
-| **Twilio** | P0 emergency SMS | ~$5 | console.twilio.com | Account; from/to numbers | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TWILIO_TO_NUMBER` |
+| **Twilio** | P0 emergency SMS | **$0 — NOT set up** | console.twilio.com | Not configured during paper phase (SMS wasn't worth paying for); P0 reaches you via Discord + Telegram instead. Add if going live. | `TWILIO_*` (unset) |
+| **Privacy.com** | Virtual cards used to **pay for some services** (e.g. Helius) | per-card | privacy.com | Roy's account; login on the Access Sheet | (none) |
+| **Email (SMTP)** | Daily digest/report email | included | (provider) | Digest is sent to **`trading@generalaisystems.com`** | `SMTP_*`, `SMTP_TO` |
 | **OneDrive** | Where browser discovery writes vetting results | Included (M365) | onedrive.com | Roy's account; files at `C:\Users\Roy\OneDrive\Documents\Claude\` | (none) |
 | **Claude Max** | Runs the browser wallet-discovery/vetting | Included (Max sub) | claude.ai | Max subscription; the discovery uses Max quota, not an API key | (uses Max login, not `.env`) |
 | **Cloudflare** | Secure remote access to the server | Free | one.dash.cloudflare.com | Tunnel token | `CLOUDFLARE_TUNNEL_TOKEN` |
 
-Rough monthly total today: **~$140–150** (Hetzner + Helius + Cielo + Birdeye + small SMS).
+Rough monthly total today: **~$140–150** (Hetzner + Helius + Cielo + Birdeye; **no SMS**).
 The Helius bill is the variable one — it scales with how many/active wallets COPY watches.
+Some services are paid via a **Privacy.com** virtual card rather than a card directly.
+
+### Payments & crypto wallets (mostly for the eventual live phase)
+
+- **Privacy.com** — virtual cards used to pay for some subscriptions (e.g. Helius). Login
+  on the Access Sheet.
+- **Crypto wallets / exchange** — used to hold and fund trading capital (relevant once live
+  trading is on; mostly idle now): **Phantom** (Solana), **Rabby** and **MetaMask** (EVM
+  chains), and **Kraken** (exchange / on-ramp). Each browser wallet has a **12-word
+  recovery phrase** — the most sensitive secrets in the whole project. They live on the
+  Access Sheet with extra-secure handling; **never** type or store them anywhere digital
+  connected to this project.
 
 ### Reaching the Helius dashboard (the SOCKS tunnel)
 

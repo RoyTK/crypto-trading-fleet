@@ -18,7 +18,10 @@ There are two bots, each a different strategy:
 
 - **STRUCTURE** — trades **Hyperliquid perpetual futures** (a derivatives exchange for
   large coins like Bitcoin and Ethereum). It looks for unusual market conditions (e.g.
-  lots of forced selling) and bets on a bounce. *Lower activity; the quieter of the two.*
+  lots of forced selling) and bets on a bounce. **Currently PAUSED** — it kept losing
+  paper money. A fix is believed possible but would need a ~$500/month paid data-plan
+  upgrade, which isn't justified during the paper phase. So the project's active focus is
+  COPY.
 
 - **COPY** — trades **Solana "memecoins"** (tiny, very risky new tokens). It watches a
   curated list of skilled trader wallets; when several of them buy the same brand-new token
@@ -32,7 +35,9 @@ There are two bots, each a different strategy:
   at risk.**
 - **COPY** is the active focus: it trades on a **curated, vetted** list of ~150+ wallets
   that grows as Roy runs wallet discovery. Buying is currently **ON**.
-- **STRUCTURE** is running quietly in the background.
+- **STRUCTURE** is **PAUSED** (it was losing paper money; the likely fix needs a costly
+  ~$500/mo data upgrade not worth paying for during the paper phase). It can be revisited
+  later; for now, most of this manual's day-to-day is about COPY.
 - The system is being **measured** against pass/fail criteria (the "kill criteria") over a
   ~60–90 day window before any decision to use real money.
 

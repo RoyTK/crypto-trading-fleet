@@ -21,7 +21,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-06-24 16:20 UTC.</em></p>
+<em>Last built: 2026-06-24 18:05 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> the <strong>Operator track</strong> (sections 1x) is plain-language —
 for keeping the system alive day to day. The <strong>Engineer track</strong> (2x) is technical —
@@ -53,6 +53,12 @@ or Ctrl-F to jump around.</p>
 <li><a href="#the-emergency-stop-panic">The emergency stop: <code>/panic</code></a></li>
 <li><a href="#what-not-to-touch">What NOT to touch</a></li>
 <li><a href="#the-rhythm-of-the-job">The rhythm of the job</a></li>
+</ul>
+</li>
+<li><a href="#ask-claude-your-built-in-expert">Ask Claude — Your Built-In Expert</a><ul>
+<li><a href="#how-to-start-claude-on-this-project-one-time-per-session">How to start Claude on this project (one-time-per-session)</a></li>
+<li><a href="#what-to-ask-it">What to ask it</a></li>
+<li><a href="#good-habits">Good habits</a></li>
 </ul>
 </li>
 <li><a href="#recurring-tasks-step-by-step">Recurring Tasks — Step by Step</a><ul>
@@ -110,6 +116,7 @@ or Ctrl-F to jump around.</p>
 </li>
 <li><a href="#tools-resources">Tools &amp; Resources</a><ul>
 <li><a href="#services">Services</a></li>
+<li><a href="#payments-crypto-wallets-mostly-for-the-eventual-live-phase">Payments &amp; crypto wallets (mostly for the eventual live phase)</a></li>
 <li><a href="#reaching-the-helius-dashboard-the-socks-tunnel">Reaching the Helius dashboard (the SOCKS tunnel)</a></li>
 <li><a href="#how-we-get-vetted-wallets-the-discovery-trade-pipeline">How we get vetted wallets (the discovery → trade pipeline)</a></li>
 </ul>
@@ -131,6 +138,7 @@ or Ctrl-F to jump around.</p>
 </li>
 <li><a href="#access-sheet-print-this-fill-by-hand">Access Sheet (PRINT THIS — fill by hand)</a><ul>
 <li><a href="#accounts-consoles">Accounts &amp; consoles</a></li>
+<li><a href="#crypto-wallets-recovery-phrases-the-most-sensitive-items">Crypto wallets &amp; recovery phrases (the MOST sensitive items)</a></li>
 <li><a href="#the-live-env-the-master-key-file">The live <code>.env</code> (the master key file)</a></li>
 <li><a href="#who-can-use-the-emergency-stop">Who can use the emergency stop</a></li>
 </ul>
@@ -186,6 +194,11 @@ and a technical <strong>Engineer track</strong> for understanding and changing t
 </table>
 <p>You do <strong>not</strong> need to read this top to bottom. Use the Table of Contents (auto-generated
 at the top of the built document) or Ctrl-F.</p>
+<blockquote>
+<p><strong>If in doubt, ask Claude.</strong> The fastest way to understand or run anything here is to open
+VS Code, open Claude, and ask it in plain English — it can read this whole project. See
+<strong>"Ask Claude — Your Built-In Expert."</strong> You are never alone with this system.</p>
+</blockquote>
 <h2 id="in-an-emergency">In an emergency</h2>
 <blockquote>
 <p><strong>To stop ALL trading immediately:</strong> in Discord, type <strong><code>/panic</code></strong> (Roy is the
@@ -229,7 +242,10 @@ are real, but it is not yet flying a real plane.</p>
 <li>
 <p><strong>STRUCTURE</strong> — trades <strong>Hyperliquid perpetual futures</strong> (a derivatives exchange for
   large coins like Bitcoin and Ethereum). It looks for unusual market conditions (e.g.
-  lots of forced selling) and bets on a bounce. <em>Lower activity; the quieter of the two.</em></p>
+  lots of forced selling) and bets on a bounce. <strong>Currently PAUSED</strong> — it kept losing
+  paper money. A fix is believed possible but would need a ~$500/month paid data-plan
+  upgrade, which isn't justified during the paper phase. So the project's active focus is
+  COPY.</p>
 </li>
 <li>
 <p><strong>COPY</strong> — trades <strong>Solana "memecoins"</strong> (tiny, very risky new tokens). It watches a
@@ -245,7 +261,9 @@ are real, but it is not yet flying a real plane.</p>
   at risk.</strong></li>
 <li><strong>COPY</strong> is the active focus: it trades on a <strong>curated, vetted</strong> list of ~150+ wallets
   that grows as Roy runs wallet discovery. Buying is currently <strong>ON</strong>.</li>
-<li><strong>STRUCTURE</strong> is running quietly in the background.</li>
+<li><strong>STRUCTURE</strong> is <strong>PAUSED</strong> (it was losing paper money; the likely fix needs a costly
+  ~$500/mo data upgrade not worth paying for during the paper phase). It can be revisited
+  later; for now, most of this manual's day-to-day is about COPY.</li>
 <li>The system is being <strong>measured</strong> against pass/fail criteria (the "kill criteria") over a
   ~60–90 day window before any decision to use real money.</li>
 </ul>
@@ -286,8 +304,9 @@ the one task done from <strong>Roy's office Windows PC</strong>, not the server.
 <li><strong>Discord #alerts channel</strong> — this is the heartbeat. If it's quiet or only shows routine
    green/blue messages, things are fine. Red/urgent messages need attention (see <em>Alerts</em>
    below).</li>
-<li><strong>The daily digest</strong> — once a day a summary of COPY's last 24 hours is posted to Discord.
-   Skim it.</li>
+<li><strong>The daily digest</strong> — once a day a summary of COPY's last 24 hours is posted to Discord
+   <strong>and emailed to <code>trading@generalaisystems.com</code></strong>. Skim it (check that inbox if you
+   don't watch Discord closely).</li>
 <li><strong>Grafana dashboard</strong> (a web page; login on the Access Sheet) — shows charts of each
    bot's health. You don't need to interpret every chart; just confirm it's loading and
    nothing is screaming red.</li>
@@ -307,7 +326,7 @@ the one task done from <strong>Roy's office Windows PC</strong>, not the server.
 <tbody>
 <tr>
 <td><strong>P0</strong></td>
-<td><strong>Text message (SMS)</strong> + Discord ping</td>
+<td><strong>Discord ping</strong> + Telegram</td>
 <td>Emergency — trading halted, an emergency stop fired, or a big loss limit hit</td>
 <td><strong>Look now.</strong> Open Discord, read the message. If unsure, it's safe to leave the bots halted and call the technical contact.</td>
 </tr>
@@ -331,6 +350,12 @@ the one task done from <strong>Roy's office Windows PC</strong>, not the server.
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p><strong>Note:</strong> <strong>SMS text alerts are NOT set up</strong> (the Twilio service wasn't worth paying for
+during the paper phase). So even a P0 emergency reaches you via <strong>Discord + Telegram</strong>,
+not a text message. Keep Discord notifications on. If real-money trading is ever turned
+on, adding SMS is worth reconsidering.</p>
+</blockquote>
 <p>When in doubt about any alert: <strong>a stopped bot is safe</strong>. Nothing bad happens by halting.</p>
 <h3 id="the-emergency-stop-panic">The emergency stop: <code>/panic</code></h3>
 <p>In Discord, typing <strong><code>/panic</code></strong> immediately halts every bot, cancels open orders, and
@@ -360,6 +385,53 @@ engineer is guiding you:</p>
 <li><strong>Quarterly:</strong> a whale-list refresh for STRUCTURE runs automatically; you just review it.</li>
 <li><strong>On a red alert:</strong> follow the table above.</li>
 </ul>
+<hr />
+<h2 id="ask-claude-your-built-in-expert">Ask Claude — Your Built-In Expert</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<p><strong>This is the single most useful skill for maintaining the project. If in doubt, ask
+Claude.</strong> Claude is an AI assistant that can read this entire project, explain anything in
+plain language, run the routine tasks for you, and help diagnose problems. You do not need
+to be technical — you just need to be able to open one program and type a question.</p>
+<h3 id="how-to-start-claude-on-this-project-one-time-per-session">How to start Claude on this project (one-time-per-session)</h3>
+<ol>
+<li><strong>Open VS Code.</strong> It's the program with the blue folder-ribbon icon (search "VS Code" or
+   "Visual Studio Code" in the Start menu).</li>
+<li><strong>Make sure this project is open.</strong> The title bar / the file list on the left should say
+   <strong><code>CryptoTradingworkflow</code></strong>. If it doesn't:
+   - In VS Code: <strong>File → Open Folder…</strong> → navigate to
+     <code>C:\Projects\CryptoTradingworkflow</code> → <strong>Select Folder</strong>.</li>
+<li><strong>Open Claude.</strong> Click the <strong>Claude icon</strong> in the left-hand activity bar (or press
+   <strong>Ctrl+Shift+P</strong>, type "Claude", and pick the option to open/start Claude). A chat panel
+   opens on the side.</li>
+<li><strong>Start typing.</strong> That's it — you're talking to Claude, and it can see this whole
+   project (code, this manual, and the notes).</li>
+</ol>
+<h3 id="what-to-ask-it">What to ask it</h3>
+<p>Talk to it like a knowledgeable colleague. For example:
+- <em>"In plain English, what does the COPY bot do right now, and is it healthy?"</em>
+- <em>"Walk me through running a wallet discovery pass step by step."</em>
+- <em>"I got a P1 alert that says '… kill criterion fired'. What does that mean and do I need
+  to do anything?"</em>
+- <em>"Help me check the Helius credit usage and tell me if we're near the budget."</em>
+- <em>"Something looks wrong on the dashboard — here's a screenshot. What is it telling me?"</em>
+- <em>"Read the maintenance manual section on disaster recovery and summarize what I'd do if
+  the server died."</em></p>
+<h3 id="good-habits">Good habits</h3>
+<ul>
+<li><strong>Be specific and paste what you see</strong> — error messages, alert text, screenshots. Claude
+  works best with the actual details in front of it.</li>
+<li><strong>Ask it to explain before acting.</strong> <em>"Explain what this will do before you do it."</em></li>
+<li><strong>It's safe to ask "is this safe?"</strong> before any change. When something could affect real
+  money or stop the bots, Claude will flag it (and so does this manual's <em>Changing Safely</em>
+  section).</li>
+<li><strong>When truly stuck, the safe fallback is still <code>/panic</code></strong> in Discord (stops all trading,
+  harms nothing), then ask Claude or call the technical contact.</li>
+</ul>
+<blockquote>
+<p><strong>Bottom line:</strong> you are never alone with this project. Open VS Code, open Claude, and
+ask. Most questions in this manual can also just be asked directly — and Claude will
+point you to the right section or do the task with you.</p>
+</blockquote>
 <hr />
 <h2 id="recurring-tasks-step-by-step">Recurring Tasks — Step by Step</h2>
 <p><em>Last reviewed: 2026-06-24</em></p>
@@ -515,7 +587,9 @@ multi-channel alerting (Discord/Telegram/Twilio).</p>
 <p><strong>STRUCTURE</strong> (<code>bots/structure/</code>) — Hyperliquid perpetual futures. Signals in
 <code>bots/structure/signals/</code>: <code>funding_fade</code>, <code>liquidation_cascade</code>, <code>whale_flip</code>,
 <code>hl_oi_divergence</code>. Reads market data via the Hyperliquid Info API (<code>venue.py</code>). Paper +
-~10% shadow. Quieter bot.</p>
+~10% shadow. <strong>Currently PAUSED</strong> — it was losing paper money; the suspected fix needs a
+~$500/mo real-time data-feed upgrade (e.g. the Coinglass liquidation tier feeding
+<code>liquidation_cascade</code>), not justified in the paper phase. Code is intact; revisit later.</p>
 <p><strong>COPY</strong> (<code>bots/copy/</code>) — Solana memecoins via wallet-cluster copying. This is the active
 focus. Key files:
 - <code>main.py</code> — the loop: subscribes to wallet events, runs cluster detection, manages
@@ -1068,7 +1142,7 @@ the Access Sheet, never here.</strong></p>
 <td>Liquidation data (STRUCTURE)</td>
 <td>$0 (disabled)</td>
 <td>coinglass.com</td>
-<td>Disabled via <code>STRUCTURE_LIQ_CASCADE_ENABLED=false</code></td>
+<td>Disabled via <code>STRUCTURE_LIQ_CASCADE_ENABLED=false</code>; its <strong>real-time tier (~$500/mo)</strong> is the upgrade STRUCTURE would need to be revived — not justified in paper phase</td>
 <td><code>COINGLASS_API_KEY</code></td>
 </tr>
 <tr>
@@ -1090,10 +1164,26 @@ the Access Sheet, never here.</strong></p>
 <tr>
 <td><strong>Twilio</strong></td>
 <td>P0 emergency SMS</td>
-<td>~$5</td>
+<td><strong>$0 — NOT set up</strong></td>
 <td>console.twilio.com</td>
-<td>Account; from/to numbers</td>
-<td><code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code>, <code>TWILIO_FROM_NUMBER</code>, <code>TWILIO_TO_NUMBER</code></td>
+<td>Not configured during paper phase (SMS wasn't worth paying for); P0 reaches you via Discord + Telegram instead. Add if going live.</td>
+<td><code>TWILIO_*</code> (unset)</td>
+</tr>
+<tr>
+<td><strong>Privacy.com</strong></td>
+<td>Virtual cards used to <strong>pay for some services</strong> (e.g. Helius)</td>
+<td>per-card</td>
+<td>privacy.com</td>
+<td>Roy's account; login on the Access Sheet</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><strong>Email (SMTP)</strong></td>
+<td>Daily digest/report email</td>
+<td>included</td>
+<td>(provider)</td>
+<td>Digest is sent to <strong><code>trading@generalaisystems.com</code></strong></td>
+<td><code>SMTP_*</code>, <code>SMTP_TO</code></td>
 </tr>
 <tr>
 <td><strong>OneDrive</strong></td>
@@ -1121,8 +1211,20 @@ the Access Sheet, never here.</strong></p>
 </tr>
 </tbody>
 </table>
-<p>Rough monthly total today: <strong>~$140–150</strong> (Hetzner + Helius + Cielo + Birdeye + small SMS).
-The Helius bill is the variable one — it scales with how many/active wallets COPY watches.</p>
+<p>Rough monthly total today: <strong>~$140–150</strong> (Hetzner + Helius + Cielo + Birdeye; <strong>no SMS</strong>).
+The Helius bill is the variable one — it scales with how many/active wallets COPY watches.
+Some services are paid via a <strong>Privacy.com</strong> virtual card rather than a card directly.</p>
+<h3 id="payments-crypto-wallets-mostly-for-the-eventual-live-phase">Payments &amp; crypto wallets (mostly for the eventual live phase)</h3>
+<ul>
+<li><strong>Privacy.com</strong> — virtual cards used to pay for some subscriptions (e.g. Helius). Login
+  on the Access Sheet.</li>
+<li><strong>Crypto wallets / exchange</strong> — used to hold and fund trading capital (relevant once live
+  trading is on; mostly idle now): <strong>Phantom</strong> (Solana), <strong>Rabby</strong> and <strong>MetaMask</strong> (EVM
+  chains), and <strong>Kraken</strong> (exchange / on-ramp). Each browser wallet has a <strong>12-word
+  recovery phrase</strong> — the most sensitive secrets in the whole project. They live on the
+  Access Sheet with extra-secure handling; <strong>never</strong> type or store them anywhere digital
+  connected to this project.</li>
+</ul>
 <h3 id="reaching-the-helius-dashboard-the-socks-tunnel">Reaching the Helius dashboard (the SOCKS tunnel)</h3>
 <p>The Helius account is tied to the server's German IP, so the dashboard must be opened
 <em>through</em> the server:
@@ -1152,6 +1254,12 @@ fresh-mint pumps and exiting before they collapse. ~90% of candidates are REJECT
 changing anything — several look like "inefficiencies" but are deliberate. Full history is
 in <code>memory/project_decision_log.md</code> and <code>memory/project_fleet_design_state.md</code>.</p>
 <ul>
+<li>
+<p><strong>STRUCTURE is paused, on purpose.</strong> It was steadily losing paper money. The suspected
+  fix needs a ~$500/month real-time data-feed upgrade, which isn't worth paying for during
+  the paper phase. So effort is concentrated on COPY. STRUCTURE's code is intact and can be
+  revived later if/when the data spend is justified — don't delete it.</p>
+</li>
 <li>
 <p><strong>Paper-first, with a kill-criteria window.</strong> The entire point is to <em>measure</em> whether an
   edge exists before risking money. Hence locked config during the window, and a Sharpe/win-rate
@@ -1290,6 +1398,9 @@ When something weird happens, check there.</p>
 in git. <strong>Print it, then write the credentials in by hand</strong> and store it with your family
 password sheets, somewhere safe and offline. Whoever maintains the project needs this
 sheet plus the printed <code>.env</code> (see bottom).</p>
+<p><strong>Print in LANDSCAPE</strong> so there's room to write. The build produces a ready-to-print
+landscape version of just this sheet at <strong><code>docs/ACCESS_SHEET.html</code></strong> (open in a browser →
+Print → Landscape). The full manual's <code>docs/MANUAL.html</code> is portrait.</p>
 </blockquote>
 <h3 id="accounts-consoles">Accounts &amp; consoles</h3>
 <table>
@@ -1400,11 +1511,22 @@ sheet plus the printed <code>.env</code> (see bottom).</p>
 <td><strong>Twilio</strong></td>
 <td>Emergency SMS</td>
 <td>console.twilio.com</td>
+<td><em>(not set up)</em></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>NOT configured (no SMS in paper phase)</td>
+</tr>
+<tr>
+<td>9b</td>
+<td><strong>Privacy.com</strong></td>
+<td>Pays for some services (Helius etc.)</td>
+<td>privacy.com</td>
 <td><strong><em>_</em></strong>___</td>
 <td><strong><em>_</em></strong>___</td>
 <td><strong><em>_</em></strong>___</td>
 <td>☐</td>
-<td></td>
+<td>virtual cards</td>
 </tr>
 <tr>
 <td>10</td>
@@ -1460,6 +1582,59 @@ sheet plus the printed <code>.env</code> (see bottom).</p>
 <td></td>
 <td></td>
 <td>one-time codes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="crypto-wallets-recovery-phrases-the-most-sensitive-items">Crypto wallets &amp; recovery phrases (the MOST sensitive items)</h3>
+<blockquote>
+<p>⚠️ <strong>A 12-word recovery phrase IS the money.</strong> Anyone who has it can drain that wallet.
+Write these by hand on the printed sheet ONLY, store them in a safe/lockbox, and <strong>never</strong>
+type or photograph them or store them on any computer, phone, cloud, or in this project.
+If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Wallet</th>
+<th>Type / chain</th>
+<th>Used for</th>
+<th>Address (public, ok to write)</th>
+<th>12-word recovery phrase (store securely)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phantom</strong> (phantom.com)</td>
+<td>Solana</td>
+<td>COPY trading / funding</td>
+<td><strong><em>_</em></strong>___</td>
+<td>1.<strong><em>_ 2.</em></strong><em> 3.<strong><em>_ … 12.</em></strong></em></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Rabby</strong> (rabby.io)</td>
+<td>EVM (Base/Arbitrum/ETH)</td>
+<td>EVM trading / funding</td>
+<td><strong><em>_</em></strong>___</td>
+<td>1.<strong><em>_ 2.</em></strong><em> 3.<strong><em>_ … 12.</em></strong></em></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>MetaMask</strong></td>
+<td>EVM</td>
+<td>EVM trading / funding</td>
+<td><strong><em>_</em></strong>___</td>
+<td>1.<strong><em>_ 2.</em></strong><em> 3.<strong><em>_ … 12.</em></strong></em></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Kraken</strong> (kraken.com)</td>
+<td>Exchange</td>
+<td>On-ramp / hold capital</td>
+<td>(account, not a phrase)</td>
+<td>login on the accounts table above</td>
+<td>enable 2FA</td>
 </tr>
 </tbody>
 </table>
@@ -1535,8 +1710,16 @@ least one trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER
 <td>liquidation feed (disabled)</td>
 </tr>
 <tr>
-<td><code>DISCORD_*</code>, <code>TELEGRAM_*</code>, <code>TWILIO_*</code>, <code>SMTP_*</code></td>
-<td>alerting channels</td>
+<td><code>DISCORD_*</code>, <code>TELEGRAM_*</code></td>
+<td>alerting channels (active)</td>
+</tr>
+<tr>
+<td><code>TWILIO_*</code></td>
+<td>SMS — <strong>not configured</strong> (no SMS in paper phase)</td>
+</tr>
+<tr>
+<td><code>SMTP_*</code>, <code>SMTP_TO</code></td>
+<td>email digest/report; <code>SMTP_TO</code> = <code>trading@generalaisystems.com</code></td>
 </tr>
 <tr>
 <td><code>CLOUDFLARE_TUNNEL_TOKEN</code></td>

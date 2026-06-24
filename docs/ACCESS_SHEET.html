@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8'>
+<title>Access Sheet</title>
+<style>
+    @page { size: A4 landscape; margin: 1cm; }
+    body { font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 1rem; line-height: 1.4; color: #1a1a1a; }
+    h2 { border-bottom: 2px solid #333; padding-bottom: .2em; }
+    table { border-collapse: collapse; width: 100%; font-size: .85em; }
+    th, td { border: 1px solid #999; padding: .55em .5em; text-align: left; vertical-align: top; }
+    th { background: #eee; }
+    blockquote { border-left: 4px solid #c0392b; background: #fdf3f2; margin: 1em 0; padding: .4em 1em; }
+    code { background: #f3f3f3; padding: .1em .3em; border-radius: 3px; }
+    </style>
+</head>
+<body>
+<h2>Access Sheet (PRINT THIS — fill by hand)</h2>
+<p><em>Last reviewed: 2026-06-24</em></p>
+<blockquote>
+<p><strong>This page is a blank template.</strong> It contains <strong>no passwords</strong> and never should — it is
+in git. <strong>Print it, then write the credentials in by hand</strong> and store it with your family
+password sheets, somewhere safe and offline. Whoever maintains the project needs this
+sheet plus the printed <code>.env</code> (see bottom).</p>
+<p><strong>Print in LANDSCAPE</strong> so there's room to write. The build produces a ready-to-print
+landscape version of just this sheet at <strong><code>docs/ACCESS_SHEET.html</code></strong> (open in a browser →
+Print → Landscape). The full manual's <code>docs/MANUAL.html</code> is portrait.</p>
+</blockquote>
+<h3>Accounts &amp; consoles</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Service</th>
+<th>What it unlocks</th>
+<th>Console / login URL</th>
+<th>Account / email</th>
+<th>Username</th>
+<th>Password</th>
+<th>2FA?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Hetzner</strong></td>
+<td>The server + backups</td>
+<td>console.hetzner.cloud</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>also need SSH key for the box</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>SSH key (server)</strong></td>
+<td>Logging into the server</td>
+<td>(key file on the PC)</td>
+<td>n/a</td>
+<td><code>fleet</code></td>
+<td>(key passphrase) ____</td>
+<td>☐</td>
+<td>connect: <code>ssh fleet hetzner.com</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>GitHub</strong></td>
+<td>Code; push = deploy</td>
+<td>github.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>repo: RoyTK/crypto-trading-fleet</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Helius</strong></td>
+<td>Solana webhooks (COPY)</td>
+<td>dashboard.helius.dev</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td><strong>open via SSH SOCKS tunnel</strong> (see Tools)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Cielo</strong></td>
+<td>Wallet PnL stats</td>
+<td>app.cielo.finance</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Birdeye</strong></td>
+<td>Token data / discovery</td>
+<td>birdeye.so</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>keep Chrome logged in for discovery</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Discord</strong></td>
+<td>Alerts + <code>/panic</code></td>
+<td>discord.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>note the server + #alerts channel</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Telegram</strong></td>
+<td>Backup alert channel</td>
+<td>t.me</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td></td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Twilio</strong></td>
+<td>Emergency SMS</td>
+<td>console.twilio.com</td>
+<td><em>(not set up)</em></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>NOT configured (no SMS in paper phase)</td>
+</tr>
+<tr>
+<td>9b</td>
+<td><strong>Privacy.com</strong></td>
+<td>Pays for some services (Helius etc.)</td>
+<td>privacy.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>virtual cards</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Cloudflare</strong></td>
+<td>Remote access tunnel</td>
+<td>one.dash.cloudflare.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td></td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>Microsoft / OneDrive</strong></td>
+<td>Vetting result files</td>
+<td>onedrive.com</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>files: <code>OneDrive\Documents\Claude\</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>Claude (Max)</strong></td>
+<td>Runs wallet discovery</td>
+<td>claude.ai</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td>Max subscription</td>
+</tr>
+<tr>
+<td>13</td>
+<td><strong>Email (for reports)</strong></td>
+<td>Daily report email / SMTP</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td><strong><em>_</em></strong>___</td>
+<td>☐</td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td><strong>Recovery codes</strong></td>
+<td>2FA backups for the above</td>
+<td>(store with this sheet)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>one-time codes</td>
+</tr>
+</tbody>
+</table>
+<h3>Crypto wallets &amp; recovery phrases (the MOST sensitive items)</h3>
+<blockquote>
+<p>⚠️ <strong>A 12-word recovery phrase IS the money.</strong> Anyone who has it can drain that wallet.
+Write these by hand on the printed sheet ONLY, store them in a safe/lockbox, and <strong>never</strong>
+type or photograph them or store them on any computer, phone, cloud, or in this project.
+If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Wallet</th>
+<th>Type / chain</th>
+<th>Used for</th>
+<th>Address (public, ok to write)</th>
+<th>12-word recovery phrase (store securely)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phantom</strong> (phantom.com)</td>
+<td>Solana</td>
+<td>COPY trading / funding</td>
+<td><strong><em>_</em></strong>___</td>
+<td>1.<strong><em>_ 2.</em></strong><em> 3.<strong><em>_ … 12.</em></strong></em></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Rabby</strong> (rabby.io)</td>
+<td>EVM (Base/Arbitrum/ETH)</td>
+<td>EVM trading / funding</td>
+<td><strong><em>_</em></strong>___</td>
+<td>1.<strong><em>_ 2.</em></strong><em> 3.<strong><em>_ … 12.</em></strong></em></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>MetaMask</strong></td>
+<td>EVM</td>
+<td>EVM trading / funding</td>
+<td><strong><em>_</em></strong>___</td>
+<td>1.<strong><em>_ 2.</em></strong><em> 3.<strong><em>_ … 12.</em></strong></em></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Kraken</strong> (kraken.com)</td>
+<td>Exchange</td>
+<td>On-ramp / hold capital</td>
+<td>(account, not a phrase)</td>
+<td>login on the accounts table above</td>
+<td>enable 2FA</td>
+</tr>
+</tbody>
+</table>
+<h3>The live <code>.env</code> (the master key file)</h3>
+<p>The server's <code>~/crypto-fleet/.env</code> holds <strong>every API key and the trading-wallet secret</strong>. It
+is intentionally <strong>not</strong> in git and <strong>cannot be regenerated</strong> if lost. To keep a physical
+backup:</p>
+<pre><code class="language-bash">ssh fleet hetzner.com 'cat ~/crypto-fleet/.env'    # then print/save the output offline
+</code></pre>
+<p>Store the printed <code>.env</code> <strong>with this Access Sheet</strong>, securely. Treat it like the keys to a
+safe — anyone with it can move money once live trading is on.</p>
+<h3>Who can use the emergency stop</h3>
+<p><code>/panic</code> only works for authorized Discord/Telegram users (by user ID). <strong>Make sure at
+least one trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /
+<code>TELEGRAM_OWNER_USER_ID</code>). Record who: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+</body>
+</html>

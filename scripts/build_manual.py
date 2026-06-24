@@ -26,6 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = REPO_ROOT / "docs" / "manual"
 OUT_MD = REPO_ROOT / "docs" / "MANUAL.md"
 OUT_HTML = REPO_ROOT / "docs" / "MANUAL.html"
+OUT_ACCESS = REPO_ROOT / "docs" / "ACCESS_SHEET.html"  # standalone, LANDSCAPE, for printing
 
 TITLE = "Crypto Trading Fleet — Maintenance Manual"
 
@@ -122,6 +123,42 @@ def build_html(markdown_text: str) -> str | None:
     )
 
 
+def build_access_sheet_html() -> bool:
+    """Render just the Access Sheet section as a standalone LANDSCAPE printable.
+
+    Roy fills it by hand, so it needs room — landscape, wide table cells. Returns
+    True if written (requires the optional `markdown` lib), False if skipped.
+    """
+    try:
+        import markdown  # type: ignore
+    except Exception:
+        return False
+    src = next((p for p in SRC_DIR.glob("*access_sheet*.md")), None)
+    if src is None:
+        return False
+    html_body = markdown.markdown(
+        src.read_text(encoding="utf-8"),
+        extensions=["tables", "fenced_code", "sane_lists"],
+    )
+    css = """
+    @page { size: A4 landscape; margin: 1cm; }
+    body { font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 1rem; line-height: 1.4; color: #1a1a1a; }
+    h2 { border-bottom: 2px solid #333; padding-bottom: .2em; }
+    table { border-collapse: collapse; width: 100%; font-size: .85em; }
+    th, td { border: 1px solid #999; padding: .55em .5em; text-align: left; vertical-align: top; }
+    th { background: #eee; }
+    blockquote { border-left: 4px solid #c0392b; background: #fdf3f2; margin: 1em 0; padding: .4em 1em; }
+    code { background: #f3f3f3; padding: .1em .3em; border-radius: 3px; }
+    """
+    OUT_ACCESS.write_text(
+        "<!DOCTYPE html>\n<html lang='en'>\n<head>\n<meta charset='utf-8'>\n"
+        f"<title>Access Sheet</title>\n<style>{css}</style>\n</head>\n<body>\n"
+        f"{html_body}\n</body>\n</html>\n",
+        encoding="utf-8",
+    )
+    return True
+
+
 def main() -> int:
     files = _section_files()
     md = build_markdown(files)
@@ -136,6 +173,9 @@ def main() -> int:
     else:
         print("Skipped HTML (optional): `pip install markdown` to enable, "
               "or render the .md with `pandoc docs/MANUAL.md -o MANUAL.pdf`.")
+
+    if build_access_sheet_html():
+        print(f"Built {OUT_ACCESS.relative_to(REPO_ROOT)}  (LANDSCAPE — print this to fill by hand)")
     return 0
 
 

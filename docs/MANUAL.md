@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-24 16:20 UTC.*
+*Last built: 2026-06-24 18:05 UTC.*
 
 > **How to read this:** the **Operator track** (sections 1x) is plain-language —
 > for keeping the system alive day to day. The **Engineer track** (2x) is technical —
@@ -32,6 +32,10 @@
     - [The emergency stop: `/panic`](#the-emergency-stop-panic)
     - [What NOT to touch](#what-not-to-touch)
     - [The rhythm of the job](#the-rhythm-of-the-job)
+  - [Ask Claude — Your Built-In Expert](#ask-claude-your-built-in-expert)
+    - [How to start Claude on this project (one-time-per-session)](#how-to-start-claude-on-this-project-one-time-per-session)
+    - [What to ask it](#what-to-ask-it)
+    - [Good habits](#good-habits)
   - [Recurring Tasks — Step by Step](#recurring-tasks-step-by-step)
     - [A. Run a wallet discovery + vetting pass (the main chore)](#a-run-a-wallet-discovery-vetting-pass-the-main-chore)
     - [B. Sync vetting results into the live system](#b-sync-vetting-results-into-the-live-system)
@@ -75,6 +79,7 @@
     - ["I don't know what's wrong" — safe default](#i-dont-know-whats-wrong-safe-default)
   - [Tools & Resources](#tools-resources)
     - [Services](#services)
+    - [Payments & crypto wallets (mostly for the eventual live phase)](#payments-crypto-wallets-mostly-for-the-eventual-live-phase)
     - [Reaching the Helius dashboard (the SOCKS tunnel)](#reaching-the-helius-dashboard-the-socks-tunnel)
     - [How we get vetted wallets (the discovery → trade pipeline)](#how-we-get-vetted-wallets-the-discovery-trade-pipeline)
   - [Why It Is The Way It Is](#why-it-is-the-way-it-is)
@@ -92,6 +97,7 @@
     - [Known non-obvious gotchas (catalog)](#known-non-obvious-gotchas-catalog)
   - [Access Sheet (PRINT THIS — fill by hand)](#access-sheet-print-this-fill-by-hand)
     - [Accounts & consoles](#accounts-consoles)
+    - [Crypto wallets & recovery phrases (the MOST sensitive items)](#crypto-wallets-recovery-phrases-the-most-sensitive-items)
     - [The live `.env` (the master key file)](#the-live-env-the-master-key-file)
     - [Who can use the emergency stop](#who-can-use-the-emergency-stop)
   - [Appendix](#appendix)
@@ -131,6 +137,10 @@ and a technical **Engineer track** for understanding and changing the code.
 
 You do **not** need to read this top to bottom. Use the Table of Contents (auto-generated
 at the top of the built document) or Ctrl-F.
+
+> **If in doubt, ask Claude.** The fastest way to understand or run anything here is to open
+> VS Code, open Claude, and ask it in plain English — it can read this whole project. See
+> **"Ask Claude — Your Built-In Expert."** You are never alone with this system.
 
 ## In an emergency
 
@@ -183,7 +193,10 @@ There are two bots, each a different strategy:
 
 - **STRUCTURE** — trades **Hyperliquid perpetual futures** (a derivatives exchange for
   large coins like Bitcoin and Ethereum). It looks for unusual market conditions (e.g.
-  lots of forced selling) and bets on a bounce. *Lower activity; the quieter of the two.*
+  lots of forced selling) and bets on a bounce. **Currently PAUSED** — it kept losing
+  paper money. A fix is believed possible but would need a ~$500/month paid data-plan
+  upgrade, which isn't justified during the paper phase. So the project's active focus is
+  COPY.
 
 - **COPY** — trades **Solana "memecoins"** (tiny, very risky new tokens). It watches a
   curated list of skilled trader wallets; when several of them buy the same brand-new token
@@ -197,7 +210,9 @@ There are two bots, each a different strategy:
   at risk.**
 - **COPY** is the active focus: it trades on a **curated, vetted** list of ~150+ wallets
   that grows as Roy runs wallet discovery. Buying is currently **ON**.
-- **STRUCTURE** is running quietly in the background.
+- **STRUCTURE** is **PAUSED** (it was losing paper money; the likely fix needs a costly
+  ~$500/mo data upgrade not worth paying for during the paper phase). It can be revisited
+  later; for now, most of this manual's day-to-day is about COPY.
 - The system is being **measured** against pass/fail criteria (the "kill criteria") over a
   ~60–90 day window before any decision to use real money.
 
@@ -245,8 +260,9 @@ the one task done from **Roy's office Windows PC**, not the server.
 1. **Discord #alerts channel** — this is the heartbeat. If it's quiet or only shows routine
    green/blue messages, things are fine. Red/urgent messages need attention (see *Alerts*
    below).
-2. **The daily digest** — once a day a summary of COPY's last 24 hours is posted to Discord.
-   Skim it.
+2. **The daily digest** — once a day a summary of COPY's last 24 hours is posted to Discord
+   **and emailed to `trading@generalaisystems.com`**. Skim it (check that inbox if you
+   don't watch Discord closely).
 3. **Grafana dashboard** (a web page; login on the Access Sheet) — shows charts of each
    bot's health. You don't need to interpret every chart; just confirm it's loading and
    nothing is screaming red.
@@ -259,10 +275,15 @@ Alerts come with a severity. **The level tells you how fast to react:**
 
 | Level | How it reaches you | What it means | What to do |
 |---|---|---|---|
-| **P0** | **Text message (SMS)** + Discord ping | Emergency — trading halted, an emergency stop fired, or a big loss limit hit | **Look now.** Open Discord, read the message. If unsure, it's safe to leave the bots halted and call the technical contact. |
+| **P0** | **Discord ping** + Telegram | Emergency — trading halted, an emergency stop fired, or a big loss limit hit | **Look now.** Open Discord, read the message. If unsure, it's safe to leave the bots halted and call the technical contact. |
 | **P1** | Discord ping (mention) | A bot was stopped, the system went quiet, or a "is this strategy failing?" warning fired | **Look within an hour.** Read the message. A "kill-criteria" warning is informational — it does **not** require you to do anything except be aware (a human decides later). |
 | **P2** | Discord message (no ping) | Routine but worth noting — wallets added, a credit snapshot, a minor anomaly | Read when convenient. |
 | **P3** | Folded into the daily digest | Pure information | No action. |
+
+> **Note:** **SMS text alerts are NOT set up** (the Twilio service wasn't worth paying for
+> during the paper phase). So even a P0 emergency reaches you via **Discord + Telegram**,
+> not a text message. Keep Discord notifications on. If real-money trading is ever turned
+> on, adding SMS is worth reconsidering.
 
 When in doubt about any alert: **a stopped bot is safe**. Nothing bad happens by halting.
 
@@ -297,6 +318,58 @@ When unsure, the safe move is always: **halt with `/panic`, then ask.**
   *Recurring Tasks*).
 - **Quarterly:** a whale-list refresh for STRUCTURE runs automatically; you just review it.
 - **On a red alert:** follow the table above.
+
+---
+
+## Ask Claude — Your Built-In Expert
+
+_Last reviewed: 2026-06-24_
+
+**This is the single most useful skill for maintaining the project. If in doubt, ask
+Claude.** Claude is an AI assistant that can read this entire project, explain anything in
+plain language, run the routine tasks for you, and help diagnose problems. You do not need
+to be technical — you just need to be able to open one program and type a question.
+
+### How to start Claude on this project (one-time-per-session)
+
+1. **Open VS Code.** It's the program with the blue folder-ribbon icon (search "VS Code" or
+   "Visual Studio Code" in the Start menu).
+2. **Make sure this project is open.** The title bar / the file list on the left should say
+   **`CryptoTradingworkflow`**. If it doesn't:
+   - In VS Code: **File → Open Folder…** → navigate to
+     `C:\Projects\CryptoTradingworkflow` → **Select Folder**.
+3. **Open Claude.** Click the **Claude icon** in the left-hand activity bar (or press
+   **Ctrl+Shift+P**, type "Claude", and pick the option to open/start Claude). A chat panel
+   opens on the side.
+4. **Start typing.** That's it — you're talking to Claude, and it can see this whole
+   project (code, this manual, and the notes).
+
+### What to ask it
+
+Talk to it like a knowledgeable colleague. For example:
+- *"In plain English, what does the COPY bot do right now, and is it healthy?"*
+- *"Walk me through running a wallet discovery pass step by step."*
+- *"I got a P1 alert that says '… kill criterion fired'. What does that mean and do I need
+  to do anything?"*
+- *"Help me check the Helius credit usage and tell me if we're near the budget."*
+- *"Something looks wrong on the dashboard — here's a screenshot. What is it telling me?"*
+- *"Read the maintenance manual section on disaster recovery and summarize what I'd do if
+  the server died."*
+
+### Good habits
+
+- **Be specific and paste what you see** — error messages, alert text, screenshots. Claude
+  works best with the actual details in front of it.
+- **Ask it to explain before acting.** *"Explain what this will do before you do it."*
+- **It's safe to ask "is this safe?"** before any change. When something could affect real
+  money or stop the bots, Claude will flag it (and so does this manual's *Changing Safely*
+  section).
+- **When truly stuck, the safe fallback is still `/panic`** in Discord (stops all trading,
+  harms nothing), then ask Claude or call the technical contact.
+
+> **Bottom line:** you are never alone with this project. Open VS Code, open Claude, and
+> ask. Most questions in this manual can also just be asked directly — and Claude will
+> point you to the right section or do the task with you.
 
 ---
 
@@ -488,7 +561,9 @@ multi-channel alerting (Discord/Telegram/Twilio).
 **STRUCTURE** (`bots/structure/`) — Hyperliquid perpetual futures. Signals in
 `bots/structure/signals/`: `funding_fade`, `liquidation_cascade`, `whale_flip`,
 `hl_oi_divergence`. Reads market data via the Hyperliquid Info API (`venue.py`). Paper +
-~10% shadow. Quieter bot.
+~10% shadow. **Currently PAUSED** — it was losing paper money; the suspected fix needs a
+~$500/mo real-time data-feed upgrade (e.g. the Coinglass liquidation tier feeding
+`liquidation_cascade`), not justified in the paper phase. Code is intact; revisit later.
 
 **COPY** (`bots/copy/`) — Solana memecoins via wallet-cluster copying. This is the active
 focus. Key files:
@@ -915,16 +990,30 @@ the Access Sheet, never here.**
 | **Cielo** | Wallet PnL/win-rate stats (curation) | $65 Pro | app.cielo.finance | Account login | `CIELO_API_KEY` |
 | **Birdeye** | Token prices, liquidity, trader discovery | Free/Lite (~$0–19) | birdeye.so | Logged-in Chrome session (used by discovery) + API key | `BIRDEYE_API_KEY` |
 | **Jupiter** | Solana DEX quotes/swaps | Free | jup.ag | Public API, no key | (none) |
-| **Coinglass** | Liquidation data (STRUCTURE) | $0 (disabled) | coinglass.com | Disabled via `STRUCTURE_LIQ_CASCADE_ENABLED=false` | `COINGLASS_API_KEY` |
+| **Coinglass** | Liquidation data (STRUCTURE) | $0 (disabled) | coinglass.com | Disabled via `STRUCTURE_LIQ_CASCADE_ENABLED=false`; its **real-time tier (~$500/mo)** is the upgrade STRUCTURE would need to be revived — not justified in paper phase | `COINGLASS_API_KEY` |
 | **Discord** | Alerts + `/panic` + `/status` | Free | discord.com | Bot in the server; owner ID authorizes `/panic` | `DISCORD_BOT_TOKEN`, `DISCORD_*_CHANNEL_ID`, `DISCORD_OWNER_USER_ID`, `COPY_DISCORD_WEBHOOK` |
 | **Telegram** | Alerts + `/panic` (backup channel) | Free | t.me | Bot via BotFather; owner ID | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_USER_ID` |
-| **Twilio** | P0 emergency SMS | ~$5 | console.twilio.com | Account; from/to numbers | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TWILIO_TO_NUMBER` |
+| **Twilio** | P0 emergency SMS | **$0 — NOT set up** | console.twilio.com | Not configured during paper phase (SMS wasn't worth paying for); P0 reaches you via Discord + Telegram instead. Add if going live. | `TWILIO_*` (unset) |
+| **Privacy.com** | Virtual cards used to **pay for some services** (e.g. Helius) | per-card | privacy.com | Roy's account; login on the Access Sheet | (none) |
+| **Email (SMTP)** | Daily digest/report email | included | (provider) | Digest is sent to **`trading@generalaisystems.com`** | `SMTP_*`, `SMTP_TO` |
 | **OneDrive** | Where browser discovery writes vetting results | Included (M365) | onedrive.com | Roy's account; files at `C:\Users\Roy\OneDrive\Documents\Claude\` | (none) |
 | **Claude Max** | Runs the browser wallet-discovery/vetting | Included (Max sub) | claude.ai | Max subscription; the discovery uses Max quota, not an API key | (uses Max login, not `.env`) |
 | **Cloudflare** | Secure remote access to the server | Free | one.dash.cloudflare.com | Tunnel token | `CLOUDFLARE_TUNNEL_TOKEN` |
 
-Rough monthly total today: **~$140–150** (Hetzner + Helius + Cielo + Birdeye + small SMS).
+Rough monthly total today: **~$140–150** (Hetzner + Helius + Cielo + Birdeye; **no SMS**).
 The Helius bill is the variable one — it scales with how many/active wallets COPY watches.
+Some services are paid via a **Privacy.com** virtual card rather than a card directly.
+
+### Payments & crypto wallets (mostly for the eventual live phase)
+
+- **Privacy.com** — virtual cards used to pay for some subscriptions (e.g. Helius). Login
+  on the Access Sheet.
+- **Crypto wallets / exchange** — used to hold and fund trading capital (relevant once live
+  trading is on; mostly idle now): **Phantom** (Solana), **Rabby** and **MetaMask** (EVM
+  chains), and **Kraken** (exchange / on-ramp). Each browser wallet has a **12-word
+  recovery phrase** — the most sensitive secrets in the whole project. They live on the
+  Access Sheet with extra-secure handling; **never** type or store them anywhere digital
+  connected to this project.
 
 ### Reaching the Helius dashboard (the SOCKS tunnel)
 
@@ -963,6 +1052,11 @@ _Last reviewed: 2026-06-24_
 The load-bearing decisions behind the design. A maintainer should understand these before
 changing anything — several look like "inefficiencies" but are deliberate. Full history is
 in `memory/project_decision_log.md` and `memory/project_fleet_design_state.md`.
+
+- **STRUCTURE is paused, on purpose.** It was steadily losing paper money. The suspected
+  fix needs a ~$500/month real-time data-feed upgrade, which isn't worth paying for during
+  the paper phase. So effort is concentrated on COPY. STRUCTURE's code is intact and can be
+  revived later if/when the data spend is justified — don't delete it.
 
 - **Paper-first, with a kill-criteria window.** The entire point is to *measure* whether an
   edge exists before risking money. Hence locked config during the window, and a Sharpe/win-rate
@@ -1088,6 +1182,10 @@ _Last reviewed: 2026-06-24_
 > in git. **Print it, then write the credentials in by hand** and store it with your family
 > password sheets, somewhere safe and offline. Whoever maintains the project needs this
 > sheet plus the printed `.env` (see bottom).
+>
+> **Print in LANDSCAPE** so there's room to write. The build produces a ready-to-print
+> landscape version of just this sheet at **`docs/ACCESS_SHEET.html`** (open in a browser →
+> Print → Landscape). The full manual's `docs/MANUAL.html` is portrait.
 
 ### Accounts & consoles
 
@@ -1101,12 +1199,27 @@ _Last reviewed: 2026-06-24_
 | 6 | **Birdeye** | Token data / discovery | birdeye.so | __________ | __________ | __________ | ☐ | keep Chrome logged in for discovery |
 | 7 | **Discord** | Alerts + `/panic` | discord.com | __________ | __________ | __________ | ☐ | note the server + #alerts channel |
 | 8 | **Telegram** | Backup alert channel | t.me | __________ | __________ | __________ | ☐ | |
-| 9 | **Twilio** | Emergency SMS | console.twilio.com | __________ | __________ | __________ | ☐ | |
+| 9 | **Twilio** | Emergency SMS | console.twilio.com | _(not set up)_ | — | — | — | NOT configured (no SMS in paper phase) |
+| 9b | **Privacy.com** | Pays for some services (Helius etc.) | privacy.com | __________ | __________ | __________ | ☐ | virtual cards |
 | 10 | **Cloudflare** | Remote access tunnel | one.dash.cloudflare.com | __________ | __________ | __________ | ☐ | |
 | 11 | **Microsoft / OneDrive** | Vetting result files | onedrive.com | __________ | __________ | __________ | ☐ | files: `OneDrive\Documents\Claude\` |
 | 12 | **Claude (Max)** | Runs wallet discovery | claude.ai | __________ | __________ | __________ | ☐ | Max subscription |
 | 13 | **Email (for reports)** | Daily report email / SMTP | __________ | __________ | __________ | __________ | ☐ | |
 | 14 | **Recovery codes** | 2FA backups for the above | (store with this sheet) | | | | | one-time codes |
+
+### Crypto wallets & recovery phrases (the MOST sensitive items)
+
+> ⚠️ **A 12-word recovery phrase IS the money.** Anyone who has it can drain that wallet.
+> Write these by hand on the printed sheet ONLY, store them in a safe/lockbox, and **never**
+> type or photograph them or store them on any computer, phone, cloud, or in this project.
+> If a phrase is ever exposed, move the funds to a new wallet immediately.
+
+| Wallet | Type / chain | Used for | Address (public, ok to write) | 12-word recovery phrase (store securely) | Notes |
+|---|---|---|---|---|---|
+| **Phantom** (phantom.com) | Solana | COPY trading / funding | __________ | 1.____ 2.____ 3.____ … 12.____ | |
+| **Rabby** (rabby.io) | EVM (Base/Arbitrum/ETH) | EVM trading / funding | __________ | 1.____ 2.____ 3.____ … 12.____ | |
+| **MetaMask** | EVM | EVM trading / funding | __________ | 1.____ 2.____ 3.____ … 12.____ | |
+| **Kraken** (kraken.com) | Exchange | On-ramp / hold capital | (account, not a phrase) | login on the accounts table above | enable 2FA |
 
 ### The live `.env` (the master key file)
 
@@ -1159,7 +1272,9 @@ Verify the live set with `crontab -l`. Expected:
 | `COPY_DISCORD_WEBHOOK` | discovery health pings |
 | `HYPERLIQUID_AGENT_PRIVATE_KEY`, `HYPERLIQUID_*` | STRUCTURE venue (trade-only key) |
 | `COINGLASS_API_KEY`, `STRUCTURE_LIQ_CASCADE_ENABLED` | liquidation feed (disabled) |
-| `DISCORD_*`, `TELEGRAM_*`, `TWILIO_*`, `SMTP_*` | alerting channels |
+| `DISCORD_*`, `TELEGRAM_*` | alerting channels (active) |
+| `TWILIO_*` | SMS — **not configured** (no SMS in paper phase) |
+| `SMTP_*`, `SMTP_TO` | email digest/report; `SMTP_TO` = `trading@generalaisystems.com` |
 | `CLOUDFLARE_TUNNEL_TOKEN` | remote access |
 | drawdown/halt knobs (`*_DD_*_PCT`, `CONSECUTIVE_LOSS_*`, `FLEET_*`) | risk limits |
 
