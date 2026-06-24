@@ -8,6 +8,8 @@
     .page-break { page-break-before: always; break-before: page; height: 0; }
     body { font-family: Georgia, 'Times New Roman', serif; max-width: 50rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; color: #1a1a1a; }
     h1, h2, h3 { font-family: -apple-system, Segoe UI, Arial, sans-serif; line-height: 1.25; }
+    h3.hsplit { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #ccc; padding-bottom: .12em; }
+    .rev { font-weight: normal; font-size: .62em; color: #777; }
     h1 { border-bottom: 2px solid #333; padding-bottom: .2em; }
     h2 { border-bottom: 1px solid #ccc; padding-bottom: .15em; margin-top: 1.6em; }
     code { background: #f3f3f3; padding: .1em .3em; border-radius: 3px; font-size: .9em; }
@@ -22,7 +24,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-06-24 19:50 UTC.</em></p>
+<em>Last built: 2026-06-24 20:07 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -140,7 +142,6 @@ or Ctrl-F to jump around.</p>
 </ul>
 </li>
 <li><a href="#33-access-sheet-print-this-fill-by-hand">3.3 Access Sheet (PRINT THIS — fill by hand)</a><ul>
-<li><a href="#accounts-consoles">Accounts &amp; consoles</a></li>
 <li><a href="#crypto-wallets-usernames-passwords-recovery-phrases">Crypto wallets — usernames, passwords &amp; recovery phrases</a></li>
 <li><a href="#emergency-stop-panic-authorized-users">Emergency-stop (<code>/panic</code>) authorized users</a></li>
 <li><a href="#instructions-notes-read-before-filling">Instructions &amp; Notes (read before filling)</a></li>
@@ -1407,10 +1408,8 @@ untracked files; <code>restart</code> ignores <code>.env</code>; PowerShell 5.1 
 When something weird happens, check there.</p>
 <hr />
 <h2 id="33-access-sheet-print-this-fill-by-hand">3.3 Access Sheet (PRINT THIS — fill by hand)</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
-<p><em>Print in </em><em>LANDSCAPE</em><em>. The detailed instructions are on the </em><em>last page</em><em>, so the tables
-stay clean to fill in.</em></p>
-<h3 id="accounts-consoles">Accounts &amp; consoles</h3>
+<h3 class="hsplit"><span>Accounts &amp; consoles</span><span class="rev">Last reviewed: 2026-06-24</span></h3>
+
 <p>The <strong>Account/email, Username, Password</strong> columns are wide and blank — fill them by hand.
 Tick <strong>2FA</strong> where enabled.</p>
 <table class="sheet">
@@ -1458,7 +1457,12 @@ last page before writing them.</strong></p>
 trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /
 <code>TELEGRAM_OWNER_USER_ID</code>). Record them here:</p>
 <ul>
-<li>Person 1: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong>   Person 2: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong></li>
+<li>
+<p><strong>Person 1:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p>
+</li>
+<li>
+<p><strong>Person 2:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p>
+</li>
 </ul>
 <div class="page-break"></div>
 

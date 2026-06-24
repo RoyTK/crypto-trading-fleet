@@ -7,6 +7,8 @@
     @page { size: A4 landscape; margin: 1cm; }
     body { font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 1rem; line-height: 1.4; color: #1a1a1a; }
     h2 { border-bottom: 2px solid #333; padding-bottom: .2em; }
+    h3.hsplit { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #999; padding-bottom: .12em; margin-top: 1em; }
+    .rev { font-weight: normal; font-size: .7em; color: #555; }
     table { border-collapse: collapse; width: 100%; font-size: .82em; }
     th, td { border: 1px solid #999; padding: .4em .45em; text-align: left; vertical-align: top; }
     th { background: #eee; }
@@ -20,10 +22,8 @@
 </head>
 <body>
 <h2>Access Sheet (PRINT THIS — fill by hand)</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
-<p><em>Print in </em><em>LANDSCAPE</em><em>. The detailed instructions are on the </em><em>last page</em><em>, so the tables
-stay clean to fill in.</em></p>
-<h3>Accounts &amp; consoles</h3>
+<h3 class="hsplit"><span>Accounts &amp; consoles</span><span class="rev">Last reviewed: 2026-06-24</span></h3>
+
 <p>The <strong>Account/email, Username, Password</strong> columns are wide and blank — fill them by hand.
 Tick <strong>2FA</strong> where enabled.</p>
 <table class="sheet">
@@ -71,7 +71,12 @@ last page before writing them.</strong></p>
 trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /
 <code>TELEGRAM_OWNER_USER_ID</code>). Record them here:</p>
 <ul>
-<li>Person 1: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong>   Person 2: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong></li>
+<li>
+<p><strong>Person 1:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p>
+</li>
+<li>
+<p><strong>Person 2:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p>
+</li>
 </ul>
 <div class="page-break"></div>
 

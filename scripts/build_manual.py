@@ -143,6 +143,8 @@ def build_html(markdown_text: str) -> str | None:
     .page-break { page-break-before: always; break-before: page; height: 0; }
     body { font-family: Georgia, 'Times New Roman', serif; max-width: 50rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; color: #1a1a1a; }
     h1, h2, h3 { font-family: -apple-system, Segoe UI, Arial, sans-serif; line-height: 1.25; }
+    h3.hsplit { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #ccc; padding-bottom: .12em; }
+    .rev { font-weight: normal; font-size: .62em; color: #777; }
     h1 { border-bottom: 2px solid #333; padding-bottom: .2em; }
     h2 { border-bottom: 1px solid #ccc; padding-bottom: .15em; margin-top: 1.6em; }
     code { background: #f3f3f3; padding: .1em .3em; border-radius: 3px; font-size: .9em; }
@@ -181,6 +183,8 @@ def build_access_sheet_html() -> bool:
     @page { size: A4 landscape; margin: 1cm; }
     body { font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 1rem; line-height: 1.4; color: #1a1a1a; }
     h2 { border-bottom: 2px solid #333; padding-bottom: .2em; }
+    h3.hsplit { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #999; padding-bottom: .12em; margin-top: 1em; }
+    .rev { font-weight: normal; font-size: .7em; color: #555; }
     table { border-collapse: collapse; width: 100%; font-size: .82em; }
     th, td { border: 1px solid #999; padding: .4em .45em; text-align: left; vertical-align: top; }
     th { background: #eee; }

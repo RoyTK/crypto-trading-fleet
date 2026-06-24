@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-24 19:50 UTC.*
+*Last built: 2026-06-24 20:07 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -98,7 +98,6 @@
     - ["Helius dashboard won't load"](#helius-dashboard-wont-load)
     - [Known non-obvious gotchas (catalog)](#known-non-obvious-gotchas-catalog)
   - [3.3 Access Sheet (PRINT THIS — fill by hand)](#33-access-sheet-print-this-fill-by-hand)
-    - [Accounts & consoles](#accounts-consoles)
     - [Crypto wallets — usernames, passwords & recovery phrases](#crypto-wallets-usernames-passwords-recovery-phrases)
     - [Emergency-stop (`/panic`) authorized users](#emergency-stop-panic-authorized-users)
     - [Instructions & Notes (read before filling)](#instructions-notes-read-before-filling)
@@ -1194,12 +1193,7 @@ When something weird happens, check there.
 
 ## 3.3 Access Sheet (PRINT THIS — fill by hand)
 
-_Last reviewed: 2026-06-24_
-
-*Print in **LANDSCAPE**. The detailed instructions are on the **last page**, so the tables
-stay clean to fill in.*
-
-### Accounts & consoles
+<h3 class="hsplit"><span>Accounts &amp; consoles</span><span class="rev">Last reviewed: 2026-06-24</span></h3>
 
 The **Account/email, Username, Password** columns are wide and blank — fill them by hand.
 Tick **2FA** where enabled.
@@ -1252,7 +1246,9 @@ last page before writing them.**
 trusted person besides Roy is configured** (`DISCORD_OWNER_USER_ID` /
 `TELEGRAM_OWNER_USER_ID`). Record them here:
 
-- Person 1: ______________________________   Person 2: ______________________________
+- **Person 1:** _______________________________________________________________________
+
+- **Person 2:** _______________________________________________________________________
 
 <div class="page-break"></div>
 

@@ -1,11 +1,6 @@
 ## Access Sheet (PRINT THIS — fill by hand)
 
-_Last reviewed: 2026-06-24_
-
-*Print in **LANDSCAPE**. The detailed instructions are on the **last page**, so the tables
-stay clean to fill in.*
-
-### Accounts & consoles
+<h3 class="hsplit"><span>Accounts &amp; consoles</span><span class="rev">Last reviewed: 2026-06-24</span></h3>
 
 The **Account/email, Username, Password** columns are wide and blank — fill them by hand.
 Tick **2FA** where enabled.
@@ -58,7 +53,9 @@ last page before writing them.**
 trusted person besides Roy is configured** (`DISCORD_OWNER_USER_ID` /
 `TELEGRAM_OWNER_USER_ID`). Record them here:
 
-- Person 1: ______________________________   Person 2: ______________________________
+- **Person 1:** _______________________________________________________________________
+
+- **Person 2:** _______________________________________________________________________
 
 <div class="page-break"></div>
 
