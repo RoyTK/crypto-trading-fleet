@@ -5,6 +5,7 @@
 <title>Crypto Trading Fleet — Maintenance Manual</title>
 <style>
     @media print { h1, h2 { page-break-before: always; } h1:first-of-type { page-break-before: avoid; } a { color: inherit; text-decoration: none; } }
+    .page-break { page-break-before: always; break-before: page; height: 0; }
     body { font-family: Georgia, 'Times New Roman', serif; max-width: 50rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; color: #1a1a1a; }
     h1, h2, h3 { font-family: -apple-system, Segoe UI, Arial, sans-serif; line-height: 1.25; }
     h1 { border-bottom: 2px solid #333; padding-bottom: .2em; }
@@ -21,7 +22,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-06-24 19:42 UTC.</em></p>
+<em>Last built: 2026-06-24 19:50 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -140,15 +141,13 @@ or Ctrl-F to jump around.</p>
 </li>
 <li><a href="#33-access-sheet-print-this-fill-by-hand">3.3 Access Sheet (PRINT THIS — fill by hand)</a><ul>
 <li><a href="#accounts-consoles">Accounts &amp; consoles</a></li>
-<li><a href="#crypto-wallets-usernames-passwords-recovery-phrases-the-most-sensitive-items">Crypto wallets — usernames, passwords &amp; recovery phrases (the MOST sensitive items)</a></li>
-<li><a href="#the-live-env-the-master-key-file">The live <code>.env</code> (the master key file)</a></li>
+<li><a href="#crypto-wallets-usernames-passwords-recovery-phrases">Crypto wallets — usernames, passwords &amp; recovery phrases</a></li>
+<li><a href="#emergency-stop-panic-authorized-users">Emergency-stop (<code>/panic</code>) authorized users</a></li>
+<li><a href="#instructions-notes-read-before-filling">Instructions &amp; Notes (read before filling)</a></li>
 </ul>
 </li>
 <li><strong><a href="#inside-your-normal-ssh-session-on-the-server">inside your normal SSH session on the server:</a></strong></li>
-<li><strong><a href="#or-as-a-one-shot-from-your-pc-use-your-usual-ssh-target">...or as a one-shot from your PC (use your usual SSH target):</a></strong><ul>
-<li><a href="#who-can-use-the-emergency-stop">Who can use the emergency stop</a></li>
-</ul>
-</li>
+<li><strong><a href="#or-one-shot-from-your-pc-use-your-usual-ssh-target">...or one-shot from your PC (use your usual SSH target):</a></strong></li>
 <li><a href="#34-appendix">3.4 Appendix</a><ul>
 <li><a href="#crontab-inventory-server-utc">Crontab inventory (server, UTC)</a></li>
 <li><a href="#env-var-reference-names-purpose-only-values-live-in-env">Env-var reference (names + purpose only — values live in <code>.env</code>)</a></li>
@@ -1409,18 +1408,11 @@ When something weird happens, check there.</p>
 <hr />
 <h2 id="33-access-sheet-print-this-fill-by-hand">3.3 Access Sheet (PRINT THIS — fill by hand)</h2>
 <p><em>Last reviewed: 2026-06-24</em></p>
-<blockquote>
-<p><strong>This page is a blank template.</strong> It contains <strong>no passwords</strong> and never should — it is
-in git. <strong>Print it, then write the credentials in by hand</strong> and store it with your family
-password sheets, somewhere safe and offline. Whoever maintains the project needs this
-sheet plus the printed <code>.env</code> (see bottom).</p>
-<p><strong>Print in LANDSCAPE</strong> so there's room to write. The build produces a ready-to-print
-landscape version of just this sheet at <strong><code>docs/ACCESS_SHEET.html</code></strong> (open in a browser →
-Print → Landscape). The full manual's <code>docs/MANUAL.html</code> is portrait.</p>
-</blockquote>
+<p><em>Print in </em><em>LANDSCAPE</em><em>. The detailed instructions are on the </em><em>last page</em><em>, so the tables
+stay clean to fill in.</em></p>
 <h3 id="accounts-consoles">Accounts &amp; consoles</h3>
-<p>The <strong>Account/email, Username, Password</strong> columns are intentionally wide and left <strong>blank</strong> —
-fill them by hand. Tick <strong>2FA</strong> if enabled.</p>
+<p>The <strong>Account/email, Username, Password</strong> columns are wide and blank — fill them by hand.
+Tick <strong>2FA</strong> where enabled.</p>
 <table class="sheet">
 <colgroup>
 <col style="width:3%"><col style="width:11%"><col style="width:14%"><col style="width:20%"><col style="width:18%"><col style="width:20%"><col style="width:4%"><col style="width:10%">
@@ -1445,13 +1437,9 @@ fill them by hand. Tick <strong>2FA</strong> if enabled.</p>
 </tbody>
 </table>
 
-<h3 id="crypto-wallets-usernames-passwords-recovery-phrases-the-most-sensitive-items">Crypto wallets — usernames, passwords &amp; recovery phrases (the MOST sensitive items)</h3>
-<blockquote>
-<p>⚠️ <strong>A 12-word recovery phrase IS the money.</strong> Anyone who has it can drain that wallet.
-Write these by hand on the printed sheet ONLY, store them in a safe/lockbox, and <strong>never</strong>
-type or photograph them or store them on any computer, phone, cloud, or in this project.
-If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
-</blockquote>
+<h3 id="crypto-wallets-usernames-passwords-recovery-phrases">Crypto wallets — usernames, passwords &amp; recovery phrases</h3>
+<p>⚠️ Recovery phrases are the most sensitive items on this sheet — <strong>read the safety note on the
+last page before writing them.</strong></p>
 <table class="sheet">
 <colgroup>
 <col style="width:12%"><col style="width:11%"><col style="width:16%"><col style="width:16%"><col style="width:37%"><col style="width:8%">
@@ -1465,22 +1453,38 @@ If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
 </tbody>
 </table>
 
-<h3 id="the-live-env-the-master-key-file">The live <code>.env</code> (the master key file)</h3>
-<p>The server's <code>~/crypto-fleet/.env</code> holds <strong>every API key and the trading-wallet secret</strong>. It
-is intentionally <strong>not</strong> in git and <strong>cannot be regenerated</strong> if lost. To keep a physical
-backup:</p>
+<h3 id="emergency-stop-panic-authorized-users">Emergency-stop (<code>/panic</code>) authorized users</h3>
+<p><code>/panic</code> (in Discord/Telegram) only works for authorized user IDs. <strong>Make sure at least one
+trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /
+<code>TELEGRAM_OWNER_USER_ID</code>). Record them here:</p>
+<ul>
+<li>Person 1: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong>   Person 2: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong></li>
+</ul>
+<div class="page-break"></div>
+
+<h3 id="instructions-notes-read-before-filling">Instructions &amp; Notes (read before filling)</h3>
+<p><strong>This is a blank template.</strong> It contains no passwords (it lives in git). Print it, write the
+credentials in by hand, and store it with your family password sheets — somewhere safe and
+offline. Whoever maintains the project needs this sheet <strong>plus</strong> the printed <code>.env</code> (below).</p>
+<p><strong>Filling it in:</strong> the wide blank columns (Account/email, Username, Password, and the wallet
+recovery phrase) are yours to write in. Tick <strong>2FA</strong> where you have it enabled. The narrow
+columns (Service, Console URL, Notes) are pre-filled reference.</p>
+<blockquote>
+<p>⚠️ <strong>A 12-word recovery phrase IS the money.</strong> Anyone who has it can drain that wallet.
+Write the phrases by hand on this printed sheet ONLY; store them in a safe/lockbox; and
+<strong>never</strong> type, photograph, or store them on any computer, phone, cloud, or in this
+project. If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
+</blockquote>
+<p><strong>The live <code>.env</code> — the master key file.</strong> The server's <code>~/crypto-fleet/.env</code> holds every API
+key and the trading-wallet secret. It is <strong>not</strong> in git and <strong>cannot be regenerated</strong> if
+lost. Print a copy to store with this sheet:</p>
 <pre><code class="language-bash"># inside your normal SSH session on the server:
 cat ~/crypto-fleet/.env
-# ...or as a one-shot from your PC (use your usual SSH target):
+# ...or one-shot from your PC (use your usual SSH target):
 ssh fleet 'cat ~/crypto-fleet/.env'
 </code></pre>
-<p>Copy/print the output, then <strong>delete any digital copy</strong>. Store the printed <code>.env</code> <strong>with
-this Access Sheet</strong>, securely. Treat it like the keys to a safe — anyone with it can move
-money once live trading is on.</p>
-<h3 id="who-can-use-the-emergency-stop">Who can use the emergency stop</h3>
-<p><code>/panic</code> only works for authorized Discord/Telegram users (by user ID). <strong>Make sure at
-least one trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /
-<code>TELEGRAM_OWNER_USER_ID</code>). Record who: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p>Copy/print the output, then <strong>delete any digital copy</strong>. Treat the printed <code>.env</code> like the
+keys to a safe — anyone with it can move money once live trading is on.</p>
 <hr />
 <h2 id="34-appendix">3.4 Appendix</h2>
 <p><em>Last reviewed: 2026-06-24</em></p>

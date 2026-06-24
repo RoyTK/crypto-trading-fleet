@@ -140,6 +140,7 @@ def build_html(markdown_text: str) -> str | None:
     )
     css = """
     @media print { h1, h2 { page-break-before: always; } h1:first-of-type { page-break-before: avoid; } a { color: inherit; text-decoration: none; } }
+    .page-break { page-break-before: always; break-before: page; height: 0; }
     body { font-family: Georgia, 'Times New Roman', serif; max-width: 50rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; color: #1a1a1a; }
     h1, h2, h3 { font-family: -apple-system, Segoe UI, Arial, sans-serif; line-height: 1.25; }
     h1 { border-bottom: 2px solid #333; padding-bottom: .2em; }
@@ -186,6 +187,7 @@ def build_access_sheet_html() -> bool:
     /* Access-sheet tables: honor the colgroup widths, give blank cells writing room. */
     table.sheet { table-layout: fixed; }
     table.sheet td { height: 2.4em; word-wrap: break-word; overflow-wrap: break-word; }
+    .page-break { page-break-before: always; break-before: page; height: 0; }
     blockquote { border-left: 4px solid #c0392b; background: #fdf3f2; margin: 1em 0; padding: .4em 1em; }
     code { background: #f3f3f3; padding: .1em .3em; border-radius: 3px; }
     """

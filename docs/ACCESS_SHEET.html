@@ -13,6 +13,7 @@
     /* Access-sheet tables: honor the colgroup widths, give blank cells writing room. */
     table.sheet { table-layout: fixed; }
     table.sheet td { height: 2.4em; word-wrap: break-word; overflow-wrap: break-word; }
+    .page-break { page-break-before: always; break-before: page; height: 0; }
     blockquote { border-left: 4px solid #c0392b; background: #fdf3f2; margin: 1em 0; padding: .4em 1em; }
     code { background: #f3f3f3; padding: .1em .3em; border-radius: 3px; }
     </style>
@@ -20,18 +21,11 @@
 <body>
 <h2>Access Sheet (PRINT THIS — fill by hand)</h2>
 <p><em>Last reviewed: 2026-06-24</em></p>
-<blockquote>
-<p><strong>This page is a blank template.</strong> It contains <strong>no passwords</strong> and never should — it is
-in git. <strong>Print it, then write the credentials in by hand</strong> and store it with your family
-password sheets, somewhere safe and offline. Whoever maintains the project needs this
-sheet plus the printed <code>.env</code> (see bottom).</p>
-<p><strong>Print in LANDSCAPE</strong> so there's room to write. The build produces a ready-to-print
-landscape version of just this sheet at <strong><code>docs/ACCESS_SHEET.html</code></strong> (open in a browser →
-Print → Landscape). The full manual's <code>docs/MANUAL.html</code> is portrait.</p>
-</blockquote>
+<p><em>Print in </em><em>LANDSCAPE</em><em>. The detailed instructions are on the </em><em>last page</em><em>, so the tables
+stay clean to fill in.</em></p>
 <h3>Accounts &amp; consoles</h3>
-<p>The <strong>Account/email, Username, Password</strong> columns are intentionally wide and left <strong>blank</strong> —
-fill them by hand. Tick <strong>2FA</strong> if enabled.</p>
+<p>The <strong>Account/email, Username, Password</strong> columns are wide and blank — fill them by hand.
+Tick <strong>2FA</strong> where enabled.</p>
 <table class="sheet">
 <colgroup>
 <col style="width:3%"><col style="width:11%"><col style="width:14%"><col style="width:20%"><col style="width:18%"><col style="width:20%"><col style="width:4%"><col style="width:10%">
@@ -56,13 +50,9 @@ fill them by hand. Tick <strong>2FA</strong> if enabled.</p>
 </tbody>
 </table>
 
-<h3>Crypto wallets — usernames, passwords &amp; recovery phrases (the MOST sensitive items)</h3>
-<blockquote>
-<p>⚠️ <strong>A 12-word recovery phrase IS the money.</strong> Anyone who has it can drain that wallet.
-Write these by hand on the printed sheet ONLY, store them in a safe/lockbox, and <strong>never</strong>
-type or photograph them or store them on any computer, phone, cloud, or in this project.
-If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
-</blockquote>
+<h3>Crypto wallets — usernames, passwords &amp; recovery phrases</h3>
+<p>⚠️ Recovery phrases are the most sensitive items on this sheet — <strong>read the safety note on the
+last page before writing them.</strong></p>
 <table class="sheet">
 <colgroup>
 <col style="width:12%"><col style="width:11%"><col style="width:16%"><col style="width:16%"><col style="width:37%"><col style="width:8%">
@@ -76,21 +66,37 @@ If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
 </tbody>
 </table>
 
-<h3>The live <code>.env</code> (the master key file)</h3>
-<p>The server's <code>~/crypto-fleet/.env</code> holds <strong>every API key and the trading-wallet secret</strong>. It
-is intentionally <strong>not</strong> in git and <strong>cannot be regenerated</strong> if lost. To keep a physical
-backup:</p>
+<h3>Emergency-stop (<code>/panic</code>) authorized users</h3>
+<p><code>/panic</code> (in Discord/Telegram) only works for authorized user IDs. <strong>Make sure at least one
+trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /
+<code>TELEGRAM_OWNER_USER_ID</code>). Record them here:</p>
+<ul>
+<li>Person 1: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong>   Person 2: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong></li>
+</ul>
+<div class="page-break"></div>
+
+<h3>Instructions &amp; Notes (read before filling)</h3>
+<p><strong>This is a blank template.</strong> It contains no passwords (it lives in git). Print it, write the
+credentials in by hand, and store it with your family password sheets — somewhere safe and
+offline. Whoever maintains the project needs this sheet <strong>plus</strong> the printed <code>.env</code> (below).</p>
+<p><strong>Filling it in:</strong> the wide blank columns (Account/email, Username, Password, and the wallet
+recovery phrase) are yours to write in. Tick <strong>2FA</strong> where you have it enabled. The narrow
+columns (Service, Console URL, Notes) are pre-filled reference.</p>
+<blockquote>
+<p>⚠️ <strong>A 12-word recovery phrase IS the money.</strong> Anyone who has it can drain that wallet.
+Write the phrases by hand on this printed sheet ONLY; store them in a safe/lockbox; and
+<strong>never</strong> type, photograph, or store them on any computer, phone, cloud, or in this
+project. If a phrase is ever exposed, move the funds to a new wallet immediately.</p>
+</blockquote>
+<p><strong>The live <code>.env</code> — the master key file.</strong> The server's <code>~/crypto-fleet/.env</code> holds every API
+key and the trading-wallet secret. It is <strong>not</strong> in git and <strong>cannot be regenerated</strong> if
+lost. Print a copy to store with this sheet:</p>
 <pre><code class="language-bash"># inside your normal SSH session on the server:
 cat ~/crypto-fleet/.env
-# ...or as a one-shot from your PC (use your usual SSH target):
+# ...or one-shot from your PC (use your usual SSH target):
 ssh fleet 'cat ~/crypto-fleet/.env'
 </code></pre>
-<p>Copy/print the output, then <strong>delete any digital copy</strong>. Store the printed <code>.env</code> <strong>with
-this Access Sheet</strong>, securely. Treat it like the keys to a safe — anyone with it can move
-money once live trading is on.</p>
-<h3>Who can use the emergency stop</h3>
-<p><code>/panic</code> only works for authorized Discord/Telegram users (by user ID). <strong>Make sure at
-least one trusted person besides Roy is configured</strong> (<code>DISCORD_OWNER_USER_ID</code> /
-<code>TELEGRAM_OWNER_USER_ID</code>). Record who: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p>Copy/print the output, then <strong>delete any digital copy</strong>. Treat the printed <code>.env</code> like the
+keys to a safe — anyone with it can move money once live trading is on.</p>
 </body>
 </html>

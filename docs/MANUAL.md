@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-24 19:42 UTC.*
+*Last built: 2026-06-24 19:50 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -99,11 +99,11 @@
     - [Known non-obvious gotchas (catalog)](#known-non-obvious-gotchas-catalog)
   - [3.3 Access Sheet (PRINT THIS — fill by hand)](#33-access-sheet-print-this-fill-by-hand)
     - [Accounts & consoles](#accounts-consoles)
-    - [Crypto wallets — usernames, passwords & recovery phrases (the MOST sensitive items)](#crypto-wallets-usernames-passwords-recovery-phrases-the-most-sensitive-items)
-    - [The live `.env` (the master key file)](#the-live-env-the-master-key-file)
+    - [Crypto wallets — usernames, passwords & recovery phrases](#crypto-wallets-usernames-passwords-recovery-phrases)
+    - [Emergency-stop (`/panic`) authorized users](#emergency-stop-panic-authorized-users)
+    - [Instructions & Notes (read before filling)](#instructions-notes-read-before-filling)
 - **[inside your normal SSH session on the server:](#inside-your-normal-ssh-session-on-the-server)**
-- **[...or as a one-shot from your PC (use your usual SSH target):](#or-as-a-one-shot-from-your-pc-use-your-usual-ssh-target)**
-    - [Who can use the emergency stop](#who-can-use-the-emergency-stop)
+- **[...or one-shot from your PC (use your usual SSH target):](#or-one-shot-from-your-pc-use-your-usual-ssh-target)**
   - [3.4 Appendix](#34-appendix)
     - [Crontab inventory (server, UTC)](#crontab-inventory-server-utc)
     - [Env-var reference (names + purpose only — values live in `.env`)](#env-var-reference-names-purpose-only-values-live-in-env)
@@ -1196,19 +1196,13 @@ When something weird happens, check there.
 
 _Last reviewed: 2026-06-24_
 
-> **This page is a blank template.** It contains **no passwords** and never should — it is
-> in git. **Print it, then write the credentials in by hand** and store it with your family
-> password sheets, somewhere safe and offline. Whoever maintains the project needs this
-> sheet plus the printed `.env` (see bottom).
->
-> **Print in LANDSCAPE** so there's room to write. The build produces a ready-to-print
-> landscape version of just this sheet at **`docs/ACCESS_SHEET.html`** (open in a browser →
-> Print → Landscape). The full manual's `docs/MANUAL.html` is portrait.
+*Print in **LANDSCAPE**. The detailed instructions are on the **last page**, so the tables
+stay clean to fill in.*
 
 ### Accounts & consoles
 
-The **Account/email, Username, Password** columns are intentionally wide and left **blank** —
-fill them by hand. Tick **2FA** if enabled.
+The **Account/email, Username, Password** columns are wide and blank — fill them by hand.
+Tick **2FA** where enabled.
 
 <table class="sheet">
 <colgroup>
@@ -1234,12 +1228,10 @@ fill them by hand. Tick **2FA** if enabled.
 </tbody>
 </table>
 
-### Crypto wallets — usernames, passwords & recovery phrases (the MOST sensitive items)
+### Crypto wallets — usernames, passwords & recovery phrases
 
-> ⚠️ **A 12-word recovery phrase IS the money.** Anyone who has it can drain that wallet.
-> Write these by hand on the printed sheet ONLY, store them in a safe/lockbox, and **never**
-> type or photograph them or store them on any computer, phone, cloud, or in this project.
-> If a phrase is ever exposed, move the funds to a new wallet immediately.
+⚠️ Recovery phrases are the most sensitive items on this sheet — **read the safety note on the
+last page before writing them.**
 
 <table class="sheet">
 <colgroup>
@@ -1254,28 +1246,44 @@ fill them by hand. Tick **2FA** if enabled.
 </tbody>
 </table>
 
-### The live `.env` (the master key file)
+### Emergency-stop (`/panic`) authorized users
 
-The server's `~/crypto-fleet/.env` holds **every API key and the trading-wallet secret**. It
-is intentionally **not** in git and **cannot be regenerated** if lost. To keep a physical
-backup:
+`/panic` (in Discord/Telegram) only works for authorized user IDs. **Make sure at least one
+trusted person besides Roy is configured** (`DISCORD_OWNER_USER_ID` /
+`TELEGRAM_OWNER_USER_ID`). Record them here:
+
+- Person 1: ______________________________   Person 2: ______________________________
+
+<div class="page-break"></div>
+
+### Instructions & Notes (read before filling)
+
+**This is a blank template.** It contains no passwords (it lives in git). Print it, write the
+credentials in by hand, and store it with your family password sheets — somewhere safe and
+offline. Whoever maintains the project needs this sheet **plus** the printed `.env` (below).
+
+**Filling it in:** the wide blank columns (Account/email, Username, Password, and the wallet
+recovery phrase) are yours to write in. Tick **2FA** where you have it enabled. The narrow
+columns (Service, Console URL, Notes) are pre-filled reference.
+
+> ⚠️ **A 12-word recovery phrase IS the money.** Anyone who has it can drain that wallet.
+> Write the phrases by hand on this printed sheet ONLY; store them in a safe/lockbox; and
+> **never** type, photograph, or store them on any computer, phone, cloud, or in this
+> project. If a phrase is ever exposed, move the funds to a new wallet immediately.
+
+**The live `.env` — the master key file.** The server's `~/crypto-fleet/.env` holds every API
+key and the trading-wallet secret. It is **not** in git and **cannot be regenerated** if
+lost. Print a copy to store with this sheet:
 
 ```bash
 # inside your normal SSH session on the server:
 cat ~/crypto-fleet/.env
-# ...or as a one-shot from your PC (use your usual SSH target):
+# ...or one-shot from your PC (use your usual SSH target):
 ssh fleet 'cat ~/crypto-fleet/.env'
 ```
 
-Copy/print the output, then **delete any digital copy**. Store the printed `.env` **with
-this Access Sheet**, securely. Treat it like the keys to a safe — anyone with it can move
-money once live trading is on.
-
-### Who can use the emergency stop
-
-`/panic` only works for authorized Discord/Telegram users (by user ID). **Make sure at
-least one trusted person besides Roy is configured** (`DISCORD_OWNER_USER_ID` /
-`TELEGRAM_OWNER_USER_ID`). Record who: ____________________________________________
+Copy/print the output, then **delete any digital copy**. Treat the printed `.env` like the
+keys to a safe — anyone with it can move money once live trading is on.
 
 ---
 
