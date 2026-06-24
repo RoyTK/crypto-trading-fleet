@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-24 18:28 UTC.*
+*Last built: 2026-06-24 18:41 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -436,6 +436,10 @@ You'll see a Discord summary when wallets are applied.
 Cost is driven almost entirely by how many wallets it watches and how active they are. The
 budget cap is **30 million credits/month (~$149)**. You want to make sure adding wallets
 isn't blowing the budget.
+
+> **Helius sends its usage alerts and bills to `roytkelly@gmail.com`.** Watch that inbox
+> for "approaching credit limit" / billing emails — that's the early warning before the
+> monthly cap, separate from the in-system snapshot below.
 
 **Two ways:**
 
@@ -998,7 +1002,7 @@ the Access Sheet, never here.**
 |---|---|---|---|---|---|
 | **Hetzner** | The always-on server (and backups) | ~$25 + $4 backup | console.hetzner.cloud | Account login; SSH key for the box | (SSH key, not in `.env`) |
 | **GitHub** | Source code; `git push` = deploy | Free | github.com/RoyTK/crypto-trading-fleet | SSH key with push to `main` | (SSH key) |
-| **Helius** | Solana wallet webhooks (COPY's lifeblood) | **$49** Developer (10M credits) + autoscale $5/1M, **$149 cap = 30M** | dashboard.helius.dev | **Reach via the SSH SOCKS tunnel** (account is German-IP bound) — see below | `HELIUS_API_KEY`, `HELIUS_WEBHOOK_AUTH_SECRET`, `HELIUS_RPC_URL` |
+| **Helius** | Solana wallet webhooks (COPY's lifeblood) | **$49** Developer (10M credits) + autoscale $5/1M, **$149 cap = 30M** | dashboard.helius.dev | **Reach via the SSH SOCKS tunnel** (account is German-IP bound) — see below. Usage alerts + bills emailed to **roytkelly@gmail.com** | `HELIUS_API_KEY`, `HELIUS_WEBHOOK_AUTH_SECRET`, `HELIUS_RPC_URL` |
 | **Cielo** | Wallet PnL/win-rate stats (curation) | $65 Pro | app.cielo.finance | Account login | `CIELO_API_KEY` |
 | **Birdeye** | Token prices, liquidity, trader discovery | Free/Lite (~$0–19) | birdeye.so | Logged-in Chrome session (used by discovery) + API key | `BIRDEYE_API_KEY` |
 | **Jupiter** | Solana DEX quotes/swaps | Free | jup.ag | Public API, no key | (none) |

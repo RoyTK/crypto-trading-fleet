@@ -58,6 +58,10 @@ Cost is driven almost entirely by how many wallets it watches and how active the
 budget cap is **30 million credits/month (~$149)**. You want to make sure adding wallets
 isn't blowing the budget.
 
+> **Helius sends its usage alerts and bills to `roytkelly@gmail.com`.** Watch that inbox
+> for "approaching credit limit" / billing emails — that's the early warning before the
+> monthly cap, separate from the in-system snapshot below.
+
 **Two ways:**
 
 **Quick (no login) — how many credits we're burning, from our own data:** an engineer runs

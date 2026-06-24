@@ -21,7 +21,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-06-24 18:28 UTC.</em></p>
+<em>Last built: 2026-06-24 18:41 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -482,6 +482,11 @@ new results must be copied over and "applied."</p>
 Cost is driven almost entirely by how many wallets it watches and how active they are. The
 budget cap is <strong>30 million credits/month (~$149)</strong>. You want to make sure adding wallets
 isn't blowing the budget.</p>
+<blockquote>
+<p><strong>Helius sends its usage alerts and bills to <code>roytkelly@gmail.com</code>.</strong> Watch that inbox
+for "approaching credit limit" / billing emails — that's the early warning before the
+monthly cap, separate from the in-system snapshot below.</p>
+</blockquote>
 <p><strong>Two ways:</strong></p>
 <p><strong>Quick (no login) — how many credits we're burning, from our own data:</strong> an engineer runs
 on the server: <code>docker compose exec -T framework python -m scripts.credit_pool_snapshot</code>.
@@ -1117,7 +1122,7 @@ the Access Sheet, never here.</strong></p>
 <td>Solana wallet webhooks (COPY's lifeblood)</td>
 <td><strong>$49</strong> Developer (10M credits) + autoscale $5/1M, <strong>$149 cap = 30M</strong></td>
 <td>dashboard.helius.dev</td>
-<td><strong>Reach via the SSH SOCKS tunnel</strong> (account is German-IP bound) — see below</td>
+<td><strong>Reach via the SSH SOCKS tunnel</strong> (account is German-IP bound) — see below. Usage alerts + bills emailed to <strong>roytkelly@gmail.com</strong></td>
 <td><code>HELIUS_API_KEY</code>, <code>HELIUS_WEBHOOK_AUTH_SECRET</code>, <code>HELIUS_RPC_URL</code></td>
 </tr>
 <tr>
