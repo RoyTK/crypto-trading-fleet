@@ -581,6 +581,15 @@ def attribute_closed_trade(trade_id: int) -> int:
         if t is None or t.signal_id is None:
             return 0
 
+        # Conviction trades are single-wallet and tracked on their own strategy
+        # metric — do NOT write them into wallet_attributions (which has no
+        # strategy column). Otherwise conviction's cluster_size=1 rows would
+        # contaminate the cluster attribution panels + wallet leaderboard.
+        # Per-wallet conviction PnL stays recoverable via
+        # trades.sim_metadata->>'trigger_wallet'.
+        if (t.sim_metadata or {}).get("strategy") == "conviction":
+            return 0
+
         # Idempotency check
         existing = s.execute(
             select(WalletAttribution.id).where(WalletAttribution.trade_id == trade_id).limit(1)
