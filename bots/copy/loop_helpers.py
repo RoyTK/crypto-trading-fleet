@@ -434,6 +434,7 @@ def close_paper_trade(
     exit_price: float,
     exit_fill: SimulatedFill,
     exit_reason: str,
+    exit_meta: Optional[dict] = None,
 ) -> None:
     """Close an open paper trade. Handles BOTH the legacy single-exit
     lifecycle AND the new partial-exit ladder (where 0-3 tiers may have
@@ -504,6 +505,11 @@ def close_paper_trade(
             md["partial_received_usdc"] = partial_received_usdc
             md["final_received_usdc"] = remaining_received
             md["total_received_usdc"] = total_received_usdc
+        # Signal-triggered exits record the wallets that caused the sell
+        # (sell-cluster cohort, or the conviction trigger wallet) for the
+        # "recent closed positions" detail panel.
+        if exit_meta:
+            md.update(exit_meta)
         t.sim_metadata = md
     write_audit(
         "paper_trade_closed",

@@ -874,6 +874,10 @@ class CopyBot(BotLifecycle):
                     exit_price=close_price,
                     exit_fill=exit_fill,
                     exit_reason=exit_reason,
+                    exit_meta={
+                        "exit_signal": "trigger_wallet_exit",
+                        "exit_trigger_wallets": [ev.wallet_address],
+                    },
                 )
             except Exception:
                 self.log.exception("conviction_trigger_wallet_close_failed",
@@ -1258,6 +1262,10 @@ class CopyBot(BotLifecycle):
                     exit_price=close_price,
                     exit_fill=exit_fill,
                     exit_reason=exit_reason,
+                    exit_meta={
+                        "exit_signal": "sell_cluster",
+                        "exit_trigger_wallets": _extract_wallet_list(c),
+                    },
                 )
             except Exception:
                 self.log.exception("sell_cluster_paper_close_failed",
