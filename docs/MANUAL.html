@@ -25,7 +25,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-06-25 01:38 UTC.</em></p>
+<em>Last built: 2026-06-25 21:44 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -44,7 +44,7 @@ or Ctrl-F to jump around.</p>
 <li><strong><a href="#part-1-operator-track-keeping-it-alive-plain-language">Part 1 · Operator Track — Keeping It Alive (plain language)</a></strong></li>
 <li><a href="#10-project-overview">1.0 Project Overview</a><ul>
 <li><a href="#what-the-project-is">What the project is</a></li>
-<li><a href="#the-two-bots">The two bots</a></li>
+<li><a href="#the-bots">The bots</a></li>
 <li><a href="#current-status-keep-this-updated">Current status (keep this updated)</a></li>
 <li><a href="#the-core-philosophy-please-respect-these">The core philosophy (please respect these)</a></li>
 <li><a href="#how-it-stays-alive-without-roy">How it stays alive without Roy</a></li>
@@ -77,7 +77,7 @@ or Ctrl-F to jump around.</p>
 <li><strong><a href="#part-2-engineer-track-understand-continue-technical">Part 2 · Engineer Track — Understand &amp; Continue (technical)</a></strong></li>
 <li><a href="#20-architecture-codebase-map">2.0 Architecture &amp; Codebase Map</a><ul>
 <li><a href="#high-level-shape">High-level shape</a></li>
-<li><a href="#the-bots">The bots</a></li>
+<li><a href="#the-bots-1">The bots</a></li>
 <li><a href="#copy-data-flow-webhook-trade-measurement">COPY data flow (webhook → trade → measurement)</a></li>
 <li><a href="#the-wallet-pool-lifecycle">The wallet pool lifecycle</a></li>
 <li><a href="#the-framework">The framework</a></li>
@@ -245,34 +245,38 @@ buy and sell. Right now it trades on <strong>paper</strong> (pretend money) and 
 Roy can see whether the strategies actually make money before risking real funds.</p>
 <p>Think of it like a flight simulator for trading: the controls are real and the decisions
 are real, but it is not yet flying a real plane.</p>
-<h3 id="the-two-bots">The two bots</h3>
-<p>There are two bots, each a different strategy:</p>
+<h3 id="the-bots">The bots</h3>
+<p>The fleet is now <strong>COPY-only</strong>. (STRUCTURE was decommissioned on 2026-06-25 — see below.)</p>
 <ul>
+<li><strong>COPY</strong> — trades <strong>Solana "memecoins"</strong> (tiny, very risky new tokens). It watches a
+  curated list of skilled trader wallets and buys when they do, then sells quickly to lock
+  in gains before the token (often) collapses. COPY runs <strong>two independent strategies</strong>:</li>
+<li><strong>Cluster</strong> — buys when several tracked wallets buy the same brand-new token within
+    ~15 minutes (the original COPY strategy).</li>
 <li>
-<p><strong>STRUCTURE</strong> — trades <strong>Hyperliquid perpetual futures</strong> (a derivatives exchange for
-  large coins like Bitcoin and Ethereum). It looks for unusual market conditions (e.g.
-  lots of forced selling) and bets on a bounce. <strong>Currently PAUSED</strong> — it kept losing
-  paper money. A fix is believed possible but would need a ~$500/month paid data-plan
-  upgrade, which isn't justified during the paper phase. So the project's active focus is
-  COPY.</p>
+<p><strong>Conviction</strong> — buys when a <em>single</em> highly-trusted wallet accumulates a meaningful
+    position in one token (its buys sum past a threshold within ~60 min, with no offsetting
+    sells). It has its own <strong>$10k paper bankroll</strong> and separate metrics.</p>
 </li>
 <li>
-<p><strong>COPY</strong> — trades <strong>Solana "memecoins"</strong> (tiny, very risky new tokens). It watches a
-  curated list of skilled trader wallets; when several of them buy the same brand-new token
-  within ~15 minutes, COPY buys too, then sells quickly to lock in gains before the token
-  (often) collapses. <em>This is the more active bot and the one most of the day-to-day work
-  is about.</em></p>
+<p><strong>STRUCTURE</strong> <em>(decommissioned 2026-06-25)</em> — formerly traded <strong>Hyperliquid perpetual
+  futures</strong>, looking for unusual market conditions (e.g. lots of forced selling) and betting
+  on a bounce. It kept losing paper money; the suspected fix needed a ~$500/month paid
+  data-plan upgrade not worth paying for during the paper phase, so it was first parked and
+  then fully removed (its idle container was spamming errors). The code is retained and it
+  can be revived later if the data spend is ever justified.</p>
 </li>
 </ul>
 <h3 id="current-status-keep-this-updated">Current status (keep this updated)</h3>
 <ul>
 <li><strong>Mode:</strong> Paper + a small "shadow" sample of real trades. <strong>No meaningful real money is
   at risk.</strong></li>
-<li><strong>COPY</strong> is the active focus: it trades on a <strong>curated, vetted</strong> list of ~150+ wallets
-  that grows as Roy runs wallet discovery. Buying is currently <strong>ON</strong>.</li>
-<li><strong>STRUCTURE</strong> is <strong>PAUSED</strong> (it was losing paper money; the likely fix needs a costly
-  ~$500/mo data upgrade not worth paying for during the paper phase). It can be revisited
-  later; for now, most of this manual's day-to-day is about COPY.</li>
+<li><strong>COPY</strong> is the whole fleet now: it trades on a <strong>curated, vetted</strong> list of wallets that
+  grows as Roy runs wallet discovery, via two strategies (cluster + conviction). Buying is
+  currently <strong>ON</strong>.</li>
+<li><strong>STRUCTURE</strong> is <strong>DECOMMISSIONED</strong> (removed 2026-06-25 — it was losing paper money and the
+  likely fix needs a costly ~$500/mo data upgrade not worth paying for during the paper
+  phase). Its code is retained and it can be revived later.</li>
 <li>The system is being <strong>measured</strong> against pass/fail criteria (the "kill criteria") over a
   ~60–90 day window before any decision to use real money.</li>
 </ul>
@@ -599,7 +603,7 @@ multi-channel alerting (Discord/Telegram/Twilio).</p>
             │                                       │
    monitoring/ (webhook_receiver, alerting dispatcher, dashboards, prometheus)
 </code></pre>
-<h3 id="the-bots">The bots</h3>
+<h3 id="the-bots_1">The bots</h3>
 <p><strong>STRUCTURE</strong> (<code>bots/structure/</code>) — Hyperliquid perpetual futures. Signals in
 <code>bots/structure/signals/</code>: <code>funding_fade</code>, <code>liquidation_cascade</code>, <code>whale_flip</code>,
 <code>hl_oi_divergence</code>. Reads market data via the Hyperliquid Info API (<code>venue.py</code>). Paper +
@@ -1273,10 +1277,14 @@ changing anything — several look like "inefficiencies" but are deliberate. Ful
 in <code>memory/project_decision_log.md</code> and <code>memory/project_fleet_design_state.md</code>.</p>
 <ul>
 <li>
-<p><strong>STRUCTURE is paused, on purpose.</strong> It was steadily losing paper money. The suspected
-  fix needs a ~$500/month real-time data-feed upgrade, which isn't worth paying for during
-  the paper phase. So effort is concentrated on COPY. STRUCTURE's code is intact and can be
-  revived later if/when the data spend is justified — don't delete it.</p>
+<p><strong>STRUCTURE was decommissioned on 2026-06-25, on purpose.</strong> It was steadily losing paper
+  money, and the suspected fix needs a ~$500/month real-time data-feed upgrade not worth
+  paying for during the paper phase. It was first paused, then fully removed when its idle
+  container kept running as a "zombie" — spamming polling errors and a recurring cross-bot
+  cron failure. Removal covered docker-compose, the kill-criteria and drawdown monitors, and
+  the scoring crons. STRUCTURE's code is intact (<code>bots/structure/</code>) and can be revived later
+  if/when the data spend is justified — don't delete it. So the fleet is now COPY-only and
+  all effort is concentrated there.</p>
 </li>
 <li>
 <p><strong>Paper-first, with a kill-criteria window.</strong> The entire point is to <em>measure</em> whether an

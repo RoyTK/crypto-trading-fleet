@@ -1,8 +1,9 @@
 # CLAUDE.md — read this first
 
-This is the **Crypto Trading Fleet** project: a paper-trading crypto bot fleet (COPY active,
-STRUCTURE paused) on a Hetzner server. It is complex with a lot of accumulated context that
-does **not** all live in the code.
+This is the **Crypto Trading Fleet** project: a paper-trading crypto bot fleet — now
+**COPY-only** (STRUCTURE decommissioned 2026-06-25) on a Hetzner server. COPY runs two
+strategies: **cluster** (3-wallet co-buy) and **conviction** (single-wallet accumulation).
+It is complex with a lot of accumulated context that does **not** all live in the code.
 
 ## ⭐ Start every session by reading the memory index
 
@@ -31,8 +32,12 @@ changes. Docs-only changes do not trigger a deploy.
 
 ## Key current facts (verify against memory + live state before acting)
 
-- **Paper + shadow only; real-money flags are OFF.** COPY cluster-buys ON. **STRUCTURE
-  PAUSED** (was losing paper money; fix needs ~$500/mo data — deferred).
+- **Paper + shadow only; real-money flags are OFF.** COPY ON, running **two strategies** —
+  cluster (3-wallet co-buy) + conviction (single-wallet cumulative-accumulation trigger, own
+  $10k paper bankroll, isolated metrics). **STRUCTURE DECOMMISSIONED 2026-06-25** (`c41835d`):
+  was only "parked" but its container ran on as a zombie spamming `whale_poll_failed` + a
+  cross-bot cron IndexError; removed from docker-compose + kill/dd monitors + scoring crons.
+  Code retained in `bots/structure/` — revive = restore the compose block + 3 cron hooks.
 - **Wallet pool is vetted-only**; KEEP → active directly; `copy_active_list_target` = 300.
 - **Wallet discovery is ATTENDED** (run browser-Opus / the VS Code Claude extension by hand) —
   headless `claude -p` has no Claude-in-Chrome browser tools. Helius budget = 30M credits/mo

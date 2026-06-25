@@ -12,32 +12,36 @@ Roy can see whether the strategies actually make money before risking real funds
 Think of it like a flight simulator for trading: the controls are real and the decisions
 are real, but it is not yet flying a real plane.
 
-### The two bots
+### The bots
 
-There are two bots, each a different strategy:
-
-- **STRUCTURE** — trades **Hyperliquid perpetual futures** (a derivatives exchange for
-  large coins like Bitcoin and Ethereum). It looks for unusual market conditions (e.g.
-  lots of forced selling) and bets on a bounce. **Currently PAUSED** — it kept losing
-  paper money. A fix is believed possible but would need a ~$500/month paid data-plan
-  upgrade, which isn't justified during the paper phase. So the project's active focus is
-  COPY.
+The fleet is now **COPY-only**. (STRUCTURE was decommissioned on 2026-06-25 — see below.)
 
 - **COPY** — trades **Solana "memecoins"** (tiny, very risky new tokens). It watches a
-  curated list of skilled trader wallets; when several of them buy the same brand-new token
-  within ~15 minutes, COPY buys too, then sells quickly to lock in gains before the token
-  (often) collapses. *This is the more active bot and the one most of the day-to-day work
-  is about.*
+  curated list of skilled trader wallets and buys when they do, then sells quickly to lock
+  in gains before the token (often) collapses. COPY runs **two independent strategies**:
+  - **Cluster** — buys when several tracked wallets buy the same brand-new token within
+    ~15 minutes (the original COPY strategy).
+  - **Conviction** — buys when a *single* highly-trusted wallet accumulates a meaningful
+    position in one token (its buys sum past a threshold within ~60 min, with no offsetting
+    sells). It has its own **$10k paper bankroll** and separate metrics.
+
+- **STRUCTURE** *(decommissioned 2026-06-25)* — formerly traded **Hyperliquid perpetual
+  futures**, looking for unusual market conditions (e.g. lots of forced selling) and betting
+  on a bounce. It kept losing paper money; the suspected fix needed a ~$500/month paid
+  data-plan upgrade not worth paying for during the paper phase, so it was first parked and
+  then fully removed (its idle container was spamming errors). The code is retained and it
+  can be revived later if the data spend is ever justified.
 
 ### Current status (keep this updated)
 
 - **Mode:** Paper + a small "shadow" sample of real trades. **No meaningful real money is
   at risk.**
-- **COPY** is the active focus: it trades on a **curated, vetted** list of ~150+ wallets
-  that grows as Roy runs wallet discovery. Buying is currently **ON**.
-- **STRUCTURE** is **PAUSED** (it was losing paper money; the likely fix needs a costly
-  ~$500/mo data upgrade not worth paying for during the paper phase). It can be revisited
-  later; for now, most of this manual's day-to-day is about COPY.
+- **COPY** is the whole fleet now: it trades on a **curated, vetted** list of wallets that
+  grows as Roy runs wallet discovery, via two strategies (cluster + conviction). Buying is
+  currently **ON**.
+- **STRUCTURE** is **DECOMMISSIONED** (removed 2026-06-25 — it was losing paper money and the
+  likely fix needs a costly ~$500/mo data upgrade not worth paying for during the paper
+  phase). Its code is retained and it can be revived later.
 - The system is being **measured** against pass/fail criteria (the "kill criteria") over a
   ~60–90 day window before any decision to use real money.
 

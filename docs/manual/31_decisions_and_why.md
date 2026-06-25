@@ -6,10 +6,14 @@ The load-bearing decisions behind the design. A maintainer should understand the
 changing anything — several look like "inefficiencies" but are deliberate. Full history is
 in `memory/project_decision_log.md` and `memory/project_fleet_design_state.md`.
 
-- **STRUCTURE is paused, on purpose.** It was steadily losing paper money. The suspected
-  fix needs a ~$500/month real-time data-feed upgrade, which isn't worth paying for during
-  the paper phase. So effort is concentrated on COPY. STRUCTURE's code is intact and can be
-  revived later if/when the data spend is justified — don't delete it.
+- **STRUCTURE was decommissioned on 2026-06-25, on purpose.** It was steadily losing paper
+  money, and the suspected fix needs a ~$500/month real-time data-feed upgrade not worth
+  paying for during the paper phase. It was first paused, then fully removed when its idle
+  container kept running as a "zombie" — spamming polling errors and a recurring cross-bot
+  cron failure. Removal covered docker-compose, the kill-criteria and drawdown monitors, and
+  the scoring crons. STRUCTURE's code is intact (`bots/structure/`) and can be revived later
+  if/when the data spend is justified — don't delete it. So the fleet is now COPY-only and
+  all effort is concentrated there.
 
 - **Paper-first, with a kill-criteria window.** The entire point is to *measure* whether an
   edge exists before risking money. Hence locked config during the window, and a Sharpe/win-rate

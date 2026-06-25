@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-25 01:38 UTC.*
+*Last built: 2026-06-25 21:44 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -21,7 +21,7 @@
 - **[Part 1 · Operator Track — Keeping It Alive (plain language)](#part-1-operator-track-keeping-it-alive-plain-language)**
   - [1.0 Project Overview](#10-project-overview)
     - [What the project is](#what-the-project-is)
-    - [The two bots](#the-two-bots)
+    - [The bots](#the-bots)
     - [Current status (keep this updated)](#current-status-keep-this-updated)
     - [The core philosophy (please respect these)](#the-core-philosophy-please-respect-these)
     - [How it stays alive without Roy](#how-it-stays-alive-without-roy)
@@ -46,7 +46,7 @@
 - **[Part 2 · Engineer Track — Understand & Continue (technical)](#part-2-engineer-track-understand-continue-technical)**
   - [2.0 Architecture & Codebase Map](#20-architecture-codebase-map)
     - [High-level shape](#high-level-shape)
-    - [The bots](#the-bots)
+    - [The bots](#the-bots-1)
     - [COPY data flow (webhook → trade → measurement)](#copy-data-flow-webhook-trade-measurement)
     - [The wallet pool lifecycle](#the-wallet-pool-lifecycle)
     - [The framework](#the-framework)
@@ -193,32 +193,36 @@ Roy can see whether the strategies actually make money before risking real funds
 Think of it like a flight simulator for trading: the controls are real and the decisions
 are real, but it is not yet flying a real plane.
 
-### The two bots
+### The bots
 
-There are two bots, each a different strategy:
-
-- **STRUCTURE** — trades **Hyperliquid perpetual futures** (a derivatives exchange for
-  large coins like Bitcoin and Ethereum). It looks for unusual market conditions (e.g.
-  lots of forced selling) and bets on a bounce. **Currently PAUSED** — it kept losing
-  paper money. A fix is believed possible but would need a ~$500/month paid data-plan
-  upgrade, which isn't justified during the paper phase. So the project's active focus is
-  COPY.
+The fleet is now **COPY-only**. (STRUCTURE was decommissioned on 2026-06-25 — see below.)
 
 - **COPY** — trades **Solana "memecoins"** (tiny, very risky new tokens). It watches a
-  curated list of skilled trader wallets; when several of them buy the same brand-new token
-  within ~15 minutes, COPY buys too, then sells quickly to lock in gains before the token
-  (often) collapses. *This is the more active bot and the one most of the day-to-day work
-  is about.*
+  curated list of skilled trader wallets and buys when they do, then sells quickly to lock
+  in gains before the token (often) collapses. COPY runs **two independent strategies**:
+  - **Cluster** — buys when several tracked wallets buy the same brand-new token within
+    ~15 minutes (the original COPY strategy).
+  - **Conviction** — buys when a *single* highly-trusted wallet accumulates a meaningful
+    position in one token (its buys sum past a threshold within ~60 min, with no offsetting
+    sells). It has its own **$10k paper bankroll** and separate metrics.
+
+- **STRUCTURE** *(decommissioned 2026-06-25)* — formerly traded **Hyperliquid perpetual
+  futures**, looking for unusual market conditions (e.g. lots of forced selling) and betting
+  on a bounce. It kept losing paper money; the suspected fix needed a ~$500/month paid
+  data-plan upgrade not worth paying for during the paper phase, so it was first parked and
+  then fully removed (its idle container was spamming errors). The code is retained and it
+  can be revived later if the data spend is ever justified.
 
 ### Current status (keep this updated)
 
 - **Mode:** Paper + a small "shadow" sample of real trades. **No meaningful real money is
   at risk.**
-- **COPY** is the active focus: it trades on a **curated, vetted** list of ~150+ wallets
-  that grows as Roy runs wallet discovery. Buying is currently **ON**.
-- **STRUCTURE** is **PAUSED** (it was losing paper money; the likely fix needs a costly
-  ~$500/mo data upgrade not worth paying for during the paper phase). It can be revisited
-  later; for now, most of this manual's day-to-day is about COPY.
+- **COPY** is the whole fleet now: it trades on a **curated, vetted** list of wallets that
+  grows as Roy runs wallet discovery, via two strategies (cluster + conviction). Buying is
+  currently **ON**.
+- **STRUCTURE** is **DECOMMISSIONED** (removed 2026-06-25 — it was losing paper money and the
+  likely fix needs a costly ~$500/mo data upgrade not worth paying for during the paper
+  phase). Its code is retained and it can be revived later.
 - The system is being **measured** against pass/fail criteria (the "kill criteria") over a
   ~60–90 day window before any decision to use real money.
 
@@ -1071,10 +1075,14 @@ The load-bearing decisions behind the design. A maintainer should understand the
 changing anything — several look like "inefficiencies" but are deliberate. Full history is
 in `memory/project_decision_log.md` and `memory/project_fleet_design_state.md`.
 
-- **STRUCTURE is paused, on purpose.** It was steadily losing paper money. The suspected
-  fix needs a ~$500/month real-time data-feed upgrade, which isn't worth paying for during
-  the paper phase. So effort is concentrated on COPY. STRUCTURE's code is intact and can be
-  revived later if/when the data spend is justified — don't delete it.
+- **STRUCTURE was decommissioned on 2026-06-25, on purpose.** It was steadily losing paper
+  money, and the suspected fix needs a ~$500/month real-time data-feed upgrade not worth
+  paying for during the paper phase. It was first paused, then fully removed when its idle
+  container kept running as a "zombie" — spamming polling errors and a recurring cross-bot
+  cron failure. Removal covered docker-compose, the kill-criteria and drawdown monitors, and
+  the scoring crons. STRUCTURE's code is intact (`bots/structure/`) and can be revived later
+  if/when the data spend is justified — don't delete it. So the fleet is now COPY-only and
+  all effort is concentrated there.
 
 - **Paper-first, with a kill-criteria window.** The entire point is to *measure* whether an
   edge exists before risking money. Hence locked config during the window, and a Sharpe/win-rate
