@@ -61,10 +61,20 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
   = exit skill = what the bot copies.
 - Unrealized NOT deeply negative. REJECT if unrealized losses exceed realized gains
   (bag-holder who rides tokens to zero — the anti-pattern).
-- Avg Holding Duration in the FOLLOWABLE window: ~30 minutes to 7 days. COPY's
-  entry latency (Helius webhook + cluster formation + quote/execute) is ~10s to a
-  few minutes, so it can ride a wallet that holds 30min-days. Two failure modes:
-    * TOO SLOW (~14d+ swing): wrong style, COPY exits early. REJECT.
+- Avg Holding Duration — long holds are FINE; do NOT reject on hold time alone.
+  ★ 2026-06-25 CORRECTION (the single most important change to this prompt): in CLUSTER
+  mode COPY only borrows a wallet's co-buy ENTRY, then exits on its OWN ~15-min ladder —
+  it does NOT follow the wallet out. So a multi-day or even multi-month swing holder can
+  be an EXCELLENT cluster entry signal, as long as its ENTRIES land on good tokens. The
+  old "~14d+ hold = REJECT (wrong style)" rule was WRONG: it pruned PROVEN cluster winners
+  (EG8X rode 2-month holds yet earned COPY +$523 attributed; HkFGQsW8 +$413 and was COPY's
+  #2 profit-driver). Judge a slow wallet on ENTRY QUALITY, not hold length:
+    * SLOW + good entries -> KEEP: realized PnL strongly positive, net (realized +
+      unrealized) clearly positive (NOT a bag-holder), multiple multi-x wins. COPY
+      supplies the fast exit; the long hold is irrelevant to a cluster entry signal.
+    * SLOW + bad entries -> REJECT: reject a slow wallet ONLY if it is a net BAG-HOLDER
+      (unrealized losses dwarf realized -> it picks tokens that die), or an MM/HFT/dust
+      farmer. Bad entries are the real "slow" failure mode — NOT the hold time itself.
     * TOO FAST (sub-~15-min holds — e.g. 7-second or 1-minute snipers): UNFOLLOWABLE.
       COPY buys what they're already dumping. A wallet that qualifies on everything
       ELSE but holds sub-15-min is NOT a KEEP — mark it verdict=TOO_FAST (see Output).
@@ -89,7 +99,11 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
 High Scam/Rug % is a FEATURE here, not a reason to reject — as long as the
 realized/unrealized/hold criteria hold.
   KEEP example: Realized +$1.16M / Unrealized -$428K / 6d hold / 162 multi-x / 99% rug
-    (banks far more than the bag; hold is in the followable ~30min-7d window).
+    (banks far more than the bag; good entries).
+  KEEP example (SLOW, now correctly kept): Realized +$17.38M / Unrealized -$5.21M / 2mo
+    hold / 1026 multi-x / 99.94% rug (EG8X — long hold but strongly net-positive with huge
+    multi-x; a PROVEN cluster-entry winner at +$523 COPY-attributed. Hold length alone is
+    NOT a reject reason; only a net-negative bag would be).
   TOO_FAST example: Realized +$436K / Unrealized ~$0 / 7-sec holds / 473 multi-x / 99% rug
     (an ELITE wallet on its own merits, but COPY cannot enter inside a 7-second hold —
     it would buy the dump. Mark verdict=TOO_FAST, NOT KEEP. Logged for a future fast bot.)

@@ -1,5 +1,16 @@
 # CLAUDE.md — read this first
 
+## ⛔ Ground rule: do not guess
+
+**Do not guess. Do the work and find the truth before acting or recommending, and never
+present a guess as fact.** This system trades (paper now, real later) on the conclusions you
+report — verify against the code, the live DB, and on-chain/log data instead of inferring.
+When you genuinely cannot verify something, say so explicitly and label it as an assumption.
+(This rule exists because a confident-but-wrong claim here ["+$523 is inflated"] wasted Roy's
+time and nearly drove a wrong decision — the attribution was a fair `pnl/cluster_size` share,
+which one DB query proved.)
+
+
 This is the **Crypto Trading Fleet** project: a paper-trading crypto bot fleet — now
 **COPY-only** (STRUCTURE decommissioned 2026-06-25) on a Hetzner server. COPY runs two
 strategies: **cluster** (3-wallet co-buy) and **conviction** (single-wallet accumulation).
