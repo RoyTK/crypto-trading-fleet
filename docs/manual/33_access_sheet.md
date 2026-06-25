@@ -22,7 +22,7 @@ Tick **2FA** where enabled.
 <tr><td>9</td><td><b>Twilio</b> &mdash; not set up</td><td>console.twilio.com</td><td></td><td></td><td></td><td>☐</td><td>no SMS (paper phase)</td></tr>
 <tr><td>10</td><td><b>Privacy.com</b></td><td>privacy.com</td><td></td><td></td><td></td><td>☐</td><td>virtual cards (pays Helius etc.)</td></tr>
 <tr><td>11</td><td><b>Cloudflare</b></td><td>one.dash.cloudflare.com</td><td></td><td></td><td></td><td>☐</td><td>remote-access tunnel</td></tr>
-<tr><td>12</td><td><b>Grafana</b></td><td>(self-hosted, via Cloudflare tunnel)</td><td></td><td></td><td></td><td>☐</td><td>dashboards (royfleet.dev)</td></tr>
+<tr><td>12</td><td><b>Grafana</b></td><td>grafana.royfleet.dev</td><td></td><td></td><td></td><td>☐</td><td>dashboards (via Cloudflare tunnel)</td></tr>
 <tr><td>13</td><td><b>Microsoft / OneDrive</b></td><td>onedrive.com</td><td></td><td></td><td></td><td>☐</td><td>Documents\Claude\</td></tr>
 <tr><td>14</td><td><b>Claude (Max)</b></td><td>claude.ai</td><td></td><td></td><td></td><td>☐</td><td>runs discovery</td></tr>
 <tr><td>15</td><td><b>Email</b> (reports)</td><td>(SMTP provider)</td><td></td><td></td><td></td><td>☐</td><td>trading@generalaisystems.com</td></tr>
@@ -31,6 +31,8 @@ Tick **2FA** where enabled.
 <tr><td>18</td><td><b>2FA recovery codes</b></td><td>(store with this sheet)</td><td></td><td></td><td></td><td></td><td>one-time codes</td></tr>
 </tbody>
 </table>
+
+<div class="page-break"></div>
 
 ### Crypto wallets — usernames, passwords & recovery phrases
 
