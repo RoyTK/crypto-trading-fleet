@@ -137,6 +137,9 @@ class ConvictionDetector:
                 continue  # wallet is also selling this token — hold off
 
             chain, token, wallet = key
+            # How long the accumulation took: span from the first to the last
+            # buy that summed to the threshold (0 for a single-buy / sniper fire).
+            accumulation_seconds = round((bdq[-1][0] - bdq[0][0]) / 1000.0, 1)
             out.append(SignalCandidate(
                 signal_type="conviction_buy",
                 asset=token,
@@ -151,6 +154,7 @@ class ConvictionDetector:
                     "trigger_wallet": wallet,
                     "accumulated_usd": round(buys_sum, 2),
                     "n_buys": len(bdq),
+                    "accumulation_seconds": accumulation_seconds,
                     "window_sells_usd": round(sells_sum, 2),
                     "window_minutes": self._window_ms // 60000,
                     # Carried so downstream wallet-list helpers keep working.
