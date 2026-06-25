@@ -257,6 +257,36 @@ class CopySettings(BaseSettings):
     copy_cluster_dedup_hours: int = Field(default=24)
 
     # ------------------------------------------------------------------
+    # Conviction mode (2026-06-24) — single-wallet trigger strategy
+    # ------------------------------------------------------------------
+    # Parallel COPY strategy that fires a paper buy when ONE elite "conviction"
+    # wallet buys (no cluster needed). Own $10k paper bankroll + isolated
+    # metrics so it can be measured/killed/promoted independently of the
+    # cluster strategy, WITHOUT disturbing the cluster's pre-registered
+    # evaluation. Roster lives in the DB (wallet_pool.conviction = true), not
+    # here — edit via scripts/set_conviction_wallets.py. Ships dark (disabled);
+    # flip on after reviewing the signal-frequency preview.
+    copy_conviction_enabled: bool = Field(default=False)
+    # Separate paper bankroll for conviction. Read by dd_monitor +
+    # kill_criteria_monitor via env (COPY_CONVICTION_PAPER_CAPITAL_USD), same
+    # as the cluster bankroll. Sizing/allocation below are computed against it.
+    copy_conviction_paper_capital_usd: float = Field(default=10_000.0)
+    # Per-wallet notional floor for a conviction trigger. Matches the cluster
+    # per-wallet floor ($1k) — a sub-$1k buy from an elite wallet is noise.
+    copy_conviction_min_notional_usd: float = Field(default=1_000.0)
+    # Per-trade size = this % of the conviction bankroll. 4% mirrors the
+    # cluster 3-wallet base (Roy 2026-06-24: keep at 4% — paper money).
+    copy_conviction_sizing_pct: float = Field(default=4.0)
+    # Allocation cap — total open conviction notional may not exceed this % of
+    # the conviction bankroll. Mirrors the cluster 50% cap.
+    copy_conviction_alloc_cap_pct: float = Field(default=50.0)
+    # Follow-the-trigger-wallet-out exit: when TRUE, a conviction position is
+    # closed as soon as the specific wallet that triggered it SELLS that token
+    # (we already ingest sell events). The standard exit stack
+    # (stop/TP/timeout/partials/trailing/sell-cluster) still applies on top.
+    copy_conviction_follow_wallet_exit: bool = Field(default=True)
+
+    # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)
     # ------------------------------------------------------------------
     # Master gate. Default FALSE — full skeleton in code but no signing
@@ -411,6 +441,14 @@ class SignalSpec:
 SIGNAL_SPECS: dict[str, SignalSpec] = {
     "cluster_buy": SignalSpec(
         name="cluster_buy",
+        stop_pct=EXIT_STOP_PCT,
+        take_profit_pct=EXIT_TAKE_PROFIT_PCT,
+        timeout_hours=EXIT_TIMEOUT_HOURS,
+    ),
+    # Conviction (single-wallet trigger) reuses the same exit stack as the
+    # cluster strategy — only entry differs.
+    "conviction_buy": SignalSpec(
+        name="conviction_buy",
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
         timeout_hours=EXIT_TIMEOUT_HOURS,

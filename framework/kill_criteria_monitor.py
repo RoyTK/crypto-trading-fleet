@@ -73,6 +73,14 @@ WINDOWS: dict[str, dict[str, datetime]] = {
         "end_primary":  datetime(2026, 8, 20, tzinfo=timezone.utc),
         "end_extended": datetime(2026, 9, 19, tzinfo=timezone.utc),
     },
+    # Conviction (single-wallet trigger) sub-strategy — separate $10k paper
+    # bankroll + isolated metrics. Window opens at the 2026-06-24 ship; trades
+    # before then don't exist (it ships dark), so exit_at >= start captures all.
+    "copy_conviction": {
+        "start":        datetime(2026, 6, 24, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 23, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 22, tzinfo=timezone.utc),
+    },
 }
 
 # Backwards-compat exports. Default to STRUCTURE since these constants
@@ -112,9 +120,21 @@ COPY_CRITERIA: dict[str, Any] = {
 }
 
 
+# Conviction sub-strategy criteria. Mirror COPY's memecoin-economics floors
+# (low WR + positive skew is normal), but key off the strategy tag rather than
+# wallet_tier. PRE-REGISTERED 2026-06-24 — no tuning during the window.
+COPY_CONVICTION_CRITERIA: dict[str, Any] = {
+    "wr_floor": 0.25,
+    "wr_min_n": 60,
+    "pnl_floor_pct": 2.0,
+    "strategy_filter": "conviction",
+}
+
+
 PROMOTION_CRITERIA: dict[str, dict[str, float]] = {
     "structure": {"wr": 0.55, "pnl_pct": 5.0, "sharpe": 1.0, "slippage_ratio_max": 1.2},
     "copy": {"wr": 0.55, "pnl_pct": 5.0, "sharpe": 1.0},
+    "copy_conviction": {"wr": 0.55, "pnl_pct": 5.0, "sharpe": 1.0},
 }
 
 
@@ -188,6 +208,7 @@ def _paper_capital_for(bot_id: str) -> float:
     env_key = {
         "structure": "STRUCTURE_PAPER_CAPITAL_USD",
         "copy": "COPY_PAPER_CAPITAL_USD",
+        "copy_conviction": "COPY_CONVICTION_PAPER_CAPITAL_USD",
     }.get(bot_id)
     if env_key:
         raw = os.environ.get(env_key)
@@ -399,6 +420,7 @@ def _compute_copy_status() -> dict[str, Any]:
               AND fill_status='closed' AND exit_at >= :ws
               AND pnl_usd IS NOT NULL
               AND sim_metadata->>'wallet_tier' = :tier
+              AND (sim_metadata->>'strategy') IS DISTINCT FROM 'conviction'
             """
         ), {"ws": window_start, "tier": tier}).all()
         pnls = [float(r.pnl_usd) for r in rows]
@@ -450,6 +472,75 @@ def _compute_copy_status() -> dict[str, Any]:
     }
 
 
+def _compute_copy_conviction_status() -> dict[str, Any]:
+    """Kill/promote status for the conviction sub-strategy.
+
+    Same shape + economics as the cluster COPY computer, but the validation
+    set is `strategy='conviction'` paper trades (not wallet_tier='active'),
+    measured against the separate conviction bankroll + window. Isolated by
+    construction: conviction trades carry wallet_tier='conviction', so they
+    never appear in the cluster metric and vice-versa.
+    """
+    paper_capital = _paper_capital_for("copy_conviction")
+    window_start = WINDOWS["copy_conviction"]["start"]
+
+    with session_scope() as s:
+        rows = s.execute(text(
+            """
+            SELECT pnl_usd FROM trades
+            WHERE bot_id='copy' AND mode='paper'
+              AND fill_status='closed' AND exit_at >= :ws
+              AND pnl_usd IS NOT NULL
+              AND sim_metadata->>'strategy' = 'conviction'
+            """
+        ), {"ws": window_start}).all()
+        pnls = [float(r.pnl_usd) for r in rows]
+        n = len(pnls)
+        wins = sum(1 for p in pnls if p > 0)
+        wr = (wins / n) if n > 0 else 0.0
+        net_pnl = sum(pnls)
+        net_pnl_pct = (net_pnl / paper_capital * 100.0) if paper_capital > 0 else 0.0
+        sharpe = _sharpe(pnls)
+
+    kill_triggers: list[str] = []
+    warning_triggers: list[str] = []
+
+    if n >= COPY_CONVICTION_CRITERIA["wr_min_n"]:
+        if wr < COPY_CONVICTION_CRITERIA["wr_floor"]:
+            kill_triggers.append("copy_conviction_wr_below_floor")
+        elif wr < COPY_CONVICTION_CRITERIA["wr_floor"] * (1 + WARNING_MARGIN):
+            warning_triggers.append("copy_conviction_wr_within_margin")
+
+        if net_pnl_pct < COPY_CONVICTION_CRITERIA["pnl_floor_pct"]:
+            kill_triggers.append("copy_conviction_pnl_below_floor")
+        elif net_pnl_pct < COPY_CONVICTION_CRITERIA["pnl_floor_pct"] * (1 + WARNING_MARGIN):
+            warning_triggers.append("copy_conviction_pnl_within_margin")
+
+    promo = PROMOTION_CRITERIA["copy_conviction"]
+    promote_eligible = (
+        n >= COPY_CONVICTION_CRITERIA["wr_min_n"]
+        and wr >= promo["wr"]
+        and net_pnl_pct >= promo["pnl_pct"]
+        and (sharpe is not None and sharpe >= promo["sharpe"])
+    )
+
+    return {
+        "bot_id": "copy_conviction",
+        "window": _window_metadata("copy_conviction"),
+        "paper_capital_usd": paper_capital,
+        "strategy": "conviction",
+        "n": n,
+        "wr": round(wr, 4),
+        "net_pnl_usd": round(net_pnl, 2),
+        "net_pnl_pct": round(net_pnl_pct, 3),
+        "sharpe": round(sharpe, 3) if sharpe is not None else None,
+        "kill_triggers": kill_triggers,
+        "warning_triggers": warning_triggers,
+        "promote_eligible": promote_eligible,
+        "last_checked_at": _now().isoformat(),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
@@ -457,6 +548,7 @@ def _compute_copy_status() -> dict[str, Any]:
 _COMPUTERS = {
     "structure": _compute_structure_status,
     "copy": _compute_copy_status,
+    "copy_conviction": _compute_copy_conviction_status,
 }
 
 
@@ -473,8 +565,13 @@ def _write_status(bot_id: str, status: dict[str, Any]) -> None:
     with session_scope() as s:
         row = s.query(BotState).filter(BotState.bot_id == bot_id).one_or_none()
         if row is None:
-            log.warning("kill_criteria_no_bot_state_row", bot_id=bot_id)
-            return
+            # Sub-strategies (e.g. copy_conviction) don't have a bot_state row
+            # pre-seeded. Create one so the status persists + is queryable by
+            # the daily digest / Grafana. state='paper' is truthful (paper
+            # trading); daily_report excludes these pseudo-bots from the fleet
+            # check-in (see _REPORT_EXCLUDE_BOT_IDS).
+            row = BotState(bot_id=bot_id, state="paper")
+            s.add(row)
         row.kill_criteria_status = status
 
 

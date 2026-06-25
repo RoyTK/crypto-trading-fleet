@@ -98,6 +98,12 @@ def _bot_summary(s: Session, bot: BotState, since: datetime) -> BotSummary:
 # in bot_state as 'initializing' but shouldn't pollute the daily check-in.
 _INACTIVE_STATES = {"initializing", "killed"}
 
+# Pseudo-bots that have a bot_state row (for kill_criteria_status / Grafana)
+# but whose trades live under another bot_id, so a fleet-summary row would
+# render misleadingly empty. copy_conviction's trades are bot_id='copy' tagged
+# strategy='conviction' — it's surfaced in the COPY daily digest instead.
+_REPORT_EXCLUDE_BOT_IDS = {"copy_conviction"}
+
 
 def build_summary(window_hours: int = 24, deployed_capital_usd: float = 0.0) -> FleetSummary:
     since = datetime.now(timezone.utc) - timedelta(hours=window_hours)
@@ -105,6 +111,7 @@ def build_summary(window_hours: int = 24, deployed_capital_usd: float = 0.0) -> 
         bots = list(
             s.query(BotState)
             .filter(~BotState.state.in_(_INACTIVE_STATES))
+            .filter(~BotState.bot_id.in_(_REPORT_EXCLUDE_BOT_IDS))
             .order_by(BotState.bot_id)
             .all()
         )

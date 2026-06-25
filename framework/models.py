@@ -412,6 +412,14 @@ class WalletPool(Base):
     pinned = Column(Boolean, nullable=False, default=False)
     pinned_at = Column(DateTime(timezone=True), nullable=True)
     pinned_reason = Column(Text, nullable=True)
+    # Conviction mode (2026-06-24): when TRUE, this wallet is a single-wallet
+    # trigger for the parallel "conviction" COPY strategy (its own $10k paper
+    # bankroll + isolated metrics). Independent of `pinned` (which only governs
+    # demotion immunity). The conviction roster is simply
+    # `wallet_pool WHERE conviction = true` — edit via scripts/set_conviction_wallets.py.
+    conviction = Column(Boolean, nullable=False, default=False)
+    conviction_at = Column(DateTime(timezone=True), nullable=True)
+    conviction_reason = Column(Text, nullable=True)
 
     __table_args__ = (
         Index("ix_wallet_pool_tier", "tier"),

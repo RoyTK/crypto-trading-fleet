@@ -61,6 +61,7 @@ def _build() -> str:
             FROM trades
             WHERE bot_id='copy' AND mode='paper' AND fill_status='closed'
               AND exit_at >= NOW() - INTERVAL '24 hours'
+              AND (sim_metadata->>'strategy') IS DISTINCT FROM 'conviction'
         """)).first()
         n24 = int(row.n or 0)
         wins24 = int(row.wins or 0)
@@ -73,6 +74,7 @@ def _build() -> str:
                    COALESCE(ROUND(SUM(COALESCE((sim_metadata->>'remaining_size_usd')::numeric, size_usd))::numeric, 0), 0) AS alloc
             FROM trades
             WHERE bot_id='copy' AND mode='paper' AND fill_status='open'
+              AND (sim_metadata->>'strategy') IS DISTINCT FROM 'conviction'
         """)).first()
         open_n = int(orow.n or 0)
         alloc = float(orow.alloc or 0.0)
@@ -104,6 +106,44 @@ def _build() -> str:
                    kill_criteria_status->>'kill_triggers' AS kt,
                    kill_criteria_status->>'warning_triggers' AS wt
             FROM bot_state WHERE bot_id='copy'
+        """)).first()
+
+        # ---- conviction sub-strategy (single-wallet trigger) ----
+        conv_cap = float(get_copy_settings().copy_conviction_paper_capital_usd or 10000.0)
+        conv_enabled = bool(get_copy_settings().copy_conviction_enabled)
+        crow = s.execute(text("""
+            SELECT COUNT(*) AS n,
+                   COALESCE(SUM(CASE WHEN pnl_usd > 0 THEN 1 ELSE 0 END), 0) AS wins,
+                   COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) AS pnl
+            FROM trades
+            WHERE bot_id='copy' AND mode='paper' AND fill_status='closed'
+              AND exit_at >= NOW() - INTERVAL '24 hours'
+              AND (sim_metadata->>'strategy') = 'conviction'
+        """)).first()
+        conv_n24 = int(crow.n or 0)
+        conv_wins24 = int(crow.wins or 0)
+        conv_pnl24 = float(crow.pnl or 0.0)
+        corow = s.execute(text("""
+            SELECT COUNT(*) AS n,
+                   COALESCE(ROUND(SUM(COALESCE((sim_metadata->>'remaining_size_usd')::numeric, size_usd))::numeric, 0), 0) AS alloc
+            FROM trades
+            WHERE bot_id='copy' AND mode='paper' AND fill_status='open'
+              AND (sim_metadata->>'strategy') = 'conviction'
+        """)).first()
+        conv_open_n = int(corow.n or 0)
+        conv_alloc = float(corow.alloc or 0.0)
+        conv_total = int(_scalar(s,
+            "SELECT COUNT(*) FROM trades WHERE bot_id='copy' "
+            "AND (sim_metadata->>'strategy')='conviction'", 0) or 0)
+        conv_roster = int(_scalar(s,
+            "SELECT COUNT(*) FROM wallet_pool WHERE conviction = true", 0) or 0)
+        ckc = s.execute(text("""
+            SELECT kill_criteria_status->>'n' AS n,
+                   kill_criteria_status->>'wr' AS wr,
+                   kill_criteria_status->>'net_pnl_pct' AS net,
+                   kill_criteria_status->>'sharpe' AS sharpe,
+                   kill_criteria_status->>'kill_triggers' AS kt
+            FROM bot_state WHERE bot_id='copy_conviction'
         """)).first()
 
         # sell-cluster closes since Option A (forward validation)
@@ -147,6 +187,23 @@ def _build() -> str:
         lines.append(f"🔴 STALE heartbeats: {', '.join(stale)}")
     else:
         lines.append("Liveness: all processes fresh ✅")
+
+    # ---- conviction section (only when enabled or it has ever traded) ----
+    if conv_enabled or conv_total:
+        conv_wr = (conv_wins24 / conv_n24 * 100.0) if conv_n24 else 0.0
+        conv_alloc_pct = (conv_alloc / conv_cap * 100.0) if conv_cap else 0.0
+        lines.append("")
+        lines.append("— Conviction (single-wallet) —")
+        lines.append(f"24h: {conv_n24} trades, {conv_wins24}W ({conv_wr:.0f}% WR), PnL {conv_pnl24:+.2f}")
+        lines.append(f"Open: {conv_open_n} positions, ${conv_alloc:.0f} ({conv_alloc_pct:.1f}% of ${conv_cap:.0f})")
+        lines.append(f"Roster: {conv_roster} wallets" + ("" if conv_enabled else "  (DISABLED)"))
+        if ckc and ckc.n is not None:
+            kt = ckc.kt or "[]"
+            trig = "none" if kt in ("[]", "", None) else kt
+            sharpe = ckc.sharpe if ckc.sharpe not in (None, "") else "n/a"
+            wr_str = f"{float(ckc.wr)*100:.1f}%" if ckc.wr not in (None, "") else "n/a"
+            lines.append(f"Window: n={ckc.n}, WR={wr_str}, NetPnL={ckc.net}%, Sharpe={sharpe}")
+            lines.append(f"Triggers: {trig}")
 
     return "\n".join(lines)
 

@@ -43,6 +43,11 @@ class OpenPaperTrade:
     # Trailing-stop state, persisted across cycles in Trade.sim_metadata.
     # None until the first cycle observes a positive move.
     peak_pct_since_entry: Optional[float] = None
+    # Strategy discriminator: 'cluster' (default/legacy) or 'conviction'.
+    strategy: str = "cluster"
+    # For conviction trades: the single wallet whose buy triggered the entry
+    # (used by the follow-the-trigger-wallet-out exit). None for cluster.
+    trigger_wallet: Optional[str] = None
 
 
 def persist_signal(candidate: SignalCandidate) -> int:
@@ -91,6 +96,8 @@ def persist_paper_trade(
     sim_fill: SimulatedFill,
     notional_usd: float,
     leverage: float = 1.0,
+    strategy: str = "cluster",
+    trigger_wallet: Optional[str] = None,
 ) -> Optional[int]:
     wallets_payload = (candidate.payload or {}).get("wallets") or {}
     if isinstance(wallets_payload, dict):
@@ -99,7 +106,15 @@ def persist_paper_trade(
         cluster_wallets = wallets_payload
     else:
         cluster_wallets = []
-    wallet_tier = _classify_cluster_wallet_tier(cluster_wallets)
+    # Conviction trades are single-wallet and MUST NOT be tagged wallet_tier
+    # 'active' — that is the cluster kill-criteria's filter, and conviction is
+    # tracked on its own metric (strategy='conviction'). Force a distinct tier
+    # so a conviction trade can never leak into the cluster validation set even
+    # if its trigger wallet happens to be active-tier.
+    if strategy == "conviction":
+        wallet_tier = "conviction"
+    else:
+        wallet_tier = _classify_cluster_wallet_tier(cluster_wallets)
 
     with session_scope() as s:
         trade = Trade(
@@ -125,6 +140,8 @@ def persist_paper_trade(
                 "cluster_size": candidate.cluster_size,
                 "wallet_tier": wallet_tier,
                 "cluster_wallets": cluster_wallets,
+                "strategy": strategy,
+                "trigger_wallet": trigger_wallet,
             },
         )
         s.add(trade)
@@ -146,7 +163,24 @@ def persist_paper_trade(
     return trade_id
 
 
-def list_open_paper_trades() -> list[OpenPaperTrade]:
+def _strategy_clause(strategy: Optional[str]):
+    """SQLAlchemy text() WHERE fragment scoping COPY paper trades by strategy.
+
+    - 'conviction' → only conviction trades
+    - 'cluster'    → everything that is NOT conviction (NULL/absent or 'cluster';
+                     keeps legacy untagged rows in the cluster bucket)
+    - None         → no filter (all strategies)
+
+    Postgres JSON operators, consistent with kill_criteria_monitor.
+    """
+    if strategy == "conviction":
+        return text("(sim_metadata->>'strategy') = 'conviction'")
+    if strategy == "cluster":
+        return text("(sim_metadata->>'strategy') IS DISTINCT FROM 'conviction'")
+    return None
+
+
+def list_open_paper_trades(strategy: Optional[str] = None) -> list[OpenPaperTrade]:
     out: list[OpenPaperTrade] = []
     with session_scope() as s:
         q = select(Trade).where(
@@ -154,6 +188,9 @@ def list_open_paper_trades() -> list[OpenPaperTrade]:
             Trade.mode == "paper",
             Trade.fill_status == "open",
         )
+        clause = _strategy_clause(strategy)
+        if clause is not None:
+            q = q.where(clause)
         for t in s.execute(q).scalars():
             md = t.sim_metadata or {}
             out.append(OpenPaperTrade(
@@ -170,6 +207,8 @@ def list_open_paper_trades() -> list[OpenPaperTrade]:
                 take_profit_pct=md.get("take_profit_pct"),
                 timeout_hours=md.get("timeout_hours"),
                 peak_pct_since_entry=_to_float_or_none(md.get("peak_pct_since_entry")),
+                strategy=md.get("strategy") or "cluster",
+                trigger_wallet=md.get("trigger_wallet"),
             ))
     return out
 
@@ -593,8 +632,14 @@ def panic_close_all_open() -> int:
     return n
 
 
-def has_open_position(asset: str, venue: str) -> bool:
-    """Dedupe: true if we already have an open paper trade for this token."""
+def has_open_position(asset: str, venue: str, strategy: Optional[str] = None) -> bool:
+    """Dedupe: true if we already have an open paper trade for this token.
+
+    `strategy` scopes the check so the cluster and conviction strategies are
+    independent — each only blocks itself from re-opening a token it already
+    holds (an overlap across strategies is intentional). 'cluster' matches all
+    non-conviction rows; 'conviction' matches only conviction; None = any.
+    """
     with session_scope() as s:
         q = select(Trade).where(
             Trade.bot_id == BOT_ID,
@@ -603,6 +648,9 @@ def has_open_position(asset: str, venue: str) -> bool:
             Trade.asset == asset,
             Trade.venue == venue,
         )
+        clause = _strategy_clause(strategy)
+        if clause is not None:
+            q = q.where(clause)
         return s.execute(q).first() is not None
 
 
@@ -745,17 +793,23 @@ def write_cluster_detection(
     )
 
 
-def open_allocation_pct(paper_capital_usd: float) -> float:
-    """Sum of size_usd of currently open paper trades, as % of paper capital."""
+def open_allocation_pct(paper_capital_usd: float, strategy: Optional[str] = None) -> float:
+    """Sum of size_usd of currently open paper trades, as % of paper capital.
+
+    `strategy` scopes the allocation so cluster and conviction caps are
+    computed against their own open positions (and their own bankrolls).
+    """
     if paper_capital_usd <= 0:
         return 0.0
     with session_scope() as s:
         from sqlalchemy import func
-        total = s.execute(
-            select(func.coalesce(func.sum(Trade.size_usd), 0.0)).where(
-                Trade.bot_id == BOT_ID,
-                Trade.mode == "paper",
-                Trade.fill_status == "open",
-            )
-        ).scalar() or 0.0
+        q = select(func.coalesce(func.sum(Trade.size_usd), 0.0)).where(
+            Trade.bot_id == BOT_ID,
+            Trade.mode == "paper",
+            Trade.fill_status == "open",
+        )
+        clause = _strategy_clause(strategy)
+        if clause is not None:
+            q = q.where(clause)
+        total = s.execute(q).scalar() or 0.0
     return float(total) / paper_capital_usd * 100.0

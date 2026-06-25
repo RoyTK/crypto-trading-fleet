@@ -53,10 +53,11 @@ from bots.copy.trailing_stop import evaluate_exit_actions, is_price_scale_anomal
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
+from bots.copy.signals.conviction import ConvictionDetector
 from bots.copy.signals.sell_cluster import SellClusterDetector
 from bots.copy import shadow_log
 from bots.copy.loop_helpers import _classify_cluster_wallet_tier
-from bots.copy.sizing import size_position
+from bots.copy.sizing import size_conviction_position, size_position
 from bots.copy.venue.dex_quoter import (
     fetch_token_creation,
     fetch_token_liquidity,
@@ -68,6 +69,7 @@ from bots.copy.venue.helius_solana import WalletBuyEvent, WalletSellEvent
 from bots.copy.venue.solana_wallet import is_wallet_available, public_key_b58
 from framework.alerts import emit_alert
 from framework.config import get_settings as get_framework_settings
+from framework.halt_state import is_bot_halted
 from framework.reconciliation import reconcile_once, register_venue_fetcher
 from monitoring.alerting.taxonomy import Severity
 
@@ -183,6 +185,12 @@ class CopyBot(BotLifecycle):
         self.simulator = CopyFillSimulator()
         self.cluster = ClusterDetector()
         self.sell_cluster = SellClusterDetector()
+        # Conviction (single-wallet trigger) strategy — roster loaded from the
+        # DB in on_start. Runs alongside the cluster detector off the same
+        # buy-event stream; ships dark (copy_conviction_enabled defaults false).
+        self.conviction = ConvictionDetector(
+            min_notional_usd=self.copy_settings.copy_conviction_min_notional_usd,
+        )
         self.executor = CopyExecutor()
         self._wallets_solana: list[str] = []
         self._wallets_base: list[str] = []
@@ -206,14 +214,22 @@ class CopyBot(BotLifecycle):
         register_venue_fetcher("base", make_fetcher_evm("base"))
         register_venue_fetcher("arbitrum", make_fetcher_evm("arbitrum"))
         self._load_wallet_pool()
+        # Conviction roster (single-wallet trigger strategy) — loaded from the
+        # DB (wallet_pool.conviction = true), independent of the JSON pool above.
+        self._load_conviction_wallets()
         self._session = aiohttp.ClientSession()
         # Subscribe to wallet-buy events on Redis (published by webhook_receiver)
         self._buys_redis = redis_async.from_url(self.settings.redis_url, decode_responses=True)
         self._buys_subscriber_task = asyncio.create_task(self._buys_subscriber())
-        # Sell-cluster subscriber — shares the same Redis connection. Pubsub
-        # objects are created per-subscriber so they coexist without
-        # interfering. Gated by copy_sell_cluster_enabled (default true).
-        if self.copy_settings.copy_sell_cluster_enabled:
+        # Sell subscriber — shares the same Redis connection. Pubsub objects are
+        # created per-subscriber so they coexist without interfering. Started
+        # when EITHER the sell-cluster detector OR the conviction
+        # follow-the-trigger-wallet-out exit needs sell events.
+        need_sells = self.copy_settings.copy_sell_cluster_enabled or (
+            self.copy_settings.copy_conviction_enabled
+            and self.copy_settings.copy_conviction_follow_wallet_exit
+        )
+        if need_sells:
             self._sells_subscriber_task = asyncio.create_task(self._sells_subscriber())
         # Visibility on executor configuration at startup. Paper-only is the
         # default state; flipping copy_live_enabled (with a wallet present)
@@ -228,6 +244,8 @@ class CopyBot(BotLifecycle):
             live_full_enabled=self.copy_settings.copy_live_full_enabled,
             wallet_available=is_wallet_available(),
             wallet_pubkey=public_key_b58(),
+            conviction_enabled=self.copy_settings.copy_conviction_enabled,
+            conviction_wallets=self.conviction.wallet_count,
         )
 
     async def on_stop(self) -> None:
@@ -260,6 +278,12 @@ class CopyBot(BotLifecycle):
         # token. Per brainstorm 2026-05-30: "sell-cluster as LONG-SIDE STOPS
         # first." Independent state from buy cluster; same dedup primitive.
         self._evaluate_sell_clusters()
+
+        # Conviction (single-wallet trigger) strategy — runs alongside the
+        # cluster path off the same buy stream, with its own bankroll/metrics.
+        # Gated by copy_conviction_enabled (ships dark).
+        if self.copy_settings.copy_conviction_enabled:
+            self._evaluate_conviction()
 
         # Shadow log poller — update pending rows on the configured cadence
         if now - self._last_shadow_log_poll_ts >= self.copy_settings.copy_shadow_log_poll_seconds:
@@ -316,6 +340,9 @@ class CopyBot(BotLifecycle):
                             tx_signature=payload.get("tx_signature", ""),
                         )
                         self.cluster.observe_buy(ev)
+                        # Conviction strategy observes the SAME stream. Cheap
+                        # set-membership filter; firing is gated in iterate().
+                        self.conviction.observe_buy(ev)
                     except Exception:
                         self.log.exception("buys_message_parse_failed")
             except asyncio.CancelledError:
@@ -355,6 +382,13 @@ class CopyBot(BotLifecycle):
                             tx_signature=payload.get("tx_signature", ""),
                         )
                         self.sell_cluster.observe_sell(ev)
+                        # Conviction follow-the-trigger-wallet-out: if this
+                        # seller triggered an open conviction position in this
+                        # token, close it. Decoupled task so a slow price fetch
+                        # never blocks the subscriber.
+                        if (self.copy_settings.copy_conviction_enabled
+                                and self.copy_settings.copy_conviction_follow_wallet_exit):
+                            asyncio.create_task(self._follow_trigger_wallet_out(ev))
                     except Exception:
                         self.log.exception("sells_message_parse_failed")
             except asyncio.CancelledError:
@@ -538,12 +572,15 @@ class CopyBot(BotLifecycle):
     # ---- Signal handling ---------------------------------------------------
 
     async def _consume_candidate(self, candidate: SignalCandidate) -> None:
-        if has_open_position(candidate.asset, candidate.venue):
+        # Scope dedup + allocation to the cluster strategy so a conviction
+        # position in the same token never blocks a cluster buy (they're
+        # independent and may co-hold — see project plan 2026-06-24).
+        if has_open_position(candidate.asset, candidate.venue, strategy="cluster"):
             self.log.info("dedup_skip", asset=candidate.asset, chain=candidate.chain)
             return
 
         paper_capital = self.copy_settings.copy_paper_capital_usd
-        current_alloc = open_allocation_pct(paper_capital)
+        current_alloc = open_allocation_pct(paper_capital, strategy="cluster")
         notional_usd = size_position(
             cluster_size=candidate.cluster_size,
             paper_capital_usd=paper_capital,
@@ -669,6 +706,178 @@ class CopyBot(BotLifecycle):
                 except Exception:
                     self.log.exception("token_age_capture_failed",
                                        asset=candidate.asset)
+
+    # ---- Conviction (single-wallet) signal handling -----------------------
+
+    def _evaluate_conviction(self) -> None:
+        """Drain single-wallet conviction triggers and act on each.
+
+        Parallel to _evaluate_clusters but for the conviction strategy: each
+        fired candidate becomes its own paper trade (strategy='conviction',
+        separate bankroll). Independent of the cluster path — both may fire on
+        and hold the same token at once.
+        """
+        candidates = self.conviction.evaluate()
+        for c in candidates:
+            asyncio.create_task(self._consume_conviction_candidate(c))
+
+    async def _consume_conviction_candidate(self, candidate: SignalCandidate) -> None:
+        # Independent DD halt for the conviction sub-strategy (its own halt_id).
+        try:
+            if is_bot_halted("copy_conviction"):
+                self.log.info("conviction_halted_skip", asset=candidate.asset)
+                return
+        except Exception:
+            self.log.exception("conviction_halt_check_failed")
+
+        # Per-strategy dedup: only blocked by an existing OPEN conviction
+        # position in this token (cluster positions don't block conviction).
+        if has_open_position(candidate.asset, candidate.venue, strategy="conviction"):
+            self.log.info("conviction_dedup_skip", asset=candidate.asset, chain=candidate.chain)
+            return
+
+        trigger_wallet = (candidate.payload or {}).get("trigger_wallet")
+        capital = self.copy_settings.copy_conviction_paper_capital_usd
+        current_alloc = open_allocation_pct(capital, strategy="conviction")
+        notional_usd = size_conviction_position(
+            paper_capital_usd=capital,
+            current_open_alloc_pct=current_alloc,
+            current_dd_today_pct=0.0,
+        )
+        if notional_usd <= 0:
+            self.log.info("conviction_size_zero_skip", current_alloc=current_alloc)
+            return
+
+        if self._session is None:
+            return
+
+        # Serial-deployer blocklist (same fail-open check as the cluster path).
+        token_security: Optional[dict] = None
+        if candidate.venue == "solana":
+            try:
+                token_security = await fetch_token_security(self._session, candidate.asset)
+            except Exception:
+                self.log.exception("conviction_token_security_fetch_failed", asset=candidate.asset)
+            if token_security:
+                creator = token_security.get("creator")
+                if creator and creator in self.copy_settings.get_blocked_creators():
+                    self.log.info("conviction_blocked_creator_skip",
+                                  asset=candidate.asset, creator=creator)
+                    return
+
+        snapshot = CopyMarketSnapshot(chain=candidate.chain, session=self._session)
+        sim_fill = await self.simulator.simulate_entry_async(
+            asset=candidate.asset,
+            notional_usd=notional_usd,
+            leverage=1.0,
+            direction=candidate.direction,
+            market_snapshot=snapshot,
+        )
+
+        signal_id = persist_signal(candidate)
+        # Paper-only by construction: conviction never calls the shadow/live
+        # executor. Write the paper trade directly, tagged strategy='conviction'.
+        paper_trade_id = persist_paper_trade(
+            signal_id=signal_id,
+            candidate=candidate,
+            sim_fill=sim_fill,
+            notional_usd=notional_usd,
+            leverage=1.0,
+            strategy="conviction",
+            trigger_wallet=trigger_wallet,
+        )
+        self.log.info(
+            "conviction_paper_opened",
+            asset=candidate.asset,
+            trigger_wallet=trigger_wallet,
+            notional_usd=round(notional_usd, 2),
+            trade_id=paper_trade_id,
+            fill=sim_fill.fill_price,
+        )
+
+        # Best-effort enrichment (concentration + token age), same as cluster.
+        if candidate.venue == "solana" and paper_trade_id is not None:
+            if token_security is not None:
+                try:
+                    update_trade_token_meta(
+                        paper_trade_id,
+                        creator=token_security.get("creator"),
+                        top10_holder_pct=token_security.get("top10_holder_pct"),
+                        owner_pct=token_security.get("owner_pct"),
+                    )
+                except Exception:
+                    self.log.exception("conviction_token_security_capture_failed",
+                                       asset=candidate.asset)
+            try:
+                import time as _time
+                info = await fetch_token_creation(self._session, candidate.asset)
+                if info and info.get("created_unix"):
+                    age_hours = max(0.0, (_time.time() - info["created_unix"]) / 3600.0)
+                    update_trade_token_age(
+                        paper_trade_id,
+                        created_unix=info["created_unix"],
+                        age_hours=age_hours,
+                        tx=info.get("tx"),
+                    )
+            except Exception:
+                self.log.exception("conviction_token_age_capture_failed",
+                                   asset=candidate.asset)
+
+    async def _follow_trigger_wallet_out(self, ev: WalletSellEvent) -> None:
+        """Close any open conviction position whose trigger wallet just sold
+        the token it triggered. Additive to the standard exit stack — a faster,
+        single-wallet-specific exit. Best-effort; failures are logged.
+        """
+        matches = [
+            t for t in list_open_paper_trades(strategy="conviction")
+            if t.trigger_wallet == ev.wallet_address
+            and t.asset == ev.token_mint
+            and t.venue == ev.chain
+        ]
+        if not matches:
+            return
+        self.log.warning(
+            "conviction_trigger_wallet_exit",
+            asset=ev.token_mint, wallet=ev.wallet_address, count=len(matches),
+        )
+        mid: Optional[float] = None
+        if self._session is not None and ev.chain == "solana":
+            try:
+                prices = await multi_price_solana(self._session, [ev.token_mint])
+                mid = prices.get(ev.token_mint)
+            except Exception:
+                self.log.warning("conviction_exit_price_fetch_failed", asset=ev.token_mint)
+        rugged = await self._is_rugged(ev.token_mint, ev.chain, mid)
+        EXIT_SLIPPAGE_BPS_PAPER = 100.0
+        for t in matches:
+            if rugged:
+                close_price = float(t.entry_price) * 1e-6
+                exit_fill = SimulatedFill(
+                    fill_price=close_price, fees_usd=0.0, slippage_bps=0.0,
+                    metadata={"side": "exit", "rugged": True,
+                              "orig_exit_reason": "trigger_wallet_exit"},
+                )
+                exit_reason = "rug_no_liquidity"
+            else:
+                close_price = mid if mid is not None else t.entry_price
+                fees = float(t.size_usd) * (DEX_FEE_PCT / 100.0)
+                exit_fill = SimulatedFill(
+                    fill_price=close_price, fees_usd=fees,
+                    slippage_bps=EXIT_SLIPPAGE_BPS_PAPER,
+                    metadata={"side": "exit", "exit_reason": "trigger_wallet_exit",
+                              "no_price_at_close": mid is None},
+                )
+                exit_reason = "trigger_wallet_exit"
+            try:
+                close_paper_trade(
+                    trade_id=t.trade_id,
+                    exit_price=close_price,
+                    exit_fill=exit_fill,
+                    exit_reason=exit_reason,
+                )
+            except Exception:
+                self.log.exception("conviction_trigger_wallet_close_failed",
+                                   trade_id=t.trade_id, asset=ev.token_mint)
 
     # ---- Position management ----------------------------------------------
 
@@ -1202,6 +1411,28 @@ class CopyBot(BotLifecycle):
                 self._wallets_base.append(addr)
             elif chain == "arbitrum":
                 self._wallets_arbitrum.append(addr)
+
+    def _load_conviction_wallets(self) -> None:
+        """Load the conviction roster from the DB (wallet_pool.conviction=true)
+        and push it into the detector. Non-fatal on error — conviction simply
+        stays empty (no triggers). NOTE: a conviction wallet only produces
+        triggers if it is also ACTIVE tier, since only active-tier webhook
+        events are published to the copy:buys channel the bot subscribes to.
+        """
+        try:
+            from framework.db import session_scope
+            from sqlalchemy import text
+            with session_scope() as s:
+                rows = s.execute(text(
+                    "SELECT address FROM wallet_pool "
+                    "WHERE conviction = true AND tier <> 'pruned'"
+                )).all()
+            addrs = [r.address for r in rows]
+        except Exception:
+            self.log.exception("conviction_wallets_load_failed")
+            return
+        self.conviction.set_wallets(addrs)
+        self.log.info("conviction_wallets_loaded", count=len(addrs))
 
 
 def main() -> None:
