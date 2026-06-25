@@ -142,6 +142,10 @@ def persist_paper_trade(
                 "cluster_wallets": cluster_wallets,
                 "strategy": strategy,
                 "trigger_wallet": trigger_wallet,
+                # Conviction: the accumulation level the trigger fired at (None
+                # for cluster). Used to tune the accumulation threshold.
+                "conviction_accumulated_usd": (candidate.payload or {}).get("accumulated_usd"),
+                "conviction_n_buys": (candidate.payload or {}).get("n_buys"),
             },
         )
         s.add(trade)

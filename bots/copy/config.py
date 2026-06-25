@@ -271,9 +271,26 @@ class CopySettings(BaseSettings):
     # kill_criteria_monitor via env (COPY_CONVICTION_PAPER_CAPITAL_USD), same
     # as the cluster bankroll. Sizing/allocation below are computed against it.
     copy_conviction_paper_capital_usd: float = Field(default=10_000.0)
-    # Per-wallet notional floor for a conviction trigger. Matches the cluster
-    # per-wallet floor ($1k) — a sub-$1k buy from an elite wallet is noise.
+    # DEPRECATED 2026-06-25 — the single-buy floor was replaced by the
+    # cumulative-accumulation trigger below (Birdeye analysis: these wallets
+    # build winners from many sub-$1k clips, so no single-buy floor works).
+    # Field kept only so a stray env var won't error; nothing reads it.
     copy_conviction_min_notional_usd: float = Field(default=1_000.0)
+    # Cumulative-accumulation trigger (2026-06-25). The conviction detector sums
+    # a roster wallet's buys per token over a rolling window and fires when the
+    # committed total crosses the threshold (a single large buy crosses
+    # instantly). dust_floor drops routing/fee junk; sell_holdoff suppresses the
+    # trigger when the wallet is ALSO selling the token in the window (churn /
+    # distribution, not clean accumulation). All env-overridable so the threshold
+    # can be re-tuned without a redeploy. STARTING values — monitor + adjust the
+    # threshold after ~20-30 conviction trades to find the sweet spot.
+    copy_conviction_dust_floor_usd: float = Field(default=10.0)
+    copy_conviction_accumulation_threshold_usd: float = Field(default=200.0)
+    copy_conviction_accumulation_window_minutes: int = Field(default=60)
+    # Window sells above this USD → hold off the buy. 0 = ANY non-dust sell of the
+    # token in the window holds us off. Raise if it over-suppresses HF
+    # accumulators that take tiny profits mid-build.
+    copy_conviction_sell_holdoff_usd: float = Field(default=0.0)
     # Per-trade size = this % of the conviction bankroll. 4% mirrors the
     # cluster 3-wallet base (Roy 2026-06-24: keep at 4% — paper money).
     copy_conviction_sizing_pct: float = Field(default=4.0)

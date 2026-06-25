@@ -185,12 +185,11 @@ class CopyBot(BotLifecycle):
         self.simulator = CopyFillSimulator()
         self.cluster = ClusterDetector()
         self.sell_cluster = SellClusterDetector()
-        # Conviction (single-wallet trigger) strategy — roster loaded from the
-        # DB in on_start. Runs alongside the cluster detector off the same
-        # buy-event stream; ships dark (copy_conviction_enabled defaults false).
-        self.conviction = ConvictionDetector(
-            min_notional_usd=self.copy_settings.copy_conviction_min_notional_usd,
-        )
+        # Conviction (single-wallet accumulation) strategy — roster loaded from
+        # the DB in on_start. Runs alongside the cluster detector off the same
+        # buy + sell streams; accumulation params (dust/threshold/window/
+        # sell-holdoff) come from settings.
+        self.conviction = ConvictionDetector()
         self.executor = CopyExecutor()
         self._wallets_solana: list[str] = []
         self._wallets_base: list[str] = []
@@ -225,9 +224,10 @@ class CopyBot(BotLifecycle):
         # created per-subscriber so they coexist without interfering. Started
         # when EITHER the sell-cluster detector OR the conviction
         # follow-the-trigger-wallet-out exit needs sell events.
+        # Conviction now needs the sell stream too — for its accumulation
+        # sell-hold-off (observe_sell) as well as the follow-the-wallet-out exit.
         need_sells = self.copy_settings.copy_sell_cluster_enabled or (
             self.copy_settings.copy_conviction_enabled
-            and self.copy_settings.copy_conviction_follow_wallet_exit
         )
         if need_sells:
             self._sells_subscriber_task = asyncio.create_task(self._sells_subscriber())
@@ -382,13 +382,13 @@ class CopyBot(BotLifecycle):
                             tx_signature=payload.get("tx_signature", ""),
                         )
                         self.sell_cluster.observe_sell(ev)
-                        # Conviction follow-the-trigger-wallet-out: if this
-                        # seller triggered an open conviction position in this
-                        # token, close it. Decoupled task so a slow price fetch
-                        # never blocks the subscriber.
-                        if (self.copy_settings.copy_conviction_enabled
-                                and self.copy_settings.copy_conviction_follow_wallet_exit):
-                            asyncio.create_task(self._follow_trigger_wallet_out(ev))
+                        # Conviction observes sells too: (1) accumulation
+                        # sell-hold-off (suppress a buy trigger when the wallet is
+                        # also selling), and (2) follow-the-trigger-wallet-out exit.
+                        if self.copy_settings.copy_conviction_enabled:
+                            self.conviction.observe_sell(ev)
+                            if self.copy_settings.copy_conviction_follow_wallet_exit:
+                                asyncio.create_task(self._follow_trigger_wallet_out(ev))
                     except Exception:
                         self.log.exception("sells_message_parse_failed")
             except asyncio.CancelledError:
