@@ -258,12 +258,12 @@
       "id": 30,
       "type": "table",
       "title": "Wallet leaderboard — PnL attribution (top by total PnL)",
-      "description": "Equal-share attribution per cluster. Use this to identify which wallets in the pool are predictive vs noise. Bottom-of-leaderboard wallets are pruning candidates after ≥5 attributed trades.",
+      "description": "Equal-share attribution per cluster. Use this to identify which wallets in the pool are predictive vs noise. Bottom-of-leaderboard wallets are pruning candidates after ≥5 attributed trades. The 'status' column shows the wallet's current pool tier (active/watch/pruned) — or 'removed' if it's no longer in the pool at all; 'conviction'=yes means it's also a conviction-roster trigger wallet.",
       "gridPos": {"x": 0, "y": 44, "w": 24, "h": 12},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT wa.wallet_address, wa.chain, COUNT(*) AS n_trades, ROUND(SUM(wa.attributed_pnl_usd)::numeric, 2) AS total_pnl_usd, ROUND(AVG(wa.attributed_pnl_pct)::numeric, 2) AS avg_pct, ROUND(MAX(wa.attributed_pnl_pct)::numeric, 2) AS best_pct, ROUND(MIN(wa.attributed_pnl_pct)::numeric, 2) AS worst_pct, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0) AS wins, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd <= 0) AS losses, ROUND((COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' GROUP BY wa.wallet_address, wa.chain ORDER BY total_pnl_usd DESC NULLS LAST",
+          "rawSql": "SELECT wa.wallet_address, wa.chain, COALESCE(wp.tier, 'removed') AS status, CASE WHEN wp.conviction THEN 'yes' ELSE '' END AS conviction, COUNT(*) AS n_trades, ROUND(SUM(wa.attributed_pnl_usd)::numeric, 2) AS total_pnl_usd, ROUND(AVG(wa.attributed_pnl_pct)::numeric, 2) AS avg_pct, ROUND(MAX(wa.attributed_pnl_pct)::numeric, 2) AS best_pct, ROUND(MIN(wa.attributed_pnl_pct)::numeric, 2) AS worst_pct, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0) AS wins, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd <= 0) AS losses, ROUND((COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id LEFT JOIN wallet_pool wp ON wp.address = wa.wallet_address WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' GROUP BY wa.wallet_address, wa.chain, wp.tier, wp.conviction ORDER BY total_pnl_usd DESC NULLS LAST",
           "format": "table"
         }
       ],
@@ -274,6 +274,20 @@
           "color": {"mode": "thresholds"}
         },
         "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "status"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "mappings", "value": [
+                {"type": "value", "options": {
+                  "active": {"color": "green", "index": 0},
+                  "watch": {"color": "yellow", "index": 1},
+                  "pruned": {"color": "red", "index": 2},
+                  "removed": {"color": "dark-red", "index": 3}
+                }}
+              ]}
+            ]
+          },
           {
             "matcher": {"id": "byName", "options": "total_pnl_usd"},
             "properties": [
@@ -591,12 +605,12 @@
       "id": 78,
       "type": "table",
       "title": "Conviction per-trigger-wallet PnL",
-      "description": "Closed conviction paper trades grouped by the wallet whose buy triggered them. This is where you watch whether each elite wallet (e.g. CyaE1Vx) is actually followable — own PnL ≠ COPY-followable PnL.",
+      "description": "Closed conviction paper trades grouped by the wallet whose buy triggered them. This is where you watch whether each elite wallet (e.g. CyaE1Vx) is actually followable — own PnL ≠ COPY-followable PnL. 'status' = the wallet's current pool tier (active/watch/pruned) or 'removed' if no longer in the pool; 'in_roster'=yes means it's still a live conviction trigger (no = it was dropped from the roster but historical trades remain).",
       "gridPos": {"x": 12, "y": 91, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT sim_metadata->>'trigger_wallet' AS trigger_wallet, COUNT(*) AS n_trades, ROUND(SUM(pnl_usd)::numeric, 2) AS total_pnl_usd, COUNT(*) FILTER (WHERE pnl_usd > 0) AS wins, ROUND((COUNT(*) FILTER (WHERE pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND (sim_metadata->>'strategy')='conviction' AND entry_at >= '2026-06-25 19:00:00+00' GROUP BY 1 ORDER BY total_pnl_usd DESC NULLS LAST",
+          "rawSql": "SELECT t.sim_metadata->>'trigger_wallet' AS trigger_wallet, COALESCE(wp.tier, 'removed') AS status, CASE WHEN wp.conviction THEN 'yes' ELSE 'no' END AS in_roster, COUNT(*) AS n_trades, ROUND(SUM(t.pnl_usd)::numeric, 2) AS total_pnl_usd, COUNT(*) FILTER (WHERE t.pnl_usd > 0) AS wins, ROUND((COUNT(*) FILTER (WHERE t.pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM trades t LEFT JOIN wallet_pool wp ON wp.address = t.sim_metadata->>'trigger_wallet' WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed' AND (t.sim_metadata->>'strategy')='conviction' AND t.entry_at >= '2026-06-25 19:00:00+00' GROUP BY 1, wp.tier, wp.conviction ORDER BY total_pnl_usd DESC NULLS LAST",
           "format": "table"
         }
       ],
@@ -604,6 +618,20 @@
       "fieldConfig": {
         "defaults": {"custom": {"align": "auto", "displayMode": "auto"}, "color": {"mode": "thresholds"}},
         "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "status"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "mappings", "value": [
+                {"type": "value", "options": {
+                  "active": {"color": "green", "index": 0},
+                  "watch": {"color": "yellow", "index": 1},
+                  "pruned": {"color": "red", "index": 2},
+                  "removed": {"color": "dark-red", "index": 3}
+                }}
+              ]}
+            ]
+          },
           {
             "matcher": {"id": "byName", "options": "total_pnl_usd"},
             "properties": [
