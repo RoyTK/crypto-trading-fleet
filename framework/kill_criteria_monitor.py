@@ -546,7 +546,9 @@ def _compute_copy_conviction_status() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 _COMPUTERS = {
-    "structure": _compute_structure_status,
+    # 'structure' decommissioned 2026-06-25 (HL perps shelved, no edge). Its
+    # frozen bot_state row is left as-is; re-add here to revive. WINDOWS +
+    # _compute_structure_status are kept for that revival.
     "copy": _compute_copy_status,
     "copy_conviction": _compute_copy_conviction_status,
 }

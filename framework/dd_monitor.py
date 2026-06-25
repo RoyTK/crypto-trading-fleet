@@ -163,7 +163,7 @@ def check_dd_breaches(
 
 # Per-bot threshold registry. Locked Item #3 design.
 BOT_DD_THRESHOLDS: dict[str, dict[str, float]] = {
-    "structure": {"daily": 15.0, "weekly": 30.0, "total": 45.0},
+    # 'structure' decommissioned 2026-06-25 (HL perps shelved, no edge).
     "copy": {"daily": 12.0, "weekly": 28.0, "total": 50.0},
     "event": {"daily": 12.0, "weekly": 28.0, "total": 50.0},
     "sniper": {"daily": 8.0, "weekly": 20.0, "total": 40.0},

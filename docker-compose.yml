@@ -124,23 +124,12 @@ services:
         condition: service_healthy
     command: ["python", "-m", "framework.reporting.cron"]
 
-  bot_structure:
-    build:
-      context: .
-      dockerfile: framework/Dockerfile
-    restart: unless-stopped
-    env_file: .env
-    volumes:
-      - ./framework:/app/framework
-      - ./bots:/app/bots
-      - ./monitoring:/app/monitoring
-      - ./scripts:/app/scripts
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    command: ["python", "-m", "bots.structure.main"]
+  # bot_structure DECOMMISSIONED 2026-06-25 — HL perps bot shelved (no edge;
+  # constant paper losses, practical fix needed ~$500/mo Coinglass data). Code
+  # retained in bots/structure/ and the framework image; to revive, restore
+  # this service block + re-add 'structure' to the scoring crons
+  # (kill_criteria_monitor._COMPUTERS, dd_monitor.BOT_DD_THRESHOLDS) and the
+  # cross_bot_outcome_cron schedule in framework/scoring/main.py.
 
   bot_copy:
     build:

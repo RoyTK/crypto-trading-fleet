@@ -15,7 +15,10 @@ from framework.heartbeat import ping
 from framework.scoring.engine import score_all_bots
 from framework.dd_monitor import check_all_bots_dd
 from framework.kill_criteria_monitor import check_all_bots_kill_criteria
-from framework.cross_bot_outcome_cron import run_outcome_evaluation as run_cross_bot_outcomes
+# cross_bot_outcome_cron descheduled 2026-06-25 with STRUCTURE decommission — it
+# only marked outcomes for STRUCTURE's cross-bot signal journal (which no longer
+# writes) and was failing every 4h on a Hyperliquid SDK call. Re-import + re-add
+# the job below to revive alongside STRUCTURE.
 from framework.macro_monitor import check_macro_kill_switch, check_geo_shock_alert
 from framework.stale_position_cleanup import check_and_close_stale_positions
 from framework.audit import write_audit
@@ -68,12 +71,6 @@ def _run() -> None:
         id="kill_criteria_monitor",
     )
     scheduler.add_job(
-        run_cross_bot_outcomes,
-        "interval",
-        minutes=CROSS_BOT_OUTCOME_INTERVAL_MINUTES,
-        id="cross_bot_outcome_cron",
-    )
-    scheduler.add_job(
         check_macro_kill_switch,
         "interval",
         minutes=MACRO_KILL_SWITCH_INTERVAL_MINUTES,
@@ -95,7 +92,6 @@ def _run() -> None:
     score_all_bots()  # one immediate pass
     check_all_bots_dd()  # one immediate DD check
     check_all_bots_kill_criteria()  # one immediate kill-criteria check
-    run_cross_bot_outcomes()  # one immediate cross-bot outcome pass (no-op until first row)
     check_macro_kill_switch()  # one immediate macro shock check
     check_geo_shock_alert()  # one immediate geo-shock alert check
 
