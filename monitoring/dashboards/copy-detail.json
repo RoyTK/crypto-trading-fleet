@@ -581,7 +581,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND (sim_metadata->>'strategy')='conviction' ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND (sim_metadata->>'strategy')='conviction' AND entry_at >= '2026-06-25 19:00:00+00' ORDER BY exit_at",
           "format": "time_series"
         }
       ],
@@ -596,7 +596,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT sim_metadata->>'trigger_wallet' AS trigger_wallet, COUNT(*) AS n_trades, ROUND(SUM(pnl_usd)::numeric, 2) AS total_pnl_usd, COUNT(*) FILTER (WHERE pnl_usd > 0) AS wins, ROUND((COUNT(*) FILTER (WHERE pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND (sim_metadata->>'strategy')='conviction' GROUP BY 1 ORDER BY total_pnl_usd DESC NULLS LAST",
+          "rawSql": "SELECT sim_metadata->>'trigger_wallet' AS trigger_wallet, COUNT(*) AS n_trades, ROUND(SUM(pnl_usd)::numeric, 2) AS total_pnl_usd, COUNT(*) FILTER (WHERE pnl_usd > 0) AS wins, ROUND((COUNT(*) FILTER (WHERE pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND (sim_metadata->>'strategy')='conviction' AND entry_at >= '2026-06-25 19:00:00+00' GROUP BY 1 ORDER BY total_pnl_usd DESC NULLS LAST",
           "format": "table"
         }
       ],
@@ -651,7 +651,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT entry_at AS time, asset AS token, sim_metadata->>'trigger_wallet' AS wallet, (sim_metadata->>'conviction_n_buys')::int AS n_buys, ROUND((sim_metadata->>'conviction_accumulated_usd')::numeric, 0) AS accum_usd, ROUND(((sim_metadata->>'conviction_accumulated_usd')::numeric / NULLIF((sim_metadata->>'conviction_n_buys')::numeric, 0)), 1) AS avg_buy_usd, ROUND(((sim_metadata->>'conviction_accumulation_seconds')::numeric / 60.0), 1) AS accum_min, ROUND((sim_metadata->>'conviction_window_sells_usd')::numeric, 0) AS win_sells, fill_status AS status, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason AS why_sold FROM trades WHERE bot_id='copy' AND mode='paper' AND (sim_metadata->>'strategy')='conviction' ORDER BY entry_at DESC NULLS LAST LIMIT 25",
+          "rawSql": "SELECT entry_at AS time, asset AS token, sim_metadata->>'trigger_wallet' AS wallet, (sim_metadata->>'conviction_n_buys')::int AS n_buys, ROUND((sim_metadata->>'conviction_accumulated_usd')::numeric, 0) AS accum_usd, ROUND(((sim_metadata->>'conviction_accumulated_usd')::numeric / NULLIF((sim_metadata->>'conviction_n_buys')::numeric, 0)), 1) AS avg_buy_usd, ROUND(((sim_metadata->>'conviction_accumulation_seconds')::numeric / 60.0), 1) AS accum_min, ROUND((sim_metadata->>'conviction_window_sells_usd')::numeric, 0) AS win_sells, fill_status AS status, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason AS why_sold FROM trades WHERE bot_id='copy' AND mode='paper' AND (sim_metadata->>'strategy')='conviction' AND entry_at >= '2026-06-25 19:00:00+00' ORDER BY entry_at DESC NULLS LAST LIMIT 25",
           "format": "table"
         }
       ],
