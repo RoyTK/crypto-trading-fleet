@@ -175,6 +175,29 @@ def _cluster_wallet_tier(c: SignalCandidate) -> str:
     return _classify_cluster_wallet_tier(_extract_wallet_list(c))
 
 
+RUG_PRICE_FACTOR = 1e-6      # near-total-loss mark for a genuinely rugged (no-LP) token
+EXIT_SLIPPAGE_BPS_DEFAULT = 100.0  # base paper-exit slippage for liquid tokens
+
+
+def _liquidity_aware_exit_price(
+    mid: float, size_usd: float, liquidity_usd: Optional[float],
+    base_slip_bps: float = EXIT_SLIPPAGE_BPS_DEFAULT,
+) -> tuple[float, float]:
+    """Effective paper-exit price selling `size_usd` of a position at `mid` into a
+    pool of `liquidity_usd`. Models depth impact: slippage fraction ≈
+    size/(liquidity+size), floored at the base slippage and capped near-total.
+    `liquidity_usd is None` (unknown depth) → base slippage only. Returns
+    (effective_price, slip_fraction)."""
+    base = max(0.0, base_slip_bps) / 10000.0
+    if liquidity_usd is None:
+        frac = base
+    elif liquidity_usd <= 0:
+        frac = 1.0
+    else:
+        frac = min(0.97, max(base, size_usd / (liquidity_usd + size_usd)))
+    return mid * (1.0 - frac), frac
+
+
 class CopyBot(BotLifecycle):
     bot_id = "copy"
 
@@ -765,6 +788,23 @@ class CopyBot(BotLifecycle):
                                   asset=candidate.asset, creator=creator)
                     return
 
+        # Entry liquidity guard (2026-06-25): skip tokens too thin to exit our
+        # ~$400 position without catastrophic slippage (CyaE1Vx-style fresh-mint
+        # snipes that cratered). Fail-open — only a KNOWN-thin reading blocks; a
+        # fetch miss (None) does not.
+        if candidate.venue == "solana":
+            min_liq = self.copy_settings.copy_conviction_min_entry_liquidity_usd
+            if min_liq and min_liq > 0:
+                try:
+                    entry_liq = await fetch_token_liquidity(self._session, candidate.asset)
+                except Exception:
+                    entry_liq = None
+                if entry_liq is not None and entry_liq < min_liq:
+                    self.log.info("conviction_thin_liquidity_skip",
+                                  asset=candidate.asset, liquidity_usd=entry_liq,
+                                  min_liquidity_usd=min_liq, trigger_wallet=trigger_wallet)
+                    return
+
         snapshot = CopyMarketSnapshot(chain=candidate.chain, session=self._session)
         sim_fill = await self.simulator.simulate_entry_async(
             asset=candidate.asset,
@@ -847,27 +887,12 @@ class CopyBot(BotLifecycle):
                 mid = prices.get(ev.token_mint)
             except Exception:
                 self.log.warning("conviction_exit_price_fetch_failed", asset=ev.token_mint)
-        rugged = await self._is_rugged(ev.token_mint, ev.chain, mid)
-        EXIT_SLIPPAGE_BPS_PAPER = 100.0
         for t in matches:
-            if rugged:
-                close_price = float(t.entry_price) * 1e-6
-                exit_fill = SimulatedFill(
-                    fill_price=close_price, fees_usd=0.0, slippage_bps=0.0,
-                    metadata={"side": "exit", "rugged": True,
-                              "orig_exit_reason": "trigger_wallet_exit"},
-                )
-                exit_reason = "rug_no_liquidity"
-            else:
-                close_price = mid if mid is not None else t.entry_price
-                fees = float(t.size_usd) * (DEX_FEE_PCT / 100.0)
-                exit_fill = SimulatedFill(
-                    fill_price=close_price, fees_usd=fees,
-                    slippage_bps=EXIT_SLIPPAGE_BPS_PAPER,
-                    metadata={"side": "exit", "exit_reason": "trigger_wallet_exit",
-                              "no_price_at_close": mid is None},
-                )
-                exit_reason = "trigger_wallet_exit"
+            close_price, exit_fill, exit_reason = await self._build_paper_exit(
+                asset=ev.token_mint, venue=ev.chain, mid=mid,
+                entry_price=t.entry_price, size_usd=t.size_usd,
+                base_exit_reason="trigger_wallet_exit",
+            )
             try:
                 close_paper_trade(
                     trade_id=t.trade_id,
@@ -929,28 +954,67 @@ class CopyBot(BotLifecycle):
         except Exception:
             self.log.exception("anomaly_alert_emit_failed", trade_id=trade.trade_id)
 
-    async def _is_rugged(self, asset: str, venue: str, mid: Optional[float]) -> bool:
-        """True if the token's liquidity has collapsed below the rug floor.
-
-        Only meaningful for solana with a price in hand (the classic rug:
-        Birdeye still returns a stale last price but the LP is gone). Used to
-        book paper sells of rugged tokens as ~total losses instead of
-        fictitious clean exits. Best-effort; a failed check returns False
-        (don't block the close).
-        """
+    async def _exit_liquidity(self, asset: str, venue: str, mid: Optional[float]) -> Optional[float]:
+        """Current Birdeye liquidity (USD) for the token, or None if unknown /
+        not applicable. Best-effort — a failed fetch returns None (treated as
+        unknown depth downstream, NOT as a rug)."""
         if venue != "solana" or mid is None or self._session is None:
-            return False
+            return None
         try:
-            liq = await fetch_token_liquidity(self._session, asset)
+            return await fetch_token_liquidity(self._session, asset)
         except Exception:
-            self.log.exception("rug_liquidity_check_failed", asset=asset)
-            return False
+            self.log.exception("exit_liquidity_check_failed", asset=asset)
+            return None
+
+    async def _build_paper_exit(
+        self, *, asset: str, venue: str, mid: Optional[float],
+        entry_price: float, size_usd: float, base_exit_reason: str,
+    ) -> tuple[float, SimulatedFill, str]:
+        """Resolve (close_price, exit_fill, exit_reason) for a paper close.
+
+        - mid missing → flat-mark at entry (pnl≈0), keep base_exit_reason.
+        - near-zero liquidity (< rug floor) → ~total loss, 'rug_no_liquidity'.
+        - thin-but-live → book at mid minus liquidity-aware DEPTH slippage so a
+          $400 sell into a $300 pool isn't a fictitious clean exit (the bug) NOR
+          a fictitious -100% (the old over-aggressive $1000 rug floor).
+        - liquid → mid minus base slippage.
+        """
+        entry_price = float(entry_price or 0.0)
+        size_usd = float(size_usd or 0.0)
+        if mid is None:
+            return (
+                entry_price,
+                SimulatedFill(fill_price=entry_price, fees_usd=0.0, slippage_bps=0.0,
+                              metadata={"side": "exit", "no_price_at_close": True,
+                                        "orig_exit_reason": base_exit_reason}),
+                base_exit_reason,
+            )
+        liq = await self._exit_liquidity(asset, venue, mid)
         floor = self.copy_settings.copy_rug_liquidity_floor_usd
         if liq is not None and liq < floor:
+            close_price = entry_price * RUG_PRICE_FACTOR
             self.log.warning("paper_close_rug_detected",
                              asset=asset, liquidity_usd=liq, floor_usd=floor)
-            return True
-        return False
+            return (
+                close_price,
+                SimulatedFill(fill_price=close_price, fees_usd=0.0, slippage_bps=0.0,
+                              metadata={"side": "exit", "rugged": True,
+                                        "liquidity_usd": liq,
+                                        "orig_exit_reason": base_exit_reason}),
+                "rug_no_liquidity",
+            )
+        close_price, frac = _liquidity_aware_exit_price(
+            mid, size_usd, liq, EXIT_SLIPPAGE_BPS_DEFAULT)
+        fees = size_usd * (DEX_FEE_PCT / 100.0)
+        return (
+            close_price,
+            SimulatedFill(fill_price=close_price, fees_usd=fees,
+                          slippage_bps=round(frac * 10000.0, 1),
+                          metadata={"side": "exit", "liquidity_usd": liq,
+                                    "exit_reason": base_exit_reason,
+                                    "input_usd": size_usd}),
+            base_exit_reason,
+        )
 
     async def _manage_open_positions(self) -> None:
         opens = list_open_paper_trades()
@@ -1073,48 +1137,16 @@ class CopyBot(BotLifecycle):
             if exit_reason is None:
                 continue
 
-            # Rug check (2026-06-21): before booking a paper sell, verify the
-            # token still has liquidity. If the LP was pulled, the position
-            # can't actually be sold — book a ~total loss on the remainder
-            # instead of a fictitious exit at the stale last price (turtle
-            # bug: +$295 booked on a rugged token). Solana-only; only when we
-            # were going to exit at a market price.
-            rugged = await self._is_rugged(trade.asset, trade.venue, mid)
-
-            # Build the exit fill locally — we already have `mid` from the
-            # batch, no need for the simulator to re-fetch it. When `mid` is
-            # missing, flat-mark at entry_price (pnl=0) so the trade closes.
-            if rugged:
-                # Remaining position is unsellable (~0). The partial-aware
-                # close math books any already-banked partials + ~total loss
-                # on the remainder.
-                close_price = trade.entry_price * 1e-6
-                exit_fill = SimulatedFill(
-                    fill_price=close_price,
-                    fees_usd=0.0,
-                    slippage_bps=0.0,
-                    metadata={"side": "exit", "rugged": True,
-                              "orig_exit_reason": exit_reason},
-                )
-                exit_reason = "rug_no_liquidity"
-            elif mid is not None:
-                fees = trade.size_usd * (DEX_FEE_PCT / 100.0)
-                exit_fill = SimulatedFill(
-                    fill_price=mid,
-                    fees_usd=fees,
-                    slippage_bps=EXIT_SLIPPAGE_BPS,
-                    metadata={"side": "exit", "chain": trade.venue,
-                              "input_usd": trade.size_usd},
-                )
-                close_price = mid
-            else:
-                exit_fill = SimulatedFill(
-                    fill_price=trade.entry_price,
-                    fees_usd=0.0,
-                    slippage_bps=0.0,
-                    metadata={"side": "exit", "no_price_at_close": True},
-                )
-                close_price = trade.entry_price
+            # Resolve the exit with liquidity-aware accounting: a near-zero pool
+            # books ~total loss ('rug_no_liquidity'); a thin-but-live pool books
+            # at mid minus depth slippage (a $400 sell into a $300 pool isn't a
+            # clean exit, but it isn't a fictitious -100% either); a liquid token
+            # books at mid minus base slippage. (`mid` already fetched above.)
+            close_price, exit_fill, exit_reason = await self._build_paper_exit(
+                asset=trade.asset, venue=trade.venue, mid=mid,
+                entry_price=trade.entry_price, size_usd=trade.size_usd,
+                base_exit_reason=exit_reason,
+            )
 
             close_paper_trade(
                 trade_id=trade.trade_id,
@@ -1228,34 +1260,15 @@ class CopyBot(BotLifecycle):
                 self.log.warning("sell_cluster_paper_price_fetch_failed",
                                  asset=c.asset)
 
-        # Rug check (2026-06-21): a sell-cluster often fires right as a token
-        # is being dumped/rugged. If the LP is already gone, book ~total loss
-        # instead of a fictitious exit at the stale price.
-        rugged = await self._is_rugged(c.asset, c.venue, mid)
-
-        # Constant for the synthesized paper exit. Matches the
-        # _manage_open_positions cadence — DEX-paper world is fee-only.
-        EXIT_SLIPPAGE_BPS_PAPER = 100.0
+        # A sell-cluster often fires right as a token is being dumped — resolve
+        # each close with liquidity-aware accounting (near-zero pool → rug
+        # ~total loss; thin-but-live → mid minus depth slippage).
         for t in paper_trades:
-            if rugged:
-                close_price = float(t.entry_price) * 1e-6
-                exit_fill = SimulatedFill(
-                    fill_price=close_price, fees_usd=0.0, slippage_bps=0.0,
-                    metadata={"side": "exit", "rugged": True,
-                              "orig_exit_reason": "sell_cluster"},
-                )
-                exit_reason = "rug_no_liquidity"
-            else:
-                close_price = mid if mid is not None else t.entry_price
-                fees = float(t.size_usd) * (DEX_FEE_PCT / 100.0)
-                exit_fill = SimulatedFill(
-                    fill_price=close_price,
-                    fees_usd=fees,
-                    slippage_bps=EXIT_SLIPPAGE_BPS_PAPER,
-                    metadata={"side": "exit", "exit_reason": "sell_cluster",
-                              "no_price_at_close": mid is None},
-                )
-                exit_reason = "sell_cluster"
+            close_price, exit_fill, exit_reason = await self._build_paper_exit(
+                asset=c.asset, venue=c.venue, mid=mid,
+                entry_price=t.entry_price, size_usd=t.size_usd,
+                base_exit_reason="sell_cluster",
+            )
             try:
                 close_paper_trade(
                     trade_id=t.trade_id,

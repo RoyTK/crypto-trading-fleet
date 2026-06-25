@@ -221,12 +221,15 @@ class CopySettings(BaseSettings):
     # wallets get promoted to active. Set false to revert to the old
     # activity-ranked promotion of any watch wallet. See wallet_pool_manager.
     copy_promote_vetted_only: bool = Field(default=True)
-    # Rug detection floor for paper sells (2026-06-21). At paper-close time
-    # we check the token's current Birdeye liquidity; if it's below this
-    # USD floor, the LP has been pulled (rug) and the position can't really
-    # be sold — so we book a ~total loss instead of a fictitious exit at the
-    # stale last price (the turtle bug: +$295 booked on a rugged token).
-    copy_rug_liquidity_floor_usd: float = Field(default=1000.0)
+    # Rug detection floor for paper sells. LOWERED 2026-06-25 from $1000 → $50.
+    # At paper-close we check Birdeye liquidity; only a near-zero pool (< this
+    # floor) is a genuine rug → book ~total loss ('rug_no_liquidity'). The old
+    # $1000 floor was WAY too high for fresh pump.fun mints (which legitimately
+    # trade with $25-300 liquidity) and booked thin-but-LIVE tokens at a
+    # fictitious -100% (e.g. a token down 41% with $294 liquidity booked as
+    # -$400). Thin-but-live tokens now book at their real price with
+    # liquidity-aware exit slippage (see _build_paper_exit / _liquidity_aware_exit_price).
+    copy_rug_liquidity_floor_usd: float = Field(default=50.0)
     # Floor for modeled paper slippage (2026-06-21). The dex_quoter fix
     # (0f7e73c) switched entry slippage from a flat 100bps estimate to
     # Jupiter's priceImpactPct (~3bps), which is unrealistically optimistic
@@ -302,6 +305,14 @@ class CopySettings(BaseSettings):
     # (we already ingest sell events). The standard exit stack
     # (stop/TP/timeout/partials/trailing/sell-cluster) still applies on top.
     copy_conviction_follow_wallet_exit: bool = Field(default=True)
+    # Entry liquidity guard (2026-06-25). Don't open a conviction position in a
+    # token too thin to exit our ~$400 size without catastrophic slippage. Skip
+    # the entry if the token's current Birdeye liquidity is below this USD floor.
+    # Added after CyaE1Vx (a fresh-mint sniper) led conviction into ultra-thin
+    # pump.fun mints ($26-294 liquidity) that cratered. Fail-open: a failed
+    # liquidity fetch does NOT block (only a known-thin reading does). Tune by
+    # observing whether it filters the rug-prone part of a wallet's signal.
+    copy_conviction_min_entry_liquidity_usd: float = Field(default=5000.0)
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)

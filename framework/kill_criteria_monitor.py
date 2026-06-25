@@ -73,13 +73,17 @@ WINDOWS: dict[str, dict[str, datetime]] = {
         "end_primary":  datetime(2026, 8, 20, tzinfo=timezone.utc),
         "end_extended": datetime(2026, 9, 19, tzinfo=timezone.utc),
     },
-    # Conviction (single-wallet trigger) sub-strategy — separate $10k paper
-    # bankroll + isolated metrics. Window opens at the 2026-06-24 ship; trades
-    # before then don't exist (it ships dark), so exit_at >= start captures all.
+    # Conviction (single-wallet accumulation) sub-strategy — separate $10k paper
+    # bankroll + isolated metrics. RE-BASELINED 2026-06-25 19:00 UTC: the first
+    # 3 conviction trades are invalid for the edge evaluation — the single early
+    # trade was the pre-accumulation (single-buy) mechanism, and the 2 that
+    # followed were booked at a fictitious -100% by the over-aggressive $1000 rug
+    # floor (since fixed: $50 floor + liquidity-aware exit + entry liquidity
+    # guard). Clock starts on clean post-fix data; exit_at >= start excludes them.
     "copy_conviction": {
-        "start":        datetime(2026, 6, 24, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 23, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 22, tzinfo=timezone.utc),
+        "start":        datetime(2026, 6, 25, 19, 0, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 24, 19, 0, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 23, 19, 0, tzinfo=timezone.utc),
     },
 }
 
