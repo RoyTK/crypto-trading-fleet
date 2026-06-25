@@ -265,16 +265,21 @@ def update_trade_token_meta(
     creator: Optional[str] = None,
     top10_holder_pct: Optional[float] = None,
     owner_pct: Optional[float] = None,
+    entry_liquidity_usd: Optional[float] = None,
 ) -> None:
-    """Stamp the token's creator + holder concentration into sim_metadata.
+    """Stamp the token's creator + holder concentration + entry liquidity into
+    sim_metadata.
 
     Best-effort enrichment (post-placement). Fields:
       - token_creator: base58 creator/owner wallet (serial-deployer analysis)
       - top10_holder_pct / owner_pct: concentration at entry (0-1 fraction)
+      - entry_liquidity_usd: Birdeye liquidity at entry (2026-06-25). Pure
+        INSTRUMENTATION to calibrate a future cluster entry-liquidity guard —
+        compare winners' vs fast-dumps' entry liquidity before gating. No
+        filtering behavior here.
 
-    Pure instrumentation — we do NOT filter on concentration (the
-    2026-06-10 audit showed a blanket concentration filter is -EV). These
-    fields let us LATER test for a surgical filter on our own data.
+    Pure instrumentation — we do NOT filter on these (the 2026-06-10 audit
+    showed a blanket concentration filter is -EV).
     """
     with session_scope() as s:
         t = s.get(Trade, trade_id)
@@ -287,6 +292,8 @@ def update_trade_token_meta(
             md["top10_holder_pct"] = top10_holder_pct
         if owner_pct is not None:
             md["owner_pct"] = owner_pct
+        if entry_liquidity_usd is not None:
+            md["entry_liquidity_usd"] = entry_liquidity_usd
         t.sim_metadata = md
 
 

@@ -12,6 +12,10 @@ then exits FAST — tiered ladder, 25% pullback, or when 2 tracked wallets sell.
 Its edge is riding fresh-mint pumps (most of which later rug) and EXITING BEFORE
 the collapse. So the ideal wallet BANKS REALIZED profit FAST on rug-prone mints.
 High Scam/Rug % is EXPECTED and confirmatory, NOT a disqualifier.
+CRITICAL — COPY-FOLLOWABILITY, not just personal profit: COPY trades a ~$400
+position and must ENTER and EXIT on-chain, so it needs tokens with enough LIQUIDITY
+and a hold it can match. A wallet can be elite on its OWN book yet UNFOLLOWABLE for
+COPY — own profit != copy-followable. Vet for what COPY can actually ride.
 
 HOW YOU RUN (two possible surfaces — use the file path that matches yours)
 You may run either as (a) Claude Code with local file tools + a connected Chrome, or
@@ -66,6 +70,17 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
       ELSE but holds sub-15-min is NOT a KEEP — mark it verdict=TOO_FAST (see Output).
       It's an excellent wallet for a future faster (MEV-grade) bot, but COPY's
       latency can't follow it, so it must not be ingested into COPY.
+    * FAST-DUMP ON THIN MINTS (2026-06-25 lesson — UNFOLLOWABLE, REJECT): even when
+      AVG hold looks fine (>15min), some elite wallets make their money ACCUMULATING
+      ultra-thin fresh mints in many tiny clips, then dumping in seconds-to-minutes.
+      COPY cannot enter/exit a token with only ~$25-300 of liquidity without
+      catastrophic slippage — these CRATER us. So check the LIQUIDITY of the tokens
+      they win on (Birdeye token "Liquidity"), not just hold time: if their wins come
+      from sub-~$5k-liquidity micro-mints, OR their FRESH-mint trades hold seconds
+      even though a few longer holds drag the AVG up, mark REJECT (reason
+      "fast-dump on thin mints; COPY can't follow"). Proof: COPY's own attribution
+      pruned the 2wHHnAmd/46ojZjmv/9yxmCNwZ cohort at a NET LOSS despite their elite
+      personal PnL. Judge MEDIAN/typical hold + token liquidity, not the average.
 - Multiple multi-x wins (>100% and >500% in the distribution). Several beats one
   big win — a one-hit wonder is not a repeatable edge.
 - NOT brand new (>= ~1 week old; 1+ month preferred). NOT a pure market-maker/HFT

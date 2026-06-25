@@ -42,6 +42,17 @@ DEMOTE_GRACE_DAYS = 30
 DEMOTE_MIN_ATTRIBUTED_TRADES = 5
 DEMOTE_ATTRIBUTED_PNL_BELOW_USD = 0.0
 
+# Sustained-underperformance demotion (2026-06-25). The exclude-worst-trade rule
+# above ("one rug doesn't make a loser") was too lenient against fast-dump
+# cohorts: wallets that snipe ultra-thin fresh mints in seconds (own-profit high,
+# but COPY can't follow) rack up a PATTERN of losses + occasional wins, and one
+# big loss being excluded leaves them net-~breakeven so they're spared. Add a
+# second path: a wallet net-negative over a LARGE sample with a LOW win rate is a
+# pattern-loser regardless. The low-WR gate spares genuine positive-skew winners
+# (net-POSITIVE → not a loser) and good-wallet-one-rug cases (high WR).
+DEMOTE_SUSTAINED_MIN_TRADES = 15
+DEMOTE_SUSTAINED_MAX_WR = 0.35
+
 # swap_in is DISABLED by default (2026-06-21 fix). It was an
 # observation-phase mechanism to force "hot" (= most active) watch wallets
 # into a full active list, displacing the weakest-by-events active. With
@@ -99,6 +110,9 @@ class WalletSnapshot:
     # trade (e.g. a rug) can't condemn an otherwise-positive wallet — see
     # _is_proven_loser. 0.0 default = no losing trade recorded.
     worst_attributed_pnl_usd: float = 0.0
+    # Number of this wallet's attributed trades that were net-positive
+    # (2026-06-25). Drives the sustained-loser win-rate gate.
+    attributed_wins: int = 0
     # Discovery source — used to prioritize promotion (2026-06-21). Vetted
     # browser_opus curated wallets promote ahead of raw birdeye_gainers.
     source: Optional[str] = None
@@ -118,9 +132,19 @@ def _is_proven_loser(w: "WalletSnapshot", min_trades: int, pnl_floor: float) -> 
         return False
     if w.attributed_pnl_usd >= pnl_floor:
         return False
-    # Negative even without the single worst (most-negative) trade?
+    # Path A — "one rug doesn't make a loser": negative even excluding the
+    # single worst (most-negative) trade.
     net_excluding_worst = w.attributed_pnl_usd - min(0.0, w.worst_attributed_pnl_usd)
-    return net_excluding_worst < 0
+    if net_excluding_worst < 0:
+        return True
+    # Path B (2026-06-25) — SUSTAINED underperformance: net-negative over a large
+    # sample with a low win rate is a pattern-loser even if Path A would forgive
+    # one big loss. Catches fast-dump cohorts COPY can't follow. (Reached only
+    # when already net-negative, so positive-skew winners are never caught.)
+    if (w.attributed_trades >= DEMOTE_SUSTAINED_MIN_TRADES
+            and (w.attributed_wins / w.attributed_trades) < DEMOTE_SUSTAINED_MAX_WR):
+        return True
+    return False
 
 
 def _source_priority(source: Optional[str]) -> int:

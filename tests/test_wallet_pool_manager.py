@@ -54,6 +54,59 @@ def _w(
     )
 
 
+# ---------- Proven-loser logic (Path A exclude-worst + Path B sustained) ------
+
+from bots.copy.wallet_pool_manager import (  # noqa: E402
+    _is_proven_loser,
+    DEMOTE_MIN_ATTRIBUTED_TRADES,
+    DEMOTE_ATTRIBUTED_PNL_BELOW_USD,
+)
+
+
+def _loser_snap(*, trades, pnl, worst, wins):
+    return WalletSnapshot(
+        address="x", tier="active", added_at=NOW, last_event_at=NOW,
+        events_30d=100, events_7d=10, events_48h=2, cielo_winrate_90d=0.5,
+        last_attribution_at=NOW, pinned=False,
+        attributed_trades=trades, attributed_pnl_usd=pnl,
+        worst_attributed_pnl_usd=worst, attributed_wins=wins, source="browser_opus",
+    )
+
+
+def _proven(w):
+    return _is_proven_loser(w, DEMOTE_MIN_ATTRIBUTED_TRADES, DEMOTE_ATTRIBUTED_PNL_BELOW_USD)
+
+
+def test_path_a_robust_loser_excluding_worst():
+    # -$136 net, worst -$50 → excluding worst still -$86 < 0 → loser (Path A).
+    assert _proven(_loser_snap(trades=19, pnl=-136, worst=-50, wins=6)) is True
+
+
+def test_path_a_spares_one_rug_wallet():
+    # +$100 across trades, one -$133 rug → net -$33; excluding worst +$100 → spared.
+    assert _proven(_loser_snap(trades=10, pnl=-33, worst=-133, wins=7)) is False
+
+
+def test_path_b_sustained_low_wr_loser_caught():
+    # Fast-dump cohort: one big loss (-$200) spares Path A (-136-(-200)=+64), but
+    # 32% WR over 19 trades → Path B catches it.
+    assert _proven(_loser_snap(trades=19, pnl=-136, worst=-200, wins=6)) is True
+
+
+def test_path_b_spares_high_wr_one_rug():
+    # net-negative dragged by one big rug but 90% WR → not a sustained loser.
+    assert _proven(_loser_snap(trades=20, pnl=-50, worst=-400, wins=18)) is False
+
+
+def test_path_b_requires_min_sample():
+    # Low WR + net-neg but only 10 trades (<15) and excl-worst positive → spared.
+    assert _proven(_loser_snap(trades=10, pnl=-50, worst=-150, wins=3)) is False
+
+
+def test_net_positive_never_a_loser():
+    assert _proven(_loser_snap(trades=30, pnl=120, worst=-300, wins=8)) is False
+
+
 # ---------- Promotion --------------------------------------------------------
 
 def test_promote_qualifying_watch_when_active_has_headroom():

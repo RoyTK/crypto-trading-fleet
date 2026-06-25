@@ -692,23 +692,29 @@ class CopyBot(BotLifecycle):
             # median Solana rug lifespan ~17 min). Solana-only for now
             # (Birdeye token_creation_info is the source).
             if candidate.venue == "solana":
-                # Concentration instrumentation — store the security data we
-                # already fetched pre-placement (no second call). Pure
-                # instrumentation; we do NOT filter on concentration.
-                if token_security is not None:
+                # Concentration + ENTRY-LIQUIDITY instrumentation (no filtering).
+                # Liquidity-at-entry (2026-06-25) is captured to calibrate a
+                # future cluster entry-liquidity guard — comparing winners' vs
+                # fast-dumps' entry liquidity before we gate on it.
+                try:
+                    cluster_entry_liq = await fetch_token_liquidity(self._session, candidate.asset)
+                except Exception:
+                    cluster_entry_liq = None
+                if token_security is not None or cluster_entry_liq is not None:
                     try:
                         update_trade_token_meta(
                             paper_trade_id,
-                            creator=token_security.get("creator"),
-                            top10_holder_pct=token_security.get("top10_holder_pct"),
-                            owner_pct=token_security.get("owner_pct"),
+                            creator=(token_security or {}).get("creator"),
+                            top10_holder_pct=(token_security or {}).get("top10_holder_pct"),
+                            owner_pct=(token_security or {}).get("owner_pct"),
+                            entry_liquidity_usd=cluster_entry_liq,
                         )
-                        self.log.info("token_security_captured",
+                        self.log.info("token_meta_captured",
                                       asset=candidate.asset,
-                                      creator=token_security.get("creator"),
-                                      top10_holder_pct=token_security.get("top10_holder_pct"))
+                                      creator=(token_security or {}).get("creator"),
+                                      entry_liquidity_usd=cluster_entry_liq)
                     except Exception:
-                        self.log.exception("token_security_capture_failed",
+                        self.log.exception("token_meta_capture_failed",
                                            asset=candidate.asset)
                 try:
                     import time
@@ -791,7 +797,9 @@ class CopyBot(BotLifecycle):
         # Entry liquidity guard (2026-06-25): skip tokens too thin to exit our
         # ~$400 position without catastrophic slippage (CyaE1Vx-style fresh-mint
         # snipes that cratered). Fail-open — only a KNOWN-thin reading blocks; a
-        # fetch miss (None) does not.
+        # fetch miss (None) does not. entry_liq is also stamped on the trade for
+        # instrumentation (so kept around regardless of the guard threshold).
+        entry_liq: Optional[float] = None
         if candidate.venue == "solana":
             min_liq = self.copy_settings.copy_conviction_min_entry_liquidity_usd
             if min_liq and min_liq > 0:
@@ -835,18 +843,19 @@ class CopyBot(BotLifecycle):
             fill=sim_fill.fill_price,
         )
 
-        # Best-effort enrichment (concentration + token age), same as cluster.
+        # Best-effort enrichment (concentration + entry liquidity + token age).
         if candidate.venue == "solana" and paper_trade_id is not None:
-            if token_security is not None:
+            if token_security is not None or entry_liq is not None:
                 try:
                     update_trade_token_meta(
                         paper_trade_id,
-                        creator=token_security.get("creator"),
-                        top10_holder_pct=token_security.get("top10_holder_pct"),
-                        owner_pct=token_security.get("owner_pct"),
+                        creator=(token_security or {}).get("creator"),
+                        top10_holder_pct=(token_security or {}).get("top10_holder_pct"),
+                        owner_pct=(token_security or {}).get("owner_pct"),
+                        entry_liquidity_usd=entry_liq,
                     )
                 except Exception:
-                    self.log.exception("conviction_token_security_capture_failed",
+                    self.log.exception("conviction_token_meta_capture_failed",
                                        asset=candidate.asset)
             try:
                 import time as _time
