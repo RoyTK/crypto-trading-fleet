@@ -53,7 +53,40 @@ _B58 = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$")
 VETTED_SOURCE = "browser_opus_vetted"
 
 
-def _apply(file_path: Path, *, dry_run: bool) -> int:
+def _sync_helius_from_db() -> None:
+    """Sync the Helius active+watch webhooks to the current DB pool tiers.
+
+    Called right after a vetting apply so newly-active wallets start receiving
+    webhook deliveries immediately (and pruned wallets unsubscribe) — no waiting
+    for the daily wallet_pool cron. Reuses the daily cron's _sync_helius. Lazy
+    imports keep this script's startup light and avoid import cycles.
+    """
+    import asyncio
+    import os
+    try:
+        from bots.copy.config import get_copy_settings
+        from scripts.wallet_pool_daily_cron import _sync_helius
+    except Exception as e:  # pragma: no cover - defensive
+        print(f"\n[helius] sync unavailable ({e}) — subscriptions update on next pool cron",
+              file=sys.stderr)
+        return
+    settings = get_copy_settings()
+    api_key = settings.helius_api_key
+    auth = os.environ.get("HELIUS_WEBHOOK_AUTH_SECRET", "")
+    active_url = os.environ.get("COPY_WEBHOOK_URL", "")
+    watch_url = os.environ.get("COPY_WEBHOOK_URL_WATCH", "")
+    if not (api_key and auth and active_url and watch_url):
+        print("\n[helius] sync skipped — missing env "
+              "(HELIUS_WEBHOOK_AUTH_SECRET / COPY_WEBHOOK_URL[_WATCH])")
+        return
+    try:
+        res = asyncio.run(_sync_helius(api_key, auth, active_url, watch_url))
+        print(f"\n[helius] synced: active={res['active'][1]}, watch={res['watch'][1]}")
+    except Exception as e:
+        print(f"\n[helius] sync FAILED: {e} — retry via the daily pool cron", file=sys.stderr)
+
+
+def _apply(file_path: Path, *, dry_run: bool, sync_helius: bool = True) -> int:
     if not file_path.exists():
         print(f"ERROR: file not found: {file_path}", file=sys.stderr)
         return 2
@@ -132,8 +165,15 @@ def _apply(file_path: Path, *, dry_run: bool) -> int:
     if not dry_run and (kept or rejected):
         write_audit("wallet_vetting_applied", bot_id="copy", actor="roy",
                     payload={"kept": kept, "rejected": rejected})
-        print("\nPruned wallets unsubscribe from Helius on the next daily cron "
-              "sync. Kept wallets promote vetted-first (cap 10/day).")
+        # Push the updated active/watch sets to Helius NOW so newly-active wallets
+        # receive webhook deliveries immediately and pruned wallets unsubscribe —
+        # no waiting for the daily wallet_pool cron. (Replaces the old "happens on
+        # the next daily sync" behavior, which was left over from the discovery crons.)
+        if sync_helius:
+            _sync_helius_from_db()
+        else:
+            print("\n[helius] sync skipped (--no-sync-helius) — subscriptions "
+                  "update on the next wallet_pool cron")
         # Notify so an unattended cron run is visible (P2, no ping).
         if _ALERTS:
             try:
@@ -155,8 +195,11 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Apply browser-Opus vetting verdicts")
     p.add_argument("--file", default=str(DEFAULT_FILE))
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--no-sync-helius", action="store_true",
+                   help="Don't push pool changes to Helius after applying "
+                        "(subscriptions then update on the next wallet_pool cron)")
     args = p.parse_args()
-    return _apply(Path(args.file), dry_run=args.dry_run)
+    return _apply(Path(args.file), dry_run=args.dry_run, sync_helius=not args.no_sync_helius)
 
 
 if __name__ == "__main__":

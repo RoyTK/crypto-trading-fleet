@@ -98,7 +98,6 @@ MACRO_MINT_TO_HL_ASSET: dict[str, str] = {
 }
 
 
-WALLET_POOL_PATH = Path(__file__).parent / "wallet_pool.json"
 
 
 def _completed_tier_indexes(
@@ -214,9 +213,6 @@ class CopyBot(BotLifecycle):
         # sell-holdoff) come from settings.
         self.conviction = ConvictionDetector()
         self.executor = CopyExecutor()
-        self._wallets_solana: list[str] = []
-        self._wallets_base: list[str] = []
-        self._wallets_arbitrum: list[str] = []
         self._last_reconcile_ts: float = 0.0
         self._last_position_check_ts: float = 0.0
         self._last_shadow_log_poll_ts: float = 0.0
@@ -235,9 +231,10 @@ class CopyBot(BotLifecycle):
         register_venue_fetcher("solana", make_fetcher_solana())
         register_venue_fetcher("base", make_fetcher_evm("base"))
         register_venue_fetcher("arbitrum", make_fetcher_evm("arbitrum"))
-        self._load_wallet_pool()
         # Conviction roster (single-wallet trigger strategy) — loaded from the
-        # DB (wallet_pool.conviction = true), independent of the JSON pool above.
+        # DB (wallet_pool.conviction = true). The active cluster pool is NOT
+        # loaded here: webhook_receiver matches incoming events against the live
+        # DB active set, so bot_copy keeps no wallet list of its own.
         self._load_conviction_wallets()
         self._session = aiohttp.ClientSession()
         # Subscribe to wallet-buy events on Redis (published by webhook_receiver)
@@ -260,9 +257,6 @@ class CopyBot(BotLifecycle):
         self.log.info(
             "copy_started",
             paper_capital_usd=self.copy_settings.copy_paper_capital_usd,
-            sol_wallets=len(self._wallets_solana),
-            base_wallets=len(self._wallets_base),
-            arbitrum_wallets=len(self._wallets_arbitrum),
             live_enabled=self.copy_settings.copy_live_enabled,
             live_full_enabled=self.copy_settings.copy_live_full_enabled,
             wallet_available=is_wallet_available(),
@@ -1420,27 +1414,6 @@ class CopyBot(BotLifecycle):
                 )
 
     # ---- Wallet pool -------------------------------------------------------
-
-    def _load_wallet_pool(self) -> None:
-        if not WALLET_POOL_PATH.exists():
-            self.log.warning("wallet_pool_missing", path=str(WALLET_POOL_PATH))
-            return
-        try:
-            data = json.loads(WALLET_POOL_PATH.read_text())
-        except Exception:
-            self.log.exception("wallet_pool_load_failed")
-            return
-        for entry in data.get("wallets", []) or []:
-            addr = entry.get("address")
-            chain = entry.get("chain")
-            if not addr or not chain:
-                continue
-            if chain == "solana":
-                self._wallets_solana.append(addr)
-            elif chain == "base":
-                self._wallets_base.append(addr)
-            elif chain == "arbitrum":
-                self._wallets_arbitrum.append(addr)
 
     def _load_conviction_wallets(self) -> None:
         """Load the conviction roster from the DB (wallet_pool.conviction=true)
