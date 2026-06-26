@@ -27,7 +27,10 @@ from framework.audit import write_audit
 PROCESS_NAME = "scoring"
 SCORING_INTERVAL_MINUTES = 15
 DD_CHECK_INTERVAL_MINUTES = 5  # tighter cadence than scoring; halts respond fast
-KILL_CRITERIA_INTERVAL_MINUTES = 60  # hourly is fine — WR doesn't move in 15min
+KILL_CRITERIA_INTERVAL_MINUTES = 5  # was 60 (hourly). At low n each trade swings
+# the scorecard hard, so an hourly recompute let the dashboard lag ~1h and even
+# show the wrong SIGN (read +$4 when conviction was actually -$314). The compute is
+# light (a few aggregates per bot); 5min keeps the scorecard ~live. (2026-06-26)
 CROSS_BOT_OUTCOME_INTERVAL_MINUTES = 240  # every 4h aligns with 4h horizon
 MACRO_KILL_SWITCH_INTERVAL_MINUTES = 5   # high-urgency — same cadence as dd_monitor
 GEO_SHOCK_ALERT_INTERVAL_MINUTES = 60    # research-grade, slower changes
