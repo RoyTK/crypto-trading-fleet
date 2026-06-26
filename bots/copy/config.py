@@ -259,6 +259,19 @@ class CopySettings(BaseSettings):
     # NOT reset the kill-criteria window per the operational-fix carve-out.
     copy_cluster_dedup_hours: int = Field(default=24)
 
+    # Cluster entry guards (2026-06-26). Same fast-death pattern as conviction:
+    # cluster's <5min trades were -$1,692 / 0 wins while 5-15min holds carried the
+    # edge (+$779). Two levers, both config-tunable, both fail-open:
+    #  - liquidity floor: skip tokens too thin to round-trip our position (catches
+    #    the $1-liq pump.fun rugs). Only a KNOWN-thin reading blocks; a miss doesn't.
+    #  - persistence delay: park a cluster trigger this long, then enter only if the
+    #    price hasn't cratered (dump already underway). Cluster's edge is the fast
+    #    co-buy pump, so the delay is SHORTER than conviction's 75s — the big fast
+    #    rugs die in 5-50s, so ~40s catches them at lower edge-cost. 0 disables.
+    copy_cluster_min_entry_liquidity_usd: float = Field(default=5000.0)
+    copy_cluster_entry_delay_seconds: int = Field(default=40)
+    copy_cluster_confirm_max_adverse_pct: float = Field(default=25.0)
+
     # ------------------------------------------------------------------
     # Conviction mode (2026-06-24) — single-wallet trigger strategy
     # ------------------------------------------------------------------

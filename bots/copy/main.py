@@ -227,6 +227,8 @@ class CopyBot(BotLifecycle):
         # Conviction entry persistence gate (2026-06-26): fired triggers park here
         # keyed (chain, token, wallet) until the delay elapses + re-check passes.
         self._pending_conviction: dict[tuple[str, str, Optional[str]], dict] = {}
+        # Cluster entry persistence gate (2026-06-26): same idea, keyed (chain, token).
+        self._pending_cluster: dict[tuple[str, str], dict] = {}
 
     # ---- Lifecycle hooks ---------------------------------------------------
 
@@ -496,10 +498,81 @@ class CopyBot(BotLifecycle):
             # the data-driven correction carve-out — adverse signal H2
             # confirmed by statistician's H3 rejection).
             if self.copy_settings.copy_cluster_buy_enabled:
-                asyncio.create_task(self._consume_candidate(c))
+                asyncio.create_task(self._enqueue_cluster_candidate(c))
             else:
                 self.log.info("cluster_buy_paused_skip_trade",
                               asset=c.asset, cluster_size=c.cluster_size)
+
+        # Re-check + enter any parked cluster candidates whose persistence delay
+        # has elapsed (2026-06-26 entry gate).
+        if self._pending_cluster:
+            asyncio.create_task(self._process_pending_cluster())
+
+    async def _enqueue_cluster_candidate(self, candidate: SignalCandidate) -> None:
+        """Park a cluster candidate for the persistence gate (2026-06-26) instead of
+        entering immediately, capturing the trigger price for the falling-knife
+        re-check. delay<=0 = immediate entry (old behavior)."""
+        delay = self.copy_settings.copy_cluster_entry_delay_seconds
+        if not delay or delay <= 0:
+            await self._consume_candidate(candidate)
+            return
+        key = (candidate.chain, candidate.asset)
+        if key in self._pending_cluster:
+            return
+        if has_open_position(candidate.asset, candidate.venue, strategy="cluster"):
+            return
+        trigger_price: Optional[float] = None
+        if candidate.venue == "solana" and self._session is not None:
+            try:
+                prices = await multi_price_solana(self._session, [candidate.asset])
+                trigger_price = prices.get(candidate.asset)
+            except Exception:
+                trigger_price = None
+        self._pending_cluster[key] = {
+            "candidate": candidate, "trigger_ts": time(), "trigger_price": trigger_price,
+        }
+        self.log.info("cluster_pending", asset=candidate.asset,
+                      cluster_size=candidate.cluster_size, delay_s=delay,
+                      trigger_price=trigger_price)
+
+    async def _process_pending_cluster(self) -> None:
+        """Re-check parked cluster candidates once the persistence delay elapses,
+        then enter or abort. Aborts if the price cratered past the adverse
+        threshold (dump underway). Fail-open: a price-fetch miss skips only the
+        price check. The entry (_consume_candidate) re-runs its own dedup /
+        liquidity-floor / security guards at commit. No whale-flip check here —
+        cluster is multi-wallet; its sell-cluster exit handles post-entry sells."""
+        delay = self.copy_settings.copy_cluster_entry_delay_seconds
+        now = time()
+        for key in list(self._pending_cluster.keys()):
+            p = self._pending_cluster.get(key)
+            if p is None or (now - p["trigger_ts"]) < delay:
+                continue
+            if self._pending_cluster.pop(key, None) is None:
+                continue  # taken by a concurrent pass
+            candidate = p["candidate"]
+            chain, asset = key
+            max_adv = self.copy_settings.copy_cluster_confirm_max_adverse_pct
+            trig_price = p.get("trigger_price")
+            if max_adv and max_adv > 0 and trig_price and trig_price > 0 \
+                    and candidate.venue == "solana" and self._session is not None:
+                cur_price: Optional[float] = None
+                try:
+                    prices = await multi_price_solana(self._session, [asset])
+                    cur_price = prices.get(asset)
+                except Exception:
+                    cur_price = None
+                if cur_price:
+                    drop_pct = (1.0 - cur_price / trig_price) * 100.0
+                    if drop_pct > max_adv:
+                        self.log.info("cluster_confirm_abort", reason="price_cratered",
+                                      asset=asset, drop_pct=round(drop_pct, 1),
+                                      trigger_price=trig_price, current_price=cur_price)
+                        continue
+            self.log.info("cluster_confirmed", asset=asset,
+                          cluster_size=candidate.cluster_size,
+                          waited_s=round(now - p["trigger_ts"], 1))
+            await self._consume_candidate(candidate)
 
     async def _publish_macro_cluster(self, c: SignalCandidate, hl_asset: str, cluster_uuid: str) -> None:
         """Publish a macro cluster event for STRUCTURE to observe (experiment only)."""
@@ -634,6 +707,24 @@ class CopyBot(BotLifecycle):
                                   cluster_size=candidate.cluster_size)
                     return
 
+        # Entry-liquidity guard (2026-06-26): skip tokens too thin to round-trip
+        # our cluster position — same lever as conviction. Fetched once here and
+        # reused for the post-placement instrumentation below. Fail-open: only a
+        # KNOWN-thin reading blocks; a fetch miss (None) does not.
+        cluster_entry_liq: Optional[float] = None
+        if candidate.venue == "solana":
+            try:
+                cluster_entry_liq = await fetch_token_liquidity(self._session, candidate.asset)
+            except Exception:
+                cluster_entry_liq = None
+            min_liq = self.copy_settings.copy_cluster_min_entry_liquidity_usd
+            if (min_liq and min_liq > 0 and cluster_entry_liq is not None
+                    and cluster_entry_liq < min_liq):
+                self.log.info("cluster_thin_liquidity_skip", asset=candidate.asset,
+                              liquidity_usd=cluster_entry_liq, min_liquidity_usd=min_liq,
+                              cluster_size=candidate.cluster_size)
+                return
+
         snapshot = CopyMarketSnapshot(chain=candidate.chain, session=self._session)
         sim_fill = await self.simulator.simulate_entry_async(
             asset=candidate.asset,
@@ -693,10 +784,8 @@ class CopyBot(BotLifecycle):
                 # Liquidity-at-entry (2026-06-25) is captured to calibrate a
                 # future cluster entry-liquidity guard — comparing winners' vs
                 # fast-dumps' entry liquidity before we gate on it.
-                try:
-                    cluster_entry_liq = await fetch_token_liquidity(self._session, candidate.asset)
-                except Exception:
-                    cluster_entry_liq = None
+                # cluster_entry_liq was already fetched at the entry-liquidity gate
+                # above (single fetch) — just stamp it for instrumentation here.
                 if token_security is not None or cluster_entry_liq is not None:
                     try:
                         update_trade_token_meta(
