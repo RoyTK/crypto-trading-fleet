@@ -224,6 +224,9 @@ class CopyBot(BotLifecycle):
         # cool-down — prevents spam if Birdeye is returning persistently
         # bad data and every cycle re-triggers the guard for the same trade.
         self._anomaly_alert_ts: dict[int, float] = {}
+        # Conviction entry persistence gate (2026-06-26): fired triggers park here
+        # keyed (chain, token, wallet) until the delay elapses + re-check passes.
+        self._pending_conviction: dict[tuple[str, str, Optional[str]], dict] = {}
 
     # ---- Lifecycle hooks ---------------------------------------------------
 
@@ -739,10 +742,104 @@ class CopyBot(BotLifecycle):
         fired candidate becomes its own paper trade (strategy='conviction',
         separate bankroll). Independent of the cluster path — both may fire on
         and hold the same token at once.
+
+        Entry is gated by a persistence/confirmation delay (2026-06-26): a fired
+        trigger is parked, then re-checked ~copy_conviction_entry_delay_seconds
+        later before it enters — see _enqueue/_process_pending_conviction.
         """
         candidates = self.conviction.evaluate()
         for c in candidates:
-            asyncio.create_task(self._consume_conviction_candidate(c))
+            asyncio.create_task(self._enqueue_conviction_candidate(c))
+        if self._pending_conviction:
+            asyncio.create_task(self._process_pending_conviction())
+
+    async def _enqueue_conviction_candidate(self, candidate: SignalCandidate) -> None:
+        """Park a fired conviction trigger for the persistence gate instead of
+        entering immediately. Captures the trigger-time price so _process_pending
+        can later tell whether the token cratered during the wait. delay <= 0
+        bypasses the gate (immediate entry — the old behavior)."""
+        delay = self.copy_settings.copy_conviction_entry_delay_seconds
+        if not delay or delay <= 0:
+            await self._consume_conviction_candidate(candidate)
+            return
+        wallet = (candidate.payload or {}).get("trigger_wallet")
+        key = (candidate.chain, candidate.asset, wallet)
+        if key in self._pending_conviction:
+            return  # already waiting on this (chain, token, wallet)
+        try:
+            if is_bot_halted("copy_conviction"):
+                return
+        except Exception:
+            pass
+        if has_open_position(candidate.asset, candidate.venue, strategy="conviction"):
+            return
+        trigger_price: Optional[float] = None
+        if candidate.venue == "solana" and self._session is not None:
+            try:
+                prices = await multi_price_solana(self._session, [candidate.asset])
+                trigger_price = prices.get(candidate.asset)
+            except Exception:
+                trigger_price = None
+        self._pending_conviction[key] = {
+            "candidate": candidate,
+            "trigger_ts": time(),
+            "trigger_price": trigger_price,
+        }
+        self.log.info(
+            "conviction_pending",
+            asset=candidate.asset, trigger_wallet=wallet,
+            delay_s=delay, trigger_price=trigger_price,
+        )
+
+    async def _process_pending_conviction(self) -> None:
+        """Re-check parked conviction triggers once the persistence delay elapses,
+        then enter or abort. Aborts if (a) the whale net-sold the token during the
+        wait (flipped out) or (b) the price cratered past the adverse threshold
+        (dump already underway). Fail-open: a price-fetch miss skips only the price
+        check, never the entry. The actual entry (_consume_...) re-runs its own
+        halt/dedup/liquidity/security guards at commit time."""
+        delay = self.copy_settings.copy_conviction_entry_delay_seconds
+        now = time()
+        for key in list(self._pending_conviction.keys()):
+            p = self._pending_conviction.get(key)
+            if p is None or (now - p["trigger_ts"]) < delay:
+                continue
+            if self._pending_conviction.pop(key, None) is None:
+                continue  # taken by a concurrent pass
+            candidate = p["candidate"]
+            chain, asset, wallet = key
+            # (a) whale flip — did the trigger wallet sell the token during the wait?
+            since_ms = int(p["trigger_ts"] * 1000)
+            try:
+                sold = self.conviction.sold_usd_since(chain, asset, wallet or "", since_ms)
+            except Exception:
+                sold = 0.0
+            if sold > self.copy_settings.copy_conviction_sell_holdoff_usd:
+                self.log.info("conviction_confirm_abort", reason="whale_sold",
+                              asset=asset, trigger_wallet=wallet, sold_usd=round(sold, 2))
+                continue
+            # (b) falling knife — has the price cratered since the trigger?
+            max_adv = self.copy_settings.copy_conviction_confirm_max_adverse_pct
+            trig_price = p.get("trigger_price")
+            if max_adv and max_adv > 0 and trig_price and trig_price > 0 \
+                    and candidate.venue == "solana" and self._session is not None:
+                cur_price: Optional[float] = None
+                try:
+                    prices = await multi_price_solana(self._session, [asset])
+                    cur_price = prices.get(asset)
+                except Exception:
+                    cur_price = None
+                if cur_price:
+                    drop_pct = (1.0 - cur_price / trig_price) * 100.0
+                    if drop_pct > max_adv:
+                        self.log.info("conviction_confirm_abort", reason="price_cratered",
+                                      asset=asset, trigger_wallet=wallet,
+                                      drop_pct=round(drop_pct, 1),
+                                      trigger_price=trig_price, current_price=cur_price)
+                        continue
+            self.log.info("conviction_confirmed", asset=asset, trigger_wallet=wallet,
+                          waited_s=round(now - p["trigger_ts"], 1))
+            await self._consume_conviction_candidate(candidate)
 
     async def _consume_conviction_candidate(self, candidate: SignalCandidate) -> None:
         # Independent DD halt for the conviction sub-strategy (its own halt_id).

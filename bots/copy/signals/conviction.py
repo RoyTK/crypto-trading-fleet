@@ -165,3 +165,15 @@ class ConvictionDetector:
             # accumulation (>= threshold of new buys) is required to fire again.
             self._buys.pop(key, None)
         return out
+
+    def sold_usd_since(self, chain: str, token: str, wallet: str, since_ms: int) -> float:
+        """Sum of `wallet`'s non-dust sells of `token` at/after `since_ms`.
+
+        Used by the main-loop entry persistence gate: after a conviction trigger
+        we wait, then abort the entry if the whale has flipped out of the token in
+        the meantime. Reads the same sells window observe_sell() populates (sells
+        older than the rolling window are pruned by evaluate())."""
+        dq = self._sells.get((chain, token, wallet))
+        if not dq:
+            return 0.0
+        return sum(n for ts, n in dq if ts >= since_ms)

@@ -314,6 +314,19 @@ class CopySettings(BaseSettings):
     # observing whether it filters the rug-prone part of a wallet's signal.
     copy_conviction_min_entry_liquidity_usd: float = Field(default=5000.0)
 
+    # Entry persistence gate (2026-06-26). After a conviction trigger fires, WAIT
+    # this many seconds and re-confirm before actually entering. The fast-rug
+    # losses all died in 19-47s (-$554 of conviction's losses), while real winners
+    # held 16-35min — so waiting lets COPY see the token die before committing, at
+    # near-zero cost to the winners. 0 = no delay (enter immediately; old behavior).
+    copy_conviction_entry_delay_seconds: int = Field(default=75)
+    # At the re-check, ABORT the entry if the token price has fallen more than this
+    # percent below the trigger-time price (the dump already started — don't catch
+    # the falling knife). 0 disables the price check. The whale-flip check (abort if
+    # the trigger wallet net-sold the token during the wait) reuses
+    # copy_conviction_sell_holdoff_usd as its tolerance.
+    copy_conviction_confirm_max_adverse_pct: float = Field(default=25.0)
+
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)
     # ------------------------------------------------------------------

@@ -185,6 +185,19 @@ def test_aged_out_sell_no_longer_blocks():
     assert len(out) == 1
 
 
+def test_sold_usd_since_tracks_post_trigger_flip():
+    """sold_usd_since sums the wallet's non-dust sells at/after a cutoff — the
+    entry persistence gate uses it to abort if a whale flips out during the wait."""
+    d = _det()
+    d.observe_sell(_sell(notional=30.0, ts_ms=T0))          # before cutoff
+    d.observe_sell(_sell(notional=50.0, ts_ms=T0 + 1000))   # after cutoff
+    d.observe_sell(_sell(notional=5.0, ts_ms=T0 + 2000))    # sub-dust → not recorded
+    cutoff = T0 + 500
+    assert d.sold_usd_since("solana", TOKEN, ROSTER, cutoff) == 50.0
+    assert d.sold_usd_since("solana", TOKEN, ROSTER, T0) == 80.0
+    assert d.sold_usd_since("solana", TOKEN, OTHER, T0) == 0.0  # unknown key
+
+
 # ---------------------------------------------------------------------------
 # Sizing
 # ---------------------------------------------------------------------------
