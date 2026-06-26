@@ -1,10 +1,14 @@
-PROMPT — Solana copy-trade wallet DISCOVERY + VETTING (Birdeye), scheduled/repeating
+PROMPT — Solana copy-trade wallet DISCOVERY + VETTING (Birdeye) — browser-Opus
 
-You find AND vet high-quality Solana trader wallets for a copy-trading bot, in ONE
-pass, and append the qualifiers to vetted_watch_results.txt on OneDrive. This is
-built to run REPEATEDLY on a schedule — each run discovers new wallets, vets them
-on the spot, and only outputs the ones that qualify (verdict=KEEP). A downstream
-cron ingests the file automatically (KEEP -> active-eligible vetted wallet).
+You run as browser-Opus: Opus with the Claude-in-Chrome extension driving a real Chrome.
+In ONE attended session you DISCOVER candidate wallets on Birdeye, VET each one on the
+spot, and append your verdicts (KEEP / REJECT / TOO_FAST) to vetted_watch_results.txt in
+the OneDrive "Claude" folder via the web text editor. Everything happens in the browser —
+you have NO local files, NO shell, NO git.
+You don't need to do anything after writing the file: a scheduled job on Roy's machine
+reconciles the OneDrive file into the git repo, and a server cron ingests it
+(KEEP -> active vetted wallet + Helius-subscribed; REJECT -> pruned). Your whole job is to
+fill the OneDrive file with good verdicts.
 
 THE BOT'S EDGE (so you vet for the right thing)
 It buys when 2-3+ tracked wallets co-buy a fresh-mint token within ~15 minutes,
@@ -17,36 +21,30 @@ position and must ENTER and EXIT on-chain, so it needs tokens with enough LIQUID
 and a hold it can match. A wallet can be elite on its OWN book yet UNFOLLOWABLE for
 COPY — own profit != copy-followable. Vet for what COPY can actually ride.
 
-HOW YOU RUN (two possible surfaces — use the file path that matches yours)
-You may run either as (a) Claude Code with local file tools + a connected Chrome, or
-(b) the consumer browser tool (claude.ai) that drives Chrome but has NO local files.
-Use the BROWSER for Birdeye discovery in BOTH. For OUTPUT:
-  (a) Claude Code: read/append the LOCAL repo file with your file tools; a wrapper
-      script handles git commit/push. Do NOT use OneDrive, the clipboard, or git.
-  (b) Browser tool: read/append the OneDrive copy via the web text editor (the only
-      file you can reach); a human syncs it to the repo afterward.
-Either surface follows the BATCH -> CHECKPOINT -> RESUME pattern below.
-
 WHERE THINGS LIVE
-Results file (LOCAL, in your working directory): vetted_watch_results.txt
-  This is the git-tracked repo file (bots/copy/vetted_watch_results.txt). CSV content,
-  .txt extension. Append new rows to the END; preserve every existing row exactly.
+Results file: vetted_watch_results.txt in the OneDrive "Claude" folder
+  (My files -> Documents -> Documents -> Claude). It's CSV content with a .txt
+  extension — open it in the OneDrive web text editor. Append new rows to the END;
+  preserve every existing row exactly. (A scheduled reconcile job copies this file into
+  the git repo as bots/copy/vetted_watch_results.txt — you never touch the repo or git.)
 Columns (EXACT order): address, verdict, realized_pnl, unrealized_pnl, avg_hold,
   rug_pct, multi_x_wins, reason, date_vetted
 Verdicts you write:
   - KEEP     = qualifies AND followable hold (~30min-7d) -> ingested into COPY
+  - REJECT   = evaluated but does NOT qualify -> pruned; logged so it isn't re-vetted
   - TOO_FAST = qualifies on everything else but holds sub-~15-min -> NOT ingested
-               into COPY (the cron ingestion only acts on KEEP/REJECT, so TOO_FAST
-               is safely logged-only); kept on the list for a future fast bot.
-Leave the file's historical rows untouched.
+               into COPY (ingestion only acts on KEEP/REJECT, so TOO_FAST is safely
+               logged-only); kept on the list for a future fast bot.
+Leave the file's historical rows untouched. Work in batches with checkpoints (see
+BATCH -> CHECKPOINT -> RESUME below) so a hang never loses finished work.
 
 PER-RUN WORKFLOW
-1. Read the LOCAL vetted_watch_results.txt (your Read tool, or grep/Get-Content)
-   and collect EVERY address already present (KEEP / REJECT / TOO_FAST alike). These
-   are already-handled — never re-add or re-vet them.
+1. Open vetted_watch_results.txt in the OneDrive web text editor and collect EVERY
+   address already present (KEEP / REJECT / TOO_FAST alike). These are already-handled
+   — never re-add or re-vet them.
 2. Go to https://birdeye.so/solana/find-gems -> "Trending" -> sort by 24h %.
-   Take trending tokens that at least doubled (>100%) in 24h. Process the top ~10
-   this run (keep runs bounded; the schedule covers the rest over time).
+   Take trending tokens that at least doubled (>100%) in 24h. Process ~10 this session
+   (keep it bounded so the session finishes reliably; run again another day for more).
 3. For each token: "Top Traders" tab -> apply the "Smart Money" filter. Pull FULL
    addresses via document.querySelectorAll('a[href*="/wallet-analyzer/"]') — never
    truncated text.
@@ -116,22 +114,26 @@ When several wallets co-buy a token within ~15 min, capture EVERY member's FULL
 address and note the shared cluster in the reason column (e.g. "co-buy TOKEN-cluster").
 Log every member as its own row — do NOT collapse a cluster into one wallet.
 
-OUTPUT — append rows to the LOCAL file with your file tools (NOT the browser)
+OUTPUT — append rows to the OneDrive file via the web text editor
 For each followable qualifier write one row:
   address,KEEP,realized_pnl,unrealized_pnl,avg_hold,rug_pct,multi_x_wins,reason,YYYY-MM-DD
 For an otherwise-great wallet that holds sub-~15-min, write TOO_FAST instead of KEEP
 (same columns) — note "too fast for COPY latency; future fast-bot" in reason.
 Also write REJECT rows for wallets you evaluated and rejected — the REJECT ledger is
-what stops the next run re-vetting the same junk, so it is REQUIRED, not optional.
+what stops a later run re-vetting the same junk, so it is REQUIRED, not optional.
 - reason: one tight sentence (realized/unrealized/hold/multi-x, or the flag).
 - date_vetted: today (YYYY-MM-DD).
 - CSV validity: quote any field containing a comma — the multi_x_wins and reason
   columns — e.g.  ...,"0 (>500%), 0 (>100%)","Bag-holder: ...",2026-06-23
-How to append (use the reliable path): a shell append of the new rows to the END of
-the file (>> / Add-Content) is simplest and avoids rewriting the whole file; or use
-Edit to insert after the last line. Either way: only ADD rows, never modify or
-reorder existing ones, and skip any address already in the file. Do NOT touch the
-browser, OneDrive, the clipboard, or git here — the wrapper handles commit/push.
+How to append (the reliable method): open vetted_watch_results.txt in the OneDrive web
+text editor, move the cursor to the END of the file, and add the new rows there. The
+steadiest way to move text in is the clipboard: render the new rows in an HTML tab with a
+"Copy to clipboard" button, click it with that tab focused, then click into the OneDrive
+editor and paste (avoid a cross-tab navigator.clipboard.writeText call — it triggers a
+permission prompt that can freeze the renderer). Only ADD rows, never modify or reorder
+existing ones, and skip any address already in the file. After saving, reload the OneDrive
+folder and confirm the file's size / modified-time updated (the list can show a stale
+cached size until you reload).
 BATCH -> CHECKPOINT -> RESUME (work in small batches so nothing is ever lost)
 Vet in batches of ~20 wallets. After EACH batch of 20:
   1. SAVE those ~20 rows to the results file immediately — this is a CHECKPOINT. Do not
@@ -145,10 +147,11 @@ Why batches + checkpoints: if the run hangs (Cloudflare wall, idle extension, ti
 every completed batch of ~20 is already persisted. A manual restart just re-reads the
 results file, dedups against it, and resumes from the first un-vetted wallet — zero
 re-work, zero lost rows, no duplicates. The file IS the checkpoint.
-Run autonomously: do NOT stop to ask for approval or a "next batch" confirmation when
-the environment lets you continue — keep going batch after batch until done or budget-
-limited. (In a tool that hard-gates per batch, the per-batch file checkpoints still let
-any restart resume cleanly from exactly where it stopped.)
+Work hands-off: don't stop to ask for a "next batch" confirmation when you can keep
+going — work batch after batch until you've covered the session's tokens or run low on
+turn budget, saving each batch to the OneDrive file as you go. (If the extension hangs
+or a batch hard-gates, the per-batch saves let a restart resume cleanly from exactly
+where it stopped.)
 If a run finds ZERO new wallets, append nothing and just write the summary — that's a
 valid outcome.
 
@@ -160,7 +163,8 @@ de-dupes by address, so duplicates are harmless, but keep the file clean).
 RELIABILITY (from past sessions)
 - If a Birdeye JS call times out, reload the tab.
 - Always take FULL addresses from the href, never truncated on-screen text.
-- Keep each run bounded (~10 tokens) so a scheduled run finishes reliably.
+- Keep each session bounded (~10 tokens) so it finishes before the extension tires or
+  Birdeye rate-limits.
 
 END-OF-RUN SUMMARY
 Report: tokens processed, how many NEW qualifiers added (KEEP), how many evaluated-
