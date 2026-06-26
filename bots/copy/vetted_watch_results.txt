@@ -784,3 +784,39 @@ E88emNBZpPxX3LGRdiHaDSobpBiRezRdgwG2TKdMcqf9,REJECT,-$0.37,-$38.17,17d,99.7%,0,"
 GHNnupvah56aMEBq7m2KLzMfYkyjkPDp2Qe8uVLwJMiR,REJECT,-$0.20,-$36.18,18d,100%,0,"Dust/test accumulator: $36 volume, 320 buys/2 sells, ~$0 realized; not a meaningful trader",2026-06-22
 HPGSoaK4WHuMNym7TpLqozRHkA6fRg3qGMDtqVsndL7h,REJECT,+$61.78K,-$106.23K,3d,97.5%,"3 (>500%), 6 (>100%)",Bag-holder: unrealized -$106K exceeds realized +$62K (net -$44K); 3d holds but net negative,2026-06-22
 Euu7J5JWmvoF4vZ5M2X583jx8c9MgES58xW9SBFKziqq,KEEP,n/a,n/a,n/a,n/a,n/a,"RESTORED 2026-06-25 on COPY attribution (not Birdeye-vetted): 100% of losses were pre-6/7 (old COPY mechanism, -$546); under current COPY net-positive +$168 attributed over 11 trades. Pruned 6/22 on contaminated all-time data.",2026-06-25
+J7hJg1JB1R1UeKmjUV8eWfzF7q5NAWG7ZoeHcJ86qCrG,REJECT,$0,-$2.04,2d,100%,"0 (>500%), 0 (>100%)",Realized not positive ($0) [src VORF],2026-06-25
+142RScFDFaGyADg1rNAdDEcMaBbv2AQ3NLiAhkgYH5U9,REJECT,$0,-$3.29,2d,96%,"0 (>500%), 0 (>100%)",Realized not positive ($0) [src America250],2026-06-25
+B1wupUPeiUjgdDY1yB51A6eimvLCh3xfkEUwpHFrJis4,KEEP,+$61.63K,+$344.78,5d,62.95%,"5 (>500%), 50 (>100%)","Realized +$61.63K, unreal +$344.78, hold 5d, 5x>500%/50x>100%, rug 62.95% [src XMoney]",2026-06-25
+kjacHvfRNMG6sThxMPUDhDn6UbkTPHfNmFdQddY7puT,KEEP,+$14.24K,-$1.99K,17d,81.13%,"12 (>500%), 21 (>100%)","Realized +$14.24K, unreal -$1.99K, hold 17d, 12x>500%/21x>100%, rug 81.13% [src XMoney]",2026-06-25
+C937MwaPmo2d6zxysoGeEERZZit7EC7H1R3Mem3BfUKZ,REJECT,+$25.79K,-$543.66,1h,69.62%,"0 (>500%), 44 (>100%)",No >500% wins (only 44x>100%); not repeatable [src XMoney],2026-06-25
+73wLTVh6B2uvntsUsP9MzsTdQ7GyrPfypiEgKY8W6caD,REJECT,-$2.76K,-$46.93K,24d,64.1%,"8 (>500%), 29 (>100%)",Realized not positive (-$2.76K) [src XMoney],2026-06-25
+5QLUCUFA62q1b2y8TKfFf31rL4Qj8zsKTQzuQ8xbTa1o,KEEP,+$373.51K,-$54.6K,4d,84.27%,"9 (>500%), 297 (>100%)","Realized +$373.51K, unreal -$54.6K, hold 4d, 9x>500%/297x>100%, rug 84.27% [src XMoney]",2026-06-25
+DwWf4AbJ2av2aVBVHkdk8Huc8Qiiz6Zcbt5M9qCB19pS,KEEP,+$11.16K,-$58.37,52m,60.88%,"4 (>500%), 21 (>100%)","Realized +$11.16K, unreal -$58.37, hold 52m, 4x>500%/21x>100%, rug 60.88% [src XMoney]",2026-06-25
+7jDbjRNWJQ9HLsStBewo3QyfBk7DwkawdrnND7zKMRCL,REJECT,-$8.67K,-$7.58K,4d,84.96%,"3 (>500%), 24 (>100%)",Realized not positive (-$8.67K) [src XMoney],2026-06-25
+3fhyNXFJcaX5oQzQCybmJUZiRkWwHJEYAW6HLX58bV34,KEEP,+$42.18K,-$342.29,4h,98.97%,"1 (>500%), 6 (>100%)","Realized +$42.18K, unreal -$342.29, hold 4h, 1x>500%/6x>100%, rug 98.97% [src XMoney]",2026-06-25
+B2JHj5w9CCxcktvoUG2J69GeLFaBv5HpZAwuQU3QsgaX,REJECT,+$292.88K,-$1.29M,5mo,76.88%,"225 (>500%), 833 (>100%)",Bag-holder: realized +$292.88K but unrealized -$1.29M [src XMoney],2026-06-25
+H7SUqxaiQTLPjNhXgWq5Cv2Sv6vj4cjEjaNErzt2DhQk,KEEP,+$13.63K,-$4.73K,13h,63.8%,"4 (>500%), 27 (>100%)","Realized +$13.63K, unreal -$4.73K, hold 13h, 4x>500%/27x>100%, rug 63.8% [src XMoney]",2026-06-25
+EzbeF2bADKo6GutJyWmgodyGJFeBPhcrXSdZUXPX5WGc,KEEP,+$1.91M,-$41.96K,20h,91.63%,"33 (>500%), 555 (>100%)","Realized +$1.91M, unreal -$41.96K, hold 20h, 33x>500%/555x>100%, rug 91.63% [src XMoney]",2026-06-25
+HZXdwRRw27kfpYtTqc7bMfrRgK3LSUaiKDFtqoEihik8,KEEP,+$133.08K,-$71.15K,6d,89.39%,"20 (>500%), 245 (>100%)","Realized +$133.08K, unreal -$71.15K, hold 6d, 20x>500%/245x>100%, rug 89.39% [src XMoney]",2026-06-25
+x8DGcvHne1vcoTgrqDZDyqYmQgDQYZEP6pQYThYtNNE,KEEP,+$31.76K,-$1.18K,11h,84.02%,"2 (>500%), 192 (>100%)","Realized +$31.76K, unreal -$1.18K, hold 11h, 2x>500%/192x>100%, rug 84.02% [src XMoney]",2026-06-25
+CXoUJHtBGnuNR6zJ3zm8nTnNzCwXxFViXh29d1kTJQmK,KEEP,+$262.21K,-$5.57K,14h,98.2%,"2 (>500%), 394 (>100%)","Realized +$262.21K, unreal -$5.57K, hold 14h, 2x>500%/394x>100%, rug 98.2% [src XMoney]",2026-06-25
+BXHFf59u8Dq7ioEYU27qpgSgsxbWrQngmeW2tK6g3Erv,KEEP,+$12.87K,-$448.24,2h,75.65%,"3 (>500%), 69 (>100%)","Realized +$12.87K, unreal -$448.24, hold 2h, 3x>500%/69x>100%, rug 75.65% [src XMoney]",2026-06-25
+9gQR5PWpmyK4EhuG2VASGreQ8Wf6uezPNbzKDjYz1V7i,TOO_FAST,+$46.4K,-$51,6m,89.17%,"4 (>500%), 140 (>100%)",Sub-15min holds (6m); too fast for COPY latency; future fast-bot [src XMoney],2026-06-25
+3zxXEq7k7dV1trkaHBbMPdVU7RTSSyCh17ckow8w8esA,REJECT,+$20.4K,+$0,1h,82.33%,"0 (>500%), 20 (>100%)",No >500% wins (only 20x>100%); not repeatable [src XMoney],2026-06-25
+Aczem4ibtD9tKDsn3gvPNZRx1SCWHjvwMy5fmNkdG9qK,KEEP,+$18.7K,-$44.74,2h,85.14%,"1 (>500%), 48 (>100%)","Realized +$18.7K, unreal -$44.74, hold 2h, 1x>500%/48x>100%, rug 85.14% [src XMoney]",2026-06-25
+EYVpjBxJ1y849nHRXDnBJtLiNqWhAhdiYxhxbKDUcwHC,REJECT,+$16K,-$59.54K,4d,80.5%,"2 (>500%), 45 (>100%)",Bag-holder: realized +$16K but unrealized -$59.54K [src XMoney],2026-06-25
+3QELEdPBiyzRVNh2bnKbsnXgKfQdmSjg5pscoRJHDb9k,KEEP,+$155.59K,-$329.1,1h,83.19%,"5 (>500%), 119 (>100%)","Realized +$155.59K, unreal -$329.1, hold 1h, 5x>500%/119x>100%, rug 83.19% [src XMoney]",2026-06-25
+FG8JjLyvhfuB7eFQPL7Dc4MzfTpeXx4fPm3YGQRGeG9K,REJECT,+$32.95K,-$4.21K,1d,78.55%,"0 (>500%), 48 (>100%)",No >500% wins (only 48x>100%); not repeatable [src XMoney],2026-06-25
+BJXjRq566xt66pcxCmCMLPSuNxyUpPNBdJGP56S7fMda,KEEP,+$868.45K,-$42.75K,1d,97.9%,"136 (>500%), 973 (>100%)","Realized +$868.45K, unreal -$42.75K, hold 1d, 136x>500%/973x>100%, rug 97.9% [src XMoney]",2026-06-25
+yMBRVpuVm7bgASPEvEhVtKTbz4g4UhNFEDz8kBmHAv1,KEEP,+$87.95K,-$36.66K,5d,89.99%,"14 (>500%), 213 (>100%)","Realized +$87.95K, unreal -$36.66K, hold 5d, 14x>500%/213x>100%, rug 89.99% [src XMoney]",2026-06-25
+hahaA2GjzZbwgAwwryjmTb8VkmLt68hdZVHhtcpknpT,KEEP,+$98.88K,-$12.32K,16h,93.9%,"1 (>500%), 259 (>100%)","Realized +$98.88K, unreal -$12.32K, hold 16h, 1x>500%/259x>100%, rug 93.9% [src XMoney]",2026-06-25
+8p22DZxAdEyaqo72KDfxYo9yfPdraumSMAF1AXgcYnjb,KEEP,+$62.66K,-$8.23K,2d,91.33%,"11 (>500%), 165 (>100%)","Realized +$62.66K, unreal -$8.23K, hold 2d, 11x>500%/165x>100%, rug 91.33% [src XMoney]",2026-06-25
+2TE2F3CJDbDhN3MgqNmnUh1NR5nHSornaK5daq65Lejs,KEEP,+$356.82K,-$33.59K,3d,86.47%,"17 (>500%), 295 (>100%)","Realized +$356.82K, unreal -$33.59K, hold 3d, 17x>500%/295x>100%, rug 86.47% [src XMoney]",2026-06-25
+7yxvqSkKz5TbSqCpv6RtZPXiWocBq41eQvuQteveQ4fS,REJECT,-$621.92,+$591.05,2d,58.33%,"0 (>500%), 0 (>100%)",Realized not positive (-$621.92) [src XMoney],2026-06-25
+DFfkvpLgid6Vaa4TyR6t9WWWsc2qCSod9iPGZSqcmYjm,KEEP,+$180.77K,+$199.37K,8h,96.29%,"10 (>500%), 6 (>100%)","Realized +$180.77K, unreal +$199.37K, hold 8h, 10x>500%/6x>100%, rug 96.29% [src SNDK]",2026-06-25
+9nF713DdZCZPAQU1SheFprs9FEYLPhCURZnURJw6hK54,KEEP,+$103.87K,+$150.64K,9h,96.29%,"8 (>500%), 7 (>100%)","Realized +$103.87K, unreal +$150.64K, hold 9h, 8x>500%/7x>100%, rug 96.29% [src SNDK]",2026-06-25
+6ZFxtZE36qG1QvXFw7uVtioesFdEeuBBEbXmUCLkesLE,KEEP,+$60.55K,+$42.2K,11h,78.57%,"1 (>500%), 6 (>100%)","Realized +$60.55K, unreal +$42.2K, hold 11h, 1x>500%/6x>100%, rug 78.57% [src OpenClaw]",2026-06-25
+HqRzwWZdQvKwVDdQ1Xp14jswQHeu7jT2JfxC7JUEzkmj,KEEP,+$75.69K,+$43.05K,9h,76.92%,"2 (>500%), 3 (>100%)","Realized +$75.69K, unreal +$43.05K, hold 9h, 2x>500%/3x>100%, rug 76.92% [src OpenClaw]",2026-06-25
+6cctnrg5Y6b9yaiq8SS11H1NfZbvKaHA1wijV5GDN2zp,REJECT,$0,+$1.38M,6d,0%,"0 (>500%), 0 (>100%)",Realized not positive ($0) [src OpenClaw],2026-06-25
+DkTX9a4npZXFtmwLBEeu85oEPKd48JzgoxRqBCXVqBk1,REJECT,+$10.39K,+$4.58K,2d,93.75%,"1 (>500%), 1 (>100%)","Too few multi-x (>500%=1,>100%=1) [src USWR]",2026-06-25
+4Rxse9qJgAmivmcLMrwd9Y2qo7DitiRpfCbpasLavJcu,REJECT,$0,+$413.14K,3d,0%,"0 (>500%), 0 (>100%)",Realized not positive ($0) [src USWR],2026-06-25
