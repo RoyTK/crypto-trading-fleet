@@ -119,32 +119,24 @@ class WalletSnapshot:
 
 
 def _is_proven_loser(w: "WalletSnapshot", min_trades: int, pnl_floor: float) -> bool:
-    """A wallet that has copied enough trades to judge AND is ROBUSTLY
-    net-negative — negative even after excluding its single worst trade.
+    """A wallet that has copied enough trades to judge AND is net-negative.
 
     Criterion is MONEY, not activity (a high-frequency winner like 9ZPsRWG is
-    NOT a loser). The exclude-worst-trade rule encodes "one rug doesn't make
-    a loser" (Roy): a wallet that's +$100 across its trades but dropped to
-    -$33 by a single -$133 rug is NOT a loser — excluding that trade it's
-    +$100. A wallet that's still negative after dropping its worst trade IS a
-    robust loser (CreQJ2t9, MfDuWeq, the turtle cluster)."""
+    net-POSITIVE, so it's never a loser here).
+
+    2026-06-26 (Roy): DROPPED the old "one rug doesn't make a loser"
+    exclude-worst-trade leniency. We can vet plenty of fresh wallets, so
+    churning a net-negative wallet is cheap and speeds up working out the
+    vetting process — net-negative over >= min_trades is enough to demote.
+    (The restored Euu7J5J/2aU9JFx co-bought rug clusters straight into COPY's
+    dd halt; the leniency that protected them is not worth keeping for paper.)
+    Re-tighten this if/when COPY goes live and churn carries real cost.
+
+    NOTE: `worst_attributed_pnl_usd` and the DEMOTE_SUSTAINED_* gate are no
+    longer consulted here — net-negative is the whole test now."""
     if w.attributed_trades < min_trades:
         return False
-    if w.attributed_pnl_usd >= pnl_floor:
-        return False
-    # Path A — "one rug doesn't make a loser": negative even excluding the
-    # single worst (most-negative) trade.
-    net_excluding_worst = w.attributed_pnl_usd - min(0.0, w.worst_attributed_pnl_usd)
-    if net_excluding_worst < 0:
-        return True
-    # Path B (2026-06-25) — SUSTAINED underperformance: net-negative over a large
-    # sample with a low win rate is a pattern-loser even if Path A would forgive
-    # one big loss. Catches fast-dump cohorts COPY can't follow. (Reached only
-    # when already net-negative, so positive-skew winners are never caught.)
-    if (w.attributed_trades >= DEMOTE_SUSTAINED_MIN_TRADES
-            and (w.attributed_wins / w.attributed_trades) < DEMOTE_SUSTAINED_MAX_WR):
-        return True
-    return False
+    return w.attributed_pnl_usd < pnl_floor
 
 
 def _source_priority(source: Optional[str]) -> int:
