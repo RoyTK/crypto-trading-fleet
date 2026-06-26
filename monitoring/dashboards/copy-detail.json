@@ -475,7 +475,7 @@
     {
       "id": 60,
       "type": "row",
-      "title": "Kill / promotion criteria (window 2026-05-25 → 2026-07-24)",
+      "title": "Kill / promotion criteria (pre-registered validation window — live dates below)",
       "collapsed": false,
       "gridPos": {"x": 0, "y": 80, "w": 24, "h": 1}
     },
@@ -517,11 +517,21 @@
       "fieldConfig": {"defaults": {"unit": "percent", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 2}, {"color": "green", "value": 5}]}}}
     },
     {
+      "id": 66,
+      "type": "stat",
+      "title": "Validation window (start → end, primary)",
+      "description": "Live from kill_criteria_status->window (re-baselines move these). The row title above is intentionally generic so it can't go stale.",
+      "gridPos": {"x": 16, "y": 81, "w": 4, "h": 4},
+      "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->'window'->>'start')::date::text || '  →  ' || (kill_criteria_status->'window'->>'end_primary')::date::text FROM bot_state WHERE bot_id='copy'", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "options": {"textMode": "value", "graphMode": "none"}
+    },
+    {
       "id": 65,
       "type": "stat",
       "title": "Active kill triggers",
       "description": "Empty = no criteria fired. Each entry = one alert that fired this window.",
-      "gridPos": {"x": 16, "y": 81, "w": 8, "h": 4},
+      "gridPos": {"x": 20, "y": 81, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT COALESCE(kill_criteria_status->>'kill_triggers', '[]') FROM bot_state WHERE bot_id='copy'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "options": {"textMode": "value", "graphMode": "none"}
