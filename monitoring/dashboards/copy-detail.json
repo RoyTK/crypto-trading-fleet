@@ -549,7 +549,7 @@
       "type": "stat",
       "title": "Roster (conviction wallets)",
       "description": "wallet_pool.conviction = true. Only active-tier ones actually trigger.",
-      "gridPos": {"x": 0, "y": 87, "w": 4, "h": 4},
+      "gridPos": {"x": 0, "y": 87, "w": 3, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT COUNT(*) FROM wallet_pool WHERE conviction = true", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
@@ -557,7 +557,7 @@
       "id": 72,
       "type": "stat",
       "title": "Conv open positions",
-      "gridPos": {"x": 4, "y": 87, "w": 4, "h": 4},
+      "gridPos": {"x": 3, "y": 87, "w": 3, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND (sim_metadata->>'strategy')='conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
@@ -565,7 +565,7 @@
       "id": 73,
       "type": "stat",
       "title": "Conv N closed (window, need 60)",
-      "gridPos": {"x": 8, "y": 87, "w": 4, "h": 4},
+      "gridPos": {"x": 6, "y": 87, "w": 3, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'n')::int FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 30}, {"color": "green", "value": 60}]}}}
@@ -574,7 +574,7 @@
       "id": 74,
       "type": "stat",
       "title": "Conv WR (kill <0.25 / promote ≥0.55)",
-      "gridPos": {"x": 12, "y": 87, "w": 4, "h": 4},
+      "gridPos": {"x": 9, "y": 87, "w": 3, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'wr')::float FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"unit": "percentunit", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.25}, {"color": "green", "value": 0.55}]}}}
@@ -583,10 +583,20 @@
       "id": 75,
       "type": "stat",
       "title": "Conv Net PnL % (kill <2% / promote ≥5%)",
-      "gridPos": {"x": 16, "y": 87, "w": 4, "h": 4},
+      "gridPos": {"x": 12, "y": 87, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'net_pnl_pct')::float FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"unit": "percent", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 2}, {"color": "green", "value": 5}]}}}
+    },
+    {
+      "id": 82,
+      "type": "stat",
+      "title": "Conv Total attributed PnL (USD)",
+      "description": "Net realized $ PnL over the conviction validation window — the EXACT $ companion to 'Conv Net PnL %' and 'Conv N closed' (all three read kill_criteria_status, same trade set / window, so they can't diverge). Equals Conv Net PnL % × $10k bankroll.",
+      "gridPos": {"x": 16, "y": 87, "w": 4, "h": 4},
+      "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'net_pnl_usd')::float FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": -0.01}, {"color": "green", "value": 0}]}}}
     },
     {
       "id": 76,
