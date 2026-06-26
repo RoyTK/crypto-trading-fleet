@@ -132,6 +132,21 @@ def _apply(file_path: Path, *, dry_run: bool, sync_helius: bool = True) -> int:
                     print(f"  [skip] {addr[:14]}… KEEP but already pruned — leaving pruned")
                     skipped += 1
                     continue
+                if w.tier == "watch" and w.demoted_at is not None:
+                    # Demoted-for-cause by the daily pool cron (proven money-loser,
+                    # or quiet). That attribution/activity-based judgment is REAL
+                    # performance and OUTRANKS this a-priori KEEP. Re-promoting here
+                    # is the resurrection loop: the cron demotes a loser active→watch
+                    # at 07:00, then this apply re-promoted it watch→active at 07:30,
+                    # so demotion never stuck for KEEP wallets. Leave it on watch —
+                    # the daily cron owns watch<->active by merit (it drops
+                    # watch-losers to pruned and re-promotes recovered ones). Only a
+                    # never-demoted watch wallet (demoted_at is None) is promoted by a
+                    # KEEP. (2026-06-26 — fixes the loop the dropped exclude-worst
+                    # rule exposed.)
+                    print(f"  [skip] {addr[:14]}… KEEP but demoted-for-cause (watch) — leaving for the pool cron")
+                    skipped += 1
+                    continue
                 if not dry_run:
                     w.source = VETTED_SOURCE
                     if w.tier != "active":
