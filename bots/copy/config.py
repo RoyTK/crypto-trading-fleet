@@ -27,6 +27,7 @@ monitoring / bug fixes do NOT reset.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -41,14 +42,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Cluster trigger
 CLUSTER_MIN_WALLETS = 3                    # ≥ 3 wallets = signal
 CLUSTER_WINDOW_MINUTES = 15                # ±15 min cluster window
-# Per-wallet notional floor. Locked Item #7 spec was $5k. Re-lowered to $1k
-# 2026-05-24 after live data showed only 2.7% of webhook buys clear $5k
-# (median single-wallet buy = $264; max in 30s sample = $9k). At $5k, only
-# 1 cluster signal fired in 42 hours. At $1k (per Build A debug period),
-# the pipeline produces enough cluster events for paper trades to accumulate
-# meaningful data. Evaluate raising back to $2-3k once attribution data shows
-# whether the $1k-$5k tier is signal-positive or noise.
-CLUSTER_MIN_NOTIONAL_PER_WALLET_USD = 1_000.0
+# Per-wallet notional floor. Locked Item #7 spec was $5k → $1k (2026-05-24, only
+# 2.7% of webhook buys clear $5k; median single-wallet buy = $264). Now ENV-TUNABLE
+# (2026-06-26) via COPY_CLUSTER_MIN_NOTIONAL_PER_WALLET_USD so the funnel can be
+# widened without a redeploy. Code default stays $1k; the server .env runs $500 to
+# get more cluster N now that the entry gates (liquidity floor + persistence delay)
+# cover the fast-dump downside — see the gate analysis 2026-06-26.
+# ⚠ LOCKED v0 threshold: lowering it EXPANDS the behavior space, so per the
+# kill-criteria lock rule (top of file) it RESETS the cluster kill-criteria window.
+CLUSTER_MIN_NOTIONAL_PER_WALLET_USD = float(
+    os.environ.get("COPY_CLUSTER_MIN_NOTIONAL_PER_WALLET_USD", "1000")
+)
 CLUSTER_TOKEN_MAX_AGE_HOURS = 24           # token age <24h OR vol jumped >5×
 CLUSTER_VOL_JUMP_THRESHOLD = 5.0           # last-hour vol vs prior 24h avg
 # Drop wallets with extreme trade counts from pool — they're MM bots, not
