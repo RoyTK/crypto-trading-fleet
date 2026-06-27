@@ -68,10 +68,15 @@ WINDOWS: dict[str, dict[str, datetime]] = {
     #   - modeled slippage collapsed to ~3bps, frictionless (fixed: floor)
     # Clock restarts on clean post-fix data. Trades that closed before this
     # date are excluded from kill_criteria (exit_at >= start).
+    # RE-BASELINED 2026-06-27: the cluster signal was materially redefined —
+    # entry gates (liquidity floor + 40s persistence delay) AND the per-wallet
+    # floor lowered $1k -> $500. Lowering a locked threshold EXPANDS the behavior
+    # space, so per the kill-criteria lock rule the window resets. Prior n~26
+    # measured the old (no-gates, $1k) strategy that no longer exists.
     "copy": {
-        "start":        datetime(2026, 6, 21, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 20, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 19, tzinfo=timezone.utc),
+        "start":        datetime(2026, 6, 27, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 26, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 25, tzinfo=timezone.utc),
     },
     # Conviction (single-wallet accumulation) sub-strategy — separate $10k paper
     # bankroll + isolated metrics. RE-BASELINED 2026-06-25 19:00 UTC: the first
@@ -80,10 +85,14 @@ WINDOWS: dict[str, dict[str, datetime]] = {
     # followed were booked at a fictitious -100% by the over-aggressive $1000 rug
     # floor (since fixed: $50 floor + liquidity-aware exit + entry liquidity
     # guard). Clock starts on clean post-fix data; exit_at >= start excludes them.
+    # RE-BASELINED 2026-06-27 (with cluster, "all of COPY"): the conviction signal
+    # was materially redefined by the entry persistence gate (75s delay + price-
+    # crater/whale-flip re-check). Prior n~12 measured the no-gate strategy; reset
+    # so the window validates the current single-wallet strategy.
     "copy_conviction": {
-        "start":        datetime(2026, 6, 25, 19, 0, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 24, 19, 0, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 23, 19, 0, tzinfo=timezone.utc),
+        "start":        datetime(2026, 6, 27, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 26, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 25, tzinfo=timezone.utc),
     },
 }
 
