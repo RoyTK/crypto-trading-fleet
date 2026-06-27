@@ -21,7 +21,10 @@ lost (total -$2,038); the 9 "elite" ones produced ZERO followable trades. Reason
 = ADVERSE SELECTION: a <1-minute flipper's profit lives in sub-$5k thin mints we
 must skip, and the only tokens we CAN follow them into ($5k+ liquidity) are ones
 that ALREADY pumped, so we buy the tail. CyaE1Vx = +$11.9M for itself, -$1,529 to
-us.
+us. Two discovery runs (2026-06-27, 310 wallets over 15 tokens) then confirmed the
+flip side: ~87% of "smart money" is un-followable (BAGHOLDER/UNFOLLOWABLE_THIN/SNIPER),
+but the few real accumulators exist — the prototype JD6rVaer banked $253k with 99% of
+its PnL in followable liquid tokens, 649 median buys/token, only 3% <1m flips.
 
 THE ARCHETYPE TO FIND
 ---------------------
@@ -38,64 +41,93 @@ This is closer to a "swing copy" trader than a memecoin sniper.
 
 DATA SOURCES (Birdeye, no login)
 --------------------------------
-For each candidate open: https://birdeye.so/solana/wallet-analyzer/<ADDRESS>
-Set the timeframe toggle (top right) to ALL. Read:
-  - WIN RATE (top left); Realized / Total / Unrealized PnL.
-  - PNL DISTRIBUTION (N TOKENS): N = trade-count denominator. Bands are MUTUALLY
-    EXCLUSIVE, so  pct_ge_100 = (>500% band %) + (>100% band %).
-  - ANALYTICS -> Avg Holding Duration; Txs (buys/sells ratio ~ accumulation).
-  - SUSPICIOUS ACTIONS -> Instant Sell %  and  Scam/Rug tokens %.
-  - TOKENS TRADED table -> toggle "Hide Low Liq/Scam" and see how much of the
-    book / PnL survives (followability test); spot-check that the WINNING tokens
-    had real liquidity, not sub-$5k fresh mints.
-  - HOLD-TIME DISTRIBUTION: the analyzer calls an internal wallet holding-duration
-    XHR that returns per-trade durations in seconds (recent ~18-49 trade sample).
-    Capture it and bin into <1m / 1-5m / 5-15m / 15-60m / 1-6h / 6-24h / 1-7d /
-    >7d. >>> IMPORTANT: record the EXACT endpoint URL + query params in your
-    output so we can save it (it was noted but not yet documented). <<<
+PRIMARY = direct-fetch the internal `forge` endpoints (credentials:include). This
+vetted 310 wallets across two runs with ZERO errors and no UI scraping — use it:
+  - periodic (realized/unrealized PnL, the >500%/>100% distribution bands, rug%):
+      GET https://birdeye.so/forge/solana/wallet-pnl/periodic?wallet=<ADDR>&periodic=
+      NOTE: the distribution bands are TOKEN COUNTS, not %. Compute
+      pct_ge_100 = (gt_500 + 100_500) / sum(all bands). Bands are mutually exclusive.
+  - token-traded (per-token liquidity flag for followability, buy counts for
+    accumulation, first->last trade span for hold-shape):
+      GET https://birdeye.so/forge/solana/wallet-pnl/token-traded?wallet=<ADDR>&order_field=volume_usd&order_type=desc&offset=0&limit=100&hide=
+      From this derive: liqShare (% of tokens that are liquid/followable), liqPnl
+      (% of the wallet's PnL that comes from those followable tokens), medBuys
+      (median buys/token = accumulation depth), nTok (sample size), and hold_shape
+      (bin each token's last_trade-first_trade span into <1m/1-5m/5-15m/15-60m/
+      1-6h/6-24h/1-7d/>7d; "mid" = the 5m-24h mass).
+  - holding-duration (per-trade durations in seconds; finer hold view, recent
+    sample only): POST https://birdeye.so/forge/solana/wallet-pnl/holding-duration
+    (wallet in POST body; GET 404s). Optional — token-traded spans are enough.
+FALLBACK / spot-check = the UI page https://birdeye.so/solana/wallet-analyzer/<ADDRESS>
+(timeframe = ALL): WIN RATE, PNL DISTRIBUTION, ANALYTICS (Avg Hold, Txs), SUSPICIOUS
+ACTIONS, and the "Hide Low Liq/Scam" toggle on TOKENS TRADED.
+NOTE: `instant_sell` is NOT exposed by the forge endpoints (only the UI Suspicious-
+Actions panel) -> record it `n/a` and use the hold_shape <1m % as the flip proxy
+instead (it's the better signal anyway). The forge endpoints can change/rate-limit
+without notice — if a run starts failing, re-derive from the analyzer's network tab.
 
 VETTING CRITERIA  (judge on the FOLLOWABLE subset, not raw PnL)
 --------------------------------------------------------------
 KEEP_CONVICTION only if ALL of these hold:
-  [ ] Hold shape: NOT >~60% of trades under 1 minute, and NOT mostly >7 days.
-      Want real mass in the 5m-24h (some 1-7d ok) bands. (This is the #1 filter —
-      a <1m flipper is structurally un-followable for conviction.)
-  [ ] Followable liquidity: a large share of the book/PnL SURVIVES "Hide Low
-      Liq/Scam"; winning tokens have >= $5k liquidity (ideally >= $25k). Reject if
-      the whole book is sub-$5k fresh mints (CyaE1Vx pattern).
-  [ ] Banks it: Realized PnL positive and >> Unrealized (not a bagholder).
-  [ ] Rides to multiples: pct_ge_100 is meaningful on the followable subset.
-  [ ] Accumulation behavior: builds positions over multiple buys per token (not a
-      single buy then dump). Buys/Sells ratio and per-token Txs help judge this.
+  [ ] Hold shape: NOT >~60% of trades under 1 minute, and NOT MAJORITY (>~60%) >7d.
+      Want real "mid" mass (5m-24h). Significant >7d is OK if mid mass is also
+      strong + it banks (the JD6rVaer prototype was 47% >7d / 50% mid and is great).
+      (Hold shape is the #1 filter — a <1m flipper is structurally un-followable.)
+  [ ] Followable PnL (the gate): liqPnl >= ~50% — i.e. at least half the wallet's
+      PROFIT comes from liquid/followable tokens. Use liqPnl, NOT liqShare: a wallet
+      can hold few liquid tokens (low liqShare) yet make most of its money there
+      (high liqPnl) and still be followable (e.g. 777cr9fb liqShare 19% / liqPnl 53%).
+      Reject if the book's profit is all sub-$5k fresh mints (CyaE1Vx pattern).
+  [ ] BANKED realized track record: realized PnL positive AND >= ~$5-10k (real money
+      taken off, not just shape). A wallet with great shape but only ~$100-300 realized
+      has NO proven track record -> LOW_SAMPLE, not KEEP. (RUN 1-2 over-tagged thin-
+      realized wallets as KEEP; this floor fixes that.)
+  [ ] Sample: nTok >= ~10-15. nTok < 6 = LOW_SAMPLE (e.g. a 100% pct_ge_100 on 2
+      tokens is meaningless), do NOT tag KEEP.
+  [ ] Rides to multiples: pct_ge_100 meaningful (>~8%) on the followable subset.
+  [ ] Accumulation: medBuys >= ~3 (builds over multiple buys, matches our trigger).
+      medBuys = 1 (one-shot) is a SNIPER, not an accumulator, even if PnL is huge.
 REJECT (note which trip):
-  - >1m-flipper (most trades <1 minute)            -> TOO_FAST_FOR_CONVICTION
-  - book is all sub-$5k thin mints                 -> UNFOLLOWABLE_THIN
-  - large unrealized bag / negative realized       -> BAGHOLDER
-  - mostly >7-day holds                            -> TOO_SLOW (swing parking lot)
-  - high rug% AND high instant-sell                -> SNIPER (route to cluster, not conviction)
+  - >1m-flipper (>~60% trades <1 minute)           -> TOO_FAST_FOR_CONVICTION
+  - liqPnl low / book's profit is sub-$5k mints     -> UNFOLLOWABLE_THIN
+  - large unrealized bag / negative realized        -> BAGHOLDER
+  - MAJORITY (>~60%) >7-day holds                    -> TOO_SLOW (swing parking lot)
+  - medBuys=1 one-shot, or high rug% + mostly <1m    -> SNIPER (route to cluster)
+  - passes shape/liq but realized < ~$5k OR nTok<~10 -> LOW_SAMPLE (revisit later;
+                                                        promising but unproven)
 (NOTE: a wallet can be a great CLUSTER wallet and a bad CONVICTION wallet. If it's
 a clean fast sniper, mark it KEEP for cluster in the normal vetted ledger, not here.)
 
 WHERE TO LOOK (discovery routes)
 --------------------------------
-1. Pick 5-10 Solana tokens that had a SUSTAINED run (hours/days, real liquidity,
-   NOT an instant rug). On each token's Birdeye page, find EARLY buyers who
-   accumulated and HELD into the run, then exited profitably. Those wallets are
-   candidates.
+1. Pick 8-10 Solana tokens that had a SUSTAINED run (hours/days, real liquidity,
+   NOT an instant rug). Use MANY DIFFERENT tokens across DIFFERENT days, and don't
+   reuse prior runs' tokens. On each token's Birdeye page, find EARLY buyers who
+   accumulated and HELD into the run, then exited profitably. Those are candidates.
 2. Birdeye Tracker / Gainers, but bias toward wallets with longer avg hold and
    liquid-token books (not the top fresh-mint snipers).
-3. For any candidate, run the full Wallet-Analyzer vetting above before keeping.
+3. For any candidate, run the full vetting above before keeping.
+
+SURVIVORSHIP CAVEAT (important): picking "top traders of a token that already ran"
+selects wallets that happened to be in THAT winner — it does not prove forward skill.
+Mitigate by (a) requiring a BANKED realized track record across MANY tokens (the
+nTok + realized floors above), not just a big unrealized bag from the discovered run,
+and (b) spreading across many tokens so no single run dominates the KEEP list. Forward
+edge is only proven once these wallets produce followable profit on tokens they were
+NOT discovered on — that is what COPY's paper trading will measure, not this vetting.
 
 OUTPUT
 ------
 Write results to a NEW file (do not mix with the cluster vetted ledger):
   C:\Users\Roy\OneDrive\Documents\Claude\conviction_candidates.txt
-One row per wallet (append-only), columns:
-  address,verdict,realized_pnl,unrealized_pnl,avg_hold,pct_ge_100,instant_sell,
-  scam_rug,followable_note,hold_shape,reason,date_vetted
-verdict in {KEEP_CONVICTION, TOO_FAST_FOR_CONVICTION, UNFOLLOWABLE_THIN,
-BAGHOLDER, TOO_SLOW, SNIPER}. Put the exact holding-duration endpoint URL at the
-top of the file as a comment line the first time you record it.
+One row per wallet (append-only), columns (make the gate metrics their OWN columns
+so they're machine-parseable, don't bury them only in a note):
+  address,verdict,realized_pnl,unrealized_pnl,pct_ge_100,liq_pnl,med_buys,n_tok,
+  mid_mass,sub1m,gt7d,scam_rug,instant_sell,hold_shape,reason,date_vetted
+verdict in {KEEP_CONVICTION, LOW_SAMPLE, TOO_FAST_FOR_CONVICTION, UNFOLLOWABLE_THIN,
+BAGHOLDER, TOO_SLOW, SNIPER}. instant_sell is n/a via the forge endpoints. Put the
+exact endpoint URLs (periodic / token-traded / holding-duration) in a comment block
+at the top of the file on the first run.
 
 Roster changes are applied by hand afterward via
 `python -m scripts.set_conviction_wallets --add <ADDR> --reason "..."`
