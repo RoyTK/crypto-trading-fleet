@@ -134,8 +134,11 @@ def evaluate_exit_actions(
     new_peak_pct = max(base_peak, equity_pct)
 
     # 1. Static stop — TERMINAL. Skip the partial check entirely; we
-    # don't sell pieces of a loser.
-    if stop_pct is not None and equity_pct <= -float(stop_pct):
+    # don't sell pieces of a loser. stop_pct <= 0 DISABLES the hard stop
+    # (2026-06-27: conviction runs with no hard stop — relies on trailing +
+    # follow-the-whale-out + rug backstop; the fast stop whipsawed it out of
+    # whale-accumulation dips that recovered).
+    if stop_pct is not None and stop_pct > 0 and equity_pct <= -float(stop_pct):
         return (new_peak_pct, [], "stop")
 
     # 2. Detect partial tiers that should fire this cycle. Identity is

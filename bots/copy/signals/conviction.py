@@ -77,6 +77,9 @@ class ConvictionDetector:
             sell_holdoff_usd if sell_holdoff_usd is not None
             else s.copy_conviction_sell_holdoff_usd
         )
+        # Conviction hard-stop pct (2026-06-27): 0 = no hard stop (rely on
+        # trailing + follow-wallet-out + rug backstop). Stamped on each candidate.
+        self._stop_pct = float(s.copy_conviction_stop_pct)
         # key -> deque[(ts_ms, notional_usd)]
         self._buys: dict[_Key, deque] = {}
         self._sells: dict[_Key, deque] = {}
@@ -146,7 +149,7 @@ class ConvictionDetector:
                 chain=chain,
                 direction="long",
                 cluster_size=1,
-                stop_pct=EXIT_STOP_PCT,
+                stop_pct=self._stop_pct,
                 take_profit_pct=EXIT_TAKE_PROFIT_PCT,
                 timeout_hours=EXIT_TIMEOUT_HOURS,
                 payload={

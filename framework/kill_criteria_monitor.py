@@ -89,10 +89,14 @@ WINDOWS: dict[str, dict[str, datetime]] = {
     # was materially redefined by the entry persistence gate (75s delay + price-
     # crater/whale-flip re-check). Prior n~12 measured the no-gate strategy; reset
     # so the window validates the current single-wallet strategy.
+    # RE-BASELINED AGAIN 2026-06-27 19:00 UTC: removed the conviction hard
+    # price-stop (copy_conviction_stop_pct=0) — it produced 0 winners and all the
+    # whipsaw. Exit change resets the window again so it measures the no-hard-stop
+    # strategy; the ~3 trades since 00:00 were on the old (stopped) exit.
     "copy_conviction": {
-        "start":        datetime(2026, 6, 27, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 26, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 25, tzinfo=timezone.utc),
+        "start":        datetime(2026, 6, 27, 19, 0, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 26, 19, 0, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 25, 19, 0, tzinfo=timezone.utc),
     },
 }
 

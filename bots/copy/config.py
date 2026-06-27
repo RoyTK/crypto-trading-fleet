@@ -350,6 +350,13 @@ class CopySettings(BaseSettings):
     # repeatedly, losing each whipsaw (EzbeF2bA round-tripped ACRE 3x for -$165).
     # 0 disables.
     copy_conviction_reentry_cooldown_minutes: int = Field(default=60)
+    # Conviction hard price-stop (2026-06-27). 0 = NO hard stop (current): the
+    # fast price-stop produced 0 winners across conviction's first ~20 trades and
+    # caused all the whipsaw — it stopped out of whale-accumulation dips that then
+    # recovered. Conviction now relies on trailing-stop + follow-the-trigger-wallet
+    # -out + the rug/liquidity backstop instead. Set > 0 (e.g. 25) to re-instate a
+    # hard stop. (Cluster keeps its own EXIT_STOP_PCT — unchanged.)
+    copy_conviction_stop_pct: float = Field(default=0.0)
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)
