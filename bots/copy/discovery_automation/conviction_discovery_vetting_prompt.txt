@@ -1,0 +1,102 @@
+CONVICTION WHALE DISCOVERY + VETTING PROMPT  (browser-Opus, attended, no login)
+================================================================================
+Last updated 2026-06-27. This is a DIFFERENT job from the cluster-elite vetting
+prompt (browser_discovery_vetting_prompt.txt). Do NOT reuse the sniper criteria.
+
+WHY THIS IS DIFFERENT
+---------------------
+COPY runs two strategies off the same wallet pool:
+- CLUSTER borrows only the co-buy ENTRY of 3 wallets and exits on its own 15-min
+  ladder. It never follows the wallets out. So fast fresh-mint snipers are GREAT
+  cluster signals.
+- CONVICTION follows a SINGLE wallet's whole accumulate -> hold -> exit lifecycle:
+  it triggers when one wallet cumulatively buys >= ~$200 of a token in ~60 min,
+  waits ~75 seconds (persistence gate), enters a ~$400 paper position, and EXITS
+  partly by following the wallet OUT (plus a trailing stop + rug backstop; there
+  is NO hard stop). So conviction must RIDE ALONGSIDE the wallet.
+
+We proved (2026-06-27) that fresh-mint snipers have NEGATIVE edge for conviction:
+of 13 sniper-profile wallets, only 4 ever produced a followable entry and ALL 4
+lost (total -$2,038); the 9 "elite" ones produced ZERO followable trades. Reason
+= ADVERSE SELECTION: a <1-minute flipper's profit lives in sub-$5k thin mints we
+must skip, and the only tokens we CAN follow them into ($5k+ liquidity) are ones
+that ALREADY pumped, so we buy the tail. CyaE1Vx = +$11.9M for itself, -$1,529 to
+us.
+
+THE ARCHETYPE TO FIND
+---------------------
+A DELIBERATE ACCUMULATOR / disciplined swing smart-money wallet that:
+  1. ACCUMULATES a position over multiple buys (not a one-shot snipe),
+  2. in tokens with REAL liquidity we can enter at a fair price (not fresh sub-$5k
+     mints that are already running by the time they cross $5k),
+  3. HOLDS long enough for us to ride the move (minutes-to-hours-to-days, NOT
+     <1 minute, and NOT a multi-week bagholder),
+  4. EXITS with discipline into strength (banks realized PnL; small unrealized
+     bag), and
+  5. actually rides winners to MULTIPLES (decent share of >=100% trades).
+This is closer to a "swing copy" trader than a memecoin sniper.
+
+DATA SOURCES (Birdeye, no login)
+--------------------------------
+For each candidate open: https://birdeye.so/solana/wallet-analyzer/<ADDRESS>
+Set the timeframe toggle (top right) to ALL. Read:
+  - WIN RATE (top left); Realized / Total / Unrealized PnL.
+  - PNL DISTRIBUTION (N TOKENS): N = trade-count denominator. Bands are MUTUALLY
+    EXCLUSIVE, so  pct_ge_100 = (>500% band %) + (>100% band %).
+  - ANALYTICS -> Avg Holding Duration; Txs (buys/sells ratio ~ accumulation).
+  - SUSPICIOUS ACTIONS -> Instant Sell %  and  Scam/Rug tokens %.
+  - TOKENS TRADED table -> toggle "Hide Low Liq/Scam" and see how much of the
+    book / PnL survives (followability test); spot-check that the WINNING tokens
+    had real liquidity, not sub-$5k fresh mints.
+  - HOLD-TIME DISTRIBUTION: the analyzer calls an internal wallet holding-duration
+    XHR that returns per-trade durations in seconds (recent ~18-49 trade sample).
+    Capture it and bin into <1m / 1-5m / 5-15m / 15-60m / 1-6h / 6-24h / 1-7d /
+    >7d. >>> IMPORTANT: record the EXACT endpoint URL + query params in your
+    output so we can save it (it was noted but not yet documented). <<<
+
+VETTING CRITERIA  (judge on the FOLLOWABLE subset, not raw PnL)
+--------------------------------------------------------------
+KEEP_CONVICTION only if ALL of these hold:
+  [ ] Hold shape: NOT >~60% of trades under 1 minute, and NOT mostly >7 days.
+      Want real mass in the 5m-24h (some 1-7d ok) bands. (This is the #1 filter —
+      a <1m flipper is structurally un-followable for conviction.)
+  [ ] Followable liquidity: a large share of the book/PnL SURVIVES "Hide Low
+      Liq/Scam"; winning tokens have >= $5k liquidity (ideally >= $25k). Reject if
+      the whole book is sub-$5k fresh mints (CyaE1Vx pattern).
+  [ ] Banks it: Realized PnL positive and >> Unrealized (not a bagholder).
+  [ ] Rides to multiples: pct_ge_100 is meaningful on the followable subset.
+  [ ] Accumulation behavior: builds positions over multiple buys per token (not a
+      single buy then dump). Buys/Sells ratio and per-token Txs help judge this.
+REJECT (note which trip):
+  - >1m-flipper (most trades <1 minute)            -> TOO_FAST_FOR_CONVICTION
+  - book is all sub-$5k thin mints                 -> UNFOLLOWABLE_THIN
+  - large unrealized bag / negative realized       -> BAGHOLDER
+  - mostly >7-day holds                            -> TOO_SLOW (swing parking lot)
+  - high rug% AND high instant-sell                -> SNIPER (route to cluster, not conviction)
+(NOTE: a wallet can be a great CLUSTER wallet and a bad CONVICTION wallet. If it's
+a clean fast sniper, mark it KEEP for cluster in the normal vetted ledger, not here.)
+
+WHERE TO LOOK (discovery routes)
+--------------------------------
+1. Pick 5-10 Solana tokens that had a SUSTAINED run (hours/days, real liquidity,
+   NOT an instant rug). On each token's Birdeye page, find EARLY buyers who
+   accumulated and HELD into the run, then exited profitably. Those wallets are
+   candidates.
+2. Birdeye Tracker / Gainers, but bias toward wallets with longer avg hold and
+   liquid-token books (not the top fresh-mint snipers).
+3. For any candidate, run the full Wallet-Analyzer vetting above before keeping.
+
+OUTPUT
+------
+Write results to a NEW file (do not mix with the cluster vetted ledger):
+  C:\Users\Roy\OneDrive\Documents\Claude\conviction_candidates.txt
+One row per wallet (append-only), columns:
+  address,verdict,realized_pnl,unrealized_pnl,avg_hold,pct_ge_100,instant_sell,
+  scam_rug,followable_note,hold_shape,reason,date_vetted
+verdict in {KEEP_CONVICTION, TOO_FAST_FOR_CONVICTION, UNFOLLOWABLE_THIN,
+BAGHOLDER, TOO_SLOW, SNIPER}. Put the exact holding-duration endpoint URL at the
+top of the file as a comment line the first time you record it.
+
+Roster changes are applied by hand afterward via
+`python -m scripts.set_conviction_wallets --add <ADDR> --reason "..."`
+then `docker compose restart bot_copy` (roster reloads only at startup).
