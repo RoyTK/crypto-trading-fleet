@@ -608,10 +608,50 @@
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.45}, {"color": "green", "value": 1.0}]}}}
     },
     {
+      "id": 83,
+      "type": "table",
+      "title": "Conviction roster — all 13 whales (live activity / what they're up to)",
+      "description": "Every wallet_pool.conviction=true wallet. events_30d / events_total = Helius webhook deliveries (buys+sells we subscribe to) since tracking started — a proxy for how active each whale is on-chain right now. last_event_at = most recent action we saw (UTC). Only ACTIVE-tier wallets actually fire conviction entries. NOTE: this panel is live on-chain ACTIVITY, not the curation track record — realized PnL / % of trades >100% comes from the browser-Opus vetted_watch_results ledger, not the DB.",
+      "gridPos": {"x": 0, "y": 91, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT address, tier, source, events_30d, events_total, last_event_at, conviction_at, conviction_reason FROM wallet_pool WHERE conviction = true ORDER BY last_event_at DESC NULLS LAST",
+          "format": "table"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "fieldConfig": {
+        "defaults": {"custom": {"align": "auto", "displayMode": "auto"}, "color": {"mode": "thresholds"}},
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "tier"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "mappings", "value": [
+                {"type": "value", "options": {
+                  "active": {"color": "green", "index": 0},
+                  "watch": {"color": "yellow", "index": 1},
+                  "pruned": {"color": "red", "index": 2}
+                }}
+              ]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "events_30d"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "yellow", "value": 1}, {"color": "green", "value": 50}]}}
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": 77,
       "type": "timeseries",
       "title": "Conviction cumulative paper PnL (USD)",
-      "gridPos": {"x": 0, "y": 91, "w": 12, "h": 8},
+      "gridPos": {"x": 0, "y": 99, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -626,7 +666,7 @@
       "type": "table",
       "title": "Conviction per-trigger-wallet PnL",
       "description": "Closed conviction paper trades grouped by the wallet whose buy triggered them. This is where you watch whether each elite wallet (e.g. CyaE1Vx) is actually followable — own PnL ≠ COPY-followable PnL. 'status' = the wallet's current pool tier (active/watch/pruned) or 'removed' if no longer in the pool; 'in_roster'=yes means it's still a live conviction trigger (no = it was dropped from the roster but historical trades remain).",
-      "gridPos": {"x": 12, "y": 91, "w": 12, "h": 8},
+      "gridPos": {"x": 12, "y": 99, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -670,7 +710,7 @@
       "id": 79,
       "type": "table",
       "title": "Open conviction positions",
-      "gridPos": {"x": 0, "y": 99, "w": 24, "h": 6},
+      "gridPos": {"x": 0, "y": 107, "w": 24, "h": 6},
       "targets": [
         {
           "refId": "A",
@@ -685,7 +725,7 @@
       "type": "stat",
       "title": "Conviction kill triggers",
       "description": "Empty = no criteria fired for the conviction strategy this window.",
-      "gridPos": {"x": 0, "y": 105, "w": 24, "h": 3},
+      "gridPos": {"x": 0, "y": 113, "w": 24, "h": 3},
       "targets": [{"refId": "A", "rawSql": "SELECT COALESCE(kill_criteria_status->>'kill_triggers', '[]') FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "options": {"textMode": "value", "graphMode": "none"}
@@ -695,7 +735,7 @@
       "type": "table",
       "title": "Conviction trades — accumulation detail (how each trigger was reached)",
       "description": "Per conviction trade: n_buys = how many of the wallet's buys summed to the threshold; accum_usd = the committed total at fire; avg_buy_usd = accum_usd / n_buys; accum_min = minutes from first to last accumulating buy (0 = single-buy/sniper fire); win_sells = the wallet's sells seen in the window (held off if above the sell-holdoff). Only populated for trades opened after the 2026-06-25 accumulation-trigger ship.",
-      "gridPos": {"x": 0, "y": 108, "w": 24, "h": 11},
+      "gridPos": {"x": 0, "y": 116, "w": 24, "h": 11},
       "targets": [
         {
           "refId": "A",
@@ -725,14 +765,14 @@
       "type": "row",
       "title": "Recent closed positions — full detail (last 10, both strategies)",
       "collapsed": false,
-      "gridPos": {"x": 0, "y": 119, "w": 24, "h": 1}
+      "gridPos": {"x": 0, "y": 127, "w": 24, "h": 1}
     },
     {
       "id": 91,
       "type": "table",
       "title": "Last 10 tokens held — buy/sell prices + times, trigger wallets, why sold",
       "description": "Most recent closed COPY paper trades (cluster + conviction). buy_trigger_wallets = the cluster cohort (or the single conviction wallet). exit_reason = why we sold (stop / take_profit / timeout / tier_complete / sell_cluster / trigger_wallet_exit / rug_no_liquidity). sell_trigger_wallets is populated only for signal-driven exits (sell-cluster cohort or the conviction trigger wallet) — blank for stop/TP/timeout/ladder exits. Note: sell_trigger_wallets only fills for trades closed AFTER 2026-06-25 (when exit-wallet stamping shipped).",
-      "gridPos": {"x": 0, "y": 120, "w": 24, "h": 11},
+      "gridPos": {"x": 0, "y": 128, "w": 24, "h": 11},
       "targets": [
         {
           "refId": "A",
