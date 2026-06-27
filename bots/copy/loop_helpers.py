@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import select, text
@@ -679,6 +679,33 @@ def has_open_position(asset: str, venue: str, strategy: Optional[str] = None) ->
         clause = _strategy_clause(strategy)
         if clause is not None:
             q = q.where(clause)
+        return s.execute(q).first() is not None
+
+
+def has_recent_conviction_trade(asset: str, venue: str, within_minutes: float) -> bool:
+    """Re-entry cooldown for conviction: true if a conviction paper trade in this
+    token was ENTERED within the last `within_minutes` (open OR closed).
+
+    has_open_position only blocks a simultaneously-open position, so once a
+    conviction trade closes the same whale's continued accumulation re-fires and
+    re-buys the same token — a buy/lose/re-buy churn (2026-06-27: EzbeF2bA round-
+    tripped ACRE 3x for -$165). This suppresses re-entry into a token conviction
+    recently traded, regardless of which trigger wallet fires. <=0 disables."""
+    if within_minutes <= 0:
+        return False
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=within_minutes)
+    with session_scope() as s:
+        q = (
+            select(Trade)
+            .where(
+                Trade.bot_id == BOT_ID,
+                Trade.mode == "paper",
+                Trade.asset == asset,
+                Trade.venue == venue,
+                Trade.entry_at >= cutoff,
+            )
+            .where(_strategy_clause("conviction"))
+        )
         return s.execute(q).first() is not None
 
 

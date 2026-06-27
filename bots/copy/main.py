@@ -37,6 +37,7 @@ from bots.copy.loop_helpers import (
     close_paper_trade,
     execute_paper_partial_close,
     has_open_position,
+    has_recent_conviction_trade,
     list_open_paper_trades,
     list_open_real_trades,
     open_allocation_pct,
@@ -847,11 +848,21 @@ class CopyBot(BotLifecycle):
         entering immediately. Captures the trigger-time price so _process_pending
         can later tell whether the token cratered during the wait. delay <= 0
         bypasses the gate (immediate entry — the old behavior)."""
+        wallet = (candidate.payload or {}).get("trigger_wallet")
+        # Re-entry cooldown (2026-06-27): don't re-buy a token conviction recently
+        # traded. The whale keeps accumulating it → the detector re-fires → COPY
+        # re-bought and whipsaw-lost repeatedly (EzbeF2bA round-tripped ACRE 3x for
+        # -$165). Checked here so it covers BOTH the gated and immediate-entry paths.
+        cooldown = self.copy_settings.copy_conviction_reentry_cooldown_minutes
+        if cooldown and cooldown > 0 and has_recent_conviction_trade(
+                candidate.asset, candidate.venue, cooldown):
+            self.log.info("conviction_reentry_cooldown_skip", asset=candidate.asset,
+                          trigger_wallet=wallet, cooldown_min=cooldown)
+            return
         delay = self.copy_settings.copy_conviction_entry_delay_seconds
         if not delay or delay <= 0:
             await self._consume_conviction_candidate(candidate)
             return
-        wallet = (candidate.payload or {}).get("trigger_wallet")
         key = (candidate.chain, candidate.asset, wallet)
         if key in self._pending_conviction:
             return  # already waiting on this (chain, token, wallet)

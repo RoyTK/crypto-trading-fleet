@@ -343,6 +343,13 @@ class CopySettings(BaseSettings):
     # the trigger wallet net-sold the token during the wait) reuses
     # copy_conviction_sell_holdoff_usd as its tolerance.
     copy_conviction_confirm_max_adverse_pct: float = Field(default=25.0)
+    # Re-entry cooldown (2026-06-27). After a conviction trade in a token, don't
+    # re-enter that token for this many minutes (open OR closed, any trigger
+    # wallet). has_open_position only blocks a simultaneously-open position, so a
+    # whale that keeps accumulating a token re-fired and COPY re-bought it
+    # repeatedly, losing each whipsaw (EzbeF2bA round-tripped ACRE 3x for -$165).
+    # 0 disables.
+    copy_conviction_reentry_cooldown_minutes: int = Field(default=60)
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)
