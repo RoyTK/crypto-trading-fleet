@@ -182,7 +182,10 @@ def _strategy_clause(strategy: Optional[str]):
     if strategy == "conviction":
         return text("(sim_metadata->>'strategy') = 'conviction'")
     if strategy == "cluster":
-        return text("(sim_metadata->>'strategy') IS DISTINCT FROM 'conviction'")
+        # Family prefix exclude (not exact) so a reset/re-tag like
+        # 'conviction_pre_reset' stays out of the cluster bucket. NULL/absent and
+        # 'cluster' are kept (legacy untagged rows count as cluster).
+        return text("coalesce(sim_metadata->>'strategy','') NOT LIKE 'conviction%'")
     return None
 
 

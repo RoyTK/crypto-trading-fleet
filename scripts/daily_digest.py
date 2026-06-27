@@ -61,7 +61,7 @@ def _build() -> str:
             FROM trades
             WHERE bot_id='copy' AND mode='paper' AND fill_status='closed'
               AND exit_at >= NOW() - INTERVAL '24 hours'
-              AND (sim_metadata->>'strategy') IS DISTINCT FROM 'conviction'
+              AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'conviction%'
         """)).first()
         n24 = int(row.n or 0)
         wins24 = int(row.wins or 0)
@@ -74,7 +74,7 @@ def _build() -> str:
                    COALESCE(ROUND(SUM(COALESCE((sim_metadata->>'remaining_size_usd')::numeric, size_usd))::numeric, 0), 0) AS alloc
             FROM trades
             WHERE bot_id='copy' AND mode='paper' AND fill_status='open'
-              AND (sim_metadata->>'strategy') IS DISTINCT FROM 'conviction'
+              AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'conviction%'
         """)).first()
         open_n = int(orow.n or 0)
         alloc = float(orow.alloc or 0.0)

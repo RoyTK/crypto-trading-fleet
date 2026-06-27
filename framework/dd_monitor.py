@@ -56,9 +56,16 @@ def _trailing_paper_pnl_usd(
         if strategy is not None:
             q = q.where(text("(sim_metadata->>'strategy') = :strat").bindparams(strat=strategy))
         if exclude_strategy is not None:
+            # Exclude the whole strategy FAMILY (prefix match), not just the
+            # exact tag. 2026-06-27: a conviction clean-slate reset re-tagged
+            # 'conviction' → 'conviction_pre_reset'; the old exact-match exclude
+            # no longer caught those rows, so $2,038 of retired conviction losses
+            # leaked into the CLUSTER drawdown and false-halted cluster (dd_weekly
+            # −29.53% vs a true cluster −9.15%). Prefix-matching the family makes
+            # any future reset/re-tag (`<strategy>_<suffix>`) safe.
             q = q.where(text(
-                "(sim_metadata->>'strategy') IS DISTINCT FROM :xstrat"
-            ).bindparams(xstrat=exclude_strategy))
+                "coalesce(sim_metadata->>'strategy','') NOT LIKE :xstrat_pat"
+            ).bindparams(xstrat_pat=exclude_strategy + "%"))
         return float(s.execute(q).scalar() or 0.0)
 
 

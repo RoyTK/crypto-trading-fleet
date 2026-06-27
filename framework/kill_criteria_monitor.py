@@ -437,7 +437,12 @@ def _compute_copy_status() -> dict[str, Any]:
               AND fill_status='closed' AND exit_at >= :ws
               AND pnl_usd IS NOT NULL
               AND sim_metadata->>'wallet_tier' = :tier
-              AND (sim_metadata->>'strategy') IS DISTINCT FROM 'conviction'
+              -- Family prefix exclude (not exact) so a reset/re-tag like
+              -- 'conviction_pre_reset' can't leak in. Belt-and-suspenders here:
+              -- the wallet_tier='active' filter above already excludes conviction
+              -- rows (they carry wallet_tier='conviction'); see dd_monitor for
+              -- where the exact-match version actually false-halted cluster.
+              AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'conviction%'
             """
         ), {"ws": window_start, "tier": tier}).all()
         pnls = [float(r.pnl_usd) for r in rows]
