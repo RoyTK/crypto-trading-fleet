@@ -106,12 +106,13 @@
     {
       "id": 11,
       "type": "timeseries",
-      "title": "Cumulative paper PnL (USD)",
+      "title": "Cluster cumulative paper PnL — CURRENT mechanism (since window start)",
+      "description": "MAIN cluster PnL view: CLUSTER strategy only (excludes the whole conviction family), cumulative over the CURRENT kill-criteria window only (reads bot_state copy window start, resets when the strategy mechanism changes). This is the figure that reflects today's strategy — the all-time line is a separate 'historical (reference)' panel at the bottom. Conviction has its own panel.",
       "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND exit_at >= '2026-06-07' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND exit_at >= COALESCE((SELECT (kill_criteria_status->'window'->>'start')::timestamptz FROM bot_state WHERE bot_id='copy'), '2026-06-27'::timestamptz) ORDER BY exit_at",
           "format": "time_series"
         }
       ],
@@ -794,6 +795,21 @@
           {"matcher": {"id": "byName", "options": "pnl_pct"}, "properties": [{"id": "unit", "value": "percent"}]}
         ]
       }
+    },
+    {
+      "id": 95,
+      "type": "timeseries",
+      "title": "Cluster cumulative paper PnL — historical (all-time since 06-07, REFERENCE)",
+      "description": "REFERENCE ONLY — cluster cumulative since 2026-06-07, spanning MULTIPLE strategy mechanisms (06-21 tier remediation, 06-25 fast-dump fixes, 06-26 rule change, 06-27 $500 threshold + new entry gates). Because it mixes dead regimes it is NOT a measure of current edge — use the 'CURRENT mechanism' main panel at the top for that. Cluster only (excludes the conviction family).",
+      "gridPos": {"x": 0, "y": 140, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND exit_at >= '2026-06-07' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY exit_at",
+          "format": "time_series"
+        }
+      ],
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     }
   ]
 }
