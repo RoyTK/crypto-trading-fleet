@@ -131,6 +131,17 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
 - NOT brand new (>= ~1 week old; 1+ month preferred). NOT a pure market-maker/HFT
   bot (millions of txns, ~0 hold, constant both-sides trading, thin per-trade PnL).
 - Classified as Smart Money by Birdeye.
+★ CLUSTER CO-SIGNER EXCEPTION (relax the individual bar for proven group members):
+a wallet found via the co-trader walk (route 1) that RECURS as a co-buyer with our
+anchors across MULTIPLE SUCCESSFUL clusters is valuable for its CLUSTER PARTICIPATION
+— it reliably helps form the 3-wallet trigger — even if its OWN realized PnL / multi-x
+record is only modest/borderline (not yet fully meeting the criteria above). KEEP it
+and note "cluster co-signer w/ <anchor> x<N tokens>". The point: cluster needs co-buyers,
+and a dependable group member that isn't individually elite is still worth more than a
+lone elite wallet that never co-buys. HARD limits still apply — do NOT keep it if it's a
+net BAG-HOLDER, a rug/dump farmer, or a sub-~15min flipper (those BREAK a cluster — COPY
+buys what they dump — they don't help it). So: relax the PnL/multi-x bar for recurring
+co-signers, NEVER the followability/bag-holder/too-fast bars.
 High Scam/Rug % is a FEATURE here, not a reason to reject — as long as the
 realized/unrealized/hold criteria hold.
   KEEP example: Realized +$1.16M / Unrealized -$428K / 6d hold / 162 multi-x / 99% rug

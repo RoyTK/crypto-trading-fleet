@@ -48,6 +48,23 @@ if ((Run 'pull' { git pull --ff-only origin main }) -ne 0) {
 $rc = Run 'reconcile' { python scripts/reconcile_vetted_results.py --apply }
 if ($rc -ne 0) { Log "reconcile exited $rc -> aborting (no commit)"; exit $rc }
 
+# 2.5 Refresh the cluster co-trader-walk anchors on OneDrive (best-effort: a
+#     failure here must NEVER block the vetted reconcile/push). Pulls COPY's
+#     active+profitable cluster wallets from the server DB and writes the anchor
+#     file browser-Opus reads for discovery route 1.
+try {
+  $anchorDir  = Join-Path $env:USERPROFILE 'OneDrive\Documents\Claude'
+  $anchorFile = Join-Path $anchorDir 'cluster_anchor_wallets.txt'
+  $anchors = & ssh claude-fleet "cd ~/crypto-fleet && docker compose exec -T framework python -m scripts.export_cluster_anchors" 2>&1 | Out-String
+  if ($LASTEXITCODE -eq 0 -and ($anchors -match 'cluster_anchor_wallets') -and (Test-Path $anchorDir)) {
+    [System.IO.File]::WriteAllText($anchorFile, $anchors.Trim() + "`n", (New-Object System.Text.UTF8Encoding($false)))
+    $n = ($anchors.Trim().Split("`n") | Where-Object { $_ -notmatch '^\s*#' -and $_.Trim() }).Count
+    Log "refreshed cluster anchors ($n wallets) -> $anchorFile"
+  } else {
+    Log "anchor export skipped (rc=$LASTEXITCODE, dir exists=$(Test-Path $anchorDir)) -> kept previous anchor file"
+  }
+} catch { Log ("anchor refresh exception (non-fatal): " + $_.Exception.Message) }
+
 # 3. Commit + push only if the tracked vetted file actually changed.
 $changed = (& git status --porcelain -- $vetted | Out-String).Trim()
 if (-not $changed) { Log "no change to $vetted -> nothing to commit"; Log "=== done ==="; exit 0 }
