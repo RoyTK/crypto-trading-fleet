@@ -69,10 +69,13 @@ without notice — if a run starts failing, re-derive from the analyzer's networ
 VETTING CRITERIA  (judge on the FOLLOWABLE subset, not raw PnL)
 --------------------------------------------------------------
 KEEP_CONVICTION only if ALL of these hold:
-  [ ] Hold shape: NOT >~60% of trades under 1 minute, and NOT MAJORITY (>~60%) >7d.
-      Want real "mid" mass (5m-24h). Significant >7d is OK if mid mass is also
-      strong + it banks (the JD6rVaer prototype was 47% >7d / 50% mid and is great).
-      (Hold shape is the #1 filter — a <1m flipper is structurally un-followable.)
+  [ ] Hold shape: NOT >~60% <1m, NOT MAJORITY (>~60%) >7d, AND midMass (5m-24h) >= ~30%.
+      The midMass FLOOR closes the BIMODAL TRAP: a wallet that is e.g. 25% <1m + 51% >7d
+      with only ~8% mid passes BOTH extreme thresholds yet is UN-FOLLOWABLE by our
+      15-min-to-hours mechanism (RUN 5 'MUSHU' keeper CL1kvg2 — correctly NOT rostered).
+      Significant >7d is OK ONLY if midMass is also strong + it banks (JD6rVaer: 47% >7d /
+      50% mid). (Hold shape is the #1 filter — a <1m flipper OR a thin-mid bimodal is
+      structurally un-followable.)
   [ ] Followable PnL (the gate): liqPnl >= ~50% — i.e. at least half the wallet's
       PROFIT comes from liquid/followable tokens. Use liqPnl, NOT liqShare: a wallet
       can hold few liquid tokens (low liqShare) yet make most of its money there
@@ -91,6 +94,10 @@ REJECT (note which trip):
   - >1m-flipper (>~60% trades <1 minute)           -> TOO_FAST_FOR_CONVICTION
   - liqPnl low / book's profit is sub-$5k mints     -> UNFOLLOWABLE_THIN
   - large unrealized bag / negative realized        -> BAGHOLDER
+      (NUANCE: a large unrealized bag is OK IF realized clearly EXCEEDS it AND the hold
+      shape is followable/fast — e.g. RUN 5 'MANLET' keeper ApRnQN2: realized $950k vs
+      -$520k bag, gt7d only 3% = a current open position, NOT a chronic bagholder, KEEP.
+      A large bag COMBINED with slow/thin-mid shape = a FORMING bagholder -> reject.)
   - MAJORITY (>~60%) >7-day holds                    -> TOO_SLOW (swing parking lot)
   - medBuys=1 one-shot, or high rug% + mostly <1m    -> SNIPER (route to cluster)
   - passes shape/liq but realized < ~$5k OR nTok<~10 -> LOW_SAMPLE (revisit later;
