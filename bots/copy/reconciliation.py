@@ -27,15 +27,25 @@ EPS = 1e-9
 
 
 def _bot_open_positions() -> dict[tuple[str, str], float]:
-    """Sum open shadow + live Trades by (venue, asset). Paper excluded —
-    they have no on-chain counterpart and would always show 100% drift.
-    Build A returns {} (no shadow/live trades yet)."""
+    """Sum open LIVE Trades by (venue, asset). Paper excluded — no on-chain
+    counterpart. SHADOW also excluded (2026-06-28): shadow DOES hold real
+    tiny on-chain positions (real Jupiter swaps, tx_signature in sim_metadata),
+    BUT `_fetch_onchain_positions_solana()` is still a Build-A STUB returning {} —
+    so every open shadow position reads bot_size>0 vs venue_size=0 = 100% drift
+    and false-halts COPY (incident: halt 64 on DuBrjnHaC, shadow trade 930). With
+    an unimplemented fetcher the check can only false-halt, never detect real drift,
+    so reconciling shadow is all-cost/no-benefit. Stuck shadow trades are already
+    backstopped by stale_position_cleanup (force-close at 2x timeout).
+    TODO(reconciliation Build B): implement _fetch_onchain_positions_solana/_evm
+    (Helius getTokenAccountsByOwner -> USD; Rabby balanceOf) and re-add 'shadow'
+    here — REQUIRED before enabling live-full trading, which needs real drift
+    protection."""
     out: dict[tuple[str, str], float] = {}
     with session_scope() as s:
         q = select(Trade).where(
             Trade.bot_id == BOT_ID,
             Trade.fill_status == "open",
-            Trade.mode.in_(("shadow", "live")),
+            Trade.mode.in_(("live",)),
         )
         for trade in s.execute(q).scalars():
             if trade.size_usd is None:
