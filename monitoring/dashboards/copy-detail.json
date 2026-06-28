@@ -106,13 +106,12 @@
     {
       "id": 11,
       "type": "timeseries",
-      "title": "Cluster cumulative paper PnL — CURRENT mechanism (since window start)",
-      "description": "MAIN cluster PnL view: CLUSTER strategy only (excludes the whole conviction family), cumulative over the CURRENT kill-criteria window only (reads bot_state copy window start, resets when the strategy mechanism changes). This is the figure that reflects today's strategy — the all-time line is a separate 'historical (reference)' panel at the bottom. Conviction has its own panel.",
+      "title": "Cumulative paper PnL (USD)",
       "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND exit_at >= COALESCE((SELECT (kill_criteria_status->'window'->>'start')::timestamptz FROM bot_state WHERE bot_id='copy'), '2026-06-27'::timestamptz) ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND exit_at >= '2026-06-07' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY exit_at",
           "format": "time_series"
         }
       ],
@@ -124,7 +123,7 @@
       "type": "timeseries",
       "title": "no_fill rate per day (pipeline health)",
       "description": "Daily % of paper trade attempts that failed to fill (Pump.fun pre-grad with no Jupiter route + no Birdeye price, Birdeye quota exhaustion, etc.). 0% = healthy. Any spike = investigate the venue/quote layer immediately. (Calibration ratio panel removed — will return when Build B shadow execution ships.)",
-      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "gridPos": {"x": 0, "y": 20, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -159,7 +158,7 @@
       "id": 13,
       "type": "barchart",
       "title": "Slippage distribution (bps, last 7d)",
-      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "gridPos": {"x": 12, "y": 20, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -187,7 +186,7 @@
       "id": 14,
       "type": "barchart",
       "title": "Cluster size distribution (last 7d)",
-      "gridPos": {"x": 0, "y": 20, "w": 12, "h": 8},
+      "gridPos": {"x": 0, "y": 28, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -201,7 +200,7 @@
       "id": 15,
       "type": "stat",
       "title": "Open allocation (% of paper)",
-      "gridPos": {"x": 12, "y": 20, "w": 6, "h": 4},
+      "gridPos": {"x": 12, "y": 28, "w": 6, "h": 4},
       "targets": [
         {
           "refId": "A",
@@ -215,7 +214,7 @@
       "id": 16,
       "type": "stat",
       "title": "Avg slippage 7d (bps)",
-      "gridPos": {"x": 18, "y": 20, "w": 6, "h": 4},
+      "gridPos": {"x": 18, "y": 28, "w": 6, "h": 4},
       "targets": [
         {
           "refId": "A",
@@ -230,7 +229,7 @@
       "id": 20,
       "type": "table",
       "title": "Open paper trades",
-      "gridPos": {"x": 0, "y": 28, "w": 24, "h": 8},
+      "gridPos": {"x": 0, "y": 36, "w": 24, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -244,7 +243,7 @@
       "id": 21,
       "type": "table",
       "title": "Recent halts (14d)",
-      "gridPos": {"x": 0, "y": 36, "w": 24, "h": 8},
+      "gridPos": {"x": 0, "y": 44, "w": 24, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -260,7 +259,7 @@
       "type": "table",
       "title": "Wallet leaderboard — PnL attribution (top by total PnL)",
       "description": "Equal-share attribution per cluster. Use this to identify which wallets in the pool are predictive vs noise. Bottom-of-leaderboard wallets are pruning candidates after ≥5 attributed trades. The 'status' column shows the wallet's current pool tier (active/watch/pruned) — or 'removed' if it's no longer in the pool at all; 'conviction'=yes means it's also a conviction-roster trigger wallet.",
-      "gridPos": {"x": 0, "y": 44, "w": 24, "h": 12},
+      "gridPos": {"x": 0, "y": 52, "w": 24, "h": 12},
       "targets": [
         {
           "refId": "A",
@@ -321,7 +320,7 @@
       "type": "stat",
       "title": "Active wallets (≥1 attributed trade)",
       "description": "How many of the 119-wallet pool have actually contributed to a paper trade. Low number = pool curation could be refined.",
-      "gridPos": {"x": 0, "y": 56, "w": 6, "h": 4},
+      "gridPos": {"x": 0, "y": 64, "w": 6, "h": 4},
       "targets": [
         {
           "refId": "A",
@@ -336,7 +335,7 @@
       "type": "stat",
       "title": "Total attributed PnL",
       "description": "Sum of all per-wallet attributions. Should equal sum of paper trade pnl_usd (sanity check). Color: green > 0, yellow -500 to 0, red < -500.",
-      "gridPos": {"x": 6, "y": 56, "w": 6, "h": 4},
+      "gridPos": {"x": 6, "y": 64, "w": 6, "h": 4},
       "targets": [
         {
           "refId": "A",
@@ -372,7 +371,7 @@
       "id": 33,
       "type": "stat",
       "title": "Avg cluster size (attributed trades)",
-      "gridPos": {"x": 12, "y": 56, "w": 6, "h": 4},
+      "gridPos": {"x": 12, "y": 64, "w": 6, "h": 4},
       "targets": [
         {
           "refId": "A",
@@ -387,7 +386,7 @@
       "type": "stat",
       "title": "Wallets with ≥5 trades",
       "description": "Wallets with enough attributed history to be candidates for pruning decisions.",
-      "gridPos": {"x": 18, "y": 56, "w": 6, "h": 4},
+      "gridPos": {"x": 18, "y": 64, "w": 6, "h": 4},
       "targets": [
         {
           "refId": "A",
@@ -403,7 +402,7 @@
       "type": "stat",
       "title": "Wallet pool by tier",
       "description": "Active wallets feed cluster detector; watch wallets are monitored but not used. Pruned wallets are unsubscribed.",
-      "gridPos": {"x": 0, "y": 60, "w": 24, "h": 5},
+      "gridPos": {"x": 0, "y": 68, "w": 24, "h": 5},
       "targets": [
         {
           "refId": "A",
@@ -433,7 +432,7 @@
       "type": "table",
       "title": "Active wallets — sorted by events_30d (top of pool)",
       "description": "Active-tier wallets sorted by recent webhook event volume. Bottom of this list = first candidates for demotion when below 10 events / 30d threshold.",
-      "gridPos": {"x": 0, "y": 65, "w": 24, "h": 10},
+      "gridPos": {"x": 0, "y": 73, "w": 24, "h": 10},
       "targets": [
         {
           "refId": "A",
@@ -448,7 +447,7 @@
       "type": "timeseries",
       "title": "Daily wallet pool transitions",
       "description": "Count of promote/demote/drop events from the daily cron. Healthy steady-state = small numbers (1-5/day). Spikes worth investigating.",
-      "gridPos": {"x": 0, "y": 75, "w": 12, "h": 8},
+      "gridPos": {"x": 0, "y": 83, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -463,7 +462,7 @@
       "type": "table",
       "title": "Top watch-tier candidates (promotion candidates)",
       "description": "Watch-tier wallets sorted by recent activity. Anything with events_7d ≥ 5 will be promoted by next daily cron (if WR passes / null).",
-      "gridPos": {"x": 12, "y": 75, "w": 12, "h": 8},
+      "gridPos": {"x": 12, "y": 83, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -478,14 +477,14 @@
       "type": "row",
       "title": "Kill / promotion criteria (pre-registered validation window — live dates below)",
       "collapsed": false,
-      "gridPos": {"x": 0, "y": 80, "w": 24, "h": 1}
+      "gridPos": {"x": 0, "y": 88, "w": 24, "h": 1}
     },
     {
       "id": 61,
       "type": "stat",
       "title": "Days remaining in primary window",
       "description": "Auto-extends to 90d total if N target not reached.",
-      "gridPos": {"x": 0, "y": 81, "w": 4, "h": 4},
+      "gridPos": {"x": 0, "y": 89, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->'window'->>'days_remaining_primary')::int FROM bot_state WHERE bot_id='copy'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"unit": "d", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 5}, {"color": "green", "value": 15}]}}}
@@ -494,7 +493,7 @@
       "id": 62,
       "type": "stat",
       "title": "Active-tier N closed (need 60)",
-      "gridPos": {"x": 4, "y": 81, "w": 4, "h": 4},
+      "gridPos": {"x": 4, "y": 89, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'n')::int FROM bot_state WHERE bot_id='copy'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 30}, {"color": "green", "value": 60}]}}}
@@ -503,7 +502,7 @@
       "id": 63,
       "type": "stat",
       "title": "Active-tier WR (kill <0.25 / promote ≥0.55)",
-      "gridPos": {"x": 8, "y": 81, "w": 4, "h": 4},
+      "gridPos": {"x": 8, "y": 89, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'wr')::float FROM bot_state WHERE bot_id='copy'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"unit": "percentunit", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.25}, {"color": "green", "value": 0.55}]}}}
@@ -512,7 +511,7 @@
       "id": 64,
       "type": "stat",
       "title": "Net PnL % (kill <2% / promote ≥5%)",
-      "gridPos": {"x": 12, "y": 81, "w": 4, "h": 4},
+      "gridPos": {"x": 12, "y": 89, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'net_pnl_pct')::float FROM bot_state WHERE bot_id='copy'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"unit": "percent", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 2}, {"color": "green", "value": 5}]}}}
@@ -522,7 +521,7 @@
       "type": "stat",
       "title": "Validation window (start → end, primary)",
       "description": "Live from kill_criteria_status->window (re-baselines move these). The row title above is intentionally generic so it can't go stale.",
-      "gridPos": {"x": 16, "y": 81, "w": 4, "h": 4},
+      "gridPos": {"x": 16, "y": 89, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->'window'->>'start')::date::text || '  →  ' || (kill_criteria_status->'window'->>'end_primary')::date::text FROM bot_state WHERE bot_id='copy'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "options": {"textMode": "value", "graphMode": "none"}
@@ -532,7 +531,7 @@
       "type": "stat",
       "title": "Active kill triggers",
       "description": "Empty = no criteria fired. Each entry = one alert that fired this window.",
-      "gridPos": {"x": 20, "y": 81, "w": 4, "h": 4},
+      "gridPos": {"x": 20, "y": 89, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT COALESCE(kill_criteria_status->>'kill_triggers', '[]') FROM bot_state WHERE bot_id='copy'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "options": {"textMode": "value", "graphMode": "none"}
@@ -543,14 +542,14 @@
       "type": "row",
       "title": "Conviction (single-wallet trigger) — own $10k paper bankroll, isolated metrics",
       "collapsed": false,
-      "gridPos": {"x": 0, "y": 86, "w": 24, "h": 1}
+      "gridPos": {"x": 0, "y": 94, "w": 24, "h": 1}
     },
     {
       "id": 71,
       "type": "stat",
       "title": "Roster (conviction wallets)",
       "description": "wallet_pool.conviction = true. Only active-tier ones actually trigger.",
-      "gridPos": {"x": 0, "y": 87, "w": 3, "h": 4},
+      "gridPos": {"x": 0, "y": 95, "w": 3, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT COUNT(*) FROM wallet_pool WHERE conviction = true", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
@@ -558,7 +557,7 @@
       "id": 72,
       "type": "stat",
       "title": "Conv open positions",
-      "gridPos": {"x": 3, "y": 87, "w": 3, "h": 4},
+      "gridPos": {"x": 3, "y": 95, "w": 3, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND (sim_metadata->>'strategy')='conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
@@ -566,7 +565,7 @@
       "id": 73,
       "type": "stat",
       "title": "Conv N closed (window, need 60)",
-      "gridPos": {"x": 6, "y": 87, "w": 3, "h": 4},
+      "gridPos": {"x": 6, "y": 95, "w": 3, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'n')::int FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 30}, {"color": "green", "value": 60}]}}}
@@ -575,7 +574,7 @@
       "id": 74,
       "type": "stat",
       "title": "Conv WR (kill <0.25 / promote ≥0.55)",
-      "gridPos": {"x": 9, "y": 87, "w": 3, "h": 4},
+      "gridPos": {"x": 9, "y": 95, "w": 3, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'wr')::float FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"unit": "percentunit", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.25}, {"color": "green", "value": 0.55}]}}}
@@ -584,7 +583,7 @@
       "id": 75,
       "type": "stat",
       "title": "Conv Net PnL % (kill <2% / promote ≥5%)",
-      "gridPos": {"x": 12, "y": 87, "w": 4, "h": 4},
+      "gridPos": {"x": 12, "y": 95, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'net_pnl_pct')::float FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"unit": "percent", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 2}, {"color": "green", "value": 5}]}}}
@@ -594,7 +593,7 @@
       "type": "stat",
       "title": "Conv Total attributed PnL (USD)",
       "description": "Net realized $ PnL over the conviction validation window — the EXACT $ companion to 'Conv Net PnL %' and 'Conv N closed' (all three read kill_criteria_status, same trade set / window, so they can't diverge). Equals Conv Net PnL % × $10k bankroll.",
-      "gridPos": {"x": 16, "y": 87, "w": 4, "h": 4},
+      "gridPos": {"x": 16, "y": 95, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'net_pnl_usd')::float FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"unit": "currencyUSD", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": -0.01}, {"color": "green", "value": 0}]}}}
@@ -603,7 +602,7 @@
       "id": 76,
       "type": "stat",
       "title": "Conv Sharpe (promote ≥1.0)",
-      "gridPos": {"x": 20, "y": 87, "w": 4, "h": 4},
+      "gridPos": {"x": 20, "y": 95, "w": 4, "h": 4},
       "targets": [{"refId": "A", "rawSql": "SELECT (kill_criteria_status->>'sharpe')::float FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 0.45}, {"color": "green", "value": 1.0}]}}}
@@ -613,7 +612,7 @@
       "type": "table",
       "title": "Conviction roster — all 13 whales (live activity / what they're up to)",
       "description": "Every wallet_pool.conviction=true wallet. events_30d / events_total = Helius webhook deliveries (buys+sells we subscribe to) since tracking started — a proxy for how active each whale is on-chain right now. last_event_at = most recent action we saw (UTC). Only ACTIVE-tier wallets actually fire conviction entries. NOTE: this panel is live on-chain ACTIVITY, not the curation track record — realized PnL / % of trades >100% comes from the browser-Opus vetted_watch_results ledger, not the DB.",
-      "gridPos": {"x": 0, "y": 91, "w": 24, "h": 8},
+      "gridPos": {"x": 0, "y": 99, "w": 24, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -652,7 +651,7 @@
       "id": 77,
       "type": "timeseries",
       "title": "Conviction cumulative paper PnL (USD)",
-      "gridPos": {"x": 0, "y": 99, "w": 12, "h": 8},
+      "gridPos": {"x": 0, "y": 107, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -667,7 +666,7 @@
       "type": "table",
       "title": "Conviction per-trigger-wallet PnL",
       "description": "Closed conviction paper trades grouped by the wallet whose buy triggered them. This is where you watch whether each elite wallet (e.g. CyaE1Vx) is actually followable — own PnL ≠ COPY-followable PnL. 'status' = the wallet's current pool tier (active/watch/pruned) or 'removed' if no longer in the pool; 'in_roster'=yes means it's still a live conviction trigger (no = it was dropped from the roster but historical trades remain).",
-      "gridPos": {"x": 12, "y": 99, "w": 12, "h": 8},
+      "gridPos": {"x": 12, "y": 107, "w": 12, "h": 8},
       "targets": [
         {
           "refId": "A",
@@ -711,7 +710,7 @@
       "id": 79,
       "type": "table",
       "title": "Open conviction positions",
-      "gridPos": {"x": 0, "y": 107, "w": 24, "h": 6},
+      "gridPos": {"x": 0, "y": 115, "w": 24, "h": 6},
       "targets": [
         {
           "refId": "A",
@@ -726,7 +725,7 @@
       "type": "stat",
       "title": "Conviction kill triggers",
       "description": "Empty = no criteria fired for the conviction strategy this window.",
-      "gridPos": {"x": 0, "y": 113, "w": 24, "h": 3},
+      "gridPos": {"x": 0, "y": 121, "w": 24, "h": 3},
       "targets": [{"refId": "A", "rawSql": "SELECT COALESCE(kill_criteria_status->>'kill_triggers', '[]') FROM bot_state WHERE bot_id='copy_conviction'", "format": "table"}],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "options": {"textMode": "value", "graphMode": "none"}
@@ -736,7 +735,7 @@
       "type": "table",
       "title": "Conviction trades — accumulation detail (how each trigger was reached)",
       "description": "Per conviction trade: n_buys = how many of the wallet's buys summed to the threshold; accum_usd = the committed total at fire; avg_buy_usd = accum_usd / n_buys; accum_min = minutes from first to last accumulating buy (0 = single-buy/sniper fire); win_sells = the wallet's sells seen in the window (held off if above the sell-holdoff). Only populated for trades opened after the 2026-06-25 accumulation-trigger ship.",
-      "gridPos": {"x": 0, "y": 116, "w": 24, "h": 11},
+      "gridPos": {"x": 0, "y": 124, "w": 24, "h": 11},
       "targets": [
         {
           "refId": "A",
@@ -766,14 +765,14 @@
       "type": "row",
       "title": "Recent closed positions — full detail (last 10, both strategies)",
       "collapsed": false,
-      "gridPos": {"x": 0, "y": 127, "w": 24, "h": 1}
+      "gridPos": {"x": 0, "y": 135, "w": 24, "h": 1}
     },
     {
       "id": 91,
       "type": "table",
       "title": "Last 10 tokens held — buy/sell prices + times, trigger wallets, why sold",
       "description": "Most recent closed COPY paper trades (cluster + conviction). buy_trigger_wallets = the cluster cohort (or the single conviction wallet). exit_reason = why we sold (stop / take_profit / timeout / tier_complete / sell_cluster / trigger_wallet_exit / rug_no_liquidity). sell_trigger_wallets is populated only for signal-driven exits (sell-cluster cohort or the conviction trigger wallet) — blank for stop/TP/timeout/ladder exits. Note: sell_trigger_wallets only fills for trades closed AFTER 2026-06-25 (when exit-wallet stamping shipped).",
-      "gridPos": {"x": 0, "y": 128, "w": 24, "h": 11},
+      "gridPos": {"x": 0, "y": 136, "w": 24, "h": 11},
       "targets": [
         {
           "refId": "A",
@@ -797,15 +796,15 @@
       }
     },
     {
-      "id": 95,
+      "id": 96,
       "type": "timeseries",
-      "title": "Cluster cumulative paper PnL — historical (all-time since 06-07, REFERENCE)",
-      "description": "REFERENCE ONLY — cluster cumulative since 2026-06-07, spanning MULTIPLE strategy mechanisms (06-21 tier remediation, 06-25 fast-dump fixes, 06-26 rule change, 06-27 $500 threshold + new entry gates). Because it mixes dead regimes it is NOT a measure of current edge — use the 'CURRENT mechanism' main panel at the top for that. Cluster only (excludes the conviction family).",
-      "gridPos": {"x": 0, "y": 140, "w": 24, "h": 8},
+      "title": "Cluster cumulative paper PnL — current mechanism (since reset / window)",
+      "description": "CURRENT-mechanism cluster PnL: CLUSTER only (excludes the conviction family), cumulative over the CURRENT kill-criteria window (reads bot_state copy window start; resets when the mechanism changes, i.e. since the 06-27 reset). The all-time line above is the longer-history reference.",
+      "gridPos": {"x": 0, "y": 12, "w": 24, "h": 8},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND exit_at >= '2026-06-07' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND exit_at >= COALESCE((SELECT (kill_criteria_status->'window'->>'start')::timestamptz FROM bot_state WHERE bot_id='copy'), '2026-06-27'::timestamptz) ORDER BY exit_at",
           "format": "time_series"
         }
       ],
