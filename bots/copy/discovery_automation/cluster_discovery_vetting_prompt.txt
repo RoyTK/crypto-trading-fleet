@@ -51,12 +51,30 @@ PER-RUN WORKFLOW
 1. Open vetted_watch_results.txt in the OneDrive web text editor and collect EVERY
    address already present (KEEP / REJECT / TOO_FAST alike). These are already-handled
    — never re-add or re-vet them.
-2. Go to https://birdeye.so/solana/find-gems -> "Trending" -> sort by 24h %.
-   Take trending tokens that at least doubled (>100%) in 24h. Process ~10 this session
-   (keep it bounded so the session finishes reliably; run again another day for more).
-3. For each token: "Top Traders" tab -> apply the "Smart Money" filter. Pull FULL
-   addresses via document.querySelectorAll('a[href*="/wallet-analyzer/"]') — never
-   truncated text.
+2. ★ PRIMARY ROUTE — CO-TRADER WALK (run this FIRST, EVERY run). Why: cluster signal
+   density did NOT rise when we grew the active list, because a cluster needs 3 wallets
+   that ACTUALLY co-buy the same token in the same ~15-min window — an INTERCONNECTED
+   trading GROUP, not just individually-good wallets. Co-traders of our PROVEN cluster
+   wallets ARE that group, and when such a group enters a token PRE-RUN together that
+   co-entry is itself the signal the token is being pushed. Steps:
+   a. Read anchors from cluster_anchor_wallets.txt (OneDrive "Claude" folder) — COPY's
+      active, profitable cluster wallets (e.g. the 897k/AGge/EG8X trio, HkFGQsW8). Walk
+      the highest-PnL / highest-n anchors first.
+   b. For each anchor, pull its traded tokens via forge token-traded
+      (GET https://birdeye.so/forge/solana/wallet-pnl/token-traded?wallet=<ANCHOR>&order_field=volume_usd&order_type=desc&offset=0&limit=100&hide=);
+      keep the tokens that RAN (a real sustained move, not an instant rug).
+   c. On each such token, open its Top Traders / trades and find the OTHER wallets that
+      BOUGHT in the SAME PRE-BREAKOUT window as the anchor (co-accumulation BEFORE the
+      run — ignore late/post-run buyers; that early co-buy is the cluster signal). Those
+      co-buyers are the candidates.
+   d. RANK BY RECURRENCE: a wallet that co-buys alongside the anchors across MULTIPLE
+      tokens, or alongside MULTIPLE different anchors, is a real group member (not
+      coincidence) — prioritize it. Each new KEEP's own co-traders become fresh anchors,
+      so the neighborhood expands every run.
+3. SECONDARY ROUTE (supplementary breadth, AFTER route 2): Birdeye find-gems ->
+   "Trending" -> sort by 24h %; take tokens up >100% in 24h (~10). On each, open
+   "Top Traders" -> apply the "Smart Money" filter and pull FULL addresses via
+   document.querySelectorAll('a[href*="/wallet-analyzer/"]') (never truncated text).
 4. For each address NOT already in the file: open
    https://birdeye.so/solana/wallet-analyzer/[FULL_ADDRESS] and read REALIZED PnL,
    UNREALIZED PnL, Avg Holding Duration, Scam/Rug tokens %, the >100%/>500%
@@ -133,15 +151,15 @@ When several wallets co-buy a token within ~15 min, capture EVERY member's FULL
 address and note the shared cluster in the reason column (e.g. "co-buy TOKEN-cluster").
 Log every member as its own row — do NOT collapse a cluster into one wallet.
 
-CO-BUYER NEIGHBORHOOD WALK (high-leverage cluster sourcing). Co-buyers ARE the cluster
-signal, so unlike conviction (where co-trading is a liability), for CLUSTER you WANT to
-expand along co-trading wallets. From a confirmed-good cluster wallet (a proven KEEP),
-look across the tokens it bought and pull the OTHER wallets that co-bought the SAME tokens
-within ~15 min — those are its recurring cluster partners. Wallets that repeatedly co-buy
-with a known-good wallet across multiple tokens are the strongest cluster candidates (a
-real co-buy group, not coincidence). Vet each one through the full criteria above before
-keeping; note the partner relationship in the reason ("co-buys with <addr>"). This finds
-cluster members far faster than scanning random trending boards.
+CO-BUYER NEIGHBORHOOD WALK = the PRIMARY discovery route (see PER-RUN WORKFLOW step 2).
+Co-buyers ARE the cluster signal, so for CLUSTER you WANT to expand along co-trading
+wallets (the opposite of conviction, where co-trading is a liability). Anchor on
+cluster_anchor_wallets.txt, find the OTHER wallets that bought the SAME tokens in the SAME
+pre-run window, and prioritize wallets that recur across multiple anchors/tokens (a real
+group, not coincidence). When logging a candidate, note the partner in the reason
+("co-buys with <anchor>"). This finds cluster MEMBERS far faster than random trending
+boards — which is the point, since growing the active list with individually-good wallets
+did NOT raise signal density.
 
 OUTPUT — append rows to the OneDrive file via the web text editor
 For each followable qualifier write one row:
