@@ -225,6 +225,62 @@ async def multi_price_solana(
     return out
 
 
+async def multi_price_liq_solana(
+    session: aiohttp.ClientSession,
+    mints: list[str],
+) -> dict[str, dict]:
+    """Batch price + CURRENT liquidity for many Solana mints in one HTTP call.
+
+    Same endpoint/CU cost as multi_price_solana but with include_liquidity=true,
+    so the position manager gets price AND live liquidity without a second call
+    (the liquidity-momentum stop, 2026-06-28). Returns mint -> {"price": float,
+    "liquidity": float|None}; missing/unsupported mints omitted.
+    """
+    if not mints:
+        return {}
+    settings = get_copy_settings()
+    if not settings.birdeye_api_key:
+        log.warning("birdeye_no_api_key", n_mints=len(mints))
+        return {}
+    out: dict[str, dict] = {}
+    headers = {"X-API-KEY": settings.birdeye_api_key, "x-chain": "solana"}
+    for i in range(0, len(mints), 100):
+        chunk = mints[i:i + 100]
+        params = {"list_address": ",".join(chunk), "include_liquidity": "true"}
+        try:
+            async with session.get(
+                "https://public-api.birdeye.so/defi/multi_price",
+                params=params, headers=headers,
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as r:
+                if r.status != 200:
+                    log.warning("birdeye_multi_price_liq_failed",
+                                status=r.status, n_mints=len(chunk))
+                    continue
+                body = await r.json()
+        except Exception:
+            log.exception("birdeye_multi_price_liq_exception", n_mints=len(chunk))
+            continue
+        data = body.get("data") if isinstance(body, dict) else None
+        if not isinstance(data, dict):
+            continue
+        for mint, entry in data.items():
+            if not isinstance(entry, dict):
+                continue
+            try:
+                price = float(entry.get("value") or 0.0)
+            except (TypeError, ValueError):
+                continue
+            if price <= 0:
+                continue
+            try:
+                liq = float(entry["liquidity"]) if entry.get("liquidity") is not None else None
+            except (TypeError, ValueError):
+                liq = None
+            out[mint] = {"price": price, "liquidity": liq}
+    return out
+
+
 async def _quote_solana_birdeye(
     session: aiohttp.ClientSession,
     output_mint: str,

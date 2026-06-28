@@ -86,6 +86,39 @@ def is_price_scale_anomaly(
     return (hi / lo) > ratio_threshold
 
 
+def liquidity_aware_stop_pct(
+    entry_liq: Optional[float],
+    liq_smoothed: Optional[float],
+    *,
+    base_stop: float,
+    grow_ratio: float,
+    deep_stop: float,
+    flat_floor: float = 0.0,
+    flat_stop: Optional[float] = None,
+) -> float:
+    """Pick a cluster hard-stop pct from the LIVE liquidity trajectory (2026-06-28).
+
+    - liquidity BUILDING (smoothed/entry >= grow_ratio) -> deep_stop (real token
+      gaining depth; give it room to ride — the -8% stop was cutting deep-liq
+      runners like ANSEM ~10x).
+    - low AND flat (flat_floor>0 and smoothed < flat_floor) -> flat_stop
+      (CAPABILITY, off when flat_floor=0; defaults to base_stop).
+    - otherwise -> base_stop (tight rug/death stop).
+
+    Falls back to base_stop when liquidity data is missing. Pure/testable.
+    `liq_smoothed` should be an EMA of current liquidity (raw liquidity thrashes
+    tick-to-tick as LPs add/remove), and grow_ratio>1 gives hysteresis so noise
+    doesn't flip the stop.
+    """
+    if not entry_liq or entry_liq <= 0 or liq_smoothed is None or liq_smoothed <= 0:
+        return base_stop
+    if (liq_smoothed / entry_liq) >= grow_ratio:
+        return deep_stop
+    if flat_floor and flat_floor > 0 and liq_smoothed < flat_floor:
+        return flat_stop if flat_stop is not None else base_stop
+    return base_stop
+
+
 def evaluate_exit_actions(
     *,
     entry_price: float,

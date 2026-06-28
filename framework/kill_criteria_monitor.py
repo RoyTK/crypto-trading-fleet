@@ -73,10 +73,15 @@ WINDOWS: dict[str, dict[str, datetime]] = {
     # floor lowered $1k -> $500. Lowering a locked threshold EXPANDS the behavior
     # space, so per the kill-criteria lock rule the window resets. Prior n~26
     # measured the old (no-gates, $1k) strategy that no longer exists.
+    # RE-BASELINED 2026-06-28 23:30 UTC: restored cluster's let-winners-run edge —
+    # trailing give-back widened 25%->45% (54% of trailing exits had run >=2x after
+    # being shaken out) AND a LIVE liquidity-momentum hard stop (widen to 30% when
+    # liquidity is building vs entry, tight 8% when flat/draining). Both materially
+    # change exits, so the window resets to validate the restored mechanism.
     "copy": {
-        "start":        datetime(2026, 6, 27, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 26, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 25, tzinfo=timezone.utc),
+        "start":        datetime(2026, 6, 28, 23, 30, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 27, 23, 30, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 26, 23, 30, tzinfo=timezone.utc),
     },
     # Conviction (single-wallet accumulation) sub-strategy — separate $10k paper
     # bankroll + isolated metrics. RE-BASELINED 2026-06-25 19:00 UTC: the first
@@ -93,10 +98,14 @@ WINDOWS: dict[str, dict[str, datetime]] = {
     # price-stop (copy_conviction_stop_pct=0) — it produced 0 winners and all the
     # whipsaw. Exit change resets the window again so it measures the no-hard-stop
     # strategy; the ~3 trades since 00:00 were on the old (stopped) exit.
+    # RE-BASELINED 2026-06-28 23:30 UTC (with cluster): the trailing give-back
+    # widened 25%->45% (shared exit evaluator) also changes conviction exits, so
+    # its window resets too. Conviction roster was rebuilt to 7 accumulators the
+    # same day; window had ~0 trades, so this reset is effectively free.
     "copy_conviction": {
-        "start":        datetime(2026, 6, 27, 19, 0, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 26, 19, 0, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 25, 19, 0, tzinfo=timezone.utc),
+        "start":        datetime(2026, 6, 28, 23, 30, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 27, 23, 30, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 26, 23, 30, tzinfo=timezone.utc),
     },
 }
 

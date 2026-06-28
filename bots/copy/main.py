@@ -50,7 +50,19 @@ from bots.copy.loop_helpers import (
     write_cluster_detection,
 )
 from bots.copy.executor import CopyExecutor
-from bots.copy.trailing_stop import evaluate_exit_actions, is_price_scale_anomaly
+from bots.copy.trailing_stop import (
+    evaluate_exit_actions,
+    is_price_scale_anomaly,
+    liquidity_aware_stop_pct,
+)
+from bots.copy.config import (
+    EXIT_STOP_PCT,
+    CLUSTER_LIQ_GROW_RATIO,
+    CLUSTER_STOP_PCT_DEEP,
+    CLUSTER_FLAT_LIQ_FLOOR_USD,
+    CLUSTER_STOP_PCT_FLAT,
+    LIQ_EMA_ALPHA,
+)
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
@@ -64,6 +76,7 @@ from bots.copy.venue.dex_quoter import (
     fetch_token_liquidity,
     fetch_token_security,
     multi_price_solana,
+    multi_price_liq_solana,
     quote,
 )
 from bots.copy.venue.helius_solana import WalletBuyEvent, WalletSellEvent
@@ -230,6 +243,10 @@ class CopyBot(BotLifecycle):
         self._pending_conviction: dict[tuple[str, str, Optional[str]], dict] = {}
         # Cluster entry persistence gate (2026-06-26): same idea, keyed (chain, token).
         self._pending_cluster: dict[tuple[str, str], dict] = {}
+        # Live liquidity-momentum stop (2026-06-28): per-open-trade EMA of current
+        # liquidity (smooths tick-to-tick thrash). trade_id -> ema_liq. In-memory
+        # (re-seeds from entry_liquidity on restart; positions are short-lived).
+        self._liq_ema: dict[int, float] = {}
 
     # ---- Lifecycle hooks ---------------------------------------------------
 
@@ -1251,12 +1268,14 @@ class CopyBot(BotLifecycle):
 
         now = datetime.now(timezone.utc)
 
-        # Batch-fetch all Solana mints in ONE Birdeye call. Per-position
-        # /defi/price was burning ~36 CU/min (12 opens × 3 CU × 60s cadence)
-        # and exhausted the free-tier monthly quota in ~14h. /defi/multi_price
-        # returns up to 100 prices in one request.
+        # Batch-fetch all Solana mints in ONE Birdeye call (price + live liquidity
+        # via include_liquidity — same CU cost). Per-position /defi/price was
+        # burning ~36 CU/min and exhausted the free-tier quota in ~14h; multi_price
+        # returns up to 100 in one request. Liquidity feeds the momentum stop below.
         sol_mints = sorted({t.asset for t in opens if t.venue == "solana"})
-        sol_prices = await multi_price_solana(self._session, sol_mints) if sol_mints else {}
+        sol_market = await multi_price_liq_solana(self._session, sol_mints) if sol_mints else {}
+        sol_prices = {m: d["price"] for m, d in sol_market.items()}
+        sol_liq = {m: d.get("liquidity") for m, d in sol_market.items()}
 
         # Flat-mark slippage estimate when we synthesize an exit fill (no
         # liquidity-aware impact data; matches the entry-side Birdeye estimate).
@@ -1318,6 +1337,33 @@ class CopyBot(BotLifecycle):
                 # close routes through close_paper_trade as before.
                 ladder = self.copy_settings.get_partial_exit_tiers()
                 completed = _completed_tier_indexes(trade.trade_id, ladder)
+                # Live liquidity-momentum stop (cluster only): widen the hard stop
+                # when the token's EMA-smoothed liquidity is BUILDING vs entry,
+                # keep it tight when flat/draining. Only cluster trades with a
+                # stamped entry_liquidity; everything else keeps trade.stop_pct.
+                eff_stop = trade.stop_pct
+                if (trade.venue == "solana" and trade.strategy == "cluster"
+                        and trade.entry_liquidity_usd):
+                    cur_liq = sol_liq.get(trade.asset)
+                    if cur_liq is not None and cur_liq > 0:
+                        prev = self._liq_ema.get(trade.trade_id, trade.entry_liquidity_usd)
+                        ema = LIQ_EMA_ALPHA * cur_liq + (1.0 - LIQ_EMA_ALPHA) * prev
+                        self._liq_ema[trade.trade_id] = ema
+                        base = trade.stop_pct if trade.stop_pct is not None else EXIT_STOP_PCT
+                        eff_stop = liquidity_aware_stop_pct(
+                            trade.entry_liquidity_usd, ema,
+                            base_stop=base, grow_ratio=CLUSTER_LIQ_GROW_RATIO,
+                            deep_stop=CLUSTER_STOP_PCT_DEEP,
+                            flat_floor=CLUSTER_FLAT_LIQ_FLOOR_USD,
+                            flat_stop=CLUSTER_STOP_PCT_FLAT,
+                        )
+                        if eff_stop != base:
+                            self.log.info(
+                                "cluster_liq_momentum_stop", trade_id=trade.trade_id,
+                                asset=trade.asset, entry_liq=round(trade.entry_liquidity_usd),
+                                ema_liq=round(ema),
+                                ratio=round(ema / trade.entry_liquidity_usd, 2),
+                                stop_pct=eff_stop)
                 new_peak, partial_actions, exit_reason = evaluate_exit_actions(
                     entry_price=trade.entry_price,
                     current_price=mid,
@@ -1326,7 +1372,7 @@ class CopyBot(BotLifecycle):
                     partial_tiers=ladder,
                     leverage=trade.leverage,
                     direction=trade.direction,
-                    stop_pct=trade.stop_pct,
+                    stop_pct=eff_stop,
                     take_profit_pct=trade.take_profit_pct,
                 )
                 if trade.peak_pct_since_entry is None or new_peak > trade.peak_pct_since_entry:
@@ -1378,6 +1424,7 @@ class CopyBot(BotLifecycle):
                 exit_fill=exit_fill,
                 exit_reason=exit_reason,
             )
+            self._liq_ema.pop(trade.trade_id, None)
 
     # ---- Sell-cluster evaluation + position close --------------------------
 

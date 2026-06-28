@@ -145,7 +145,29 @@ EXIT_TIMEOUT_HOURS = 12                    # cluster signals decay fast
 # After all four tiers: 0% remaining. The trade row closes with
 # exit_reason='tier_complete'.
 EXIT_TRAILING_ACTIVATION_PCT = 20.0
-EXIT_TRAILING_STOP_PCT = 25.0          # interpreted MULTIPLICATIVELY: 25% drop in price from peak
+# Multiplicative trailing give-back. WIDENED 25→45 (2026-06-28): post-exit
+# measurement showed 54% of trailing-stop exits ran ≥2x AFTER we got shaken out
+# (top missed runs were 11-32x), i.e. the 25% trail was cutting confirmed winners.
+# Env-tunable so we can keep adjusting as data accrues.
+EXIT_TRAILING_STOP_PCT = float(os.environ.get("COPY_EXIT_TRAILING_STOP_PCT", "45"))
+
+# --- Cluster LIVE liquidity-momentum stop (2026-06-28) -----------------------
+# Post-exit study: tokens we stopped out of that later RAN had liquidity GROWING
+# (runners median liq_now/entry = 3.7x) while non-runners' liquidity COLLAPSED
+# (median 0.18x). Static entry-liquidity was too noisy (a $137k token shrank +
+# died). So the cluster hard stop is chosen LIVE from the liquidity TRAJECTORY:
+# liquidity building vs entry → widen the stop (real token gaining depth, give it
+# room); flat/shrinking → keep the tight rug stop. Smoothed (EMA) because raw
+# liquidity thrashes tick-to-tick (LP adds/removes). All env-tunable.
+CLUSTER_LIQ_GROW_RATIO = float(os.environ.get("COPY_CLUSTER_LIQ_GROW_RATIO", "1.5"))   # EMA liq vs entry to widen
+CLUSTER_STOP_PCT_DEEP = float(os.environ.get("COPY_CLUSTER_STOP_PCT_DEEP", "30"))      # wide stop when liquidity building
+LIQ_EMA_ALPHA = float(os.environ.get("COPY_LIQ_EMA_ALPHA", "0.3"))                     # 0<a<=1; lower = more smoothing
+# Low-flat-liquidity floor (CAPABILITY, OFF by default = 0). When >0: a position
+# whose smoothed liquidity is BELOW this floor AND not growing is treated as a
+# likely dud and gets COPY_CLUSTER_STOP_PCT_FLAT (default = the normal tight stop,
+# so enabling the floor alone is a no-op until you also tune the flat stop).
+CLUSTER_FLAT_LIQ_FLOOR_USD = float(os.environ.get("COPY_CLUSTER_FLAT_LIQ_FLOOR_USD", "0"))
+CLUSTER_STOP_PCT_FLAT = float(os.environ.get("COPY_CLUSTER_STOP_PCT_FLAT", "8"))
 
 # Deprecated 2026-06-08 with the tiered partial-exit ladder. Tier 4 of
 # PARTIAL_EXIT_TIERS at 99900% (1000x) is the effective ceiling now;

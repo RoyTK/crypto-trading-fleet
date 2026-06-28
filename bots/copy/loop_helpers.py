@@ -48,6 +48,9 @@ class OpenPaperTrade:
     # For conviction trades: the single wallet whose buy triggered the entry
     # (used by the follow-the-trigger-wallet-out exit). None for cluster.
     trigger_wallet: Optional[str] = None
+    # Birdeye liquidity (USD) at entry — baseline for the live liquidity-momentum
+    # stop (cluster). None for trades entered before the 2026-06-25 instrumentation.
+    entry_liquidity_usd: Optional[float] = None
 
 
 def persist_signal(candidate: SignalCandidate) -> int:
@@ -218,6 +221,7 @@ def list_open_paper_trades(strategy: Optional[str] = None) -> list[OpenPaperTrad
                 peak_pct_since_entry=_to_float_or_none(md.get("peak_pct_since_entry")),
                 strategy=md.get("strategy") or "cluster",
                 trigger_wallet=md.get("trigger_wallet"),
+                entry_liquidity_usd=_to_float_or_none(md.get("entry_liquidity_usd")),
             ))
     return out
 
