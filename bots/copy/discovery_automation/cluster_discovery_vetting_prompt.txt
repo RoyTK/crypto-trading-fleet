@@ -133,6 +133,16 @@ When several wallets co-buy a token within ~15 min, capture EVERY member's FULL
 address and note the shared cluster in the reason column (e.g. "co-buy TOKEN-cluster").
 Log every member as its own row — do NOT collapse a cluster into one wallet.
 
+CO-BUYER NEIGHBORHOOD WALK (high-leverage cluster sourcing). Co-buyers ARE the cluster
+signal, so unlike conviction (where co-trading is a liability), for CLUSTER you WANT to
+expand along co-trading wallets. From a confirmed-good cluster wallet (a proven KEEP),
+look across the tokens it bought and pull the OTHER wallets that co-bought the SAME tokens
+within ~15 min — those are its recurring cluster partners. Wallets that repeatedly co-buy
+with a known-good wallet across multiple tokens are the strongest cluster candidates (a
+real co-buy group, not coincidence). Vet each one through the full criteria above before
+keeping; note the partner relationship in the reason ("co-buys with <addr>"). This finds
+cluster members far faster than scanning random trending boards.
+
 OUTPUT — append rows to the OneDrive file via the web text editor
 For each followable qualifier write one row:
   address,KEEP,realized_pnl,unrealized_pnl,avg_hold,rug_pct,multi_x_wins,reason,YYYY-MM-DD

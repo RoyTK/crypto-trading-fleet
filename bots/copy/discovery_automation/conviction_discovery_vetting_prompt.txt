@@ -122,12 +122,11 @@ the bar. In leverage order:
    token-traded on them; any that now clear the floors become KEEPs (the full re-screen also
    catches any that decayed into bagholders). Pure time value, zero criteria change.
 
-3. CO-TRADER NEIGHBORHOOD WALK. From a confirmed KEEPer, open its token-traded book and, in
-   its OTHER winning tokens, pull the wallets that accumulated ALONGSIDE it — skilled
-   accumulators cluster on the same setups. CAVEAT: wallets that trade together produce
-   CORRELATED signals (they co-buy the same names), which erodes conviction's
-   single-wallet independence and can make it fire like a mini-cluster. Use it to find
-   archetype-matches, but don't let the roster become one tight clique.
+3. (CO-TRADER / CO-BUYER WALK belongs to CLUSTER, not conviction. Wallets that trade
+   together produce CORRELATED signals — a LIABILITY here (it erodes conviction's
+   single-wallet independence and makes it fire like a mini-cluster) but exactly what
+   CLUSTER wants, since a cluster IS 3+ co-buyers. The technique now lives in
+   cluster_discovery_vetting_prompt.txt. Don't use it to build the conviction roster.)
 
 4. WIDEN/DIVERSIFY the token funnel: (a) scrape DEEPER than the first ~28 rows per token;
    (b) bias toward SLOW multi-day GRINDERS (real liquidity, longer avg hold) over today's
