@@ -331,6 +331,30 @@ class CopyBot(BotLifecycle):
             await self._manage_open_positions()
             self._last_position_check_ts = now
 
+    async def iterate_halted(self) -> None:
+        """EXIT-only tick while halted: keep risk management alive but open NO new
+        positions. A halt must stop NEW risk, not freeze management of EXISTING
+        positions. Runs the SAME exit paths as iterate() — defensive sell-clusters
+        and full position management (hard stop / trailing / TP / timeout / rug
+        backstop, paper + shadow/live) — but skips entries, conviction triggers,
+        and reconciliation. (2026-06-28: a false drift halt froze iterate() for
+        ~13.5h and cluster trade 929 rode its -8% stop down to -94% / -$377 because
+        exits were frozen too; this prevents the repeat.)"""
+        now = time()
+        # Sell-cluster is a DEFENSIVE exit (2+ active wallets sell -> close the
+        # position). Keep it live during a halt. Isolated so a failure here can't
+        # block the more critical position-management call below.
+        try:
+            self._evaluate_sell_clusters()
+        except Exception:
+            self.log.exception("halted_sell_cluster_failed")
+        # Position management (stops/trailing/tp/timeout/rug, paper + shadow/live)
+        # on its normal cadence — shared timestamp so it doesn't double-rate vs the
+        # unhalted path if a halt clears mid-cycle.
+        if now - self._last_position_check_ts >= self.copy_settings.copy_position_check_seconds:
+            await self._manage_open_positions()
+            self._last_position_check_ts = now
+
     # ---- Redis pubsub subscriber (replaces polling) -----------------------
 
     async def _buys_subscriber(self) -> None:

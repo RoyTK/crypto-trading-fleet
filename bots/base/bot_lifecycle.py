@@ -54,10 +54,24 @@ class BotLifecycle(ABC):
 
     @abstractmethod
     async def iterate(self) -> None:
-        """One pass of the bot's main work. Called every `loop_interval_seconds`.
+        """One pass of the bot's main work. Called every `loop_interval_seconds`
+        ONLY when the bot is NOT halted. This is the place for NEW-risk actions
+        (opening positions / entries).
 
-        Implementations must be safe to skip (no side effects) when halted.
         Implementations must NOT raise — catch and log internally.
+        """
+
+    async def iterate_halted(self) -> None:
+        """One pass of EXIT-ONLY work, called every `loop_interval_seconds` WHILE
+        the bot IS halted. Default: no-op (preserves the old "freeze everything"
+        behavior for bots that don't override).
+
+        Override to keep RISK MANAGEMENT alive during a halt — stops, trailing
+        stops, take-profit, timeout, defensive sell-signals, rug backstop — while
+        still blocking new entries. A halt should stop NEW risk, not freeze the
+        management of EXISTING positions (2026-06-28: a false drift halt froze
+        iterate() for ~13.5h and a cluster position rode its -8% stop down to -94%
+        because exits were frozen too). Must NOT open new positions; must NOT raise.
         """
 
     async def on_start(self) -> None:
@@ -111,6 +125,13 @@ class BotLifecycle(ABC):
                         await self.iterate()
                     except Exception:
                         self.log.exception("iterate_failed")
+                else:
+                    # Halted: block new entries (skip iterate) but keep managing
+                    # EXISTING positions so stops/trailing/defensive exits still fire.
+                    try:
+                        await self.iterate_halted()
+                    except Exception:
+                        self.log.exception("iterate_halted_failed")
                 try:
                     await asyncio.wait_for(self._stop.wait(), timeout=self.loop_interval_seconds)
                 except asyncio.TimeoutError:
