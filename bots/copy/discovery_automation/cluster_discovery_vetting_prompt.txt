@@ -1,4 +1,13 @@
-PROMPT — Solana copy-trade wallet DISCOVERY + VETTING (Birdeye) — browser-Opus
+PROMPT — Solana copy-trade wallet DISCOVERY + VETTING (Birdeye) — browser-Opus — CLUSTER strategy
+
+This is the CLUSTER vetting prompt (fast fresh-mint co-buy snipers; COPY borrows the ENTRY
+only and exits on its own ~15-min ladder). For the SEPARATE conviction strategy
+(single-wallet deliberate accumulators that COPY follows in AND out), use
+conviction_discovery_vetting_prompt.txt instead — its criteria are different and a clean
+fast sniper is the WRONG profile there. Conversely, if a wallet you hit here is actually a
+deliberate, FOLLOWABLE accumulator-holder (banks realized in liquid tokens, holds
+minutes-to-days, not a sub-15-min flipper), note it as a CONVICTION candidate for that
+prompt rather than forcing it into the cluster ledger.
 
 You run as browser-Opus: Opus with the Claude-in-Chrome extension driving a real Chrome.
 In ONE attended session you DISCOVER candidate wallets on Birdeye, VET each one on the
@@ -52,6 +61,16 @@ PER-RUN WORKFLOW
    https://birdeye.so/solana/wallet-analyzer/[FULL_ADDRESS] and read REALIZED PnL,
    UNREALIZED PnL, Avg Holding Duration, Scam/Rug tokens %, the >100%/>500%
    multi-x counts, and the Smart Money tag.
+   FASTER / MORE-RELIABLE (recommended — a conviction run vetted 310 wallets this way with
+   zero errors, no UI scraping): direct-fetch Birdeye's internal `forge` endpoints
+   (no login, credentials:include):
+     periodic — realized/unrealized PnL, the >500%/>100% distribution bands (these are
+       TOKEN COUNTS, not %), rug%:
+       GET https://birdeye.so/forge/solana/wallet-pnl/periodic?wallet=<ADDR>&periodic=
+     token-traded — PER-TOKEN liquidity flag (use it for the thin-mint liquidity check
+       below instead of opening each token), plus buy counts and first->last hold span:
+       GET https://birdeye.so/forge/solana/wallet-pnl/token-traded?wallet=<ADDR>&order_field=volume_usd&order_type=desc&offset=0&limit=100&hide=
+   Fall back to the wallet-analyzer UI page if an endpoint changes or rate-limits.
 
 QUALIFICATION (KEEP only if ALL true — these are the live criteria)
 - REALIZED PnL significantly positive. Use REALIZED, not Total. Total = Realized +

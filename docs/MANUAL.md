@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-06-25 21:44 UTC.*
+*Last built: 2026-06-28 00:50 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -406,8 +406,10 @@ browser tool only exists in an *interactive* Claude session. So you run it yours
 2. Open **Claude** (the VS Code extension, or an interactive `claude` session with the
    Chrome connection enabled via `/chrome`).
 3. Give it the discovery prompt:
-   `C:\Projects\CryptoTradingworkflow\bots\copy\discovery_automation\browser_discovery_vetting_prompt.txt`
-   (open that file and paste its contents, or point Claude at it).
+   `C:\Projects\CryptoTradingworkflow\bots\copy\discovery_automation\cluster_discovery_vetting_prompt.txt`
+   (open that file and paste its contents, or point Claude at it). For the conviction
+   strategy's separate roster, use `conviction_discovery_vetting_prompt.txt` in the same
+   folder.
 4. Let it run. It will browse Birdeye's trending tokens, look at the top traders, and
    **vet each wallet** — marking each KEEP / REJECT / TOO_FAST. It works in batches of ~20
    and saves as it goes, so it can be stopped and restarted without losing work.

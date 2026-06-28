@@ -25,7 +25,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-06-25 21:44 UTC.</em></p>
+<em>Last built: 2026-06-28 00:50 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -463,8 +463,10 @@ browser tool only exists in an <em>interactive</em> Claude session. So you run i
 2. Open <strong>Claude</strong> (the VS Code extension, or an interactive <code>claude</code> session with the
    Chrome connection enabled via <code>/chrome</code>).
 3. Give it the discovery prompt:
-   <code>C:\Projects\CryptoTradingworkflow\bots\copy\discovery_automation\browser_discovery_vetting_prompt.txt</code>
-   (open that file and paste its contents, or point Claude at it).
+   <code>C:\Projects\CryptoTradingworkflow\bots\copy\discovery_automation\cluster_discovery_vetting_prompt.txt</code>
+   (open that file and paste its contents, or point Claude at it). For the conviction
+   strategy's separate roster, use <code>conviction_discovery_vetting_prompt.txt</code> in the same
+   folder.
 4. Let it run. It will browse Birdeye's trending tokens, look at the top traders, and
    <strong>vet each wallet</strong> — marking each KEEP / REJECT / TOO_FAST. It works in batches of ~20
    and saves as it goes, so it can be stopped and restarted without losing work.

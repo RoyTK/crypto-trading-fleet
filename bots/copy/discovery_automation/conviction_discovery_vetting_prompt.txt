@@ -1,7 +1,7 @@
 CONVICTION WHALE DISCOVERY + VETTING PROMPT  (browser-Opus, attended, no login)
 ================================================================================
 Last updated 2026-06-27. This is a DIFFERENT job from the cluster-elite vetting
-prompt (browser_discovery_vetting_prompt.txt). Do NOT reuse the sniper criteria.
+prompt (cluster_discovery_vetting_prompt.txt). Do NOT reuse the sniper criteria.
 
 WHY THIS IS DIFFERENT
 ---------------------
