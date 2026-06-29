@@ -51,7 +51,30 @@ PER-RUN WORKFLOW
 1. Open vetted_watch_results.txt in the OneDrive web text editor and collect EVERY
    address already present (KEEP / REJECT / TOO_FAST alike). These are already-handled
    — never re-add or re-vet them.
-2. ★ PRIMARY ROUTE — CO-TRADER WALK (run this FIRST, EVERY run). Why: cluster signal
+2. ★ PRIMARY ROUTE A — PRE-RUN GROUP DISCOVERY (best for finding NEW recurring groups;
+   run this FIRST). A token that runs was usually PUSHED by a coordinated group that
+   bought it BEFORE the breakout — so the pre-run buyers of a confirmed runner ARE a
+   qualifying cluster by construction (they co-bought AND it ran). Steps:
+   a. Find ~5 QUALIFYING running / recently-run tokens: real liquidity (>=~$50k, so it's
+      followable and not a micro-rug), a SUSTAINED move (not an instant pump-dump), and a
+      visible PRE-BREAKOUT accumulation phase (flat/low-vol stretch before the first big
+      push). Use the price history to mark the breakout point.
+   b. Pull the wallets that bought in the PRE-RUN window (before the breakout). Do NOT take
+      every early buyer — isolate the COORDINATED ones: wallets that bought within a TIGHT
+      band (~minutes apart, your 15-min trigger as the core; 60-min as the outer
+      accumulation window). Scattered lone early buyers are organic; a tight cluster of
+      them is the signal. Recover each buyer's entry time via forge token-traded
+      (first_trade_unix_time). Vet each through the full screen below.
+   c. ★ RECURRENCE = the validator AND the prize (this is what fixes route-B's weakness).
+      For the VETTED pre-run buyers, walk their token-traded history and find the OTHER
+      tokens where the SAME subset co-bought in tight windows. Wallets that RECUR together
+      across multiple winning tokens = a real, repeatable cluster GROUP — roster the WHOLE
+      group (its next co-buy is a live trigger). A wallet that only co-bought ONE winner
+      early is likely luck (survivorship), NOT a group member.
+   d. SURVIVORSHIP GUARD: KEEP on RECURRENCE (the group co-bought >=2 winners), not on
+      "got into one runner early." Output GROUPS (note "co-buys with <members> x<N tokens>"),
+      not just isolated wallets — we want to roster recurring groups whole.
+2B. ★ PRIMARY ROUTE B — CO-TRADER WALK (expand from our PROVEN anchors). Why: cluster signal
    density did NOT rise when we grew the active list, because a cluster needs 3 wallets
    that ACTUALLY co-buy the same token in the same ~15-min window — an INTERCONNECTED
    trading GROUP, not just individually-good wallets. Co-traders of our PROVEN cluster
