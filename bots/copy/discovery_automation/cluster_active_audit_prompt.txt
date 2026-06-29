@@ -1,0 +1,108 @@
+PROMPT — CLUSTER active-list CO-BUYER AUDIT (Birdeye) — browser-Opus — keep-vs-prune
+
+WHAT THIS IS (and how it differs from discovery)
+This is NOT the discovery prompt. Discovery (cluster_discovery_vetting_prompt.txt) finds
+NEW off-list wallets to ADD. THIS prompt audits the wallets ALREADY on COPY's active list
+and decides, one at a time, whether each one stays (KEEP_ACTIVE) or gets dropped (PRUNE).
+You are auditing existing members, not discovering new ones.
+
+WHY WE'RE DOING THIS (the stakes)
+COPY's cluster strategy fires only when 3 active wallets co-buy the same fresh-mint token
+inside ~15 min. A wallet that NEVER co-buys with others can never help form that 3-wallet
+trigger — it is pure cost: every active wallet is subscribed to a Helius webhook and bills
+credits on every transaction it makes. We already blew past the 10M-credit tier (hit ~14M,
+had to raise the cap to 30M). So we are moving to a CO-BUYER-ONLY active list: keep the
+wallets that actually participate in co-buy groups, prune the rest to cut the bill and
+concentrate the list on interconnected wallets. This is also the cleanest test of whether
+cluster has an edge at all — if a pure co-buyer list still can't produce profitable density,
+that's decisive. PRUNING IS REVERSIBLE (a pruned wallet keeps its record and can be re-added),
+so it's safe to be decisive — but don't prune a genuine group member if you can see the group.
+
+THE ONE CRITERION (this INVERTS the discovery prompt — read carefully)
+In DISCOVERY we judge a wallet on its INDIVIDUAL quality (realized PnL, multi-x, followability).
+HERE the only question is CO-BUYER PARTICIPATION:
+  - A wallet stays ACTIVE iff it repeatedly co-buys RAN tokens in TIGHT pre-run windows
+    ALONGSIDE a recurring set of partner wallets (a real, coordinated GROUP). Individual
+    brilliance is NOT enough — a solo elite trader that never co-buys contributes ZERO
+    cluster triggers and should be PRUNED.
+  - Conversely, a wallet that is only MODEST on its own book but reliably shows up inside
+    co-buy groups EARNS its place (it helps form triggers) — KEEP it. (Same spirit as the
+    discovery "cluster co-signer exception", applied to the existing list.)
+So: judge participation, not personal PnL. The hard followability bars from discovery still
+matter only as cluster-BREAKERS — a sub-15-min flipper or rug-dump farmer that "co-buys" is
+selling into us, so it does NOT count as a useful co-buyer (PRUNE).
+
+INPUT — the wallets to audit
+Read cluster_active_audit.txt in the OneDrive "Claude" folder (My files -> Documents ->
+Documents -> Claude). It lists COPY's current active wallets to check, one per line:
+  address , already_proven , attributed_cluster_pnl , n_cluster_trades , note
+  - already_proven = YES  -> this wallet has ALREADY fired in a real cluster in our own
+    data (it's in wallet_attributions). It is a confirmed co-buyer — mark KEEP_ACTIVE
+    immediately, no Birdeye check needed, and move on. (These are pre-filtered for you so
+    you don't waste a run re-confirming the obvious keepers.)
+  - already_proven = NO   -> UNPROVEN in our data. THESE are the ones you actually audit on
+    Birdeye for a co-buy pattern.
+The 7 conviction-strategy wallets are NOT in this file (they are single-wallet by design,
+exempt from the co-buyer rule, and must never be pruned) — so everything in the file is fair
+game under the co-buyer criterion.
+
+PER-WALLET PROCEDURE (for each already_proven=NO wallet)
+1. Pull the wallet's traded tokens and find the ones that RAN (a real sustained move, not an
+   instant rug). forge token-traded when up; in DOM mode use the wallet-analyzer TOKENS-TRADED
+   table + each token's own Birdeye page to confirm it ran. If the wallet has NO ran tokens at
+   all, it supplies no entry signal -> PRUNE ("no ran tokens").
+2. For each RAN token, open its Top Traders / trades and look at WHO ELSE bought in the SAME
+   PRE-RUN window as this wallet (before the breakout; ignore late/post-run buyers). Recover
+   buy times via forge token-traded first_trade_unix_time, or in DOM mode from the token's
+   trades tab. You are looking for a TIGHT co-buy band (~minutes apart; 15-min core, 60-min
+   outer accumulation window) — coordination, not coincidence.
+3. Decide:
+   - KEEP_ACTIVE if the wallet co-bought RAN tokens in tight pre-run windows together with a
+     RECURRING set of partners across >=2 tokens (a real group). Partners may be ON or OFF our
+     list — off-list is fine, it still means this wallet is a group member.
+   - PRUNE if its RAN-token entries are consistently SOLO (no tight co-buy partners), or always
+     LATE/post-run, or it has no ran tokens, or its only "co-buys" are as a sub-15-min flipper /
+     rug-dump farmer (a cluster-breaker, not a helper).
+   - UNCERTAIN if there genuinely isn't enough data to tell (few tokens, ambiguous timing).
+     Default UNCERTAIN to KEEP-for-now (do NOT prune on thin evidence) and flag it for a human.
+4. BONUS — feed discovery: if you find OFF-LIST partners that co-bought with this wallet and
+   look qualified, note them in the partners column. They are fresh discovery candidates (the
+   group's missing members — adding them is what makes the cluster fire-able). Do NOT vet them
+   here; just record the address + token so a discovery run can pick them up.
+
+OUTPUT — append to cluster_active_audit_results.txt (OneDrive web text editor)
+Header (write once if the file is new):
+  address,verdict,co_buy_evidence,partners,n_ran_tokens,date_audited
+One row per audited wallet:
+  - verdict: KEEP_ACTIVE | PRUNE | UNCERTAIN
+  - co_buy_evidence: one tight phrase — e.g. "co-buys w/ <p1>,<p2> x3 ran tokens",
+    "solo entries on 4 ran tokens", "no ran tokens", "only sub-15min flips".
+  - partners: off-list co-buyer addresses you found (semicolon-separated), or blank.
+  - n_ran_tokens: how many of its tokens actually ran.
+  - date_audited: today (YYYY-MM-DD).
+  - CSV validity: quote any field containing a comma (co_buy_evidence, partners).
+Append-only; never modify/reorder existing rows; skip any address already in this results
+file (it's already audited). already_proven=YES wallets: write a KEEP_ACTIVE row with
+co_buy_evidence="proven in our data (wallet_attributions)" — no Birdeye needed.
+
+FORGE OFFLINE -> VISUAL/DOM METHOD (forge has gone fully dark before; same fallback as discovery)
+The internal forge endpoints sometimes error/empty/time-out for EVERY wallet. If the first
+couple of forge calls fail, switch the WHOLE run to the wallet-analyzer PAGE (a different,
+working backend) and the token pages: read a wallet's tokens from its TOKENS-TRADED table,
+and who-bought-when from each token's Top Traders / trades tab. Always pull FULL addresses
+from the href (document.querySelectorAll('a[href*="/wallet-analyzer/"]')), never truncated
+on-screen text. The audit logic is identical regardless of route.
+
+BATCH -> CHECKPOINT -> RESUME (so a hang never loses work)
+Audit in batches of ~20 wallets. After EACH batch, SAVE those rows to the results file
+immediately (the file IS the checkpoint). Dedup as you go: skip any address already in the
+results file. A restart just re-reads the file and resumes from the first un-audited wallet —
+zero rework, no duplicates. Work hands-off batch after batch until the input list is covered
+or you run low on turn budget, then write the summary. already_proven=YES rows are cheap —
+clear them in bulk first, then spend the run on the NO wallets.
+
+END-OF-RUN SUMMARY
+Report: wallets audited, counts of KEEP_ACTIVE / PRUNE / UNCERTAIN, how many off-list
+discovery candidates surfaced (for a later discovery run), the dominant PRUNE reason
+(e.g. "mostly solo entries"), and confirmation the results file's size/timestamp updated.
+A wallet not pruned just stays active; nothing else happens until Roy applies the verdicts.
