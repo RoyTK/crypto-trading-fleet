@@ -58,10 +58,23 @@ PER-RUN WORKFLOW
    run this FIRST). A token that runs was usually PUSHED by a coordinated group that
    bought it BEFORE the breakout — so the pre-run buyers of a confirmed runner ARE a
    qualifying cluster by construction (they co-bought AND it ran). Steps:
-   a. Find ~5 QUALIFYING running / recently-run tokens: real liquidity (>=~$50k, so it's
-      followable and not a micro-rug), a SUSTAINED move (not an instant pump-dump), and a
-      visible PRE-BREAKOUT accumulation phase (flat/low-vol stretch before the first big
-      push). Use the price history to mark the breakout point.
+   a. ★ TOKEN QUALIFICATION GATE — do this BEFORE you touch any buyers (this is where a
+      past run wasted 2 of its 5 tokens). For EACH candidate trending token, look at its
+      price+volume CHART and confirm ALL THREE:
+        (i)   real liquidity NOW (>=~$50k — followable, not a micro-rug);
+        (ii)  a SUSTAINED move (the run unfolds over time, not one vertical candle that
+              round-trips);
+        (iii) a VISIBLE PRE-BREAKOUT ACCUMULATION PHASE — a flat/low-vol stretch of gradual
+              buying BEFORE the first big push. THIS IS THE REQUIRED ONE: it's the window
+              where a coordinated group accumulates, and the ONLY thing that yields a pre-run
+              CLUSTER. Mark the breakout point on the chart.
+      DISQUALIFY + REPLACE: a token that went VERTICAL straight from launch with no
+      accumulation base was SNIPED, not accumulated — its early buyers are fast snipers
+      (TOO_FAST), not a pre-run group. Do NOT process its buyers; discard it and pick another
+      trending token. (Lesson: SNDK + BULLWIF were instant vertical pumps and yielded only
+      snipers — exactly this trap; world/Bepe/FLKR had real accumulation phases and produced
+      the candidates.) Keep selecting until you have ~5 tokens that PASS the gate, THEN go to
+      step b. Qualifying the right tokens up front IS the game for Route A.
    b. Pull the wallets that bought in the PRE-RUN window (before the breakout). Do NOT take
       every early buyer — isolate the COORDINATED ones: wallets that bought within a TIGHT
       band (~minutes apart, your 15-min trigger as the core; 60-min as the outer
