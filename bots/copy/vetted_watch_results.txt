@@ -1034,3 +1034,75 @@ CGYp9iv2vFbrNE8TaAW9CnjeSLXk9zekWhmXvvYS3DtA,REJECT,-$447,+$724,sub15:56%,50%,"0
 9wuW6mWJNxnBCAH4Gt4cgWhL7jMe9LYHEXgogGHd9U81,REJECT,-$468,+$714,sub15:55%,60%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -468 unreal 714,2026-06-28
 35hUuZcqe4ATiVp3oRhFyppBuo7mff8VsKGj357xSFpb,REJECT,-$44,+$302,sub15:56%,50%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -44 unreal 302,2026-06-28
 C1BKZ6JmGus3mjp4eo1guaDeGsrh5gTjNC4iMpT3WfSv,REJECT,-$45,+$128,sub15:50%,63%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +5m tight; bag-holder: realized -45 unreal 128,2026-06-28
+HAXeGvuo61hYNAaFBy7374BE2MoH7E16X2DqeVQW9WTX,KEEP,+$1780,-$392,4mo,58.97%,21 multi-x,cluster co-signer x5 anchors,2026-06-28
+DSGnBW6LXYrmKTGL1CHdDXMF2dzSTN6UpSizv21tsV5W,KEEP,+$37,+$0,1h,0%,0 multi-x,"cluster co-signer x5 anchors, 1 tok",2026-06-28
+5hLPgN8ri5Cbiae2M6FpwXzKkuk9Wwp1eDK46CnG4Lh7,KEEP,+$855,-$43,1d,62.24%,5 multi-x,"cluster co-signer x5 anchors, 1 tok",2026-06-28
+7NHynSRqYabhyaJJZyFBmSHeCj2c4U1F6FYCom66ZENy,KEEP,+$9420,-$245,7h,25%,8 multi-x,"cluster co-signer x5 anchors, 1 tok",2026-06-28
+8utGYiU93z4pgoxdV86DPBLK2KSiNh4vUmhXjKzqTxLF,KEEP,+$3630,+$4,19m,59.83%,77 multi-x,"cluster co-signer x5 anchors, 1 tok",2026-06-28
+6xZmX2YhEhqjjygVZFNtEhKJB34GeTYt32vCawcGduUf,KEEP,+$197,+$0,1h,0%,1 multi-x,"cluster co-signer x5 anchors, 1 tok",2026-06-28
+GDEt6QCRbN86oYq4hGKTfiapdvpBQUSuRNg719q6chML,KEEP,+$65,-$64,6d,24%,1 multi-x,"cluster co-signer x4 anchors, 1 tok",2026-06-28
+BHpAyEGJgPdmCpVyENgvuWE7HNSosGuNr6DBCwNtpG2H,KEEP,+$1530,-$317,1d,70.37%,10 multi-x,"cluster co-signer x2 anchors, 1 tok",2026-06-28
+F6qbzHCJBZCe8WLJvK992micPWcqvmwWvvLnCNYyMPwV,KEEP,+$145,+$0,19m,5.12%,5 multi-x,"cluster co-signer x2 anchors, 1 tok",2026-06-28
+SgetLgwGWM7e7XaYULXmQFW6jom1MS24K4RK8EN5V4T,KEEP,+$66,+$0,15m,0%,0 multi-x,"cluster co-signer x2 anchors, 1 tok",2026-06-28
+4SgwtApqXAXmkNSGGBzAvndVjXjnGkk8xS44DHm2as4s,TOO_FAST,+$5560,+$581,43m,43.03%,80 multi-x,avg hold 43m / instant-sell 89.09%,2026-06-28
+BDKuKD2Ves9RHnYQsutMzcnKQgXYtEVCEX1BZD2kDYyL,TOO_FAST,-$120,+$0,8m,0%,0 multi-x,avg hold 8m / instant-sell ?%,2026-06-28
+Fp1rAQXNBhi7JHhFy3NAHvrXXW5HTjHcPGPr88t3UWkW,TOO_FAST,-$65,+$0,10m,0%,0 multi-x,avg hold 10m / instant-sell 25%,2026-06-28
+B4BJKuhsNpdwg9eGevf5TFtcVd138p6259JFUvijErE5,TOO_FAST,+$0,+$0,7m,0%,0 multi-x,avg hold 7m / instant-sell ?%,2026-06-28
+FGtdRzqLgKzgjeuR7aejh8DkYyMvS3wH2UuaoaDjFSzj,TOO_FAST,+$12,+$0,5m,0%,0 multi-x,avg hold 5m / instant-sell ?%,2026-06-28
+8VWaBBXwAnQuvZ9wyFKckJ1Z7wv1qUf9Bqc3CswH45hu,TOO_FAST,-$7790,+$0,12m,75%,2 multi-x,avg hold 12m / instant-sell 53.84%,2026-06-28
+DQGGAFyrM6hS9b5QTNaqFAFpQupDwXj7B6EP7W4GH815,TOO_FAST,+$148,-$2,3h,86.76%,1 multi-x,avg hold 3h / instant-sell 88.23%,2026-06-28
+HEA2EZZSqZWnLha3NnUs8LNmRKDEwVrTNJSC6Yt4iRaA,TOO_FAST,+$13,+$0,2m,20%,0 multi-x,avg hold 2m / instant-sell 80%,2026-06-28
+68mY6vcFTphPpSMnxXfG8dbCenGSuyBdiph3gQr5LeLE,REJECT,-$378,-$435,5mo,83.47%,6 multi-x,realized<=0 (bag-holder),2026-06-28
+F6oksBdYrZxhbYc4BWvQPUrd9Vby4xTas5NDBu8a1ExD,REJECT,-$668,-$383,2mo,62.73%,9 multi-x,realized<=0 (bag-holder),2026-06-28
+7HRK5MmK56KcEvWV5cwx9d8z1bgubfy4TMNU3yEGiwic,REJECT,+$0,-$33,15d,20.58%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+66shJKXXtLjfdMwHEvPbnvPpBJ2fEnNpxmkjVTSZ3Hin,REJECT,-$2790,-$125,2d,29.68%,2 multi-x,realized<=0 (bag-holder),2026-06-28
+BEVBTKN98N4s7JaDrqBViDsdJaxGBmstB8FFMteoDQyg,REJECT,-$9,+$0,15m,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+8YSw4VjgsoFETNMGZbqmwakwGyYdmLscAtPzkEs43Yxe,REJECT,-$4,+$0,1h,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+5KAUFkPrFi3H8AdgXhQeQaKo9dGJk8fdnY8gLGeGntQz,REJECT,-$11400,-$2640,17d,89.51%,13 multi-x,realized<=0 (bag-holder),2026-06-28
+71RZiZ2sheeoNy2f2t7ouG4J8gfYAjWy9MTwSeZMQZ34,REJECT,-$2500,+$0,22m,72.72%,9 multi-x,realized<=0 (bag-holder),2026-06-28
+BYVDKqFPED4D5r64zPvBi9KvJkeFGyxzHxpcjHFsFNxH,REJECT,-$817,-$53,1d,53.65%,7 multi-x,realized<=0 (bag-holder),2026-06-28
+9HewA1pF5pCjMk36ue3CRCx7HA9X56SsmUjAst48rfqV,REJECT,-$772,-$15,1d,64.28%,1 multi-x,realized<=0 (bag-holder),2026-06-28
+AKZRvgLFguJXDgfNht4E7dByik6bRfSuSpK7UUdpejFa,REJECT,+$560,-$587,14h,53.84%,8 multi-x,unrealized loss > realized gain (bag-holder),2026-06-28
+8j8zxkAC39ZMR9u8gp2boYAxvHPgQwL6RiXpeEqDyMGT,REJECT,-$5890,+$0,29m,87.41%,5 multi-x,realized<=0 (bag-holder),2026-06-28
+9PpUjUk3z6jST15HSNBTBwzRxoJLAtirU4SNincCjPhF,REJECT,-$4,+$0,30m,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+3326QtsxKcxJ5gP6Hyx6s9YkT7pYaB9arhjvxAmTWkow,REJECT,-$13480,+$0,17m,81.5%,1 multi-x,realized<=0 (bag-holder),2026-06-28
+4KHXVqLsxPXCVCZkuExEDtTvjXL6SgxfTBHSLc2bGCNk,REJECT,-$82600,-$9460,1mo,90.9%,8 multi-x,realized<=0 (bag-holder),2026-06-28
+6RkAD2cMMAN1K77c9oQH8WfyZDQR6yCrkz5TuRAh8Sj4,REJECT,-$21360,-$1640,4h,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+2GMhqu3cZsBsGXcdKQnAavzia4iaWT8BjdHBSWMywsuA,REJECT,-$37840,-$22050,11h,86.55%,23 multi-x,realized<=0 (bag-holder),2026-06-28
+Aj5Pexz2nm9LAh9UvFp28dvvRS8j75sCsG9aSW4cQ4SN,REJECT,-$45780,-$26450,11h,85.74%,22 multi-x,realized<=0 (bag-holder),2026-06-28
+5knqkJzqCxNpdYRPYS4JSkU9x54NoVaSC2ZjPQH7zVuG,REJECT,+$0,-$24890,5d,5.26%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+497WkYPDszME8Taep4S8VKtUjBNNYFeJffvNd8tAioHU,REJECT,-$765,+$10,2h,7.14%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+3fBdkJfdLMLFVmbDZZprTfxV8Vu79FdAbWwz93YXeF6S,REJECT,+$0,-$502,9d,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+EPJ3cPRWcaELD3Kha4LMK1r6FBeU4TyZvQbSdTr6igW7,REJECT,-$2320,-$139,2d,34.92%,1 multi-x,realized<=0 (bag-holder),2026-06-28
+C3YvzMc64bwU3evCf3hiHDHSfZ7xDRHBor4NiZ3yPucF,REJECT,+$0,-$1190,9d,3.03%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+49LFdGNE7oDLvKXisE158RCQcfdhRqcEistjbAQLixDV,REJECT,-$0,+$2,3h,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+7CrQfCcrWwyJzzGa5cWn7BaRs3eiN5fa2yu7h5vUsG9w,REJECT,-$212,-$621,17d,55.66%,8 multi-x,realized<=0 (bag-holder),2026-06-28
+2ub1rvM2kpGhmvzmvmKMmBGoYtrmvdG6jygRd8CkhLQ6,REJECT,-$3880,-$1060,2mo,59.69%,38 multi-x,realized<=0 (bag-holder),2026-06-28
+79PNNJJYCvSKkH7ZpwZt36uiWxKR3Y9z92riWRy6TejQ,REJECT,+$0,+$0,5h,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+3LSD3CnMtKsR5triqs3jUUQ1M2ingP6pk8VG7G28Vphe,REJECT,+$0,-$1,5h,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+495Ro7DdVMgtbNWqbn7yiasoh6cMAUreVkETfhhHZDTw,REJECT,-$692,-$24,2mo,13.2%,1 multi-x,realized<=0 (bag-holder),2026-06-28
+CuFAw6XVywGBoEpzh357SVxikbG9WmwMe5mD3XmS22C9,REJECT,+$27,-$31,2mo,66%,4 multi-x,unrealized loss > realized gain (bag-holder),2026-06-28
+E4uFQ5ktFXDtj9TWjsmDb4PtQuCovJa8TETd6fRRe7xc,REJECT,+$0,-$13,13d,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+4zMEuJNkQaac8APjcDX5DNVKQpW2KvFVvvN3R6gmGTGZ,REJECT,+$0,-$309,7d,6.66%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+46t92Uc6uuNgUPXmqhe1LsSCBkWNaC24JTtvZQsxBVcu,REJECT,+$25,-$29,1d,10.81%,2 multi-x,unrealized loss > realized gain (bag-holder),2026-06-28
+CBjcd5QSuaipoRVpgiGyuiL3wvVbobxKeeXbFkxEWeGo,REJECT,-$4580,-$233,1d,25%,6 multi-x,realized<=0 (bag-holder),2026-06-28
+ELoxVrqvtVu37EFvBSSuKm5BfTEz76EWZnRXvMN284Kf,REJECT,-$85,-$144,7mo,29.16%,1 multi-x,realized<=0 (bag-holder),2026-06-28
+3UVQMPR6ZrnLfgGLNZWNzAsKZ8dQTbdtgQ9NWfx9Gnpa,REJECT,-$11,-$8,9d,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+6YmbwpXZBVb3HMcoJuTRsNfD6YqB53uzT2MsjkD3CoUr,REJECT,-$364,-$267,9d,11.11%,3 multi-x,realized<=0 (bag-holder),2026-06-28
+8miYEGwsJYXB7aimt5qXMWhLyMFvvjBPuT1LPFhRPZr1,REJECT,-$21,-$124,17d,33.33%,2 multi-x,realized<=0 (bag-holder),2026-06-28
+CQi9BtNHskXk9ErDMPpD9Yy4dVatT7fkkAPFWd6GV2r,REJECT,+$0,+$0,46m,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+8QFF7krCqs29GXLnsGc1ve7iybpLQBbqcXBtJ56zduRj,REJECT,-$7590,-$454,5h,72.72%,4 multi-x,realized<=0 (bag-holder),2026-06-28
+kc1J4CVAZWPntuiTG5ftZeWcvsoM3cy56adKmNvTjYm,REJECT,-$2630,+$0,1h,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+78c4agGHJo9wU9Y2Vy7P2q4x5fuqMMTXa9ZLgYckZJay,REJECT,-$44,-$29,2d,98.03%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+12oukKF4yHhYqGY6DZ3pYnKmmsz2myv9qxa1itJufKp9,REJECT,-$1220,-$8880,4d,37.41%,2 multi-x,realized<=0 (bag-holder),2026-06-28
+9AudsCNhVcg2iSJzqainBBtJyC26pXqQK2tXF415Q9sD,REJECT,-$4050,-$46,2d,58.53%,3 multi-x,realized<=0 (bag-holder),2026-06-28
+32utv8sHxuET3eB1fKTs5DxTYELsmXd5CwQB5ecGEZJU,REJECT,-$391,+$0,27m,57.4%,1 multi-x,realized<=0 (bag-holder),2026-06-28
+7BbyN6749dmBbSFZxCBZxz9roC4MRrR2CNGR3zv2NATy,REJECT,-$1150,-$109,4d,22.72%,1 multi-x,realized<=0 (bag-holder),2026-06-28
+FgYf1E8xtZfvD7LzmvwCpfyZgfNdZhUxDMpUU1RKdaW1,REJECT,-$596,+$0,2h,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+FZxgcX6Tkd3CgSSkUEi5XCmgnUPC5k7iVTJ3NgPeeCg2,REJECT,-$4240,-$2860,16d,86.78%,13 multi-x,realized<=0 (bag-holder),2026-06-28
+8uHvEYAJTxaHRh3GVgauGLBSMosTGmx9LDKFPZc5kxpK,REJECT,-$5,-$0,2d,38.46%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+GsnQDZSTjVpsBGhrXQL43hub1vDRCAtrkKuMimxZLVuq,REJECT,-$285,+$0,2h,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+6WiqYAQv7Gk6Fdhz9BhQ8oAP1Kouw8rrsTP7gA52DJRr,REJECT,+$56900,-$60520,4mo,97.12%,100 multi-x,unrealized loss > realized gain (bag-holder),2026-06-28
+Hg6HRx57eMVoxMJURvmRguxuAoPnkUeZnsq51RhFHz7q,REJECT,-$183,+$0,25m,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+8tuBamGr2UxpSs8EDPm3zqZu3sur6F6bPYXCY6fDeaLb,REJECT,-$639,+$0,59m,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+5KvLrxX27Wc2kBgT45kAtZ3n8djDeRWHXPi15QawCYVm,REJECT,-$1190,-$61,3d,22.72%,0 multi-x,realized<=0 (bag-holder),2026-06-28
