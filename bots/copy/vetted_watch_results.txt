@@ -933,3 +933,104 @@ GCxRVYmx7639heNoUWSuzca8bYAb488kTJ4dBjUY7jdy,KEEP,+$37.97K,-$11.14K,7h,78.94%,"1
 6vw1Qk9RH7ahwJ6B3unNvjCkXVHctVnDNG3xMSh35QVf,KEEP,+$14.26K,-$0.40K,41m,84.49%,"49 (3>500%, 46>100%)","Strong realized +$14.26K, ~$0 unrealized, 49 multi-x, 84% rug, 41m followable hold; fresh-mint exit specialist [co-buy Chameleon-cluster] [src Chameleon]",2026-06-25
 3YCyejepE6Ez8DSoNmPVbF6vaFRvXATYUcsbAYD5az8e,KEEP,+$26.06K,+$0.08K,13h,79.79%,"9 (1>500%, 8>100%)","Strong realized +$26.06K, ~$0 unrealized, 9 multi-x, 80% rug, 13h followable hold; fresh-mint exit specialist [co-buy Chameleon-cluster] [src Chameleon]",2026-06-25
 4a5HoEHujwdmHKmbzLhqwYLG4DUKAqBStPbzJt3bF29X,REJECT,+$233.24,$0,30s,0%,"0 (0>500%, 0>100%)","Dust/inactive: only 2 tokens, 2 txns, $932 vol, zero multi-x, 0% rug, 30s hold = not a fresh-mint sniper [src Chameleon]",2026-06-25
+4wfvmuCRtqvjRwGQD8npKuQXXuwewj7Ztam5DXQxzypX,KEEP,+$11.83K,-$5.69K,sub15:42%,93%,"3 (>500%), 12 (>100%)",co-buys w/ 2EwL +26m; realized $11828 unreal $-5690 multiX 15 rug 93% sub15 42%,2026-06-28
+9gwLfJnGHkGBq9JspDUcjgozoAQAVNj4B7cs12r4JGcF,KEEP,+$5.60K,-$250,sub15:50%,48%,"2 (>500%), 10 (>100%)",co-buys w/ 2EwL +59m; realized $5602 unreal $-250 multiX 12 rug 48% sub15 50%,2026-06-28
+Go4y9Qw46Exo5vHxWX7rmtS8nheVhj6Pz1mJyZvfr4i4,KEEP,+$6.07K,+$0,sub15:58%,61%,"1 (>500%), 2 (>100%)",co-buys w/ 2EwL +1m tight; realized $6073 unreal $0 multiX 3 rug 61% sub15 58%,2026-06-28
+FnTjrM1u5A4k6h6z4NxMo5eSHXibtzqkDgvLNWemEezb,KEEP,+$9.01K,-$244,sub15:37%,35%,"2 (>500%), 4 (>100%)",co-buys w/ 2EwL +45m; realized $9013 unreal $-244 multiX 6 rug 35% sub15 37%,2026-06-28
+FB3mHZC7UnHU41gUBdLVMmwwXrTWpkh3iTb5Z5ArWYvi,KEEP,+$7.59K,-$249,sub15:41%,40%,"1 (>500%), 6 (>100%)",co-buys w/ DqBs +1m tight; realized $7586 unreal $-249 multiX 7 rug 40% sub15 41%,2026-06-28
+NBTm62mDgQWSUUcTurFStdVo4QLbvjkPqfSTGkRsfP7,KEEP,+$33.80K,+$1.81K,sub15:14%,74%,"1 (>500%), 11 (>100%)",co-buys w/ 6AGp +4m tight; realized $33797 unreal $1808 multiX 12 rug 74% sub15 14%,2026-06-28
+4bc1dTTikF9ayzUt81wx8N89QWZ6n7QNkeQbw8UFY27K,TOO_FAST,-$34,+$0,sub15:100%,0%,"0 (>500%), 0 (>100%)",co-buys w/ 2EwL +53m; sub15-hold 100% of 2 tok; COPY-latency-cant-follow,2026-06-28
+3LMQjUapqbp8ULLqqYcutBwnKWhCpeDpJ9YCQVA9JbW6,TOO_FAST,-$3,+$0,sub15:100%,0%,"0 (>500%), 0 (>100%)",co-buys w/ 2EwL +7m tight; sub15-hold 100% of 2 tok; COPY-latency-cant-follow,2026-06-28
+GLYMsepa98cEbxpE2SCyCWE7umq8ksrdsgbJTpmvNc4s,TOO_FAST,-$3.21K,+$0,sub15:62%,93%,"0 (>500%), 6 (>100%)",co-buys w/ 2EwL +11m tight; sub15-hold 62% of 100 tok; COPY-latency-cant-follow,2026-06-28
+6QKhNdFVxCkDVpS5ApcHyyNJD9GFJAoHYjfABcFq3Gte,TOO_FAST,+$30,-$269,sub15:91%,92%,"0 (>500%), 10 (>100%)",co-buys w/ 2EwL +9m tight; sub15-hold 91% of 100 tok; COPY-latency-cant-follow,2026-06-28
+DDfrjgV29sYuw9sDhuCtoS3ZYGvK5R8DcLHe3q3jX2Bc,TOO_FAST,-$102,-$23,sub15:65%,80%,"0 (>500%), 5 (>100%)",co-buys w/ 2EwL +12m tight; sub15-hold 65% of 100 tok; COPY-latency-cant-follow,2026-06-28
+jKsAX9jokMfig5uhqSzP8WMJeGCG7qrk1Hd2NtCb8kD,TOO_FAST,+$0,+$341,sub15:100%,0%,"0 (>500%), 0 (>100%)",co-buys w/ 2EwL +45m; sub15-hold 100% of 2 tok; COPY-latency-cant-follow,2026-06-28
+2XaqzYG3WNmAAQtr4DoNkaEbeThFFVGykeueTsMo26z3,TOO_FAST,+$0,+$66,sub15:100%,0%,"0 (>500%), 0 (>100%)",co-buys w/ 2EwL +45m; sub15-hold 100% of 2 tok; COPY-latency-cant-follow,2026-06-28
+BsC55Bb9ntuxHR8BqYmthKgXft3wkzFZ65QSRaqGKmex,TOO_FAST,-$4.33K,-$604,sub15:75%,91%,"0 (>500%), 5 (>100%)",co-buys w/ 2EwL +45m; sub15-hold 75% of 12 tok; COPY-latency-cant-follow,2026-06-28
+DNx8ypvB7aUacxYxeYGhjV9CxYrJJ2tE4wGqos4aFdXy,TOO_FAST,-$42,+$0,sub15:100%,0%,"0 (>500%), 0 (>100%)",co-buys w/ DqBs +58m; sub15-hold 100% of 2 tok; COPY-latency-cant-follow,2026-06-28
+1LnsdX1cJ48ev6tmNUDpmrd7sUUSjiRFoQ6wyWgthEa,TOO_FAST,-$887,+$0,sub15:74%,32%,"0 (>500%), 0 (>100%)",co-buys w/ 6bxv +2m tight; sub15-hold 74% of 39 tok; COPY-latency-cant-follow,2026-06-28
+A22h9coKbBKRzdpjjR6jm7nyt3UXp44XQCwvfUVVaZ3L,TOO_FAST,+$0,-$5.95K,sub15:81%,23%,"0 (>500%), 0 (>100%)",co-buys w/ 6bxv +43m; sub15-hold 81% of 98 tok; COPY-latency-cant-follow,2026-06-28
+EjTYWD3VEscf4Z69Ki22F1iRg2H8eu5RcDH8v1WBy7zW,TOO_FAST,+$763,-$160,sub15:83%,59%,"0 (>500%), 5 (>100%)",co-buys w/ 6bxv +1m tight; sub15-hold 83% of 48 tok; COPY-latency-cant-follow,2026-06-28
+7LfVG4MNxTenrhw4xczt3ToFL6jd3KUXSzKBMpxambtM,TOO_FAST,+$106.79K,-$2.75K,sub15:62%,70%,"4 (>500%), 46 (>100%)",co-buys w/ 6bxv +0m tight; sub15-hold 62% of 100 tok; COPY-latency-cant-follow,2026-06-28
+Fpnv12A17d3bVWjiaVqJNrvtv5L7enuuh4ZYNEwf5CZA,TOO_FAST,-$78,-$44,sub15:74%,72%,"1 (>500%), 4 (>100%)",co-buys w/ 6bxv +2m tight; sub15-hold 74% of 100 tok; COPY-latency-cant-follow,2026-06-28
+3HXQoPaA7NwrCsfSsRM5GFTBVUEdD9FqsrjbBWmmVKVz,TOO_FAST,-$102,+$0,sub15:77%,77%,"0 (>500%), 16 (>100%)",co-buys w/ 6bxv +0m tight; sub15-hold 77% of 100 tok; COPY-latency-cant-follow,2026-06-28
+BD8ww8H5eVJMVGf3fjfLWu3cwHMxutgxHHDd3ShgnYjF,TOO_FAST,-$26.88K,-$2.86K,sub15:90%,94%,"0 (>500%), 32 (>100%)",co-buys w/ 6bxv +0m tight; sub15-hold 90% of 100 tok; COPY-latency-cant-follow,2026-06-28
+EF8huodttHDm2rovjQzL2gmS5XhWqfD3bGM45m7Pxk5S,TOO_FAST,+$114,-$791,sub15:86%,80%,"0 (>500%), 11 (>100%)",co-buys w/ 6bxv +4m tight; sub15-hold 86% of 100 tok; COPY-latency-cant-follow,2026-06-28
+4SNjTmNjawq3xWChUYaV7kj4J7hEHYtbp1pfd5zyk6wi,TOO_FAST,+$19,+$0,sub15:70%,38%,"0 (>500%), 0 (>100%)",co-buys w/ 6bxv +8m tight; sub15-hold 70% of 23 tok; COPY-latency-cant-follow,2026-06-28
+AeFajBPfrjxAL5tcMZJ3pUEqAmAkSDs1v3pQL6zqFe6e,TOO_FAST,+$866,-$2.74K,sub15:86%,50%,"0 (>500%), 10 (>100%)",co-buys w/ 6bxv +1m tight; sub15-hold 86% of 100 tok; COPY-latency-cant-follow,2026-06-28
+GsGAanz7hudUfXsnm2szSzTMbWpw1uFdBxp8RqBAWWLf,TOO_FAST,+$407,+$0,sub15:94%,83%,"0 (>500%), 0 (>100%)",co-buys w/ 6bxv +1m tight; sub15-hold 94% of 100 tok; COPY-latency-cant-follow,2026-06-28
+86csHWkpiZwmB1YQ26kVi6LGcgDAStjTQP1nohKMoW59,TOO_FAST,-$1.87K,+$0,sub15:96%,95%,"0 (>500%), 26 (>100%)",co-buys w/ 6bxv +1m tight; sub15-hold 96% of 100 tok; COPY-latency-cant-follow,2026-06-28
+2kv8X2a9bxnBM8NKLc6BBTX2z13GFNRL4oRotMUJRva9,TOO_FAST,+$220.35K,-$36.85K,sub15:89%,96%,"20 (>500%), 423 (>100%)",co-buys w/ 6bxv +1m tight; sub15-hold 89% of 100 tok; COPY-latency-cant-follow,2026-06-28
+7FK6oFTx8qLUNdbQJoiX5XceEpZ44TxmPZGjsSaSQxc7,TOO_FAST,-$1.65K,+$0,sub15:88%,53%,"0 (>500%), 1 (>100%)",co-buys w/ 6bxv +9m tight; sub15-hold 88% of 100 tok; COPY-latency-cant-follow,2026-06-28
+7SczN7oKpN5M2Jz5Rn6ArFioJ3MCiyeLkLGSvoqkTADr,TOO_FAST,-$218,+$0,sub15:87%,74%,"0 (>500%), 5 (>100%)",co-buys w/ 6bxv +5m tight; sub15-hold 87% of 100 tok; COPY-latency-cant-follow,2026-06-28
+3MZvE3LHAEY8d3XTa2ZxWHgGEF4q2d4Vs7M4ZTL5MgKN,TOO_FAST,+$2.21K,+$147.26K,sub15:77%,15%,"1 (>500%), 1 (>100%)",co-buys w/ 6AGp +10m tight; sub15-hold 77% of 91 tok; COPY-latency-cant-follow,2026-06-28
+HAWQepALFJabmiRBfyJefNGdu4K7X3oVqs15L19MWuhA,TOO_FAST,+$0,+$964,sub15:80%,0%,"0 (>500%), 0 (>100%)",co-buys w/ 6AGp +3m tight; sub15-hold 80% of 5 tok; COPY-latency-cant-follow,2026-06-28
+CzgTsfqhRyoQzMJsMaMismx628hnKtoRr57FWkdS7f8D,TOO_FAST,-$1.50K,-$1.75K,sub15:81%,79%,"0 (>500%), 0 (>100%)",co-buys w/ 6AGp +4m tight; sub15-hold 81% of 26 tok; COPY-latency-cant-follow,2026-06-28
+GXHEmp9LNRGZjGLjA3WTWpTnAcpu966AVx8UwT9ZjfYx,TOO_FAST,+$20.05K,+$2.19K,sub15:77%,73%,"0 (>500%), 2 (>100%)",co-buys w/ 6AGp +4m tight; sub15-hold 77% of 43 tok; COPY-latency-cant-follow,2026-06-28
+6o6apEqR7rv3t9tGDGSmULKnum8EtZn3KrAhvyByjJis,TOO_FAST,-$4.58K,-$5.88K,sub15:76%,79%,"0 (>500%), 1 (>100%)",co-buys w/ 6AGp +4m tight; sub15-hold 76% of 100 tok; COPY-latency-cant-follow,2026-06-28
+73EwbeVPjwmL7o2SBUrkyirAmtC4MEPeZYrx24RmqUBX,TOO_FAST,+$5.89K,-$10.48K,sub15:77%,77%,"0 (>500%), 7 (>100%)",co-buys w/ 6AGp +4m tight; sub15-hold 77% of 100 tok; COPY-latency-cant-follow,2026-06-28
+EVfdjE9n5P8M5T8F1B9yAbs1vqw3PaRLZjJeSvJYRkHk,TOO_FAST,-$378,-$3.94K,sub15:85%,81%,"0 (>500%), 2 (>100%)",co-buys w/ 6AGp +4m tight; sub15-hold 85% of 97 tok; COPY-latency-cant-follow,2026-06-28
+DuWncjkEgtVWapzBohRBxWh7bicgivqyPr7PBQESqUxi,TOO_FAST,+$3.76K,-$427,sub15:71%,44%,"2 (>500%), 10 (>100%)",co-buys w/ 6AGp +4m tight; sub15-hold 71% of 100 tok; COPY-latency-cant-follow,2026-06-28
+C14KHSdSoTFu9dPtGCSi6HsYEb3HeSqmCoVR13Y57SLg,TOO_FAST,-$11,+$0,sub15:95%,84%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +14m tight; sub15-hold 95% of 61 tok; COPY-latency-cant-follow,2026-06-28
+6VTEhnTvxxTYCGunKzNDyDrupfvkyeTkKD2ggCs6mVzn,TOO_FAST,-$63,+$406,sub15:84%,86%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; sub15-hold 84% of 25 tok; COPY-latency-cant-follow,2026-06-28
+5pEepk2Pn1xUVZ7bkjNT8VozdBtR7oGvrvByA8Yva1cY,REJECT,+$51,+$0,sub15:0%,0%,"0 (>500%), 0 (>100%)",co-buys w/ 2EwL +8m tight; only 0 multi-x win; not repeatable,2026-06-28
+7igsUtbErrhNQQnq3PhjF6WAPLQgBwcxd1FrJp1gNmkx,REJECT,-$475,+$1.45K,sub15:60%,56%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -475 unreal 1453,2026-06-28
+87rk7DpLNDxFzACm62CnW7nussuWMgB17M4VxwMsD9PQ,REJECT,-$1.26K,-$310,sub15:42%,60%,"0 (>500%), 1 (>100%)",co-buys w/ 2EwL +17m; bag-holder: realized -1258 unreal -310,2026-06-28
+6NvqBJSnWVA7rFMMaa6CJ3eixsA1cuMngX5gXcRRAXnm,REJECT,-$2.09K,-$253,sub15:48%,62%,"1 (>500%), 8 (>100%)",co-buys w/ 2EwL +7m tight; bag-holder: realized -2093 unreal -253,2026-06-28
+uzwbCjoBos1CiVPYAp2QqwKDVPu3LLgpsTL8k5Uqu1W,REJECT,-$23,+$0,sub15:52%,4%,"0 (>500%), 0 (>100%)",co-buys w/ 2EwL +21m; bag-holder: realized -23 unreal 0,2026-06-28
+AKqAoCZ795cqTTi4cXYCYGpazEFQ2Zp2HNP4srJCXcgh,REJECT,-$1.83K,-$96,sub15:42%,63%,"0 (>500%), 1 (>100%)",co-buys w/ 2EwL +8m tight; bag-holder: realized -1826 unreal -96,2026-06-28
+4LewMvbmRzeYtbULWe4r3Wxou19zWSPvfE2YAuWjwqWJ,REJECT,+$105,+$0,sub15:38%,7%,"0 (>500%), 0 (>100%)",co-buys w/ 2EwL +2m tight; only 0 multi-x win; not repeatable,2026-06-28
+8rF4neBFFRqZaUuzAWGKSGpKte6dtrBZG1sUSXKKPq95,REJECT,-$13.90K,-$2.32K,sub15:0%,0%,"0 (>500%), 0 (>100%)",co-buys w/ 2EwL +22m; bag-holder: realized -13901 unreal -2321,2026-06-28
+5KELUMojJXd7Rs6ucyc7hjLv1xmNqByqUrdxTpY1vskP,REJECT,-$2.27K,-$520,sub15:50%,81%,"1 (>500%), 17 (>100%)",co-buys w/ 2EwL +9m tight; bag-holder: realized -2270 unreal -520,2026-06-28
+96jycaYypPJfLA98z1ZwQnMYjE1HTPogoJJ7DGdRGFNV,REJECT,+$1.47K,-$202,sub15:49%,50%,"2 (>500%), 4 (>100%)",co-buys w/ 2EwL +25m; realized too small $1469,2026-06-28
+GTx7YbK8TpK6gskrBC9U7ip1Jw1BAfx1WcwwETobACBq,REJECT,+$14.03K,+$0,sub15:54%,55%,"1 (>500%), 0 (>100%)",co-buys w/ 2EwL +25m; only 1 multi-x win; not repeatable,2026-06-28
+8Kjo55G75QLxTq8KVunWJ5E64CZWeabwdr3fNZoY5XBp,REJECT,-$2.81K,-$17.93K,sub15:50%,33%,"0 (>500%), 1 (>100%)",co-buys w/ 2EwL +26m; bag-holder: realized -2814 unreal -17935,2026-06-28
+2mdG1hFv37ZKZ2YotGa7kk2dbzpUVc1ad5QFfNyW43Ug,REJECT,-$12.50K,-$16.84K,sub15:39%,90%,"2 (>500%), 9 (>100%)",co-buys w/ 2EwL +15m; bag-holder: realized -12499 unreal -16835,2026-06-28
+HeL6e9ybDfYfuKoeKNAA4Umq8nyNJrwfgexKcJUKxNWF,REJECT,-$8.42K,-$7.85K,sub15:56%,75%,"3 (>500%), 0 (>100%)",co-buys w/ 2EwL +47m; bag-holder: realized -8418 unreal -7850,2026-06-28
+4ruoMr6x9MFeiA4tHGJAU3rDoWsrE5ZsSJpNYtiW6SD8,REJECT,-$1.59K,-$1.65K,sub15:36%,85%,"4 (>500%), 71 (>100%)",co-buys w/ 2EwL +14m tight; bag-holder: realized -1594 unreal -1653,2026-06-28
+D3xPx96CMBRnwV5aFo4v7wHc6fPfrhJkNFCMDXEAM6ed,REJECT,-$983,-$98,sub15:17%,52%,"1 (>500%), 5 (>100%)",co-buys w/ 2EwL +2m tight; bag-holder: realized -983 unreal -98,2026-06-28
+Ga1iu5UfApAqPUYG1dWQKPHxQSgAtgjdvP3Tyzc9c3iv,REJECT,-$1.30K,-$74,sub15:14%,54%,"0 (>500%), 6 (>100%)",co-buys w/ 2EwL +13m tight; bag-holder: realized -1298 unreal -74,2026-06-28
+GA1e5hJZJoiLA3ja79D3UZA28DdpSfeMnX6FTUjUzBfw,REJECT,-$7.51K,+$0,sub15:46%,47%,"0 (>500%), 2 (>100%)",co-buys w/ 2EwL +9m tight; bag-holder: realized -7508 unreal 0,2026-06-28
+E1sykahZGZuLbkmX8nPKYbhwutTm9B6gHSPbQHVNpLyX,REJECT,-$1.58K,-$46,sub15:9%,56%,"1 (>500%), 6 (>100%)",co-buys w/ 2EwL +57m; bag-holder: realized -1578 unreal -46,2026-06-28
+7saJ51NCAvcXDNmaw3LBaeGSGhy9NH6CP8wkxPAqzLkF,REJECT,-$333,+$0,sub15:33%,50%,"0 (>500%), 0 (>100%)",co-buys w/ 2EwL +3m tight; bag-holder: realized -333 unreal 0,2026-06-28
+GLAJvcpyfqbhNe1NWpW7seUu7akGZDPQSzPgTiiECHTG,REJECT,+$12.71K,+$0,sub15:51%,53%,"1 (>500%), 0 (>100%)",co-buys w/ 2EwL +5m tight; only 1 multi-x win; not repeatable,2026-06-28
+4cgNMkRXm9Rh9Vcpg85QqwdGviSt7rTyApMATuCotFBH,REJECT,-$137,+$0,sub15:40%,50%,"0 (>500%), 0 (>100%)",co-buys w/ DqBs +48m; bag-holder: realized -137 unreal 0,2026-06-28
+48vJ5cxbn3QoTq6YdMgtuyAkMX4CVdgG91aMcu3Za63u,REJECT,+$62,+$0,sub15:0%,0%,"0 (>500%), 0 (>100%)",co-buys w/ DqBs +16m; only 0 multi-x win; not repeatable,2026-06-28
+9LyegeAJKATw3LC3U7YxpLDeYpTWcri6wiAeiWGdYUBd,REJECT,-$31,+$0,sub15:0%,0%,"0 (>500%), 0 (>100%)",co-buys w/ DqBs +48m; bag-holder: realized -31 unreal 0,2026-06-28
+3kKGh4zSPBeQ6P9eS3797oJ325T5ZME2Kr1pKv5DTwBx,REJECT,-$5.62K,-$501,sub15:52%,68%,"0 (>500%), 3 (>100%)",co-buys w/ DqBs +38m; bag-holder: realized -5620 unreal -501,2026-06-28
+GwZS5oYQqN2ohyb9MDNsvjCUPHvAtHb3tEeJ5U3PV8vu,REJECT,-$3.72K,-$326,sub15:30%,23%,"0 (>500%), 0 (>100%)",co-buys w/ DqBs +59m; bag-holder: realized -3718 unreal -326,2026-06-28
+n291R6UPzP4VMcYwn38NTTEavh7wj3Y44x5JZbXR1fE,REJECT,-$100.64K,-$210.70K,sub15:43%,59%,"21 (>500%), 62 (>100%)",co-buys w/ 6bxv +54m; bag-holder: realized -100638 unreal -210699,2026-06-28
+91bbW2X1hMXv2DQEbbvQebD8UARnMbvgowQVEoUBmTrB,REJECT,-$1.25K,-$429,sub15:44%,67%,"0 (>500%), 27 (>100%)",co-buys w/ 6bxv +4m tight; bag-holder: realized -1251 unreal -429,2026-06-28
+219hCvzR38rQj2ZEPuznCcFESjBBMtcsbY4xB9fBDLVs,REJECT,+$41,-$97,sub15:46%,13%,"0 (>500%), 0 (>100%)",co-buys w/ 6bxv +3m tight; bag-holder: realized 41 unreal -97,2026-06-28
+4JUm2WEbSiN1JW2gi3e8tNch5WoGrABt5by89BR9sF27,REJECT,+$23,-$82,sub15:48%,72%,"0 (>500%), 8 (>100%)",co-buys w/ 6bxv +4m tight; bag-holder: realized 23 unreal -82,2026-06-28
+GQ4S8mpiJoVUZD4AjLTu82Vjn6PjcnDBRpmCjDEYFgkL,REJECT,+$17.24K,+$32.02K,sub15:60%,78%,"0 (>500%), 3 (>100%)",co-buys w/ 6AGp +10m tight; fast-dump on thin mints (100% wins low-liq); COPY cant follow,2026-06-28
+5PXu9oQywZrFHyGjenvTrfiyTECGpYcuxpQRoNYBMxzx,REJECT,-$138,-$714,sub15:19%,37%,"1 (>500%), 2 (>100%)",co-buys w/ 6AGp +6m tight; bag-holder: realized -138 unreal -714,2026-06-28
+Hnr5SBsbgsiwixheFzcHBZXGgy9Le2goywb6Uyw5B3xf,REJECT,+$152,+$903,sub15:60%,0%,"0 (>500%), 0 (>100%)",co-buys w/ 6AGp +2m tight; only 0 multi-x win; not repeatable,2026-06-28
+5h32oTck9gPsz9dXVDxLiVkgeWRNADPE2d8RrBoYZspi,REJECT,+$7.24K,+$603,sub15:43%,0%,"0 (>500%), 1 (>100%)",co-buys w/ 6AGp +3m tight; only 1 multi-x win; not repeatable,2026-06-28
+5f2h1V5DwphonL9ddpoxMm9bHBRcBsmFAVSRoxuZfPNZ,REJECT,-$42,-$1.64K,sub15:33%,24%,"0 (>500%), 1 (>100%)",co-buys w/ 6AGp +3m tight; bag-holder: realized -42 unreal -1637,2026-06-28
+1z6XbMVbVGDF3tcC873Gq4HTeUjdQWUpTicm1SRR3Rm,REJECT,+$151,-$2.31K,sub15:29%,17%,"0 (>500%), 0 (>100%)",co-buys w/ 6AGp +3m tight; bag-holder: realized 151 unreal -2306,2026-06-28
+HWF7g2corLg8HHw2HeMoxziz1VHkrQ6kpBd7iwmbkdc2,REJECT,+$1.67K,-$2.72K,sub15:59%,86%,"4 (>500%), 24 (>100%)",co-buys w/ FdSC +15m tight; bag-holder: realized 1668 unreal -2724,2026-06-28
+8KygDHqiVcgKNHWZw4LemsHGHyUAwkQUN7itaJ9GLw3c,REJECT,-$6.37K,-$1.43K,sub15:44%,30%,"0 (>500%), 1 (>100%)",co-buys w/ 6AGp +4m tight; bag-holder: realized -6368 unreal -1429,2026-06-28
+9CJpUXLbDk4b2AYacUfuxNBMu9ZKPKLrhkoCR8J75kik,REJECT,-$8.93K,-$7.56K,sub15:51%,60%,"0 (>500%), 1 (>100%)",co-buys w/ 6AGp +4m tight; bag-holder: realized -8925 unreal -7561,2026-06-28
+2C8QkKswJkSunWzcvzosCAym4i37NPi8LhBJapxxhoBs,REJECT,-$523,+$0,sub15:50%,57%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +14m tight; bag-holder: realized -523 unreal 0,2026-06-28
+AKvGpW84FrfyLRVqXqezM7z5rC7EaPfFDziQBk9kgXMa,REJECT,-$857,+$2.73K,sub15:45%,60%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -857 unreal 2735,2026-06-28
+Hm5698T4SDZiu8Xg954M5bsB3UTJsu1MPP9bUasExGqH,REJECT,+$1.10K,+$14,sub15:44%,91%,"11 (>500%), 23 (>100%)",co-buys w/ FdSC +14m tight; realized too small $1105,2026-06-28
+F1sQpxLt9iGWbnQCu8AgPuJGpko2pM6ZrthP6eN6hRHZ,REJECT,-$2.62K,-$3.12K,sub15:55%,79%,"3 (>500%), 8 (>100%)",co-buys w/ FdSC +15m tight; bag-holder: realized -2622 unreal -3122,2026-06-28
+ESoyTWP27AWqe9pzan1A3Ai2GQBeLPAUUiWH61NgeKFH,REJECT,-$1.43K,+$4.11K,sub15:43%,62%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -1431 unreal 4113,2026-06-28
+655w6XEX5ypsEpdNbSswDULEeQHh6abhcsXX1qwzoYyQ,REJECT,-$611,+$2.55K,sub15:40%,56%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -611 unreal 2548,2026-06-28
+2EXevgkiaxLfY95DGW8Jw9RaZwNhKSjkSYjDcGRu1uBW,REJECT,+$745,+$2.49K,sub15:43%,62%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; fast-dump on thin mints (71% wins low-liq); COPY cant follow,2026-06-28
+7dHAgabdBJBVvnFXFuXg3ZkWZ4fxopC5ucjB6JgM8GvQ,REJECT,-$1.26K,+$2.35K,sub15:42%,64%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -1265 unreal 2352,2026-06-28
+BoN5taY34GpJtZR9omVGCoCE3AkZ5qJ3QDNjDhvYbLnt,REJECT,-$1.06K,+$2.39K,sub15:42%,64%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -1056 unreal 2390,2026-06-28
+Hq3B2dxSp2pgtobAgNHV6nzhTfmipWPcY7cu1ngwzW8C,REJECT,-$221,+$1.89K,sub15:50%,56%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -221 unreal 1890,2026-06-28
+5EgpapkCRbsgkfidpGBAyE1RJo83sz3WPnP1hwxRMXHG,REJECT,-$1.02K,+$2.30K,sub15:36%,60%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -1025 unreal 2301,2026-06-28
+Gz27HPZLgJHNKd3GAoMvVKydF2Eh6oN1N6e8S52fS7VQ,REJECT,-$223,+$2.52K,sub15:47%,71%,"0 (>500%), 2 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -223 unreal 2525,2026-06-28
+39RZUuPfRRvAZKiYxTZcyPiy4FXbwft18cNmbFyZhcNG,REJECT,-$300,+$1.47K,sub15:44%,50%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -300 unreal 1466,2026-06-28
+Akh6uY67UdtA99GVvjcBg3xR6hsJKqVgCG3WDZ6hdZrY,REJECT,-$514,+$816,sub15:56%,50%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -514 unreal 816,2026-06-28
+DHXjA99pa7EVfNdAiqraYR6izWkHJoHNSMtvka3jWuS6,REJECT,-$457,+$1.96K,sub15:50%,56%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -457 unreal 1957,2026-06-28
+CyhFtFrCy4pofRbbQa85gh9MPRDSe4Qe1r1E7hUxoRCQ,REJECT,-$269,+$948,sub15:33%,50%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -269 unreal 948,2026-06-28
+CGYp9iv2vFbrNE8TaAW9CnjeSLXk9zekWhmXvvYS3DtA,REJECT,-$447,+$724,sub15:56%,50%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -447 unreal 724,2026-06-28
+5hgYp22NQu3DutB6nR34cZqCdNgoQNKKWiq3GA7aUPYX,REJECT,-$423,+$772,sub15:50%,56%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -423 unreal 772,2026-06-28
+7wwQHjstVVXdnQ3qNSMaTQiChtz6MPkfNCXS92ri87TV,REJECT,-$34,+$377,sub15:60%,67%,"0 (>500%), 1 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -34 unreal 377,2026-06-28
+9wuW6mWJNxnBCAH4Gt4cgWhL7jMe9LYHEXgogGHd9U81,REJECT,-$468,+$714,sub15:55%,60%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -468 unreal 714,2026-06-28
+35hUuZcqe4ATiVp3oRhFyppBuo7mff8VsKGj357xSFpb,REJECT,-$44,+$302,sub15:56%,50%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +0m tight; bag-holder: realized -44 unreal 302,2026-06-28
+C1BKZ6JmGus3mjp4eo1guaDeGsrh5gTjNC4iMpT3WfSv,REJECT,-$45,+$128,sub15:50%,63%,"0 (>500%), 0 (>100%)",co-buys w/ FdSC +5m tight; bag-holder: realized -45 unreal 128,2026-06-28
