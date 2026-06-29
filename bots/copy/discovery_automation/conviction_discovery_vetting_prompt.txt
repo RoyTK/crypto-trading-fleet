@@ -61,10 +61,22 @@ vetted 310 wallets across two runs with ZERO errors and no UI scraping — use i
 FALLBACK / spot-check = the UI page https://birdeye.so/solana/wallet-analyzer/<ADDRESS>
 (timeframe = ALL): WIN RATE, PNL DISTRIBUTION, ANALYTICS (Avg Hold, Txs), SUSPICIOUS
 ACTIONS, and the "Hide Low Liq/Scam" toggle on TOKENS TRADED.
+★ IF THE FORGE API IS OFFLINE -> USE THE VISUAL/DOM METHOD (don't abort the run). The
+  forge endpoints sometimes go FULLY dark (errors/empty/timeouts for EVERY wallet, not
+  just one). When that happens, the wallet-analyzer PAGE is served by a different, working
+  backend and shows the SAME Birdeye-computed metrics — read them straight off the
+  rendered page (DOM/visible text). Confirmed (browser-Opus, 2026-06-29): the visual/DOM
+  route is fully effective and bypasses the dead forge API entirely; it's how vetting
+  worked originally and the whole scoped expansion can run this way. Decide the route ONCE
+  per run: if the first couple of forge calls fail, switch the WHOLE run to the analyzer
+  page rather than retrying forge on every wallet. Map the page fields to the same derived
+  metrics (realized/unrealized PnL, PNL DISTRIBUTION bands -> pct_ge_100, TOKENS TRADED
+  liquidity toggle -> liqShare/liqPnl, Avg Hold + per-token spans -> hold_shape/mid mass).
+  Always pull FULL addresses from the href, never truncated on-screen text. Everything
+  downstream (criteria, KEEP/REJECT verdicts, output rows) is identical either way.
 NOTE: `instant_sell` is NOT exposed by the forge endpoints (only the UI Suspicious-
 Actions panel) -> record it `n/a` and use the hold_shape <1m % as the flip proxy
-instead (it's the better signal anyway). The forge endpoints can change/rate-limit
-without notice — if a run starts failing, re-derive from the analyzer's network tab.
+instead (it's the better signal anyway).
 
 VETTING CRITERIA  (judge on the FOLLOWABLE subset, not raw PnL)
 --------------------------------------------------------------

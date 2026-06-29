@@ -113,6 +113,30 @@ PER-RUN WORKFLOW
        GET https://birdeye.so/forge/solana/wallet-pnl/token-traded?wallet=<ADDR>&order_field=volume_usd&order_type=desc&offset=0&limit=100&hide=
    Fall back to the wallet-analyzer UI page if an endpoint changes or rate-limits.
 
+★ IF THE FORGE API IS OFFLINE -> USE THE VISUAL/DOM METHOD (this is the original,
+  always-works route). The internal `forge` endpoints sometimes go fully dark (return
+  errors / empty / time out for every wallet, not just one). When that happens, do NOT
+  abort the run and do NOT mark wallets unvettable — the wallet-analyzer PAGE is served by
+  a DIFFERENT, working backend and shows the SAME Birdeye-computed metrics. Confirmed
+  (browser-Opus, 2026-06-29): the visual/DOM route is fully effective and bypasses the
+  dead forge API entirely — it is how vetting worked originally and the whole scoped
+  expansion can run this way.
+  How to run it:
+    1. Open https://birdeye.so/solana/wallet-analyzer/<FULL_ADDRESS> for each wallet.
+    2. Read the metrics straight off the rendered page (DOM/visible text): REALIZED PnL,
+       UNREALIZED PnL, Avg Holding Duration, Scam/Rug tokens %, the >100%/>500% multi-x
+       counts, and the Smart Money tag — the same fields the `periodic` endpoint returns.
+    3. For the per-token liquidity / hold check (normally `token-traded`), use the page's
+       token-list / traded-tokens table on the wallet-analyzer view, or open the token's
+       own Birdeye page and read its "Liquidity".
+    4. ALWAYS pull FULL addresses from the href
+       (document.querySelectorAll('a[href*="/wallet-analyzer/"]')), never truncated
+       on-screen text.
+  Decide the route once per run: if the first couple of forge calls fail, switch the WHOLE
+  run to the visual/DOM method rather than retrying forge on every wallet (faster, and it
+  won't stall). Everything downstream (qualification bars, KEEP/REJECT/TOO_FAST, output
+  rows, batching) is identical regardless of which route supplied the numbers.
+
 QUALIFICATION (KEEP only if ALL true — these are the live criteria)
 - REALIZED PnL significantly positive. Use REALIZED, not Total. Total = Realized +
   Unrealized; a big Total can be paper gains on still-held bags. Realized = banked
