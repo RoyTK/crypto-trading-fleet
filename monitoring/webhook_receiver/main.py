@@ -43,7 +43,7 @@ from sqlalchemy import select, text
 
 from framework.db import session_scope
 from framework.logging_setup import configure_logging, get_logger
-from framework.models import WalletEventLog, WalletPool
+from framework.models import WalletEventLog, WalletPool, WalletSwapLog
 
 
 log = get_logger(__name__)
@@ -146,39 +146,58 @@ async def _pool_refresher(app: web.Application) -> None:
 
 def _persist_event_batch(
     matched_events: list[tuple[str, str]],
+    swap_rows: Optional[list[dict]] = None,
 ) -> None:
-    """Write wallet_events_log rows + bump wallet_pool.last_event_at + events_total.
+    """Write wallet_events_log rows + bump wallet_pool counters + wallet_swaps_log.
 
     matched_events: list of (wallet_address, source_webhook_tier).
-    Runs sync; called via asyncio.to_thread from the handler.
+    swap_rows: list of WalletSwapLog mappings (wallet+token+side+notional+time) —
+      the raw per-swap log WITH the token, for multi-day slow-cluster research.
+    Both persist in one transaction. Runs sync; called via asyncio.to_thread.
     """
-    if not matched_events:
+    if not matched_events and not swap_rows:
         return
     now = datetime_now_utc()
     try:
         with session_scope() as s:
-            # Bulk insert event log rows
-            s.bulk_insert_mappings(WalletEventLog, [
-                {"wallet_address": addr, "event_at": now, "source_webhook": tier}
-                for addr, tier in matched_events
-            ])
-            # Update each affected wallet's last_event_at + events_total.
-            # Aggregate by address first to minimize UPDATE statements.
-            counts: dict[str, int] = {}
-            for addr, _ in matched_events:
-                counts[addr] = counts.get(addr, 0) + 1
-            for addr, n in counts.items():
-                s.execute(text(
-                    "UPDATE wallet_pool SET last_event_at = :now, "
-                    "events_total = events_total + :n WHERE address = :addr"
-                ), {"now": now, "n": n, "addr": addr})
+            if matched_events:
+                # Bulk insert event log rows
+                s.bulk_insert_mappings(WalletEventLog, [
+                    {"wallet_address": addr, "event_at": now, "source_webhook": tier}
+                    for addr, tier in matched_events
+                ])
+                # Update each affected wallet's last_event_at + events_total.
+                # Aggregate by address first to minimize UPDATE statements.
+                counts: dict[str, int] = {}
+                for addr, _ in matched_events:
+                    counts[addr] = counts.get(addr, 0) + 1
+                for addr, n in counts.items():
+                    s.execute(text(
+                        "UPDATE wallet_pool SET last_event_at = :now, "
+                        "events_total = events_total + :n WHERE address = :addr"
+                    ), {"now": now, "n": n, "addr": addr})
+            # Raw per-swap log (buys + sells) with the token — shadow research data
+            # for the slow-cluster (multi-day group accumulation) signal.
+            if swap_rows:
+                s.bulk_insert_mappings(WalletSwapLog, swap_rows)
     except Exception:
-        log.exception("persist_event_batch_failed", n=len(matched_events))
+        log.exception("persist_event_batch_failed",
+                      n=len(matched_events), swaps=len(swap_rows or []))
 
 
 def datetime_now_utc():
     from datetime import datetime, timezone
     return datetime.now(timezone.utc)
+
+
+def _ms_to_dt(timestamp_ms: int):
+    """On-chain swap timestamp (ms) -> tz-aware datetime. Falls back to now()
+    on any parse error (so a bad timestamp never drops the swap row)."""
+    from datetime import datetime, timezone
+    try:
+        return datetime.fromtimestamp(int(timestamp_ms) / 1000, tz=timezone.utc)
+    except Exception:
+        return datetime.now(timezone.utc)
 
 
 def _parse_swap_event(
@@ -595,6 +614,7 @@ async def _process_webhook(
     skipped_dup = 0
     skipped_unmatched = 0
     log_rows: list[tuple[str, str]] = []  # (wallet_address, tier) for batch persist
+    swap_rows: list[dict] = []  # raw per-swap log (wallet+token+side+notional+time)
     debug_unmatched = os.environ.get("COPY_RECEIVER_DEBUG_UNMATCHED", "0") == "1"
 
     for event in events:
@@ -645,6 +665,18 @@ async def _process_webhook(
         channel = REDIS_BUYS_CHANNEL if buy is not None else REDIS_SELLS_CHANNEL
         kind = "buy" if buy is not None else "sell"
         log_rows.append((matched_event["wallet_address"], tier))
+        # Raw per-swap log WITH the token (buys + sells, both tiers) — passive
+        # research data for the slow-cluster (multi-day group accumulation) signal.
+        swap_rows.append({
+            "wallet_address": matched_event["wallet_address"],
+            "chain": matched_event.get("chain", "solana"),
+            "token_mint": matched_event["token_mint"],
+            "side": kind,
+            "notional_usd": matched_event["notional_usd"],
+            "source_webhook": tier,
+            "tx_signature": matched_event.get("tx_signature") or None,
+            "event_at": _ms_to_dt(matched_event["timestamp_ms"]),
+        })
 
         # Active-tier only: publish to the appropriate cluster channel (after dedup).
         # Dedup key includes the kind so a token-for-token swap that somehow
@@ -672,10 +704,10 @@ async def _process_webhook(
             else:
                 matched_sells += 1
 
-    # Persist event log + bump counters in one batched DB roundtrip
-    if log_rows:
+    # Persist event log + bump counters + raw swap log in one batched DB roundtrip
+    if log_rows or swap_rows:
         try:
-            await asyncio.to_thread(_persist_event_batch, log_rows)
+            await asyncio.to_thread(_persist_event_batch, log_rows, swap_rows)
         except Exception:
             log.exception("event_log_persist_failed", tier=tier, n=len(log_rows))
 

@@ -40,6 +40,10 @@ from monitoring.alerting.taxonomy import Severity
 log = get_logger("wallet_pool_daily_cron")
 
 EVENT_LOG_RETENTION_DAYS = 90
+# Raw per-swap log (wallet+token+side) for slow-cluster research. More rows per
+# event than the event log, and we only need a multi-day-accumulation lookback,
+# so keep a shorter window.
+SWAP_LOG_RETENTION_DAYS = 60
 
 
 def _recompute_event_counts() -> None:
@@ -200,6 +204,23 @@ def _truncate_event_log() -> int:
         return r.rowcount or 0
 
 
+def _truncate_swap_log() -> int:
+    """Delete wallet_swaps_log rows older than SWAP_LOG_RETENTION_DAYS. Returns rows deleted.
+
+    Tolerant of the table not existing yet (pre-migration) — returns 0.
+    """
+    try:
+        with session_scope() as s:
+            r = s.execute(text("""
+                DELETE FROM wallet_swaps_log
+                WHERE event_at < NOW() - INTERVAL '%(d)s days'
+            """ % {"d": SWAP_LOG_RETENTION_DAYS}))
+            return r.rowcount or 0
+    except Exception:
+        log.exception("swap_log_truncate_failed")
+        return 0
+
+
 async def _sync_helius(api_key: str, auth_secret: str, active_url: str, watch_url: str) -> dict:
     with session_scope() as s:
         active = [w.address for w in s.execute(select(WalletPool).where(
@@ -289,6 +310,8 @@ def main() -> int:
 
     deleted = _truncate_event_log()
     log.info("event_log_truncated", rows=deleted)
+    swaps_deleted = _truncate_swap_log()
+    log.info("swap_log_truncated", rows=swaps_deleted)
     return 0
 
 

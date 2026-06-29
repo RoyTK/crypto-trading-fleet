@@ -446,6 +446,37 @@ class WalletEventLog(Base):
     )
 
 
+class WalletSwapLog(Base):
+    """Raw per-swap log (buys + sells) for tracked-wallet tokens — WITH the token.
+
+    Unlike wallet_events_log (wallet + time only), this retains
+    wallet + token + side + notional, so we can detect MULTI-DAY GROUP
+    accumulation (the "slow cluster" signal that cluster's ~15-min co-buy window
+    structurally cannot see — a group loading the same token over several days
+    before a pump). Passive logging written by the webhook receiver alongside the
+    event log; truncated to a bounded window by the daily wallet-pool cron.
+    Shadow research data only — nothing trades on it yet.
+    """
+    __tablename__ = "wallet_swaps_log"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    wallet_address = Column(String(64), nullable=False)
+    chain = Column(String(16), nullable=False, default="solana")
+    token_mint = Column(String(128), nullable=False)
+    side = Column(String(4), nullable=False)  # 'buy' | 'sell'
+    notional_usd = Column(Float, nullable=False)
+    source_webhook = Column(String(16), nullable=False)  # 'active' | 'watch'
+    tx_signature = Column(String(128), nullable=True)
+    event_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        Index("ix_wallet_swaps_token_time", "token_mint", "event_at"),
+        Index("ix_wallet_swaps_wallet_time", "wallet_address", "event_at"),
+        Index("ix_wallet_swaps_time", "event_at"),
+    )
+
+
 class WalletAttribution(Base):
     """Per-wallet PnL attribution for cluster-buy paper trades (COPY bot).
 
