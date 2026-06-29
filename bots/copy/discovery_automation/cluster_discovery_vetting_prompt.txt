@@ -20,8 +20,9 @@ reconciles the OneDrive file into the git repo, and a server cron ingests it
 fill the OneDrive file with good verdicts.
 
 THE BOT'S EDGE (so you vet for the right thing)
-It buys when 2-3+ tracked wallets co-buy a fresh-mint token within ~15 minutes,
-then exits FAST — tiered ladder, 25% pullback, or when 2 tracked wallets sell.
+It buys when 3 tracked wallets co-buy a fresh-mint token within ~15 minutes, then exits on
+its OWN ladder — tiered partial ladder, a trailing pullback (~45%) plus a live
+liquidity-momentum stop, or when 2 tracked wallets sell. It does NOT follow the wallet out.
 Its edge is riding fresh-mint pumps (most of which later rug) and EXITING BEFORE
 the collapse. So the ideal wallet BANKS REALIZED profit FAST on rug-prone mints.
 High Scam/Rug % is EXPECTED and confirmatory, NOT a disqualifier.
@@ -39,7 +40,9 @@ Results file: vetted_watch_results.txt in the OneDrive "Claude" folder
 Columns (EXACT order): address, verdict, realized_pnl, unrealized_pnl, avg_hold,
   rug_pct, multi_x_wins, reason, date_vetted
 Verdicts you write:
-  - KEEP     = qualifies AND followable hold (~30min-7d) -> ingested into COPY
+  - KEEP     = qualifies on entry quality + followable token liquidity (hold LENGTH is
+               NOT a gate — long/slow holders are fine; see the 2026-06-25 correction) ->
+               ingested into COPY
   - REJECT   = evaluated but does NOT qualify -> pruned; logged so it isn't re-vetted
   - TOO_FAST = qualifies on everything else but holds sub-~15-min -> NOT ingested
                into COPY (ingestion only acts on KEEP/REJECT, so TOO_FAST is safely
@@ -94,17 +97,20 @@ PER-RUN WORKFLOW
       tokens, or alongside MULTIPLE different anchors, is a real group member (not
       coincidence) — prioritize it. Each new KEEP's own co-traders become fresh anchors,
       so the neighborhood expands every run.
-3. SECONDARY ROUTE (supplementary breadth, AFTER route 2): Birdeye find-gems ->
-   "Trending" -> sort by 24h %; take tokens up >100% in 24h (~10). On each, open
-   "Top Traders" -> apply the "Smart Money" filter and pull FULL addresses via
-   document.querySelectorAll('a[href*="/wallet-analyzer/"]') (never truncated text).
+3. TOKEN SOURCING for Route A (NOT a wallet-harvest route): Birdeye find-gems ->
+   "Trending" -> sort by 24h %; take tokens up >100% in 24h. This is how you FIND the ~5
+   running tokens Route A needs. Do NOT use trending to harvest random "Smart Money"
+   wallets — that individually-good-but-disconnected approach is exactly what did NOT raise
+   cluster density. Find the running token here, then run Route A's pre-run-group analysis
+   on it. (Pull any FULL address via document.querySelectorAll('a[href*="/wallet-analyzer/"]'),
+   never truncated on-screen text.)
 4. For each address NOT already in the file: open
    https://birdeye.so/solana/wallet-analyzer/[FULL_ADDRESS] and read REALIZED PnL,
    UNREALIZED PnL, Avg Holding Duration, Scam/Rug tokens %, the >100%/>500%
    multi-x counts, and the Smart Money tag.
-   FASTER / MORE-RELIABLE (recommended — a conviction run vetted 310 wallets this way with
-   zero errors, no UI scraping): direct-fetch Birdeye's internal `forge` endpoints
-   (no login, credentials:include):
+   FASTER WHEN IT'S UP (a conviction run vetted 310 wallets this way with zero errors, no
+   UI scraping — but forge has also gone FULLY dark, see the offline section below): when
+   reachable, direct-fetch Birdeye's internal `forge` endpoints (no login, credentials:include):
      periodic — realized/unrealized PnL, the >500%/>100% distribution bands (these are
        TOKEN COUNTS, not %), rug%:
        GET https://birdeye.so/forge/solana/wallet-pnl/periodic?wallet=<ADDR>&periodic=
@@ -136,6 +142,10 @@ PER-RUN WORKFLOW
   run to the visual/DOM method rather than retrying forge on every wallet (faster, and it
   won't stall). Everything downstream (qualification bars, KEEP/REJECT/TOO_FAST, output
   rows, batching) is identical regardless of which route supplied the numbers.
+  FOR ROUTES A & B IN DOM MODE: the steps that say "forge token-traded" (recover a buyer's
+  entry time / pull a wallet's traded tokens) have DOM equivalents — use the token's own
+  Birdeye page Top Traders / trades tab for who-bought-when (pre-run window timing), and the
+  wallet-analyzer TOKENS-TRADED table for a wallet's token history. Same analysis, no forge.
 
 QUALIFICATION (KEEP only if ALL true — these are the live criteria)
 - REALIZED PnL significantly positive. Use REALIZED, not Total. Total = Realized +
@@ -209,15 +219,13 @@ When several wallets co-buy a token within ~15 min, capture EVERY member's FULL
 address and note the shared cluster in the reason column (e.g. "co-buy TOKEN-cluster").
 Log every member as its own row — do NOT collapse a cluster into one wallet.
 
-CO-BUYER NEIGHBORHOOD WALK = the PRIMARY discovery route (see PER-RUN WORKFLOW step 2).
-Co-buyers ARE the cluster signal, so for CLUSTER you WANT to expand along co-trading
-wallets (the opposite of conviction, where co-trading is a liability). Anchor on
-cluster_anchor_wallets.txt, find the OTHER wallets that bought the SAME tokens in the SAME
-pre-run window, and prioritize wallets that recur across multiple anchors/tokens (a real
-group, not coincidence). When logging a candidate, note the partner in the reason
-("co-buys with <anchor>"). This finds cluster MEMBERS far faster than random trending
-boards — which is the point, since growing the active list with individually-good wallets
-did NOT raise signal density.
+CO-BUYER PRINCIPLE: co-buyers ARE the cluster signal, so for CLUSTER you WANT to expand
+along co-trading wallets (the opposite of conviction, where co-trading is a liability). The
+routes that do this are PRIMARY ROUTE A (pre-run group) and ROUTE B (anchor walk) above —
+both find wallets that co-bought the SAME token in the SAME pre-run window and prize the
+ones that RECUR together across tokens (a real group, not coincidence). When logging any
+co-buyer, note the partner/group in the reason ("co-buys with <anchor/group>"). This beats
+harvesting individually-good wallets, which did NOT raise signal density.
 
 OUTPUT — append rows to the OneDrive file via the web text editor
 For each followable qualifier write one row:
