@@ -69,7 +69,10 @@ def read_rows(path: Path) -> tuple[str, list[str]]:
     text = path.read_text(encoding="utf-8")
     lines = text.split("\n")
     header = lines[0] if lines else ""
-    body = [ln for ln in lines[1:] if ln.strip()]
+    # Drop blank lines AND '#' comment lines — browser-Opus appends run-headers
+    # like "# CLUSTER co-trader walk ... anchors=10 ..." between batches; those are
+    # not data rows and must not be parsed/validated/synced (they have no address).
+    body = [ln for ln in lines[1:] if ln.strip() and not ln.lstrip().startswith("#")]
     return header, body
 
 
