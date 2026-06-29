@@ -1,29 +1,31 @@
-"""Export COPY's ACTIVE cluster wallets as the DATE-WEIGHTED co-buyer audit input.
+"""Export COPY's ACTIVE cluster wallets as the COST-RANKED co-buyer audit input.
 
 Prints the full `cluster_active_audit.txt` content (header + CSV rows) to stdout.
 This is the INPUT browser-Opus works through in the active-list co-buyer audit
 (bots/copy/discovery_automation/cluster_active_audit_prompt.txt) to decide, per
-wallet, KEEP_ACTIVE vs PRUNE — the move to a co-buyer-only active list (cut Helius
-cost; concentrate the list on wallets that actually form 3-wallet triggers).
+wallet, KEEP_ACTIVE vs PRUNE — the move to a co-buyer-only active list.
 
-Scoping + date-weighting (browser-Opus only does ~10-15 wallets/run and can't see
-far back on Birdeye, so we PRIORITIZE — we do NOT audit a flat list of 241):
-  - tier='active' only. conviction-roster + pinned are EXCLUDED (exempt; never pruned).
-  - already_proven = YES if the wallet is in wallet_attributions (fired a real cluster
-    in OUR data) -> auto KEEP_ACTIVE, no Birdeye. NO -> audit on Birdeye.
-  - DATE-WEIGHT from wallet_events_log (~30d of webhook deliveries; deliveries ARE the
-    Helius cost): each wallet gets last_event_days + events_30d + a priority bucket:
-      HOT  = event within 7d  -> most recently active AND highest current Helius cost;
-             auditable on Birdeye; audit FIRST (a HOT wallet that turns out NOT to
-             co-buy is the expensive dead weight -> the biggest prune win).
-      WARM = event within 8-30d -> audit after HOT.
-      COLD = no event in 30d -> dormant: ~no current Helius cost, and may be a SLOW
-             team between cycles (Roy: some teams fire once a month or two). LEAVE IT
-             ACTIVE by default — do NOT prune COLD wallets; audit only if budget remains.
-  Order: proven first, then HOT, WARM, COLD; within a bucket, most events first (most
-  cost at stake). browser-Opus works top-down and stops when it's found enough co-buyers.
+KEY FINDING (2026-06-29) that shapes this: Helius cost is ~90% concentrated in ~20
+wallets (top 10 = 69% of 30d deliveries, top 20 = 87%). Deliveries ARE the cost. So
+we DON'T audit a flat 241 — we cost-RANK and audit the top ~20-30; pruning the
+high-volume non-co-buyers there captures almost all the savings, and the low-volume
+tail (incl. dormant/slow monthly teams) is ~free to leave active.
 
-Regenerate by ssh-running this on the server and writing stdout to the OneDrive file.
+Per-wallet classification:
+  - conviction-roster + pinned EXCLUDED (exempt; never pruned).
+  - already_proven column:
+      YES    = fired a real cluster (wallet_attributions) AND earns its cost
+               (low volume OR net-positive attribution) -> auto KEEP_ACTIVE, no Birdeye.
+      REVIEW = proven BUT high-volume (events_30d >= HIGH_VOL) AND net-NEGATIVE
+               attribution -> audit DESPITE proven: a few-hundred-deliveries/day wallet
+               that fired one losing cluster may be an MM bot, not a real recurring
+               co-buyer. The +$533 trio (positive) stays YES; the -$25 MM-ish trio -> REVIEW.
+      NO     = never fired a cluster -> audit on Birdeye.
+  - priority (recency, from ~30d wallet_events_log): HOT(<=7d)/WARM(8-30d)/COLD(no
+    event 30d = dormant, ~no cost, maybe a slow team -> LEAVE ACTIVE, don't prune).
+
+Ordering: audit-needed rows (NO + REVIEW) FIRST by events_30d DESC (cost — money first);
+auto-keep (YES) rows last. browser-Opus works the top and stops after 1-2 runs.
 
 Usage (in framework container):
   python -m scripts.export_active_audit_list
@@ -34,18 +36,23 @@ from sqlalchemy import text
 
 from framework.db import session_scope
 
+# events_30d at/above this = "high Helius cost" (MM/HFT-ish volume). A PROVEN wallet
+# this busy is only auto-kept if its attribution is net-positive; otherwise -> REVIEW.
+HIGH_VOL = 5000
 
-HEADER = """# cluster_active_audit.txt — DATE-WEIGHTED INPUT for the active-list CO-BUYER AUDIT
+
+HEADER = """# cluster_active_audit.txt — COST-RANKED INPUT for the active-list CO-BUYER AUDIT
 # ----------------------------------------------------------------------------------
 # COPY's ACTIVE cluster wallets to audit KEEP_ACTIVE-vs-PRUNE on co-buyer participation.
-# Conviction-roster + pinned wallets are EXCLUDED (exempt — never pruned).
-# already_proven=YES -> fired a real cluster in our data (wallet_attributions): auto
-#   KEEP_ACTIVE, NO Birdeye. NO -> audit on Birdeye.
-# priority (from ~30d of Helius deliveries = the per-wallet cost): HOT=active in 7d
-#   (audit FIRST — most cost, Birdeye can see it); WARM=8-30d; COLD=no event in 30d
-#   (dormant, ~no cost, MAYBE a slow monthly team -> LEAVE ACTIVE, do NOT prune).
-# Work TOP-DOWN; stop when you've found enough co-buyers. events_30d ~ that wallet's
-# monthly credit cost (a high-events wallet that doesn't co-buy = the dead weight to cut).
+# Conviction-roster + pinned EXCLUDED (exempt — never pruned).
+# Helius cost is ~90% in the top ~20 wallets, so this is SORTED COST-FIRST: audit-needed
+# rows by events_30d DESC at the TOP, auto-keep rows at the bottom. Work the top, stop
+# after 1-2 runs — pruning the high-volume non-co-buyers there captures most of the saving.
+# already_proven: YES = fired a cluster AND earns its cost -> auto KEEP_ACTIVE, no Birdeye.
+#   REVIEW = proven but high-volume + net-NEGATIVE -> audit DESPITE proven (MM bot or real
+#   recurring co-buyer?). NO = never fired a cluster -> audit on Birdeye.
+# priority: HOT(<=7d)/WARM(8-30d)/COLD(no event 30d = dormant, ~no cost, maybe a slow
+#   monthly team -> LEAVE ACTIVE, don't prune). events_30d ~ that wallet's monthly cost.
 # HOW TO USE: bots/copy/discovery_automation/cluster_active_audit_prompt.txt
 # AUTO-GENERATED by scripts/export_active_audit_list.py. Do not hand-edit.
 # address,already_proven,attributed_cluster_pnl_usd,n_cluster_trades,last_event_days,events_30d,priority,note"""
@@ -62,9 +69,8 @@ _SQL = text(
     ),
     base AS (
         SELECT wp.address AS address,
-               CASE WHEN COUNT(wa.id) > 0 THEN 'YES' ELSE 'NO' END AS proven,
+               COUNT(wa.id) AS n_clu,
                COALESCE(ROUND(SUM(wa.attributed_pnl_usd)::numeric, 2), 0) AS attr_pnl,
-               COUNT(wa.id) AS n,
                MAX(ev.last_event) AS last_event,
                COALESCE(MAX(ev.ev30), 0) AS ev30
         FROM wallet_pool wp
@@ -76,55 +82,61 @@ _SQL = text(
           AND COALESCE(wp.pinned, false) = false
         GROUP BY wp.address
     )
-    SELECT address, proven, attr_pnl, n,
+    SELECT address, attr_pnl, n_clu, ev30,
            CASE WHEN last_event IS NULL THEN NULL
                 ELSE EXTRACT(day FROM (now() - last_event))::int END AS last_event_days,
-           ev30,
+           CASE
+               WHEN n_clu = 0 THEN 'NO'
+               WHEN ev30 >= :hv AND attr_pnl <= 0 THEN 'REVIEW'
+               ELSE 'YES'
+           END AS proven,
            CASE
                WHEN last_event IS NULL OR last_event < now() - interval '30 days' THEN 'COLD'
                WHEN last_event >= now() - interval '7 days' THEN 'HOT'
                ELSE 'WARM'
            END AS priority
     FROM base
-    ORDER BY proven DESC,
-        CASE
-            WHEN last_event IS NULL OR last_event < now() - interval '30 days' THEN 2
-            WHEN last_event >= now() - interval '7 days' THEN 0
-            ELSE 1
-        END,
+    ORDER BY
+        CASE WHEN n_clu > 0 AND NOT (ev30 >= :hv AND attr_pnl <= 0) THEN 1 ELSE 0 END,
         ev30 DESC,
         last_event DESC NULLS LAST,
         address
     """
 )
 
-_NOTE = {
-    ("YES", "any"): "fired in cluster(s) — auto-keep",
-    ("NO", "HOT"): "active+costly — audit first",
-    ("NO", "WARM"): "recently active — audit after HOT",
-    ("NO", "COLD"): "dormant ~no cost / maybe slow team — leave active, don't prune",
-}
+
+def _note(proven: str, priority: str) -> str:
+    if proven == "YES":
+        return "auto-keep (proven, earns its cost)"
+    if proven == "REVIEW":
+        return "proven but high-cost + net-negative — re-audit (real co-buyer or MM?)"
+    return {
+        "HOT": "active+costly — audit first",
+        "WARM": "recently active — audit after HOT",
+        "COLD": "dormant ~no cost / maybe slow team — leave active, don't prune",
+    }[priority]
 
 
 def main() -> int:
     with session_scope() as s:
-        rows = s.execute(_SQL).all()
+        rows = s.execute(_SQL, {"hv": HIGH_VOL}).all()
 
     from collections import Counter
-    buckets = Counter()
+    buckets: Counter = Counter()
+    total_ev = sum(int(r.ev30) for r in rows) or 1
+    audit_rows = [r for r in rows if r.proven != "YES"]  # already cost-sorted first
+    cum_top20 = sum(int(r.ev30) for r in audit_rows[:20])
+
     print(HEADER)
     for r in rows:
-        if r.proven == "YES":
-            note = _NOTE[("YES", "any")]
-            buckets["proven"] += 1
-        else:
-            note = _NOTE[("NO", r.priority)]
-            buckets[r.priority] += 1
+        buckets[r.proven] += 1
         led = "" if r.last_event_days is None else r.last_event_days
-        print(f"{r.address},{r.proven},{r.attr_pnl},{r.n},{led},{r.ev30},{r.priority},{note}")
-    print(f"# total={len(rows)}  proven_auto_keep={buckets['proven']}  "
-          f"HOT={buckets['HOT']}  WARM={buckets['WARM']}  COLD={buckets['COLD']}  "
-          f"(audit HOT+WARM first; COLD = leave active, don't prune)")
+        print(f"{r.address},{r.proven},{r.attr_pnl},{r.n_clu},{led},{r.ev30},"
+              f"{r.priority},{_note(r.proven, r.priority)}")
+    print(f"# total={len(rows)}  auto_keep(YES)={buckets['YES']}  "
+          f"audit_NO={buckets['NO']}  audit_REVIEW={buckets['REVIEW']}")
+    print(f"# top-20 audit-needed = {cum_top20}/{total_ev} deliveries "
+          f"({100*cum_top20//total_ev}% of cost) — auditing them is the bulk of the win")
     return 0
 
 

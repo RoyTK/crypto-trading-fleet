@@ -32,27 +32,32 @@ So: judge participation, not personal PnL. The hard followability bars from disc
 matter only as cluster-BREAKERS — a sub-15-min flipper or rug-dump farmer that "co-buys" is
 selling into us, so it does NOT count as a useful co-buyer (PRUNE).
 
-INPUT — the wallets to audit (DATE-WEIGHTED — work it TOP-DOWN, don't try to do all of it)
+INPUT — the wallets to audit (COST-RANKED — work the TOP, you won't reach the bottom)
 Read cluster_active_audit.txt in the OneDrive "Claude" folder (My files -> Documents ->
-Documents -> Claude). The file is already SORTED in the order you should work it. Columns:
+Documents -> Claude). Helius cost is ~90% concentrated in the top ~20 wallets, so the file is
+SORTED COST-FIRST: the wallets that NEED auditing are at the TOP, ordered by events_30d (their
+Helius cost) descending; the auto-keep wallets are at the bottom. Auditing the top ~20-30 is
+the bulk of the win — 1-2 runs, not the whole list. Columns:
   address , already_proven , attributed_cluster_pnl , n_cluster_trades , last_event_days ,
   events_30d , priority , note
-  - already_proven = YES  -> ALREADY fired a real cluster in our data (wallet_attributions):
-    confirmed co-buyer. Mark KEEP_ACTIVE immediately, NO Birdeye, move on. (Bulk-clear these.)
-  - already_proven = NO   -> audit on Birdeye for a co-buy pattern. Use the priority:
-    * HOT  (active within 7d, high events_30d) = AUDIT FIRST. Most recently active (Birdeye
-      can actually see its trades) AND highest current Helius cost — a HOT wallet that turns
-      out NOT to co-buy is the expensive dead weight, the biggest prune win.
-    * WARM (active 8-30d) = audit after the HOT wallets.
-    * COLD (no events in 30d) = DORMANT. It costs ~nothing in Helius right now, and may be a
-      SLOW team that only fires once every month or two (you likely can't even see that far
-      back on Birdeye). DO NOT PRUNE COLD WALLETS. Leave them active; only glance at them if
-      you've cleared HOT+WARM and still have budget. Inactivity is NOT a prune reason here.
-  events_30d ~ that wallet's monthly credit cost — it's why we audit the busy ones first.
-Browser-Opus does ~10-15 wallets/run: just work from the TOP and STOP when the run is full or
-you've found enough co-buyers. The next run resumes lower down (dedup via the results file).
-There's no need to reach the bottom — the COLD tail is meant to be left active, not audited.
-The conviction-roster + pinned wallets are NOT in this file (exempt; never pruned).
+  - already_proven = YES    -> proven co-buyer that EARNS its cost (fired a real cluster +
+    low-volume or net-positive). Auto KEEP_ACTIVE, NO Birdeye. (These are at the bottom;
+    bulk-clear them, don't spend Birdeye on them.)
+  - already_proven = NO     -> never fired a cluster in our data -> AUDIT on Birdeye.
+  - already_proven = REVIEW -> proven BUT high-volume AND net-NEGATIVE: it fired a cluster
+    yet pumps hundreds of deliveries/day at a loss, so it may be an MM bot that co-bought
+    ONCE by coincidence, not a real recurring co-buyer. AUDIT it on Birdeye like a NO; PRUNE
+    if it's MM/HFT noise (huge tx count, ~0 hold, both-sides churn), KEEP only if it's a
+    genuine recurring co-buyer. These are the costliest wallets — they're at the very top.
+  priority (recency): HOT(<=7d) / WARM(8-30d) / COLD(no events 30d). COLD = DORMANT: ~no
+    current Helius cost, and may be a SLOW team that fires once every month or two (you
+    likely can't see that far back on Birdeye). DO NOT PRUNE COLD WALLETS — inactivity is
+    NOT a prune reason; leave them active. (Cost-first sorting already pushes COLD to the
+    bottom; you generally won't reach them.)
+Browser-Opus does ~10-15 wallets/run: work from the TOP (highest cost) and STOP when the run
+is full or you've cleared the top ~20-30. The next run resumes lower down (dedup via the
+results file). No need to reach the bottom. Conviction-roster + pinned are NOT in this file
+(exempt; never pruned).
 
 PER-WALLET PROCEDURE (for each already_proven=NO wallet)
 1. Pull the wallet's traded tokens and find the ones that RAN (a real sustained move, not an
