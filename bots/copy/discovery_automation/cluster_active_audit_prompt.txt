@@ -32,19 +32,27 @@ So: judge participation, not personal PnL. The hard followability bars from disc
 matter only as cluster-BREAKERS — a sub-15-min flipper or rug-dump farmer that "co-buys" is
 selling into us, so it does NOT count as a useful co-buyer (PRUNE).
 
-INPUT — the wallets to audit
+INPUT — the wallets to audit (DATE-WEIGHTED — work it TOP-DOWN, don't try to do all of it)
 Read cluster_active_audit.txt in the OneDrive "Claude" folder (My files -> Documents ->
-Documents -> Claude). It lists COPY's current active wallets to check, one per line:
-  address , already_proven , attributed_cluster_pnl , n_cluster_trades , note
-  - already_proven = YES  -> this wallet has ALREADY fired in a real cluster in our own
-    data (it's in wallet_attributions). It is a confirmed co-buyer — mark KEEP_ACTIVE
-    immediately, no Birdeye check needed, and move on. (These are pre-filtered for you so
-    you don't waste a run re-confirming the obvious keepers.)
-  - already_proven = NO   -> UNPROVEN in our data. THESE are the ones you actually audit on
-    Birdeye for a co-buy pattern.
-The 7 conviction-strategy wallets are NOT in this file (they are single-wallet by design,
-exempt from the co-buyer rule, and must never be pruned) — so everything in the file is fair
-game under the co-buyer criterion.
+Documents -> Claude). The file is already SORTED in the order you should work it. Columns:
+  address , already_proven , attributed_cluster_pnl , n_cluster_trades , last_event_days ,
+  events_30d , priority , note
+  - already_proven = YES  -> ALREADY fired a real cluster in our data (wallet_attributions):
+    confirmed co-buyer. Mark KEEP_ACTIVE immediately, NO Birdeye, move on. (Bulk-clear these.)
+  - already_proven = NO   -> audit on Birdeye for a co-buy pattern. Use the priority:
+    * HOT  (active within 7d, high events_30d) = AUDIT FIRST. Most recently active (Birdeye
+      can actually see its trades) AND highest current Helius cost — a HOT wallet that turns
+      out NOT to co-buy is the expensive dead weight, the biggest prune win.
+    * WARM (active 8-30d) = audit after the HOT wallets.
+    * COLD (no events in 30d) = DORMANT. It costs ~nothing in Helius right now, and may be a
+      SLOW team that only fires once every month or two (you likely can't even see that far
+      back on Birdeye). DO NOT PRUNE COLD WALLETS. Leave them active; only glance at them if
+      you've cleared HOT+WARM and still have budget. Inactivity is NOT a prune reason here.
+  events_30d ~ that wallet's monthly credit cost — it's why we audit the busy ones first.
+Browser-Opus does ~10-15 wallets/run: just work from the TOP and STOP when the run is full or
+you've found enough co-buyers. The next run resumes lower down (dedup via the results file).
+There's no need to reach the bottom — the COLD tail is meant to be left active, not audited.
+The conviction-roster + pinned wallets are NOT in this file (exempt; never pruned).
 
 PER-WALLET PROCEDURE (for each already_proven=NO wallet)
 1. Pull the wallet's traded tokens and find the ones that RAN (a real sustained move, not an
