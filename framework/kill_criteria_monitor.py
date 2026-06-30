@@ -78,10 +78,15 @@ WINDOWS: dict[str, dict[str, datetime]] = {
     # being shaken out) AND a LIVE liquidity-momentum hard stop (widen to 30% when
     # liquidity is building vs entry, tight 8% when flat/draining). Both materially
     # change exits, so the window resets to validate the restored mechanism.
+    # ★ RESET 2026-06-30 22:00 UTC (Roy): clean-slate cluster reset — all prior cluster
+    # trades re-tagged 'cluster_pre_reset' (retained, retired) to evaluate whether the
+    # current clusters are profitable on their own, fresh. Cluster now scoped by the
+    # EXPLICIT strategy='cluster' tag everywhere (no more "not conviction"), so retired
+    # trades fall out automatically and future strategies (15-min vs 3-day) slot in clean.
     "copy": {
-        "start":        datetime(2026, 6, 28, 23, 30, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 27, 23, 30, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 26, 23, 30, tzinfo=timezone.utc),
+        "start":        datetime(2026, 6, 30, 22, 0, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 29, 22, 0, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 28, 22, 0, tzinfo=timezone.utc),
     },
     # Conviction (single-wallet accumulation) sub-strategy — separate $10k paper
     # bankroll + isolated metrics. RE-BASELINED 2026-06-25 19:00 UTC: the first
@@ -446,12 +451,11 @@ def _compute_copy_status() -> dict[str, Any]:
               AND fill_status='closed' AND exit_at >= :ws
               AND pnl_usd IS NOT NULL
               AND sim_metadata->>'wallet_tier' = :tier
-              -- Family prefix exclude (not exact) so a reset/re-tag like
-              -- 'conviction_pre_reset' can't leak in. Belt-and-suspenders here:
-              -- the wallet_tier='active' filter above already excludes conviction
-              -- rows (they carry wallet_tier='conviction'); see dd_monitor for
-              -- where the exact-match version actually false-halted cluster.
-              AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'conviction%'
+              -- EXPLICIT strategy tag (2026-06-30): scope cluster by its own tag,
+              -- not "not conviction". Retired 'cluster_pre_reset' trades fall out
+              -- automatically, and future COPY strategies (15-min vs 3-day cluster,
+              -- etc.) get their own computer instead of leaking into this one.
+              AND sim_metadata->>'strategy' = 'cluster'
             """
         ), {"ws": window_start, "tier": tier}).all()
         pnls = [float(r.pnl_usd) for r in rows]

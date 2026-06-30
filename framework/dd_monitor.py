@@ -258,16 +258,20 @@ def check_all_bots_dd() -> None:
     """Run check_dd_breaches for every bot using its configured thresholds.
     Called by the scoring engine cron.
 
-    The 'copy' job EXCLUDES conviction trades, and a separate 'copy_conviction'
-    job (same bot_id='copy' trades, strategy='conviction') runs with its own
-    bankroll + halt flag so the two COPY sub-strategies have independent
-    drawdown discipline.
+    Each COPY sub-strategy is scoped by its OWN EXPLICIT strategy tag (cluster,
+    conviction, …) — NOT by "everything that isn't conviction". The explicit-tag
+    registry scales cleanly as COPY grows (e.g. cluster may split into a 15-min
+    and a 3-day-accumulation strategy, plus others); a "not conviction" exclude
+    would silently lump every new strategy into cluster. Retired trades re-tagged
+    `<strategy>_pre_reset` fall out of every exact-tag scope automatically (also
+    how the 2026-06-30 cluster reset zeroes cluster's metrics).
     """
     # (logical_id, trades_bot_id, thresholds, strategy, exclude_strategy)
+    # Add a new COPY sub-strategy here as ("copy_<name>", "copy", th, "<tag>", None).
     jobs: list[tuple[str, str, dict[str, float], Optional[str], Optional[str]]] = []
     for bot_id, th in BOT_DD_THRESHOLDS.items():
         if bot_id == "copy":
-            jobs.append(("copy", "copy", th, None, "conviction"))
+            jobs.append(("copy", "copy", th, "cluster", None))
             jobs.append(("copy_conviction", "copy", th, "conviction", None))
         else:
             jobs.append((bot_id, bot_id, th, None, None))
