@@ -55,7 +55,10 @@ def _ledger_status() -> dict[str, str]:
 
 def _load_obs() -> list[dict]:
     rows: list[dict] = []
-    for fp in sorted(glob(str(DB / "observations_*.jsonl"))):
+    # match observations_*.jsonl AND OneDrive's observations_*.jsonl.txt (the web
+    # editor appends .txt; the file is still JSONL content).
+    for fp in sorted(set(glob(str(DB / "observations_*.jsonl")) +
+                         glob(str(DB / "observations_*.jsonl*")))):
         for ln in Path(fp).read_text(encoding="utf-8-sig").splitlines():
             s = ln.strip()
             if not s or s.startswith("#") or s.startswith("//"):

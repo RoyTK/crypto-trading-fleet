@@ -10,7 +10,9 @@ WHERE: OneDrive "Claude" folder -> co_buyer_db subfolder. Append-only JSONL, ROT
 a NEW dated file each run so no single file gets heavy in the web editor:
   co_buyer_db/observations_YYYYMMDD.jsonl     (e.g. observations_20260629.jsonl)
 Create the day's file if absent (OneDrive "+ New -> Text document", name it .jsonl);
-append one JSON object PER LINE. Never edit or reorder existing lines.
+append one JSON object PER LINE. Never edit or reorder existing lines. (OneDrive may save it
+as observations_YYYYMMDD.jsonl.txt — that's FINE, the engine reads both extensions; no need to
+strip .txt.)
 
 FOLLOWABLE = had real QUOTE-SIDE pool depth at buy-time AND during the run (enter-able then +
 sell-able then). The QUOTE asset is whatever the pool is paired with — SOL and WSOL are the

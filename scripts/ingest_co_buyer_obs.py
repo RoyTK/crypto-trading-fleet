@@ -109,7 +109,9 @@ def main() -> int:
     if a.file:
         paths.append(a.file)
     if a.dir:
-        paths += sorted(glob(str(Path(a.dir) / "*.jsonl")))
+        # match *.jsonl AND OneDrive's *.jsonl.txt (web editor appends .txt)
+        paths += sorted(set(glob(str(Path(a.dir) / "*.jsonl")) +
+                            glob(str(Path(a.dir) / "*.jsonl*"))))
     if paths:
         ins, skip = _ingest(paths)
         print(f"ingested {ins} new rows, {skip} skipped/dupe (from {len(paths)} file(s))")
