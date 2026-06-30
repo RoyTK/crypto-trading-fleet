@@ -239,6 +239,10 @@ both find wallets that co-bought the SAME token in the SAME pre-run window and p
 ones that RECUR together across tokens (a real group, not coincidence). When logging any
 co-buyer, note the partner/group in the reason ("co-buys with <anchor/group>"). This beats
 harvesting individually-good wallets, which did NOT raise signal density.
+★ ALSO FEED THE CO-BUYER CORPUS: for every FOLLOWABLE runner you resolve, append its
+pre-run early buyers (Solscan oldest-first) to the shared JSONL in co_buyer_db/ — see
+co_buyer_logging.txt. That cross-token corpus is what reveals RECURRING teams over time
+(a single run rarely shows recurrence); the local engine does the correlation, you just feed it.
 
 OUTPUT — append rows to the OneDrive file via the web text editor
 For each followable qualifier write one row:

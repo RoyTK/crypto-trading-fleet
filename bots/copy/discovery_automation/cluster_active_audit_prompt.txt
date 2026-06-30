@@ -103,9 +103,13 @@ PER-WALLET PROCEDURE (for each already_proven=NO / REVIEW wallet)
    - UNCERTAIN ONLY for a genuinely ambiguous FOLLOWABLE wallet you could not resolve (e.g.
      Solscan unreachable for its tokens). Do NOT park profitable micro-rug snipers here — those
      are PRUNE on followability. Reserve UNCERTAIN for the true gray zone; default it to keep.
-4. BONUS — feed discovery: off-list partners that RECUR with a KEPT wallet across followable
-   runs are the strongest discovery candidates (the rest of the accumulating team — adding them
-   makes the cluster fire-able). Record their address + the shared tokens in the partners column.
+4. ★ FEED THE CO-BUYER CORPUS (this is how recurrence is found across tokens OVER TIME, not
+   in one run): for every FOLLOWABLE token you open on Solscan, append its pre-run early
+   buyers (the oldest-first list) to the shared JSONL corpus in co_buyer_db/ — see
+   co_buyer_logging.txt for the exact schema. The local engine intersects that corpus to
+   surface recurring TEAMS and the off-list members we MISSED; the partners column in THIS
+   results file is just the inline note. Don't try to compute recurrence in-session — just
+   feed clean observation lines and the engine does the cross-token correlation.
 
 OUTPUT — append to cluster_active_audit_results.txt (OneDrive web text editor)
 Header (write once if the file is new):

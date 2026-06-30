@@ -1,0 +1,41 @@
+CO-BUYER CORPUS LOGGING — feed the cross-token database (co_buyer_db)
+====================================================================
+WHY: co-buying is a property of PAIRS across MANY tokens. We can only find recurring
+accumulation TEAMS (and the co-buyers we MISSED in prior curation) if we PERSIST every
+followable token's pre-run early-buyer set. One token tells us nothing; the corpus
+reveals who RECURS. This is the shared "database" a local engine correlates — you only
+FEED it; you do not query it.
+
+WHERE: OneDrive "Claude" folder -> co_buyer_db subfolder. Append-only JSONL, ROTATED to
+a NEW dated file each run so no single file gets heavy in the web editor:
+  co_buyer_db/observations_YYYYMMDD.jsonl     (e.g. observations_20260629.jsonl)
+Create the day's file if absent (OneDrive "+ New -> Text document", name it .jsonl);
+append one JSON object PER LINE. Never edit or reorder existing lines.
+
+WHAT TO LOG: for each FOLLOWABLE run you resolve on Solscan (real run + entry liquidity
++ exit liquidity — do NOT log micro-rugs / unfollowable tokens), append ONE LINE PER
+EARLY (pre-run) BUYER from the oldest-first Activities list:
+  {"token":"<mint>","symbol":"<sym>","run_date":"YYYY-MM-DD","wallet":"<FULL addr>",
+   "first_buy":"YYYY-MM-DD","held_into_run":true,"entry_liq_usd":9000,
+   "run_liq_usd":45000,"source":"<runtag>","observed":"YYYY-MM-DD"}
+  - token / symbol: the followable token.
+  - run_date: when the significant run happened (date OK).
+  - wallet: FULL address from the /account/ href (never truncated text).
+  - first_buy: that wallet's FIRST buy in the pre-run base (date OK; day-scale is fine).
+  - held_into_run: true = still holding at the run's first big leg up; false = DUMPED
+    before the run (cluster-breaker — still log it with false so the engine excludes it);
+    omit the field if you didn't check.
+  - entry_liq_usd: rough USD pool depth at buy-time (sum ADD-LIQUIDITY up to first_buy).
+    run_liq_usd: rough depth during the run (exit-ability). Approximate is fine; null if
+    not reconstructed. (You only log FOLLOWABLE tokens — these document why.)
+  - source: short run tag (e.g. "audit-b3", "discoveryA-run2"). observed: today's date.
+  DO NOT log accum_days or on-list/curation status — the engine DERIVES those.
+Log the EARLY buyers (the pre-run base — the first ~50 swaps, oldest-first), NOT
+late/post-run buyers. JSONL = one object per line; no header row, no trailing commas.
+
+THE ENGINE (you don't run it): scripts/co_buyer_correlate.py reads every
+observations_*.jsonl, derives the accumulation window, joins the vetting ledger, and
+writes co_buyer_db/teams.csv (recurring pairs across >=2 followable tokens) +
+co_buyer_db/missed.csv (non-KEEP wallets recurring with our wallets = who we missed).
+A Postgres ingest additionally joins our live data. The tool-channel address-on-read
+block is irrelevant here — you only WRITE observation lines.
