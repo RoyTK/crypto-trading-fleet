@@ -61,7 +61,12 @@ PER-RUN WORKFLOW
    a. ★ TOKEN QUALIFICATION GATE — do this BEFORE you touch any buyers (this is where a
       past run wasted 2 of its 5 tokens). For EACH candidate trending token, look at its
       price+volume CHART and confirm ALL THREE:
-        (i)   real liquidity NOW (>=~$50k — followable, not a micro-rug);
+        (i)   real QUOTE-SIDE (WSOL/USDC) depth, not FDV theater. For a token running NOW,
+              current Birdeye liq ~= run-exit liq (fine — confirms the run is sell-able,
+              >=~$50k). But ALSO confirm the PRE-RUN base had real quote-side depth the early
+              team could enter against — that's the BUY-TIME depth (days ago), checked on
+              Solscan, NOT current liq and NOT the token's nominal/FDV value (a huge token-side
+              "value" paired with a few WSOL is not sellable). See co_buyer_logging.txt;
         (ii)  a SUSTAINED move (the run unfolds over time, not one vertical candle that
               round-trips);
         (iii) a VISIBLE PRE-BREAKOUT ACCUMULATION PHASE — a flat/low-vol stretch of gradual
@@ -188,14 +193,18 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
     * FAST-DUMP ON THIN MINTS (2026-06-25 lesson — UNFOLLOWABLE, REJECT): even when
       AVG hold looks fine (>15min), some elite wallets make their money ACCUMULATING
       ultra-thin fresh mints in many tiny clips, then dumping in seconds-to-minutes.
-      COPY cannot enter/exit a token with only ~$25-300 of liquidity without
+      COPY cannot enter/exit a token with only ~$25-300 of real depth without
       catastrophic slippage — these CRATER us. So check the LIQUIDITY of the tokens
-      they win on (Birdeye token "Liquidity"), not just hold time: if their wins come
-      from sub-~$5k-liquidity micro-mints, OR their FRESH-mint trades hold seconds
-      even though a few longer holds drag the AVG up, mark REJECT (reason
+      they win on — but judge it as the QUOTE-SIDE (WSOL/USDC) depth AT THE TIME they
+      traded, NOT current Birdeye "Liquidity" (a token dead now may have been liquid
+      THEN — dead-now != unfollowable-then) and NOT token FDV/nominal. For a borderline-
+      PROFITABLE wallet, do one Solscan buy/run-time depth reconstruction on its best win
+      (ADD/REMOVE LIQUIDITY + swap WSOL amounts; see co_buyer_logging.txt) before
+      rejecting. If wins came from sub-~$5k real-depth micro-mints, OR FRESH-mint trades
+      hold seconds even though a few longer holds drag the AVG up, mark REJECT (reason
       "fast-dump on thin mints; COPY can't follow"). Proof: COPY's own attribution
       pruned the 2wHHnAmd/46ojZjmv/9yxmCNwZ cohort at a NET LOSS despite their elite
-      personal PnL. Judge MEDIAN/typical hold + token liquidity, not the average.
+      personal PnL. Judge MEDIAN/typical hold + buy-time token depth, not the average.
 - Multiple multi-x wins (>100% and >500% in the distribution). Several beats one
   big win — a one-hit wonder is not a repeatable edge.
 - NOT brand new (>= ~1 week old; 1+ month preferred). NOT a pure market-maker/HFT
