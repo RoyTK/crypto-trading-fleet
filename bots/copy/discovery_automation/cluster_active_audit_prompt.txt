@@ -116,11 +116,20 @@ PER-WALLET PROCEDURE (for each already_proven=NO / REVIEW wallet)
      are PRUNE on followability. Reserve UNCERTAIN for the true gray zone; default it to keep.
 4. ★ FEED THE CO-BUYER CORPUS (this is how recurrence is found across tokens OVER TIME, not
    in one run): for every FOLLOWABLE token you open on Solscan, append its pre-run early
-   buyers (the oldest-first list) to the shared JSONL corpus in co_buyer_db/ — see
-   co_buyer_logging.txt for the exact schema. The local engine intersects that corpus to
-   surface recurring TEAMS and the off-list members we MISSED; the partners column in THIS
-   results file is just the inline note. Don't try to compute recurrence in-session — just
-   feed clean observation lines and the engine does the cross-token correlation.
+   buyers (the oldest-first list) to the shared JSONL corpus in OneDrive co_buyer_db/, one
+   dated file per run, APPEND-ONLY, one JSON object per line:
+     co_buyer_db/observations_YYYYMMDD.jsonl
+     {"token":"<mint>","symbol":"<sym>","run_date":"YYYY-MM-DD","wallet":"<FULL addr>",
+      "first_buy":"YYYY-MM-DD","held_into_run":true,"entry_liq_usd":9000,
+      "run_liq_usd":45000,"source":"audit-b3","observed":"YYYY-MM-DD"}
+   held_into_run: true=held to the run / false=dumped pre-run (still log, engine excludes) /
+   omit if unchecked. entry_liq_usd, run_liq_usd: quote-side depth in USD at buy-time and the
+   run (the FOLLOWABILITY metric above); null if not reconstructed. Do NOT log accum_days or
+   on-list status — the engine derives them. (Full canonical spec, if provided: the repo file
+   co_buyer_logging.txt — but the schema above is self-contained; don't author your own copy.)
+   The local engine intersects the corpus to surface recurring TEAMS and the off-list members
+   we MISSED; the partners column in THIS results file is just the inline note. Don't compute
+   recurrence in-session — feed clean lines and the engine does the cross-token correlation.
 
 OUTPUT — append to cluster_active_audit_results.txt (OneDrive web text editor)
 Header (write once if the file is new):
