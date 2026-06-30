@@ -12,10 +12,13 @@ a NEW dated file each run so no single file gets heavy in the web editor:
 Create the day's file if absent (OneDrive "+ New -> Text document", name it .jsonl);
 append one JSON object PER LINE. Never edit or reorder existing lines.
 
-FOLLOWABLE = had real QUOTE-SIDE (WSOL/USDC) pool depth at buy-time AND during the run
-(enter-able then + sell-able then). Judge by buy/run-time quote depth, NOT current liquidity
-(dead-now != unfollowable-then) and NOT token FDV/nominal. Micro-rugs (tiny real WSOL depth,
-e.g. VOXEL ~$10-450) are NOT followable — do not log them.
+FOLLOWABLE = had real QUOTE-SIDE pool depth at buy-time AND during the run (enter-able then +
+sell-able then). The QUOTE asset is whatever the pool is paired with — SOL and WSOL are the
+SAME thing (count both as SOL), or USDC/USDT (or USD1/PYUSD/an LST like JitoSOL/mSOL); read the
+pool's ACTUAL quote leg and convert to USD (SOL x SOL price; stables ~= $1). A token can have
+more than one pool — use the deepest real one. Judge by buy/run-time quote depth, NOT current
+liquidity (dead-now != unfollowable-then) and NOT token FDV/nominal. Micro-rugs (tiny real
+quote depth, e.g. VOXEL ~$10-450 of SOL) are NOT followable — do not log them.
 
 WHAT TO LOG: for each FOLLOWABLE run you resolve on Solscan, append ONE LINE PER EARLY
 (pre-run) BUYER from the oldest-first Activities list:
@@ -29,11 +32,12 @@ WHAT TO LOG: for each FOLLOWABLE run you resolve on Solscan, append ONE LINE PER
   - held_into_run: true = still holding at the run's first big leg up; false = DUMPED
     before the run (cluster-breaker — still log it with false so the engine excludes it);
     omit the field if you didn't check.
-  - entry_liq_usd / run_liq_usd: the QUOTE-SIDE (WSOL/USDC) pool depth in USD at buy-time and
-    during the run — the REAL money you can enter/exit against. From the ADD/REMOVE LIQUIDITY
-    events + swap WSOL amounts. NOT current liquidity, and NOT the token's FDV/nominal value
-    (a pool showing a huge token-side "value" paired with a few WSOL is exit-liquidity theater).
-    Approximate is fine; null if not reconstructed.
+  - entry_liq_usd / run_liq_usd: the QUOTE-SIDE pool depth in USD (the pool's quote leg —
+    SOL/WSOL/USDC/USDT/etc., see FOLLOWABLE above) at buy-time and during the run — the REAL
+    money you can enter/exit against. From the ADD/REMOVE LIQUIDITY events + swap quote-leg
+    amounts. NOT current liquidity, and NOT the token's FDV/nominal value (a huge token-side
+    "value" paired with a tiny quote leg is exit-liquidity theater). Approximate is fine; null
+    if not reconstructed.
   - source: short run tag (e.g. "audit-b3", "discoveryA-run2"). observed: today's date.
   DO NOT log accum_days or on-list/curation status — the engine DERIVES those.
 Log the EARLY buyers (the pre-run base — the first ~50 swaps, oldest-first), NOT

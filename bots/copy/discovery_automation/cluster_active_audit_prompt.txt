@@ -71,15 +71,18 @@ PER-WALLET PROCEDURE (for each already_proven=NO / REVIEW wallet)
    - Its "runs" are all MICRO-RUGS (sub-15-min flips and/or no real exit depth) -> PRUNE
      ("micro-rug sniper; unfollowable"). A wallet can be very PROFITABLE on micro-rugs and
      still be a PRUNE here (followability, not PnL, is the bar) — these are NOT UNCERTAIN.
-   ★ FOLLOWABILITY = QUOTE-SIDE (WSOL/USDC) POOL DEPTH AT BUY-TIME AND DURING THE RUN — the
-   real money you can enter and exit against. NOT current liquidity (a token dead today may
-   have had real depth during its run), and NOT the token's FDV / nominal value (a pool can
-   show a huge token-side "value" paired with a few WSOL — that's exit-liquidity theater, you
-   can't sell into it). The cheap Birdeye current-liq snapshot is only a FLAG. Before you PRUNE
-   a PROFITABLE wallet as micro-rug, do ONE Solscan reconstruction on its best run: read the
-   ADD/REMOVE LIQUIDITY events + swap WSOL amounts to get the WSOL-side depth at the early buys
-   and during the run. Prune only if that real depth was thin THEN (e.g. <~$5k). If it had real
-   quote depth at buy + a sellable run, it's FOLLOWABLE -> step 2 (and it's a corpus token).
+   ★ FOLLOWABILITY = QUOTE-SIDE POOL DEPTH AT BUY-TIME AND DURING THE RUN — the real money you
+   can enter and exit against. The QUOTE asset is whatever the pool is paired with: SOL and
+   WSOL are the SAME (count both), or USDC/USDT (or USD1/PYUSD/an LST); read the pool's ACTUAL
+   quote leg and convert to USD (SOL x price; stables ~= $1). A token may have >1 pool — use the
+   deepest. NOT current liquidity (a token dead today may have had real depth during its run),
+   and NOT the token's FDV / nominal value (a huge token-side "value" paired with a tiny quote
+   leg is exit-liquidity theater, you can't sell into it). The cheap Birdeye current-liq snapshot
+   is only a FLAG. Before you PRUNE a PROFITABLE wallet as micro-rug, do ONE Solscan
+   reconstruction on its best run: read the ADD/REMOVE LIQUIDITY events + swap quote-leg amounts
+   to get the quote-side depth at the early buys and during the run. Prune only if that real
+   depth was thin THEN (e.g. <~$5k). If it had real quote depth at buy + a sellable run, it's
+   FOLLOWABLE -> step 2 (and it's a corpus token).
    (VOXEL is the cautionary example: dead now, but the call is its ~$10-450 WSOL depth at the
    time — the "$236k" was inflated VOXEL nominal vs ~3 WSOL, not sellable -> unfollowable.)
    Only wallets with GENUINELY FOLLOWABLE runs proceed to step 2. The costly top of the queue

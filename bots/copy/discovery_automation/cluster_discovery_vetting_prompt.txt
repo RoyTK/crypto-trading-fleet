@@ -199,7 +199,8 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
       traded, NOT current Birdeye "Liquidity" (a token dead now may have been liquid
       THEN — dead-now != unfollowable-then) and NOT token FDV/nominal. For a borderline-
       PROFITABLE wallet, do one Solscan buy/run-time depth reconstruction on its best win
-      (ADD/REMOVE LIQUIDITY + swap WSOL amounts; see co_buyer_logging.txt) before
+      (ADD/REMOVE LIQUIDITY + swap QUOTE-LEG amounts — SOL/WSOL/USDC/etc., whatever the pool
+      is paired with; see co_buyer_logging.txt) before
       rejecting. If wins came from sub-~$5k real-depth micro-mints, OR FRESH-mint trades
       hold seconds even though a few longer holds drag the AVG up, mark REJECT (reason
       "fast-dump on thin mints; COPY can't follow"). Proof: COPY's own attribution
