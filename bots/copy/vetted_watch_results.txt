@@ -1106,3 +1106,102 @@ GsnQDZSTjVpsBGhrXQL43hub1vDRCAtrkKuMimxZLVuq,REJECT,-$285,+$0,2h,0%,0 multi-x,re
 Hg6HRx57eMVoxMJURvmRguxuAoPnkUeZnsq51RhFHz7q,REJECT,-$183,+$0,25m,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
 8tuBamGr2UxpSs8EDPm3zqZu3sur6F6bPYXCY6fDeaLb,REJECT,-$639,+$0,59m,0%,0 multi-x,realized<=0 (bag-holder),2026-06-28
 5KvLrxX27Wc2kBgT45kAtZ3n8djDeRWHXPi15QawCYVm,REJECT,-$1190,-$61,3d,22.72%,0 multi-x,realized<=0 (bag-holder),2026-06-28
+HwkD6sDVUMDZt3g64MAwnymaTMziVzRoU9AvUVixGhSK,REJECT,-$21.55K,+$187.33K,14h,63.29%,22,"net bag-holder (realized -$21.55K, unrealized +$187.33K); single-runner survivor world",2026-06-29
+EHg5YkU2SZBTvuT87rUsvxArGp3HLeye1fXaSDfuMyaf,TOO_FAST,+$3.42M,-$59.13K,2d,97.17%,209,pre-run co-buyer world; 91.16% instant-sell / 2d (too fast for COPY latency; future fast-bot),2026-06-29
+2Q4wjqX9SnwBr7KZnfdiWaQPQCidhG5VBRya1iwbECU9,REJECT,-$7.88K,+$72.94K,2d,0%,0,"net bag-holder (realized -$7.88K, unrealized +$72.94K); single-runner survivor world",2026-06-29
+Bmi9zf27MNN5pjCtyv2Y15TDQoYgcbcmPTxvEoQ6UwWs,REJECT,-$220.68K,+$49.96K,2mo,59.8%,34,"net bag-holder (realized -$220.68K, unrealized +$49.96K); single-runner survivor world",2026-06-29
+B54yZ7sQEyTtT5AEockKFU6B3yjf9sFvPiK6Bn2B2u6E,REJECT,-$10.20K,+$65.88K,11h,62.7%,6,"net bag-holder (realized -$10.20K, unrealized +$65.88K); single-runner survivor world",2026-06-29
+7968gMZ1Xxj2WHg3Vv3MtEq4YApv13zhSX1au7YzoLUB,REJECT,+$0,+$60.84K,11d,16.32%,0,"net bag-holder (realized +$0, unrealized +$60.84K); single-runner survivor world",2026-06-29
+BWz8RT798H7wbr2CQf1eQ6QqDSst2fdDxCmR6m1ji6aU,REJECT,-$4.40K,+$44.94K,2d,3.77%,1,"net bag-holder (realized -$4.40K, unrealized +$44.94K); single-runner survivor world",2026-06-29
+6jY7Xz1nkpDJKE9hsNMf6BQ71otvJeiQYXsvEU39nZ9h,REJECT,-$3.16K,+$40.80K,10h,70%,20,"net bag-holder (realized -$3.16K, unrealized +$40.80K); single-runner survivor world",2026-06-29
+CkZnuSEKfSYG3ns8RUG72QRkUFu24o6UfH6pDrkM6KtH,REJECT,-$10.29K,+$50.23K,1d,63.71%,13,"net bag-holder (realized -$10.29K, unrealized +$50.23K); single-runner survivor world",2026-06-29
+4QC3wM3weennFZ2fPPQjvn7WufCDoqcDUBaPfD1KGS4C,REJECT,-$11.75K,+$19.01K,1mo,18.18%,2,"net bag-holder (realized -$11.75K, unrealized +$19.01K); single-runner survivor world",2026-06-29
+HewaMM91VpxyT9knL1gmLfV4LCJZ3RtznsT5aCoj6C2W,REJECT,-$1.48K,+$35.94K,5d,10.34%,2,"net bag-holder (realized -$1.48K, unrealized +$35.94K); single-runner survivor world",2026-06-29
+CBDswNVZFCaRvdeLZUSrM5ScDRWthUN5ubxrM5zd4Z8b,REJECT,-$1,+$1.20M,13d,17.39%,0,"net bag-holder (realized -$1, unrealized +$1.20M); single-runner survivor world",2026-06-29
+Cb6DNhpNsJWJwGq6F78bS2JHobBvdnhLtQijSNVva4da,REJECT,-$39.03K,+$32.39K,2d,87.11%,35,"net bag-holder (realized -$39.03K, unrealized +$32.39K); single-runner survivor world",2026-06-29
+2xMfVG9szWckq1ZVWJqmCgmRwYCaH74QGu6LRaBW8rty,REJECT,-$20.99K,+$40.26K,3d,66.18%,14,"net bag-holder (realized -$20.99K, unrealized +$40.26K); single-runner survivor world",2026-06-29
+sJe47j23PJxax1XJHGCF222zAEqUDJpkN4bMFgXTSsC,REJECT,-$24.63K,+$31.96K,7d,38.33%,1,"net bag-holder (realized -$24.63K, unrealized +$31.96K); single-runner survivor Bepe",2026-06-29
+GmzmcscnAyFpE3QRbRVe4be9LnAFAr2sbcrq6zGHjip3,REJECT,+$0,+$30.92K,3d,0%,0,"net bag-holder (realized +$0, unrealized +$30.92K); single-runner survivor Bepe",2026-06-29
+G5r6i4Howjtu3HJwf92cyCndE6xUQKL5B5nTsmD9xSVL,TOO_FAST,-$2.54K,+$27.80K,2h,33.33%,1,pre-run co-buyer Bepe; 61.11% instant-sell / 2h (too fast for COPY latency; future fast-bot),2026-06-29
+CDjiKpqT7XYRSSncmnK8Q5Fea1MrdszJXTmGf3B7HriZ,TOO_FAST,-$79.56K,-$112.01K,7d,93.61%,421,pre-run co-buyer Bepe; 76.6% instant-sell / 7d (too fast for COPY latency; future fast-bot),2026-06-29
+CS6XEWActTamMejFjo3WuDMeXoTvNDgRFoaoFif6FULg,TOO_FAST,-$402,+$21.23K,49m,55.33%,4,pre-run co-buyer Bepe; 80% instant-sell / 49m (too fast for COPY latency; future fast-bot),2026-06-29
+7kLnBYCTaZunyQkTwQdGdsxqenAZ5xMoSxEQCYWHnXBr,REJECT,-$64.74K,+$20.17K,13d,46.47%,3,"net bag-holder (realized -$64.74K, unrealized +$20.17K); single-runner survivor Bepe",2026-06-29
+5n4LLecFubQLDzsS9kDqYrN2YUGxXaq7LVU8Bm3qKHC8,REJECT,+$1.76K,+$20.11K,14h,0%,0,one-hit/too-small (0 multi-x); Bepe pre-run survivor,2026-06-29
+DuNrfZoVA6AGyghpAHAQZzyQ7bdfZPDgdjP2vZo3RBpo,REJECT,-$6.65K,+$13.68K,10h,0%,0,"net bag-holder (realized -$6.65K, unrealized +$13.68K); single-runner survivor Bepe",2026-06-29
+FzaKKXhhU7ba76NJ9fffoa5Gt4LhSnME1rcMxrrwT4Dw,REJECT,-$301,+$14.03K,18h,0%,0,"net bag-holder (realized -$301, unrealized +$14.03K); single-runner survivor Bepe",2026-06-29
+AinuuzwUfyDn6a4JgvMUNprvUE3rEKebxaut8Uq8rZuw,TOO_FAST,+$246.73K,-$55.94K,1d,91.9%,568,pre-run co-buyer Bepe; 90.75% instant-sell / 1d (too fast for COPY latency; future fast-bot),2026-06-29
+6thkBEiYSsZs3AEbmUycSngZZ9QwBG4xgGTEtAoUB1bz,REJECT,-$13.99K,+$11.16K,12h,34.24%,5,"net bag-holder (realized -$13.99K, unrealized +$11.16K); single-runner survivor Bepe",2026-06-29
+CRB2BuxivbEE1QUiWqJbDszX2pPLd2UfwU1fecEW5hZ2,REJECT,-$405,+$10.85K,7h,25%,1,"net bag-holder (realized -$405, unrealized +$10.85K); single-runner survivor Bepe",2026-06-29
+4ZjYSCH3Sib9iMSM3QN2sL2kwxNcXG2P4XCemSC2hsyb,KEEP,+$163.33K,-$137.66K,9mo,61.28%,13,"pre-run co-buyer Bepe; realized +$163.33K, 13 multi-x, 9mo hold (followable)",2026-06-29
+9QfBJk9dV5e8BQHVxBGxvkt212pbpSQi1Bku45ypGhnS,REJECT,-$518.96K,+$86.68K,2d,89.46%,116,"net bag-holder (realized -$518.96K, unrealized +$86.68K); single-runner survivor Bepe",2026-06-29
+6fhi2xCvTDDLEwo2TgszVhWshgUYg8egm8vXhgfw3Vqi,TOO_FAST,-$1.75K,+$7.09K,17h,58.18%,2,pre-run co-buyer Bepe; 78.18% instant-sell / 17h (too fast for COPY latency; future fast-bot),2026-06-29
+CP1iP16fBPYQbyCH2oxxJ7dnYR2JrpP5yjMsTPw1D55B,REJECT,+$0,+$226.55K,2d,0%,0,"net bag-holder/survivor (realized +$0, unrealized +$226.55K); SNDK pre-run",2026-06-29
+86AEJExyjeNNgcp7GrAvCXTDicf5aGWgoERbXFiG1EdD,TOO_FAST,+$3.72M,-$1.10M,5d,94.52%,197,pre-run co-buyer FLKR; 86.67% instant-sell / 5d (too fast for COPY latency; future fast-bot),2026-06-29
+5fPQNqgt9JGsPGdgWLNr6kwHsQrdVUpkNuL93YLdcZKx,KEEP,+$8.24K,+$711,5h,88.56%,8,"pre-run co-buyer FLKR; realized +$8.24K, 8 multi-x, 5h hold (followable)",2026-06-29
+DuMr5LqZ6nnLywGszWLvSBYEeHnwduGi19iTXEyb14yj,REJECT,+$0,-$4.74K,11d,30.76%,0,"net bag-holder/survivor (realized +$0, unrealized -$4.74K); FLKR pre-run",2026-06-29
+4CGR9XCSgrAD29FFn2X5rEafethigRNaJakWDUYJrbkV,REJECT,+$1.48K,-$843,2d,0%,0,"one-hit/too-small (0 multi-x, realized +$1.48K); FLKR pre-run",2026-06-29
+5o5P6jK1suNxykvh8Rj8JLYCPTi5HRNrpTvRmHw9iZsC,TOO_FAST,+$1.72M,-$151.34K,10d,96.03%,295,pre-run co-buyer FLKR; 90.66% instant-sell / 10d (too fast for COPY latency; future fast-bot),2026-06-29
+FKY9K9K2WjXP5i4FrAo3EZsyfqV4u9CjQAwj59QXh8Uv,TOO_FAST,+$3.49M,-$580.54K,2d,91.93%,184,pre-run co-buyer FLKR; 88.15% instant-sell / 2d (too fast for COPY latency; future fast-bot),2026-06-29
+AgEGiKisqM4j2Yc6Rhk6TNRxE4XUZbhTt6Vv96axfqkB,TOO_FAST,-$14.47K,-$41.79K,5d,91.87%,121,pre-run co-buyer FLKR; 85.06% instant-sell / 5d (too fast for COPY latency; future fast-bot),2026-06-29
+39j2aaXEQhVq7Jur5Wy9XpYqnat7TY5rJL9fLL8NfVU9,TOO_FAST,-$3.55K,-$58.97K,4d,93%,134,pre-run co-buyer FLKR; 86.2% instant-sell / 4d (too fast for COPY latency; future fast-bot),2026-06-29
+9tiPr6CAs82tdke6Y9x9K1cCkPqtUZTMWneAUeB3Thnj,KEEP,+$5.98K,-$61,8h,30.28%,12,"pre-run co-buyer FLKR; realized +$5.98K, 12 multi-x, 8h hold (followable)",2026-06-29
+EHMLUwdT2mZL4GcGicTvmTYtavakJg5NS25kKHJ3b6Mg,REJECT,+$4.44K,+$393,2d,73.14%,29,"one-hit/too-small (29 multi-x, realized +$4.44K); FLKR pre-run",2026-06-29
+HxRC3S9EKsdwZuHoMEYAV5YwhLH288bA1tQjb1wFBLE5,REJECT,+$686,+$536,8h,0%,0,"one-hit/too-small (0 multi-x, realized +$686); FLKR pre-run",2026-06-29
+vjnfPNW1Ko1goknaUtqkx432fNPMxTmBBDuwxMwPkFn,REJECT,-$84,+$29.65K,29d,7.4%,1,"net bag-holder/survivor (realized -$84, unrealized +$29.65K); FLKR pre-run",2026-06-29
+GMHgom1QRPZha2WPUusVexr9xaAqa76WgBzJvYSsgw1Y,TOO_FAST,-$5.24K,+$441,4h,75.4%,50,pre-run co-buyer FLKR; 80.02% instant-sell / 4h (too fast for COPY latency; future fast-bot),2026-06-29
+Bm2pg1j6Lg4t3MdStsSkupa5sXEv4yAQVZMorgp9W7DE,REJECT,+$0,+$443,2d,0%,0,"net bag-holder/survivor (realized +$0, unrealized +$443); FLKR pre-run",2026-06-29
+9m2Uv3aBhNrg8xuG2TgN92FVLLp53sWhHDF9NgChEaD7,REJECT,+$0,-$35,16d,5.88%,0,"net bag-holder/survivor (realized +$0, unrealized -$35); FLKR pre-run",2026-06-29
+2tCCJAZ3LS4z5MHA8quo92FBLNE37xb1wVFsCTMqYcX5,KEEP,+$28.88K,-$17.74K,6d,91.3%,47,"pre-run co-buyer FLKR; realized +$28.88K, 47 multi-x, 6d hold (followable)",2026-06-29
+6SZhQSMPJFy4wZSxDjLjb2oB7g6RdUP7FeDSuj1vxUsp,REJECT,-$326,+$354,21h,47.5%,1,"net bag-holder/survivor (realized -$326, unrealized +$354); FLKR pre-run",2026-06-29
+9iVyYS1SEH54cSRYPJfeBdAzani929wsGjqnHWyBxgKK,REJECT,-$2.52K,-$578,23d,48%,0,"net bag-holder/survivor (realized -$2.52K, unrealized -$578); FLKR pre-run",2026-06-29
+9NVFdRNEcreYDZqJAhennP2tTzaiNC2p9h9HWTdjLBuB,REJECT,-$4.07K,-$22.65K,14d,60.97%,24,"net bag-holder/survivor (realized -$4.07K, unrealized -$22.65K); FLKR pre-run",2026-06-29
+EyjwdUZR9d47TAgEu3iRHPUp8n37qkSNHC7CsjBubvjN,REJECT,+$365.15,+$52.54K,2d,45.45%,"0 (>500%), 0 (>100%)","one-hit/no repeatable multi-x edge [co-buy drooling-cluster]",2026-06-29
+kiLogfWUXp7nby7Xi6R9t7u8ERQyRdAzg6wBjvuE49u,REJECT,-$74.90K,-$4.27K,2d,82.18%,"8 (>500%), 93 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+Z67dnJCqbjsddm8sK1A5DNbC5oMfB3bZJqhqiafyzNk,REJECT,-$355.10,+$20.85K,12d,83.71%,"3 (>500%), 54 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+3a8DRpcrwf2TCLv88UKEAMVdGmbCSyjW1S8NJBYegLVj,KEEP,+$71.58K,+$24.63K,3d,90.22%,"2 (>500%), 38 (>100%)","banks realized profit; followable cluster-entry [co-buy drooling-cluster]",2026-06-29
+5ABdmFXPqRwXFih9SYK4ffFMNddHcKGUun2NFsd8EiCX,REJECT,-$0.04,+$511.55K,11d,9.43%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+7y4t9NKPcg6dN3uBgyaDmDHsfedEiNhaCEZZ2y7j5Dc5,REJECT,-$22.67K,+$7.40K,16d,21.56%,"0 (>500%), 1 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+9LGjXs2u3c9sVtaJDm22EzyhyzQoPjvaFJHs4LJWg9EB,REJECT,-$224.51K,-$2.81M,3mo,82.28%,"748 (>500%), 2 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+CwTBRTPqBTP9AAcR7CfVZz389xokeeSBSEimBT1PiKaa,REJECT,+$0.00,-$14.65K,18d,35.13%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+5rkSwEceTC6TxtQwzMVdsdmG4xs7u3iZMH3isU8tssdh,REJECT,-$73.44K,-$1.74M,3mo,64.41%,"299 (>500%), 683 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+4yWDmvn7TUVQuZvZRYcEcQuFijEWZ73FpnrtRnFb66aC,KEEP,+$47.04K,+$8.52K,5d,89.55%,"0 (>500%), 56 (>100%)","banks realized profit; followable cluster-entry [co-buy drooling-cluster]",2026-06-29
+B9F5z2LzwK2CBXidMbeGX5WXaPSXuRWEHUNHfC4F9Wpg,REJECT,+$0.00,+$24.91K,8d,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+51mSMZEeiWPvrGu4Aj92vyHmKS2AuXuMgfkgpYHr8Hi3,REJECT,-$316.48,+$23.45K,17d,50%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+95eikvY7DQxeBp7kqxRBYaq2H3vMANo2AfFuZq2gd2EB,REJECT,-$8.71K,+$10.01K,14d,21.27%,"0 (>500%), 7 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+38GDDLHwE1eNqeY9Lrqgv51myfkPbECAaBA1aLWKwcRu,REJECT,-$10.91K,+$352.35,9d,89.12%,"0 (>500%), 18 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+BCEtxuzquFMHD1FuTck6ueKiTLZuGM8oC5fE3GRetWkP,REJECT,+$21.58K,+$21.20K,6h,8.69%,"0 (>500%), 1 (>100%)","one-hit; no repeatable multi-x edge [co-buy drooling-cluster]",2026-06-29
+BsDoXr8sVJJvaotmPHX3BUjsBMfQucJVTTJrtZGXTcEb,KEEP,+$79.28K,+$11.50K,2d,87.89%,"11 (>500%), 49 (>100%)","banks realized profit; followable cluster-entry [co-buy drooling-cluster]",2026-06-29
+HovojzrJp7kPHyuCGfhumSXmty213pVQfVTidjjbKkBD,REJECT,+$1.60K,+$10.58K,2d,89.97%,"1 (>500%), 33 (>100%)","realized too small for a reliable banker [co-buy drooling-cluster]",2026-06-29
+2tgpb26STzCXWJvA54VkYvuyFvcPxGN7N2Zeq3Beic4B,REJECT,-$21.62K,+$16.65K,11d,37.5%,"1 (>500%), 2 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+GgSni7JWRCvzTDd7FhCUdNMb5HqfrhDxHzoXtj9E7wpw,KEEP,+$111.38K,-$1.99K,1d,86.77%,"0 (>500%), 23 (>100%)","banks realized profit; followable cluster-entry [co-buy drooling-cluster]",2026-06-29
+EEyccKWx91tMLQbbvWEYQ8VYGvU96vH1W7ibDHJQs2HE,REJECT,-$4.18K,+$7.77K,16d,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+FpXjH3mmXJVavmLMPuWW3k6uwkA5CUeK4WW9fLWzpyV4,REJECT,-$107.80,+$14.21K,2d,91.62%,"0 (>500%), 5 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+DAqCpTpQN1JNCDYLXWir28q1J2eXSufiNNADsSnUQTBZ,REJECT,-$424.39,-$50.62K,11d,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+65XYiSeA41miHevEj6HDLFQ5DpE3vRGgPCTbfa4Whjik,REJECT,-$2.53K,+$11.12K,2d,95.6%,"0 (>500%), 18 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+7TkZ2BqY6m4wcwqnPpZMgQfWNiQUxz2daoki2KpvMa3P,REJECT,-$1.42K,+$14.61K,3d,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy drooling-cluster]",2026-06-29
+E5ebcaH2TgvHJWouQMjNAKNtYo3y9CYz1sr2unLS12zW,REJECT,-$77.87K,-$7.85K,12d,36.17%,"1 (>500%), 17 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+Am1t6rL2nvM3TDHzvf7ER1hLaLTEUBS6SVSNjpCMAEA4,REJECT,-$712.84K,-$416.46K,23d,74.99%,"17 (>500%), 146 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+6X8dcpdfG7QoEg5RLuLEbh3H1rWPbdNQpKbGf9nUwTpn,REJECT,+$0.00,+$10.57K,20d,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+8pszGZXhnKLm5bNczsQS49CJTaGDr25oCwsdxdxtKThK,KEEP,+$6.47K,+$9.00K,4d,27.27%,"0 (>500%), 2 (>100%)","banks realized profit; followable cluster-entry [co-buy CHANCE-cluster]",2026-06-29
+8goPWhA5aALaa6UuzcaKBUYje2BrX8V4oKfvJRYiXvcE,REJECT,-$2.64K,+$8.60K,3h,79.02%,"2 (>500%), 33 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+6vAh7uyu5bUxPBtXwVwBoyVh3LJ79WKY2CvJbrvH2PPr,REJECT,+$879.58,+$7.93K,1d,46.71%,"0 (>500%), 9 (>100%)","realized too small for a reliable banker [co-buy CHANCE-cluster]",2026-06-29
+4LAmk6jCqYY98WoP8g9ZTvPA6QZoTWWB6SCn25DRbGhn,REJECT,+$395.97,+$8.08K,6h,33.33%,"0 (>500%), 4 (>100%)","realized too small for a reliable banker [co-buy CHANCE-cluster]",2026-06-29
+8FVQiWsHKFKBRyp9cdLJJy8byAAzcuH5zPWEsKTyUEG9,REJECT,-$604.72,+$2.99K,9d,81.8%,"10 (>500%), 49 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+BQNG2gsjNpA6cDq9yhvN1HfxXY4yAPvNEWqdUWrBFdEo,REJECT,+$0.00,+$6.39K,20d,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+HsnFG7DppdrJaXq3e8zFtAHGcF9NXayASYA6PVf7NdVm,REJECT,+$4.48K,+$5.19K,5h,33.6%,"0 (>500%), 17 (>100%)","realized too small for a reliable banker [co-buy CHANCE-cluster]",2026-06-29
+EviWc5PDgEYQURUg7KFtBKULSzoNT8o33oJzS6Ru7eYj,REJECT,+$0.00,+$0.00,,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+Ap5yvGQsBsuBjpZZhNnTvqo7HW8THkgij8weKBZGh7iS,REJECT,-$371.08,+$6.89K,1d,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+65mHhVvTGT2ymwSCbPLqWM7xLV1xbXKHSHCzbHN3Keex,REJECT,+$0.00,+$6.05K,12h,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+FJySa6Kf4SLNPu7HLUTHLJLo3ZXeQhXiPgga9cJHcRQv,REJECT,+$0.00,+$5.24K,20d,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+HqySbovGcYMuVTgUR35YB178YprGTRZSh5iZeDTZZ3Nv,REJECT,+$0.00,+$5.22K,20d,0%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+HkmsqJw2QrubSYUMCZNGm4JMtpNxWSWEvwGH5v6VhdjZ,REJECT,+$340.58,+$4.74K,18d,0%,"1 (>500%), 0 (>100%)","one-hit; no repeatable multi-x edge [co-buy CHANCE-cluster]",2026-06-29
+8ZMNEDnLx6QJiAqyGPXhv3WPeGvWxuJt2qvfsbYxXL5f,REJECT,-$7.68K,+$4.19K,3d,48.9%,"1 (>500%), 6 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+7FJDJ1HaQfL3GAcMCzoBrJ9Accnf5GUYYwfEPCBCDcVK,KEEP,+$11.09K,+$3.93K,2d,50%,"2 (>500%), 5 (>100%)","banks realized profit; followable cluster-entry [co-buy CHANCE-cluster]",2026-06-29
+69qaveug9QzXysbPRV3SpLuvDkRdJTGGbK9TmAo3yYb3,REJECT,+$97.75K,-$117.15K,5d,87.42%,"14 (>500%), 462 (>100%)","bag-holder: unrealized losses exceed realized gains [co-buy CHANCE-cluster]",2026-06-29
+2oubkNmatGszLi7vUPPAGdTQMSVrLdaoXJfu7zHZkbqz,REJECT,-$11.28K,+$1.69K,1d,77.68%,"0 (>500%), 4 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+9wvGyCmg9LyfGrku5pGEPcqQCyQk8eLBk1p413ppDkhH,REJECT,-$1.62K,+$5.93K,9h,36.26%,"0 (>500%), 1 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+CTHApzLg6YuyPWCpjRvd9NzgyRjntGAnsSrv4GKKssty,REJECT,-$1.96K,+$3.84K,4d,20%,"0 (>500%), 0 (>100%)","no realized profit; net-negative banker [co-buy CHANCE-cluster]",2026-06-29
+H5d8DMkLywD7UJ7gkEM2aSsrGEcbQ9DqhmZ3LjPQdM7V,REJECT,+$11.11K,-$26.68M,4mo,77.41%,"4 (>500%), 4 (>100%)","bag-holder: unrealized losses exceed realized gains [co-buy CHANCE-cluster]",2026-06-29
+5228CjdEp17x3THvk3VJh17keG2PZppzEYp4KrEAzKFc,KEEP,+$32.78K,-$1.12K,29d,50.36%,"0 (>500%), 4 (>100%)","banks realized profit; followable cluster-entry [co-buy CHANCE-cluster]",2026-06-29
+C1ETmcQ2xtzwsQnS8EMma2HsHXwURqg9Gdsbtqa16cEn,REJECT,+$1.37K,+$1.28K,3d,0%,"0 (>500%), 2 (>100%)","realized too small for a reliable banker [co-buy CHANCE-cluster]",2026-06-29
+8avtb3GZapmpYWUjXoJYCXfATRBhH8SGQkyDSoqF6CPC,REJECT,+$4.77K,-$25.73M,4mo,78.27%,"6 (>500%), 3 (>100%)","bag-holder: unrealized losses exceed realized gains [co-buy CHANCE-cluster]",2026-06-29
