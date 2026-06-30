@@ -263,7 +263,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT wa.wallet_address, wa.chain, COALESCE(wp.tier, 'removed') AS status, CASE WHEN wp.conviction THEN 'yes' ELSE '' END AS conviction, COUNT(*) AS n_trades, ROUND(SUM(wa.attributed_pnl_usd)::numeric, 2) AS total_pnl_usd, ROUND(AVG(wa.attributed_pnl_pct)::numeric, 2) AS avg_pct, ROUND(MAX(wa.attributed_pnl_pct)::numeric, 2) AS best_pct, ROUND(MIN(wa.attributed_pnl_pct)::numeric, 2) AS worst_pct, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0) AS wins, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd <= 0) AS losses, ROUND((COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id LEFT JOIN wallet_pool wp ON wp.address = wa.wallet_address WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' GROUP BY wa.wallet_address, wa.chain, wp.tier, wp.conviction ORDER BY total_pnl_usd DESC NULLS LAST",
+          "rawSql": "SELECT wa.wallet_address, wa.chain, COALESCE(wp.tier, 'removed') AS status, CASE WHEN wp.conviction THEN 'yes' ELSE '' END AS conviction, COUNT(*) AS n_trades, ROUND(SUM(wa.attributed_pnl_usd)::numeric, 2) AS total_pnl_usd, ROUND(AVG(wa.attributed_pnl_pct)::numeric, 2) AS avg_pct, ROUND(MAX(wa.attributed_pnl_pct)::numeric, 2) AS best_pct, ROUND(MIN(wa.attributed_pnl_pct)::numeric, 2) AS worst_pct, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0) AS wins, COUNT(*) FILTER (WHERE wa.attributed_pnl_usd <= 0) AS losses, ROUND((COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0)::float / NULLIF(COUNT(*), 0) * 100)::numeric, 1) AS win_rate_pct FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id LEFT JOIN wallet_pool wp ON wp.address = wa.wallet_address WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' AND t.sim_metadata->>'strategy' = 'cluster' GROUP BY wa.wallet_address, wa.chain, wp.tier, wp.conviction ORDER BY total_pnl_usd DESC NULLS LAST",
           "format": "table"
         }
       ],
@@ -324,7 +324,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT COUNT(DISTINCT wa.wallet_address) AS active_wallets FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07'",
+          "rawSql": "SELECT COUNT(DISTINCT wa.wallet_address) AS active_wallets FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' AND t.sim_metadata->>'strategy' = 'cluster'",
           "format": "table"
         }
       ],
@@ -339,7 +339,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ROUND(SUM(wa.attributed_pnl_usd)::numeric, 2) FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07'",
+          "rawSql": "SELECT ROUND(SUM(wa.attributed_pnl_usd)::numeric, 2) FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' AND t.sim_metadata->>'strategy' = 'cluster'",
           "format": "table"
         }
       ],
@@ -375,7 +375,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ROUND(AVG(wa.cluster_size)::numeric, 2) FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07'",
+          "rawSql": "SELECT ROUND(AVG(wa.cluster_size)::numeric, 2) FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' AND t.sim_metadata->>'strategy' = 'cluster'",
           "format": "table"
         }
       ],
@@ -390,7 +390,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT COUNT(*) FROM (SELECT wa.wallet_address FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' GROUP BY 1 HAVING COUNT(*) >= 5) sub",
+          "rawSql": "SELECT COUNT(*) FROM (SELECT wa.wallet_address FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id WHERE wa.bot_id='copy' AND t.exit_at >= '2026-06-07' AND t.sim_metadata->>'strategy' = 'cluster' GROUP BY 1 HAVING COUNT(*) >= 5) sub",
           "format": "table"
         }
       ],
