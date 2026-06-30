@@ -68,15 +68,23 @@ PER-WALLET PROCEDURE (for each already_proven=NO / REVIEW wallet)
    look at what it WON on:
    - NO ran tokens at all (MM/HFT churn: huge tx counts — 100k to millions on one token, ~0
      hold, max price ~1.1-1.7x) -> PRUNE ("no ran tokens / MM bot").
-   - Its "runs" are all $0 / near-zero-liquidity MICRO-RUGS (single vertical candle then dead,
-     and/or sub-15-min flips) -> PRUNE ("micro-rug sniper; unfollowable"). COPY can NEVER
-     follow a wallet into a $0-liq token (the liq floor blocks entry, or we get rugged), so its
-     co-buy partners on those rugs are unfollowable too — do NOT spend Solscan effort on them.
-     A wallet can be very PROFITABLE on micro-rugs and still be a PRUNE here (followability, not
-     PnL, is the bar) — these are NOT UNCERTAIN, they are PRUNE.
-   Only wallets with GENUINELY FOLLOWABLE runs (a real sustained move on >=~$5k-liquidity
-   tokens) proceed to step 2. The costly top of the queue is almost all MM bots + micro-rug
-   snipers, which this gate prunes without any co-buyer resolution.
+   - Its "runs" are all MICRO-RUGS (sub-15-min flips and/or no real exit depth) -> PRUNE
+     ("micro-rug sniper; unfollowable"). A wallet can be very PROFITABLE on micro-rugs and
+     still be a PRUNE here (followability, not PnL, is the bar) — these are NOT UNCERTAIN.
+   ★ FOLLOWABILITY = QUOTE-SIDE (WSOL/USDC) POOL DEPTH AT BUY-TIME AND DURING THE RUN — the
+   real money you can enter and exit against. NOT current liquidity (a token dead today may
+   have had real depth during its run), and NOT the token's FDV / nominal value (a pool can
+   show a huge token-side "value" paired with a few WSOL — that's exit-liquidity theater, you
+   can't sell into it). The cheap Birdeye current-liq snapshot is only a FLAG. Before you PRUNE
+   a PROFITABLE wallet as micro-rug, do ONE Solscan reconstruction on its best run: read the
+   ADD/REMOVE LIQUIDITY events + swap WSOL amounts to get the WSOL-side depth at the early buys
+   and during the run. Prune only if that real depth was thin THEN (e.g. <~$5k). If it had real
+   quote depth at buy + a sellable run, it's FOLLOWABLE -> step 2 (and it's a corpus token).
+   (VOXEL is the cautionary example: dead now, but the call is its ~$10-450 WSOL depth at the
+   time — the "$236k" was inflated VOXEL nominal vs ~3 WSOL, not sellable -> unfollowable.)
+   Only wallets with GENUINELY FOLLOWABLE runs proceed to step 2. The costly top of the queue
+   is almost all MM bots + micro-rug snipers, which this gate prunes; the buy-time reconstruction
+   is reserved for PROFITABLE wallets where a dead-now token might have been liquid-then.
 2. CO-ACCUMULATION TEAM CHECK (only for wallets that passed step 1 with followable runs). We
    want a TEAM that ACCUMULATED THE TOKEN OVER DAYS in its pre-run base — found via SOLSCAN,
    because Birdeye's per-token early-buyer endpoint is unreachable (forge 404s, traders data
