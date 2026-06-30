@@ -75,6 +75,8 @@ _SQL = text(
                COALESCE(MAX(ev.ev30), 0) AS ev30
         FROM wallet_pool wp
         LEFT JOIN wallet_attributions wa ON wa.wallet_address = wp.address
+             AND EXISTS (SELECT 1 FROM trades t WHERE t.id = wa.trade_id
+                         AND t.sim_metadata->>'strategy' = 'cluster')  -- post-reset cluster only
         LEFT JOIN ev ON ev.wallet_address = wp.address
         WHERE wp.tier = 'active'
           AND wp.chain = 'solana'

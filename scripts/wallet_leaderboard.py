@@ -36,6 +36,10 @@ SELECT
     COUNT(*) FILTER (WHERE attributed_pnl_usd <= 0) AS losses
 FROM wallet_attributions
 WHERE bot_id = :bot_id
+  -- post-reset cluster only: attributions for trades re-tagged 'cluster_pre_reset'
+  -- (the 2026-06-30 reset) are excluded so the leaderboard reads fresh.
+  AND EXISTS (SELECT 1 FROM trades t WHERE t.id = wallet_attributions.trade_id
+              AND t.sim_metadata->>'strategy' = 'cluster')
 GROUP BY wallet_address, chain
 HAVING COUNT(*) >= :min_trades
 ORDER BY total_pnl_usd DESC

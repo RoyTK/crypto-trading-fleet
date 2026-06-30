@@ -64,7 +64,7 @@
       "title": "Open positions",
       "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
       "targets": [
-        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%'", "format": "table"}
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy' = 'cluster'", "format": "table"}
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
@@ -74,7 +74,7 @@
       "title": "Trades 24h",
       "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
       "targets": [
-        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at >= NOW() - INTERVAL '24 hours' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%'", "format": "table"}
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at >= NOW() - INTERVAL '24 hours' AND sim_metadata->>'strategy' = 'cluster'", "format": "table"}
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
@@ -111,7 +111,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND exit_at >= '2026-06-07' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND exit_at >= '2026-06-07' AND sim_metadata->>'strategy' = 'cluster' ORDER BY exit_at",
           "format": "time_series"
         }
       ],
@@ -127,7 +127,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT date_trunc('day', created_at) AS time, ROUND((COUNT(*) FILTER (WHERE fill_status='no_fill')::float / NULLIF(COUNT(*),0) * 100)::numeric, 1) AS no_fill_pct FROM trades WHERE bot_id='copy' AND mode='paper' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, ROUND((COUNT(*) FILTER (WHERE fill_status='no_fill')::float / NULLIF(COUNT(*),0) * 100)::numeric, 1) AS no_fill_pct FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy' = 'cluster' GROUP BY 1 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -162,7 +162,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "WITH slip AS (SELECT (sim_metadata->>'slippage_bps')::float AS bps FROM trades WHERE bot_id='copy' AND mode IN ('paper','shadow') AND sim_metadata->>'slippage_bps' IS NOT NULL AND created_at >= NOW() - INTERVAL '7 days' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%') SELECT CASE WHEN bps < 5 THEN '0-5' WHEN bps < 10 THEN '5-10' WHEN bps < 25 THEN '10-25' WHEN bps < 50 THEN '25-50' WHEN bps < 100 THEN '50-100' ELSE '100+' END AS bucket, MIN(bps) AS sort_key, COUNT(*) AS count FROM slip GROUP BY 1 ORDER BY sort_key",
+          "rawSql": "WITH slip AS (SELECT (sim_metadata->>'slippage_bps')::float AS bps FROM trades WHERE bot_id='copy' AND mode IN ('paper','shadow') AND sim_metadata->>'slippage_bps' IS NOT NULL AND created_at >= NOW() - INTERVAL '7 days' AND sim_metadata->>'strategy' = 'cluster') SELECT CASE WHEN bps < 5 THEN '0-5' WHEN bps < 10 THEN '5-10' WHEN bps < 25 THEN '10-25' WHEN bps < 50 THEN '25-50' WHEN bps < 100 THEN '50-100' ELSE '100+' END AS bucket, MIN(bps) AS sort_key, COUNT(*) AS count FROM slip GROUP BY 1 ORDER BY sort_key",
           "format": "table"
         }
       ],
@@ -190,7 +190,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT (sim_metadata->>'cluster_size') AS cluster_size, COUNT(*) AS count FROM trades WHERE bot_id='copy' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND sim_metadata->>'cluster_size' IS NOT NULL AND created_at >= NOW() - INTERVAL '7 days' GROUP BY 1 ORDER BY 1::int",
+          "rawSql": "SELECT (sim_metadata->>'cluster_size') AS cluster_size, COUNT(*) AS count FROM trades WHERE bot_id='copy' AND sim_metadata->>'strategy' = 'cluster' AND sim_metadata->>'cluster_size' IS NOT NULL AND created_at >= NOW() - INTERVAL '7 days' GROUP BY 1 ORDER BY 1::int",
           "format": "table"
         }
       ],
@@ -204,7 +204,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ROUND((COALESCE(SUM(COALESCE((sim_metadata->>'remaining_size_usd')::numeric, size_usd)), 0) / 10000.0 * 100)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%'",
+          "rawSql": "SELECT ROUND((COALESCE(SUM(COALESCE((sim_metadata->>'remaining_size_usd')::numeric, size_usd)), 0) / 10000.0 * 100)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy' = 'cluster'",
           "format": "table"
         }
       ],
@@ -218,7 +218,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ROUND(AVG((sim_metadata->>'slippage_bps')::float)::numeric, 1) FROM trades WHERE bot_id='copy' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND sim_metadata->>'slippage_bps' IS NOT NULL AND created_at >= NOW() - INTERVAL '7 days'",
+          "rawSql": "SELECT ROUND(AVG((sim_metadata->>'slippage_bps')::float)::numeric, 1) FROM trades WHERE bot_id='copy' AND sim_metadata->>'strategy' = 'cluster' AND sim_metadata->>'slippage_bps' IS NOT NULL AND created_at >= NOW() - INTERVAL '7 days'",
           "format": "table"
         }
       ],
@@ -233,7 +233,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT id, asset, venue AS chain, direction, entry_price, size_usd, ROUND((COALESCE((sim_metadata->>'remaining_size_usd')::numeric, size_usd) / NULLIF(size_usd, 0) * 100)::numeric, 1) AS pct_held, COALESCE(json_array_length(sim_metadata->'partial_exits'), 0) AS tiers_fired, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, entry_at, sim_metadata->>'cluster_size' AS cluster_size FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY entry_at DESC",
+          "rawSql": "SELECT id, asset, venue AS chain, direction, entry_price, size_usd, ROUND((COALESCE((sim_metadata->>'remaining_size_usd')::numeric, size_usd) / NULLIF(size_usd, 0) * 100)::numeric, 1) AS pct_held, COALESCE(json_array_length(sim_metadata->'partial_exits'), 0) AS tiers_fired, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, entry_at, sim_metadata->>'cluster_size' AS cluster_size FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy' = 'cluster' ORDER BY entry_at DESC",
           "format": "table"
         }
       ],
@@ -804,7 +804,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND exit_at >= COALESCE((SELECT (kill_criteria_status->'window'->>'start')::timestamptz FROM bot_state WHERE bot_id='copy'), '2026-06-27'::timestamptz) ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy' = 'cluster' AND exit_at >= COALESCE((SELECT (kill_criteria_status->'window'->>'start')::timestamptz FROM bot_state WHERE bot_id='copy'), '2026-06-27'::timestamptz) ORDER BY exit_at",
           "format": "time_series"
         }
       ],

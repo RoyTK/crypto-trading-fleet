@@ -73,7 +73,7 @@
       "title": "Open positions",
       "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
       "targets": [
-        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='open' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%'", "format": "table"}
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='open' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE '%pre_reset'", "format": "table"}
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
@@ -83,7 +83,7 @@
       "title": "Closed (paper)",
       "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
       "targets": [
-        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%'", "format": "table"}
+        {"refId": "A", "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE '%pre_reset'", "format": "table"}
       ],
       "datasource": {"type": "postgres", "uid": "fleet-postgres"}
     },
@@ -106,7 +106,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE '%pre_reset' ORDER BY exit_at",
           "format": "time_series"
         }
       ],
@@ -120,7 +120,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT exit_at AS time, pnl_pct AS value FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY exit_at",
+          "rawSql": "SELECT exit_at AS time, pnl_pct AS value FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE '%pre_reset' ORDER BY exit_at",
           "format": "time_series"
         }
       ],
@@ -164,7 +164,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT id, asset, venue, direction, entry_price, size_usd, leverage, entry_at, sim_metadata->>'cluster_size' AS cluster_size, sim_metadata->>'slippage_bps' AS slippage_bps FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='open' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY entry_at DESC",
+          "rawSql": "SELECT id, asset, venue, direction, entry_price, size_usd, leverage, entry_at, sim_metadata->>'cluster_size' AS cluster_size, sim_metadata->>'slippage_bps' AS slippage_bps FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='open' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE '%pre_reset' ORDER BY entry_at DESC",
           "format": "table"
         }
       ],
@@ -178,7 +178,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT id, asset, direction, entry_price, exit_price, size_usd, leverage, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, entry_at, exit_at FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' ORDER BY exit_at DESC NULLS LAST LIMIT 50",
+          "rawSql": "SELECT id, asset, direction, entry_price, exit_price, size_usd, leverage, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, entry_at, exit_at FROM trades WHERE bot_id = '$bot' AND mode='paper' AND fill_status='closed' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE 'conviction%' AND COALESCE(sim_metadata->>'strategy','') NOT LIKE '%pre_reset' ORDER BY exit_at DESC NULLS LAST LIMIT 50",
           "format": "table"
         }
       ],

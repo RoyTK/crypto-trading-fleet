@@ -42,6 +42,8 @@ def main() -> int:
                    COUNT(wa.id) AS n
             FROM wallet_pool wp
             JOIN wallet_attributions wa ON wa.wallet_address = wp.address
+            JOIN trades t ON t.id = wa.trade_id
+                         AND t.sim_metadata->>'strategy' = 'cluster'  -- post-reset cluster only
             WHERE wp.tier = 'active'
             GROUP BY wp.address
             HAVING COALESCE(SUM(wa.attributed_pnl_usd), 0) > 0
