@@ -98,24 +98,89 @@ def _bot_summary(s: Session, bot: BotState, since: datetime) -> BotSummary:
 # in bot_state as 'initializing' but shouldn't pollute the daily check-in.
 _INACTIVE_STATES = {"initializing", "killed"}
 
-# Pseudo-bots that have a bot_state row (for kill_criteria_status / Grafana)
-# but whose trades live under another bot_id, so a fleet-summary row would
-# render misleadingly empty. copy_conviction's trades are bot_id='copy' tagged
-# strategy='conviction' — it's surfaced in the COPY daily digest instead.
-_REPORT_EXCLUDE_BOT_IDS = {"copy_conviction"}
+# Excluded from the generic bot_state iteration:
+#  - structure: DECOMMISSIONED 2026-06-25 (stale bot_state row shouldn't render).
+#  - copy + copy_conviction + copy_teamfollow: COPY is one bot_id running THREE
+#    isolated strategies (own bankroll/halt/metrics). Surfaced explicitly as three
+#    'copy:<strategy>' rows below (exact strategy tag → retired '*_pre_reset' trades
+#    are excluded, which the old lumped 'copy' row wrongly counted).
+_REPORT_EXCLUDE_BOT_IDS = {"structure", "copy", "copy_conviction", "copy_teamfollow"}
+
+# (display_label, strategy tag, halt_id) for the COPY sub-strategies.
+_COPY_STRATEGIES = [
+    ("copy:cluster", "cluster", "copy"),
+    ("copy:conviction", "conviction", "copy_conviction"),
+    ("copy:teamfollow", "teamfollow", "copy_teamfollow"),
+]
+
+
+def _copy_strategy_summary(
+    s: Session, label: str, strategy: str, halt_id: str,
+    copy_bot: "BotState | None", since: datetime,
+) -> BotSummary:
+    """Per-strategy COPY row: metrics scoped by the exact strategy tag + own halt_id."""
+    from sqlalchemy import text
+
+    def _strat():  # fresh clause per query (avoid bound-param reuse)
+        return text("sim_metadata->>'strategy' = :strat").bindparams(strat=strategy)
+
+    trades_24h = s.execute(
+        select(func.count(Trade.id)).where(
+            Trade.bot_id == "copy", Trade.created_at >= since, _strat())
+    ).scalar() or 0
+    pnl_24h = s.execute(
+        select(func.coalesce(func.sum(Trade.pnl_usd), 0.0)).where(
+            Trade.bot_id == "copy", Trade.exit_at >= since,
+            Trade.fill_status == "closed", _strat())
+    ).scalar() or 0.0
+    open_positions = s.execute(
+        select(func.count(Trade.id)).where(
+            Trade.bot_id == "copy", Trade.fill_status == "open", _strat())
+    ).scalar() or 0
+    halts_24h = s.execute(
+        select(func.count(Halt.id)).where(
+            Halt.bot_id == halt_id, Halt.halted_at >= since)
+    ).scalar() or 0
+    active_halt = s.execute(
+        select(func.count(Halt.id)).where(
+            Halt.bot_id == halt_id, Halt.resumed_at.is_(None))
+    ).scalar() or 0
+
+    state = "halted" if active_halt else (copy_bot.state if copy_bot else "paper")
+    if copy_bot is not None and copy_bot.paper_clock_started_at is not None:
+        elapsed_s = (datetime.now(timezone.utc) - copy_bot.paper_clock_started_at).total_seconds()
+        clock = max(0, int(elapsed_s // 86400))
+    else:
+        clock = None
+    # promotion_score in bot_state is the cluster (bot_id='copy') score; other
+    # sub-strategies have no bot_state score → leave blank rather than mislead.
+    score = copy_bot.promotion_score if (strategy == "cluster" and copy_bot) else None
+    return BotSummary(
+        bot_id=label, state=state, paper_clock_day=clock, promotion_score=score,
+        trades_24h=trades_24h, pnl_24h_usd=float(pnl_24h), pnl_24h_pct=None,
+        open_positions=open_positions, halts_24h=halts_24h,
+        last_score_at=copy_bot.last_score_at.isoformat() if (copy_bot and copy_bot.last_score_at) else None,
+    )
 
 
 def build_summary(window_hours: int = 24, deployed_capital_usd: float = 0.0) -> FleetSummary:
     since = datetime.now(timezone.utc) - timedelta(hours=window_hours)
     with session_scope() as s:
-        bots = list(
+        # COPY runs three isolated strategies under bot_id='copy' — surface each.
+        copy_bot = s.query(BotState).filter(BotState.bot_id == "copy").one_or_none()
+        copy_summaries = [
+            _copy_strategy_summary(s, label, strat, halt_id, copy_bot, since)
+            for (label, strat, halt_id) in _COPY_STRATEGIES
+        ]
+        # Any OTHER real bots (none today — fleet is COPY-only, structure decommissioned).
+        other_bots = list(
             s.query(BotState)
             .filter(~BotState.state.in_(_INACTIVE_STATES))
             .filter(~BotState.bot_id.in_(_REPORT_EXCLUDE_BOT_IDS))
             .order_by(BotState.bot_id)
             .all()
         )
-        bot_summaries = [_bot_summary(s, b, since) for b in bots]
+        bot_summaries = copy_summaries + [_bot_summary(s, b, since) for b in other_bots]
         fleet_signals = s.execute(
             select(func.count(Signal.id)).where(Signal.created_at >= since)
         ).scalar() or 0
@@ -148,7 +213,7 @@ def render_text(summary: FleetSummary) -> str:
         score_str = f"{b.promotion_score:.3f}" if b.promotion_score is not None else "—"
         clock = f"day {b.paper_clock_day}" if b.paper_clock_day is not None else "no clock"
         lines.append(
-            f"  {b.bot_id:>10} | {b.state:<14} | {clock:<10} | "
+            f"  {b.bot_id:>15} | {b.state:<14} | {clock:<10} | "
             f"score {score_str:>6} | trades24h {b.trades_24h:>4} | "
             f"pnl24h ${b.pnl_24h_usd:>+9.2f} | open {b.open_positions:>3} | halts24h {b.halts_24h:>2}"
         )
@@ -167,7 +232,7 @@ def render_discord_embed(summary: FleetSummary) -> dict[str, Any]:
         score_str = f"{b.promotion_score:.3f}" if b.promotion_score is not None else "—"
         clock = b.paper_clock_day if b.paper_clock_day is not None else "—"
         rows.append(
-            f"`{b.bot_id:<10}` {b.state:<14} day {clock} score {score_str} "
+            f"`{b.bot_id:<15}` {b.state:<14} day {clock} score {score_str} "
             f"tr {b.trades_24h} pnl ${b.pnl_24h_usd:+.2f} open {b.open_positions} halts {b.halts_24h}"
         )
     description = "\n".join(rows) if rows else "(no bots yet)"
