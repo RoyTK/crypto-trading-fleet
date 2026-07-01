@@ -107,10 +107,17 @@ WINDOWS: dict[str, dict[str, datetime]] = {
     # widened 25%->45% (shared exit evaluator) also changes conviction exits, so
     # its window resets too. Conviction roster was rebuilt to 7 accumulators the
     # same day; window had ~0 trades, so this reset is effectively free.
+    # ★ RESET 2026-07-01 (Roy): CONVICTION CLEAN-SLATE. Live data proved the old
+    # single-buy trigger followed SNIPES (n_buys≈1, 20 trades, -$1,863; entry liq did
+    # NOT separate win/loss). Fix = accumulation gate (>=3 buys over >=5min, `d92004a`)
+    # + a NEW roster of 23 DB-forward-VALIDATED deliberate accumulators (incl-duds test,
+    # +15-41% mean / 0-11% rug; snipers retired). All prior conviction trades re-tagged
+    # 'conviction_pre_reset' (retired -$3,901). Window restarts so it validates the NEW
+    # signal+roster fresh; explicit strategy='conviction' tag drops the retired trades.
     "copy_conviction": {
-        "start":        datetime(2026, 6, 28, 23, 30, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 27, 23, 30, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 26, 23, 30, tzinfo=timezone.utc),
+        "start":        datetime(2026, 7, 1, 16, 0, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 8, 30, 16, 0, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 9, 29, 16, 0, tzinfo=timezone.utc),
     },
 }
 
