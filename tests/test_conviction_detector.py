@@ -34,6 +34,10 @@ def _det(**over):
         threshold_usd=200.0,
         window_minutes=WIN_MIN,
         sell_holdoff_usd=0.0,
+        # Accumulation gate OFF by default so the existing threshold/window/sell
+        # tests exercise the core mechanics; the gate has its own tests below.
+        min_buys=1,
+        min_accumulation_span_seconds=0,
     )
     kw.update(over)
     return ConvictionDetector(**kw)
@@ -56,6 +60,50 @@ def _sell(wallet=ROSTER, token=TOKEN, notional=30.0, ts_ms=T0):
 # ---------------------------------------------------------------------------
 # Detector — accumulation
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Detector — ACCUMULATION GATE (2026-07-01): filter single-buy snipes
+# ---------------------------------------------------------------------------
+
+def _gate_det(**over):
+    """Detector with the accumulation gate ON (>=3 buys over >=300s)."""
+    kw = dict(wallets={ROSTER}, dust_floor_usd=10.0, threshold_usd=200.0,
+              window_minutes=WIN_MIN, sell_holdoff_usd=0.0,
+              min_buys=3, min_accumulation_span_seconds=300)
+    kw.update(over)
+    return ConvictionDetector(**kw)
+
+
+def test_gate_single_big_buy_snipe_does_not_fire():
+    d = _gate_det()
+    d.observe_buy(_buy(notional=500.0, ts_ms=T0))  # one clip over threshold = snipe
+    assert d.evaluate(now_ms=T0 + 1000) == []
+
+
+def test_gate_two_buys_below_min_buys_do_not_fire():
+    d = _gate_det()
+    d.observe_buy(_buy(notional=150.0, ts_ms=T0))
+    d.observe_buy(_buy(notional=150.0, ts_ms=T0 + 400_000))  # sum>=200 but only 2 buys
+    assert d.evaluate(now_ms=T0 + 401_000) == []
+
+
+def test_gate_three_buys_same_instant_burst_does_not_fire():
+    d = _gate_det()
+    for i in range(3):
+        d.observe_buy(_buy(notional=100.0, ts_ms=T0 + i))  # 3 buys within ~2ms = burst
+    assert d.evaluate(now_ms=T0 + 1000) == []
+
+
+def test_gate_genuine_accumulation_fires():
+    d = _gate_det()
+    d.observe_buy(_buy(notional=100.0, ts_ms=T0))
+    d.observe_buy(_buy(notional=100.0, ts_ms=T0 + 200_000))       # +200s
+    d.observe_buy(_buy(notional=100.0, ts_ms=T0 + 400_000))       # +400s (span 400s>=300)
+    out = d.evaluate(now_ms=T0 + 401_000)
+    assert len(out) == 1
+    assert out[0].payload["n_buys"] == 3
+    assert out[0].payload["accumulated_usd"] == 300.0
+
 
 def test_non_roster_wallet_never_fires():
     d = _det()
@@ -126,6 +174,7 @@ def test_two_wallets_same_token_are_independent():
     d = ConvictionDetector(
         wallets={ROSTER, OTHER}, dust_floor_usd=10.0, threshold_usd=200.0,
         window_minutes=WIN_MIN, sell_holdoff_usd=0.0,
+        min_buys=1, min_accumulation_span_seconds=0,
     )
     d.observe_buy(_buy(wallet=ROSTER, notional=250.0, ts_ms=T0))
     d.observe_buy(_buy(wallet=OTHER, notional=120.0, ts_ms=T0))  # below threshold
@@ -136,7 +185,8 @@ def test_two_wallets_same_token_are_independent():
 
 def test_set_wallets_refresh():
     d = ConvictionDetector(wallets=set(), dust_floor_usd=10.0, threshold_usd=200.0,
-                           window_minutes=WIN_MIN, sell_holdoff_usd=0.0)
+                           window_minutes=WIN_MIN, sell_holdoff_usd=0.0,
+                           min_buys=1, min_accumulation_span_seconds=0)
     d.observe_buy(_buy(notional=250.0, ts_ms=T0))
     assert d.evaluate(now_ms=T0 + 1000) == []  # empty roster
     d.set_wallets({ROSTER})

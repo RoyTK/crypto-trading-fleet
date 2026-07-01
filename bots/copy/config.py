@@ -329,6 +329,16 @@ class CopySettings(BaseSettings):
     copy_conviction_dust_floor_usd: float = Field(default=10.0)
     copy_conviction_accumulation_threshold_usd: float = Field(default=200.0)
     copy_conviction_accumulation_window_minutes: int = Field(default=60)
+    # ACCUMULATION GATE (2026-07-01) — the conviction-specific fix. Live data: 20/20
+    # conviction trades fired on n_buys≈1 (single-buy SNIPES, not accumulation) and
+    # bled -$1,863 (entry liquidity did NOT separate win/loss, so the cluster fix
+    # doesn't apply). Require GENUINE accumulation to fire: >= min_buys distinct buys
+    # spread over >= min span (so a wallet is deliberately BUILDING a position, not
+    # sniping one clip). Filters the snipers that were 100% of the bleed. NOTE: the
+    # current 6-wallet roster is snipers, so this quiets conviction until step 2
+    # (source deliberate accumulators from the DB corpus). Set min_buys=1 to disable.
+    copy_conviction_min_buys: int = Field(default=3)
+    copy_conviction_min_accumulation_span_seconds: int = Field(default=300)
     # Window sells above this USD → hold off the buy. 0 = ANY non-dust sell of the
     # token in the window holds us off. Raise if it over-suppresses HF
     # accumulators that take tiny profits mid-build.

@@ -57,6 +57,8 @@ class ConvictionDetector:
         threshold_usd: Optional[float] = None,
         window_minutes: Optional[float] = None,
         sell_holdoff_usd: Optional[float] = None,
+        min_buys: Optional[int] = None,
+        min_accumulation_span_seconds: Optional[float] = None,
     ) -> None:
         s = get_copy_settings()
         self._wallets: set[str] = {w for w in (wallets or ()) if w}
@@ -76,6 +78,18 @@ class ConvictionDetector:
         self._sell_holdoff = float(
             sell_holdoff_usd if sell_holdoff_usd is not None
             else s.copy_conviction_sell_holdoff_usd
+        )
+        # Accumulation gate (2026-07-01): require GENUINE accumulation (>= min_buys
+        # distinct buys spread over >= min span) so we don't fire on a single-buy
+        # snipe crossing the threshold — the failure mode that bled -$1,863 (all 20
+        # trades were n_buys≈1). min_buys=1 + span 0 restores the old behavior.
+        self._min_buys = int(
+            min_buys if min_buys is not None else s.copy_conviction_min_buys
+        )
+        self._min_span_ms = int(
+            (min_accumulation_span_seconds
+             if min_accumulation_span_seconds is not None
+             else s.copy_conviction_min_accumulation_span_seconds) * 1000
         )
         # Conviction hard-stop pct (2026-06-27): 0 = no hard stop (rely on
         # trailing + follow-wallet-out + rug backstop). Stamped on each candidate.
@@ -133,6 +147,12 @@ class ConvictionDetector:
                 continue
             buys_sum = sum(n for _, n in bdq)
             if buys_sum < self._threshold:
+                continue
+            # Accumulation gate: require enough distinct buys AND a real time span,
+            # so a single big buy (sniper) or a same-instant burst can't fire.
+            if len(bdq) < self._min_buys:
+                continue
+            if (bdq[-1][0] - bdq[0][0]) < self._min_span_ms:
                 continue
             sdq = self._sells.get(key)
             sells_sum = sum(n for _, n in sdq) if sdq else 0.0
