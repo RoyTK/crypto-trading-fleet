@@ -204,6 +204,7 @@ def _paper_capital_for(bot_id: str) -> float:
         "structure": "STRUCTURE_PAPER_CAPITAL_USD",
         "copy": "COPY_PAPER_CAPITAL_USD",
         "copy_conviction": "COPY_CONVICTION_PAPER_CAPITAL_USD",
+        "copy_teamfollow": "COPY_TEAMFOLLOW_PAPER_CAPITAL_USD",
     }.get(bot_id)
     if env_key:
         raw = os.environ.get(env_key)
@@ -273,6 +274,7 @@ def check_all_bots_dd() -> None:
         if bot_id == "copy":
             jobs.append(("copy", "copy", th, "cluster", None))
             jobs.append(("copy_conviction", "copy", th, "conviction", None))
+            jobs.append(("copy_teamfollow", "copy", th, "teamfollow", None))
         else:
             jobs.append((bot_id, bot_id, th, None, None))
 

@@ -381,6 +381,26 @@ class CopySettings(BaseSettings):
     copy_conviction_stop_pct: float = Field(default=0.0)
 
     # ------------------------------------------------------------------
+    # TEAM-FOLLOW experiment (2026-07-01) — isolated strategy 'teamfollow'.
+    # Fires when >= min_members of a known co-buy TEAM (bots/copy/teamfollow_roster.json,
+    # from the Dune 90d corpus team-finder) buy the same token within the window. Runs
+    # with its OWN paper bankroll + isolated metrics/dd, alongside cluster/conviction.
+    # Rationale (project_cluster_database_build memory): the raw cluster signal is a
+    # spray (97% duds), but a *specific recurring team* + a HIGH entry-liquidity floor
+    # + cluster's ladder/trailing exits is strongly +EV (deep liquidity = the stop can
+    # fill). This is the LIVE forward test. OFF by default — enable via .env.
+    copy_teamfollow_enabled: bool = Field(default=False)
+    copy_teamfollow_min_members: int = Field(default=2)          # >=2 same-team co-buy
+    copy_teamfollow_window_minutes: float = Field(default=60.0)  # matches the validated signal (t2-t1<=60m)
+    copy_teamfollow_dust_floor_usd: float = Field(default=50.0)  # buy dust filter (liq floor is the real gate)
+    # THE quality gate — entry liquidity floor. The DB study showed higher liquidity ->
+    # far fewer rugs (the stop can only fill in deep liquidity). $50k is the sweet spot
+    # (sim: 47% win, tiny drawdown vs 25%/huge at $5k). Birdeye depth, fail-open.
+    copy_teamfollow_min_entry_liquidity_usd: float = Field(default=50000.0)
+    copy_teamfollow_paper_capital_usd: float = Field(default=25000.0)  # isolated bankroll
+    copy_teamfollow_alloc_cap_pct: float = Field(default=50.0)
+
+    # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)
     # ------------------------------------------------------------------
     # Master gate. Default FALSE — full skeleton in code but no signing

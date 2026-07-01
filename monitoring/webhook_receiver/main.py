@@ -69,6 +69,9 @@ INPUT_LEG_MINTS = {
 }
 
 REDIS_BUYS_CHANNEL = "copy:buys"
+# Team-follow experiment: teamfollow-tier wallet BUYS publish here (isolated from
+# copy:buys) so they never feed the cluster detector. Buys only (no sell stream).
+REDIS_TEAMFOLLOW_BUYS_CHANNEL = "copy:teamfollow_buys"
 REDIS_SELLS_CHANNEL = "copy:sells"
 REDIS_DEDUP_PREFIX = "copy:webhook_dedup:"
 DEDUP_TTL_SECONDS = 600  # 10 min — Helius retries within this window
@@ -102,26 +105,31 @@ def _load_pool_addresses() -> set[str]:
     return out
 
 
-def _load_pool_tiers_from_db() -> tuple[set[str], set[str]]:
-    """Return (active_pool, watch_pool) of Solana addresses from wallet_pool.
+def _load_pool_tiers_from_db() -> tuple[set[str], set[str], set[str]]:
+    """Return (active_pool, watch_pool, teamfollow_pool) of Solana addresses.
 
     Pruned wallets are NOT subscribed to any webhook so they're excluded.
+    teamfollow = the isolated team-follow experiment tier (its buys publish to
+    copy:teamfollow_buys, NOT copy:buys, so they never feed the cluster detector).
     """
     active: set[str] = set()
     watch: set[str] = set()
+    teamfollow: set[str] = set()
     try:
         with session_scope() as s:
             for w in s.execute(select(WalletPool).where(
                 WalletPool.chain == "solana",
-                WalletPool.tier.in_(("active", "watch")),
+                WalletPool.tier.in_(("active", "watch", "teamfollow")),
             )).scalars():
                 if w.tier == "active":
                     active.add(w.address)
                 elif w.tier == "watch":
                     watch.add(w.address)
+                elif w.tier == "teamfollow":
+                    teamfollow.add(w.address)
     except Exception:
         log.exception("wallet_pool_db_load_failed")
-    return active, watch
+    return active, watch, teamfollow
 
 
 async def _pool_refresher(app: web.Application) -> None:
@@ -131,14 +139,15 @@ async def _pool_refresher(app: web.Application) -> None:
     """
     while True:
         try:
-            active, watch = await asyncio.to_thread(_load_pool_tiers_from_db)
+            active, watch, teamfollow = await asyncio.to_thread(_load_pool_tiers_from_db)
             # If DB is empty (e.g. pre-migration), keep using the JSON-loaded
             # legacy pool as active. This is the bootstrap fallback.
-            if active or watch:
+            if active or watch or teamfollow:
                 app["active_pool"] = active
                 app["watch_pool"] = watch
+                app["teamfollow_pool"] = teamfollow
                 log.info("pool_refreshed",
-                         active=len(active), watch=len(watch))
+                         active=len(active), watch=len(watch), teamfollow=len(teamfollow))
         except Exception:
             log.exception("pool_refresh_failed")
         await asyncio.sleep(POOL_REFRESH_SECONDS)
@@ -578,6 +587,7 @@ async def health_handler(request: web.Request) -> web.Response:
         "status": "ok",
         "active_pool_size": len(request.app["active_pool"]),
         "watch_pool_size": len(request.app["watch_pool"]),
+        "teamfollow_pool_size": len(request.app.get("teamfollow_pool", set())),
     })
 
 
@@ -662,8 +672,11 @@ async def _process_webhook(
             continue
 
         matched_event = buy or sell  # exactly one is truthy here
-        channel = REDIS_BUYS_CHANNEL if buy is not None else REDIS_SELLS_CHANNEL
         kind = "buy" if buy is not None else "sell"
+        if tier == "teamfollow":
+            channel = REDIS_TEAMFOLLOW_BUYS_CHANNEL   # buys only (guarded below)
+        else:
+            channel = REDIS_BUYS_CHANNEL if buy is not None else REDIS_SELLS_CHANNEL
         log_rows.append((matched_event["wallet_address"], tier))
         # Raw per-swap log WITH the token (buys + sells, both tiers) — passive
         # research data for the slow-cluster (multi-day group accumulation) signal.
@@ -678,14 +691,14 @@ async def _process_webhook(
             "event_at": _ms_to_dt(matched_event["timestamp_ms"]),
         })
 
-        # Active-tier only: publish to the appropriate cluster channel (after dedup).
-        # Dedup key includes the kind so a token-for-token swap that somehow
-        # registered as both (shouldn't happen given our skips, but defensive)
-        # would be deduped per-side, not collide.
-        if tier == "active":
+        # Publish for active (buys+sells) and teamfollow (BUYS ONLY — the experiment
+        # uses cluster's exit stack, no sell-side follow-out stream). Dedup key is
+        # tier+kind namespaced so cross-tier/side deliveries never collide.
+        should_publish = (tier == "active") or (tier == "teamfollow" and kind == "buy")
+        if should_publish:
             sig = matched_event["tx_signature"]
             if sig:
-                dedup_key = f"{REDIS_DEDUP_PREFIX}{kind}:{sig}"
+                dedup_key = f"{REDIS_DEDUP_PREFIX}{tier}:{kind}:{sig}"
                 seen = await redis_client.set(dedup_key, "1", nx=True, ex=DEDUP_TTL_SECONDS)
                 if not seen:
                     skipped_dup += 1
@@ -726,6 +739,10 @@ async def helius_watch_webhook_handler(request: web.Request) -> web.Response:
     return await _process_webhook(request, tier="watch")
 
 
+async def helius_teamfollow_webhook_handler(request: web.Request) -> web.Response:
+    return await _process_webhook(request, tier="teamfollow")
+
+
 # ---- App lifecycle --------------------------------------------------------
 
 async def init_app() -> web.Application:
@@ -745,7 +762,7 @@ async def init_app() -> web.Application:
 
     app["http"] = aiohttp.ClientSession()
     # Bootstrap: try DB first, fall back to JSON if empty (pre-migration state).
-    active, watch = _load_pool_tiers_from_db()
+    active, watch, teamfollow = _load_pool_tiers_from_db()
     if not active and not watch:
         legacy = _load_pool_addresses()
         log.info("wallet_pool_db_empty_fallback_json", n=len(legacy))
@@ -753,6 +770,7 @@ async def init_app() -> web.Application:
         watch = set()
     app["active_pool"] = active
     app["watch_pool"] = watch
+    app["teamfollow_pool"] = teamfollow
     app["sol_price_usd"] = SOL_PRICE_FALLBACK_USD
 
     log.info("webhook_receiver_starting",
@@ -763,6 +781,7 @@ async def init_app() -> web.Application:
     app.router.add_get("/health", health_handler)
     app.router.add_post("/copy/helius", helius_webhook_handler)
     app.router.add_post("/copy/helius/watch", helius_watch_webhook_handler)
+    app.router.add_post("/copy/helius/teamfollow", helius_teamfollow_webhook_handler)
 
     async def _start_bg(_app: web.Application) -> None:
         _app["sol_price_task"] = asyncio.create_task(_sol_price_refresher(_app))

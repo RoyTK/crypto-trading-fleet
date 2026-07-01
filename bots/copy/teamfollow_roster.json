@@ -1,0 +1,1252 @@
+{
+ "_meta": {
+  "source": "co_buyer_teams.py (Dune 90d corpus, overlap>=0.35 tight co-buy)",
+  "generated": "2026-07-01",
+  "n_teams": 129,
+  "n_wallets": 338,
+  "note": "team-follow experiment roster; fire on >=2 same-team members co-buy"
+ },
+ "teams": [
+  {
+   "team_id": 0,
+   "members": [
+    "2fg5QD1eD7rzNNCsvnhmXFm5hqNgwTTG8p7kQ6f3rx6f",
+    "7NAd2EpYGGeFofpyvgehSXhH5vg6Ry6VRMW2Y6jiqCu1",
+    "FxN3VZ4BosL5urG2yoeQ156JSdmavm9K5fdLxjkPmaMR",
+    "suqh5sHtr8HyJ7q8scBimULPkPpA557prMG47xCHQfK"
+   ],
+   "size": 4,
+   "co_runners": 27
+  },
+  {
+   "team_id": 1,
+   "members": [
+    "22vL22PcYcoAVCwYN8iDW9VrFEYq93TCtr7a6avNVyjL",
+    "2AqFJzcgSMQ9v7Vwh4yE7Vux8brcrjus1eg4K1zM2zUd",
+    "2wHHnAmdhFaAAsayWAeqKe3snK3KkbRQkRgLwTtz7iCi",
+    "9yxmCNwZcHe63NucU9yvCt7b1ja3jwP9v4T3yFMkQ1Z9"
+   ],
+   "size": 4,
+   "co_runners": 17
+  },
+  {
+   "team_id": 2,
+   "members": [
+    "2HJMgsEqKrcRNDqo1P9g9pCFEXSdi2VtKqDKg9qhikco",
+    "69qaveug9QzXysbPRV3SpLuvDkRdJTGGbK9TmAo3yYb3"
+   ],
+   "size": 2,
+   "co_runners": 14
+  },
+  {
+   "team_id": 3,
+   "members": [
+    "25JNowwiS6FSsXfGugbVWk3p13oeicy5arHHimkiN2Kj",
+    "BW9zpmSfFmhRicz1G1vcaWhsjvUDrCW8SZhChyJNbrSq"
+   ],
+   "size": 2,
+   "co_runners": 14
+  },
+  {
+   "team_id": 4,
+   "members": [
+    "4MwKtKfBD5d45YsSRndLpfso1L2CWPpYapXkB4V4EaSV",
+    "DKbJ69wNUXCrL5yhSP6SprV7JoP2qAnbvqGbRXwQ9Yqh",
+    "K7ykbqL81reyis9zR5YCgRsUAHSSoXAS84RGyzZSTUN"
+   ],
+   "size": 3,
+   "co_runners": 11
+  },
+  {
+   "team_id": 5,
+   "members": [
+    "7QjxbqFj7FdsttBstTZKdKJ1AtT4YGfwarTvLuJaPxEi",
+    "HhgBQmx2Ja7hRRxVA53xVxY9jaWTt3GsNiVKcHHYn51F"
+   ],
+   "size": 2,
+   "co_runners": 11
+  },
+  {
+   "team_id": 6,
+   "members": [
+    "7W4FGVJp4Fjqx1LhTYunnfKs9c5NHccGeHu3KGpD7Snh",
+    "7wDsY18F4js6MwvxPJwtGUpj8iQ95u9K8AJhAghG46MB"
+   ],
+   "size": 2,
+   "co_runners": 11
+  },
+  {
+   "team_id": 7,
+   "members": [
+    "BsvjGudtAhqR5YyiZ129KwQK2tugm6u78XvgULAJpTic",
+    "CgaA9a1JwAXJyfHuvZ7VW8YfTVRkdiT5mjBBSKcg7Rz5"
+   ],
+   "size": 2,
+   "co_runners": 11
+  },
+  {
+   "team_id": 8,
+   "members": [
+    "GFrK2QGUCtY9H1VQpbiZqzgoYkmFstEh5JZrfPoHoDXf",
+    "UpDsTWmwqeTupAVRdoQM5MaS7a4S5bWRTnsdu3nXcWV"
+   ],
+   "size": 2,
+   "co_runners": 11
+  },
+  {
+   "team_id": 9,
+   "members": [
+    "6kzEjW47wznxdrt5YDje8ugkJ1JjsSyFCjmNzMWKNWxD",
+    "DpEd1USNhwsZdLuzbXwgJRB9wTFFLyhgUWTFj8Jr4gbN"
+   ],
+   "size": 2,
+   "co_runners": 10
+  },
+  {
+   "team_id": 10,
+   "members": [
+    "48Z2gqfLTEXR897CKnLZXt5NGdmgXwVYgusJx4Tp1P6i",
+    "6Vwo34xDFS2XycmJqQxu3gGd6ozvGmqTXgegRNS6deqr",
+    "ANmRP2GWTasxZzfajBQ9oStNSfYTe21PeCQkH93gbN6k",
+    "GFrra49Go4bN7zKB5AjwrWXmwL6aFz5aena6KAEHNiej"
+   ],
+   "size": 4,
+   "co_runners": 9
+  },
+  {
+   "team_id": 11,
+   "members": [
+    "BnYk6Dph4CXM5FDhskAqbcGurq4QYQx2fQwLxPzPYKT6",
+    "CVnRWFefzdHf3ALGK8aEc8PTvCsN6zG3JfcyPeWmQPUZ",
+    "EoxtfjMw48FxC158esdyvbejj2t6tQw1VTxgHwcHkb72"
+   ],
+   "size": 3,
+   "co_runners": 9
+  },
+  {
+   "team_id": 12,
+   "members": [
+    "3JB2teCFa7UGcDcYzVnfHisBztQ7ez2Dmwr3LyUm8wYz",
+    "7kpo1KSt1TVNUWNNQs67tdzkJzEo3zxJkZjbX2oDFnMq"
+   ],
+   "size": 2,
+   "co_runners": 9
+  },
+  {
+   "team_id": 13,
+   "members": [
+    "6LvvCNV6aDGJ9azJyFRfe2J1e9SLP7cCvpw2Y9F33Kmv",
+    "7cN4ZHa6nHxdydp3wP9EEfBES93SyPM6dtGvPMbxYbj8",
+    "9xaR4VhguvmA9bceUSm9c8nNZb6TuiTDzsnW2LBR2YCX",
+    "A973h3EeRj5H8TD3KDwVTXZw7yckfYaabJZPnmMnbBbJ"
+   ],
+   "size": 4,
+   "co_runners": 8
+  },
+  {
+   "team_id": 14,
+   "members": [
+    "2F1xRcfRYq9xvN5N1beweBfiYbmAuNHHX6Cq6r7y6Dbs",
+    "3ibPYjCabmLieEo3Qa41ZPzAMbTVkMBUYPD96REkzS15",
+    "GZPEohDV3HD6X4LrEmT5i3QgWmeAg7ZLA1F6miNj75tJ",
+    "nppkD8djczRPPCeY3gfFkQXVZitHuKjed3gpp6YFY2i"
+   ],
+   "size": 4,
+   "co_runners": 8
+  },
+  {
+   "team_id": 15,
+   "members": [
+    "5Pr7D2d5WUM7j8fMF36DuzVDDGEHLtYsF7a6ezyzFG19",
+    "8QdLq5UWJAjTP3SGSbUJFcsFUY6xBQU3DwFZ6XwyFPwK",
+    "FhZmTCs7enzPDN1RpgJPUcZPfX6FKJ9uqj7ch2jtggGW"
+   ],
+   "size": 3,
+   "co_runners": 8
+  },
+  {
+   "team_id": 16,
+   "members": [
+    "7VcWrxiPixjPEDHRNZFF59DQVn5miPgwTQbe33aEj5hu",
+    "8o8yYTSzLC6egbJH89krvhm4vfu28ckwsrnqunMw4BLJ",
+    "9fDGEdiZiocHiYC43vj2dsd2Zvh32PaA7CFeT7CcfaRr",
+    "Ft9ohBNkK5GgaEnDzSeCdT4SrT8Z7Z7iXVK68XuxnGcB",
+    "vFm8P7PSrZ2EDFeaHLaagUM2H17YHe6WrUvU2ec4dYD"
+   ],
+   "size": 5,
+   "co_runners": 7
+  },
+  {
+   "team_id": 17,
+   "members": [
+    "2DDSNzStsMQYfhS1aDB5oLtVpdRqUs8WfD9MmyyU35bN",
+    "2EtWb9opiz5pdEmRxSLbArwkTdgG6NcVgKZtZypwNRLi",
+    "31yfwWmYgbF2axSfz8KK4gzQZi6EamTPa8ccXGjF9Ezj",
+    "9omZBh9vR218vPzMqMEiwieq9LoZWKbMrNDrWmER5Vak",
+    "9w7C3PCGQ5gkKvYCgcrkbMCccThBKRK8oegMdcHW3Du2"
+   ],
+   "size": 5,
+   "co_runners": 7
+  },
+  {
+   "team_id": 18,
+   "members": [
+    "34bKyfu9K9DgjEXwJMTaLMSUWZhfjjXweHCNyH6znWiX",
+    "7EcH2UaYLxQGKCdPgVHMr88FYgyDNwAYQVsrr45QUQDi",
+    "DbLDMh37yoExDkF5a6py7BPcxNnKget4Ej5JnMZpnaJ7",
+    "wB8v6fqgEkjiJCzH5s1mjzfeZvTQnaYdhN3VSSRC1fk"
+   ],
+   "size": 4,
+   "co_runners": 7
+  },
+  {
+   "team_id": 19,
+   "members": [
+    "4RT6E9TmaoDrNWrWoCRyn8CKUXDZvjA59xqNC1Rq5Dxk",
+    "9SwwQ5buzFY7tLF4ACvpjRB9Dz94ctEQ6vCbZUpcBYZT",
+    "G8y4gZ8dSTgWQUtRwm5L3iedpryzsnJcGVQNUYwt6GVT",
+    "H2ta7YVzFo3VDvmBj2FFQZt4sXhb8mtauHb5UAwzCcvX"
+   ],
+   "size": 4,
+   "co_runners": 7
+  },
+  {
+   "team_id": 20,
+   "members": [
+    "5Drm8y3B3vHgNLSKF8YD4bkY3i8tbofXAnDonfA7ixsQ",
+    "5WqM15TkwTkJPXFfWtbmrRoazrMkYPE7MjQfAE1N4sHD",
+    "B5BTGQxu498PjvSHKhMnzvDTAVA3tm98TFrcwJN7W7KS"
+   ],
+   "size": 3,
+   "co_runners": 7
+  },
+  {
+   "team_id": 21,
+   "members": [
+    "CcX24HgFgnWpmhjaKTq58ScjsAZfuYZRQsyhPLtbtpEV",
+    "FxsTB2zTVX41p2aHywgtamNTpYRGTMGDW6XsriiWCHNm",
+    "u2vbjD14qYsm36WJXkg2wJckQJrcA4v9ZwP1Y8ypGzk"
+   ],
+   "size": 3,
+   "co_runners": 7
+  },
+  {
+   "team_id": 22,
+   "members": [
+    "ASY5YdzR8GGCGBc9WBH1KifG1MGGAsGodB9KxsfvNznK",
+    "ELToezRwFP47tfERydQZxCQysggz7uQAcgAsdzueKnob",
+    "bwamJzztZsepfkteWRChggmXuiiCQvpLqPietdNfSXa"
+   ],
+   "size": 3,
+   "co_runners": 7
+  },
+  {
+   "team_id": 23,
+   "members": [
+    "6UzBDg5tdhHRyu6NkCnrSVz72Jk4TeQsEJTRkzqK7GrG",
+    "9Y47svUCbN73Gw5pYCaRppsnXPJGxNeFgAy36jb7vDUz",
+    "FCsNJKNUR5ijAyGeq5R7HRSKGHs9bHPh3GVSJJzQXjUv"
+   ],
+   "size": 3,
+   "co_runners": 7
+  },
+  {
+   "team_id": 24,
+   "members": [
+    "2h6WT2yEMhpdLQRRX5tm58bEt174sbNZq7tMqzVtm3PW",
+    "DZAa55HwXgv5hStwaTEJGXZz1DhHejvpb7Yr762urXam"
+   ],
+   "size": 2,
+   "co_runners": 7
+  },
+  {
+   "team_id": 25,
+   "members": [
+    "Di75xbVUg3u1qcmZci3NcZ8rjFMj7tsnYEoFdEMjS4ow",
+    "tuyuNoNBoij3FTkHmjkiEa4d8Nus4bjaCHfKRGgfLEs"
+   ],
+   "size": 2,
+   "co_runners": 7
+  },
+  {
+   "team_id": 26,
+   "members": [
+    "BFRPAWhXACzHeP5JwC1mYJTzabqCujBSTCjzYSZRQ2AM",
+    "pwZpq97vcUqG5r79PMYJ2rPdJeVfuqdTaxmNvj5KYMR"
+   ],
+   "size": 2,
+   "co_runners": 7
+  },
+  {
+   "team_id": 27,
+   "members": [
+    "3FRfKbYR2Vj717WFpkutcWcsBoDSAa4M6icpQt2bhZHQ",
+    "5qnMBQUtBYy9PFQah7fCn59k95xMkZfVUahJdtK3t3MF",
+    "EAzB32pcd8xP8hQgaAVH9FNKtGW34EuuowfPpprZAGF5",
+    "FNKmrVxXJPv9PuFvEHs7G3vieAQCDxkYaCYfjesAZfgc",
+    "zWW9cmsw5eBZYES5QdjwX9W1NgsfTc8mHnsHq2TfqFB"
+   ],
+   "size": 5,
+   "co_runners": 6
+  },
+  {
+   "team_id": 28,
+   "members": [
+    "2UHZMHuWLZj91Rnj6p9bREtvuiAPWQrTAsnXFEBYsXek",
+    "6fbVtqnwVLznWixx6dPvqUotLU5xQ9WuNmRanFmQY9vs",
+    "6mouP5AaNomJePMtpb8zdTVaR3epG4WQPtip1qAXACW6",
+    "B82jdDodYJQXL4nS53YYoQrS6F6pBerSHs6N273hWDfc",
+    "BBgD52v7dPxNpMjuhnBCEnnAVa9fBR33mrN3ghcpev6V"
+   ],
+   "size": 5,
+   "co_runners": 6
+  },
+  {
+   "team_id": 29,
+   "members": [
+    "8NRJzSF6KdfY4434Hf1tZCKeXCHxsojPJ4CyGXVG4F3Y",
+    "D5Yzn3EMxAshYunMJRQKyxShZkHkqK6AKAszwF8No8fr",
+    "F1kDjXWXwkksmi9iRTS2PRvyhosvE1ns835i4PwM2Fo6",
+    "dSNS9QtbV9W6pmMyJQkbYLkBnSmAVCWdxZtzkywKS4u"
+   ],
+   "size": 4,
+   "co_runners": 6
+  },
+  {
+   "team_id": 30,
+   "members": [
+    "5wnxNgrd42s4tXw1ei2t1adgoft8s28zUwMDooNZbNAj",
+    "F9bioqfPUMbqTPyGMv5XGEbs8bbdtXbAv8qADhem14By",
+    "FFdd1EeNA5PCKnpoRrpsAfAH3WbwRLn9eEX7KXN5KCLc",
+    "nZ2jFrf1UJ6XYUC4XZY7sGqrvL1Y5DNo6sXgqyfcLZi"
+   ],
+   "size": 4,
+   "co_runners": 6
+  },
+  {
+   "team_id": 31,
+   "members": [
+    "2fUr8UnHK3EYJJbn2mShJrVKMa2axqi3ytPh5EJoJz2H",
+    "7e7gHBJMGJukNUooMtJ583TJHsrh7Sy2g2QWwCe5vFaA",
+    "AhPovwYa2KpJEX11sC8Y33T9jwKUHasmerC9LFcVkdeE"
+   ],
+   "size": 3,
+   "co_runners": 6
+  },
+  {
+   "team_id": 32,
+   "members": [
+    "2jVBwqsGa1EBQ3w9xE1PDgcCBfPoi725HhanDAXh6ugb",
+    "EiXoorDCGtivkNb52ALQwauAp2GHRsSLGwR2NfDWk1QV",
+    "J9xkmvrKFDqrwo9avC3XetV8QKW7mJHjjYLJxBeLoWGP"
+   ],
+   "size": 3,
+   "co_runners": 6
+  },
+  {
+   "team_id": 33,
+   "members": [
+    "2P2EgcQEL2x6WSw2rt5U2YN8vsntB4Do1Ys3s15iEQXh",
+    "HAKon1xGfaqRkSs8LcFFu7tArsuyDXnURAjgCbDH9GgG",
+    "J6dL8G8ygPLAAspEh378dAUcK4XGV1NDSvZVMfnwP5wB"
+   ],
+   "size": 3,
+   "co_runners": 6
+  },
+  {
+   "team_id": 34,
+   "members": [
+    "4CjCftfzrRmPTbyPSAv2yb7SxgeEGexujcdE2Jte6bCW",
+    "B1uFwFb9crsudXRywJa7rFPZsmCLHxDefMz9vmEhYVMu",
+    "HMvZE2DH9eccv9Vc7aGDsQKB3chkTwb2ann2rXK7e7yM"
+   ],
+   "size": 3,
+   "co_runners": 6
+  },
+  {
+   "team_id": 35,
+   "members": [
+    "EuYmohFw4jeC66QCM82A2jwCEJRLZKeptTCx4K8eLqhV",
+    "GMZr9fH2or5MDTWpNypWCzTjZsBgTmXx2rbjsWqdLDQt",
+    "GstQehnN61gyj5mLCRFnXToyvaDirTx6wEgz8ynfJWuv"
+   ],
+   "size": 3,
+   "co_runners": 6
+  },
+  {
+   "team_id": 36,
+   "members": [
+    "HZXdwRRw27kfpYtTqc7bMfrRgK3LSUaiKDFtqoEihik8",
+    "yMBRVpuVm7bgASPEvEhVtKTbz4g4UhNFEDz8kBmHAv1"
+   ],
+   "size": 2,
+   "co_runners": 6
+  },
+  {
+   "team_id": 37,
+   "members": [
+    "2PVoFrYbj8aPt3Zg5iVDhrEtNbe5AmLQQHVHknukjz5W",
+    "FpMhLzmpXvnaT7Cpo2TAvwhP5bLvn5vuZnhkwRGfhYX5"
+   ],
+   "size": 2,
+   "co_runners": 6
+  },
+  {
+   "team_id": 38,
+   "members": [
+    "DVMkhiQe1D8yenuEgsW44NjRn9LfVQjGEpZcez5x7Mff",
+    "FczAVrSD8WPAymBhWrcFy8QsRjgDqmFkuqWa1KkAbzuD"
+   ],
+   "size": 2,
+   "co_runners": 6
+  },
+  {
+   "team_id": 39,
+   "members": [
+    "2Eo8VAkZ7g314rBN627L3jSHcndjFXQfpL64astaZEp8",
+    "6sQjnb9jVxrFF9Y99JNMJ2ZBSc4wZeNnkLYYYy7rMPFo",
+    "74MVq71UoLNjvCkD9BoMJ2DHs4RTBQQRCxHZjq8Vgd74",
+    "9zQ49S3dmqWdaJZxgQDCjox62VEmHax1LvHJ1AkYNGpJ",
+    "FM5hW2HRkC4uXE1Qniph4mYpbhwVyfrLpNap84naZNX"
+   ],
+   "size": 5,
+   "co_runners": 5
+  },
+  {
+   "team_id": 40,
+   "members": [
+    "3FehTmJAyc4mGeKjcyQdhZConpsHunXe5kM1fzmmbmrK",
+    "47yVv7e1BBoAaMsHbdNBjJNb2LrbSSBwxtHrCPWXYDzT",
+    "AFto3xo1ZomnfcvYNQSW2n8eaWmqjhrUjawHbUBVpnDD",
+    "J78MHC319zrZANLpwZQLaUaE8Rn5JxDP9LE1w4S3fprT",
+    "XCBTKvhvX2EUYsSRANUfJRXjY6WYq9SSDPbtMgzaXHN"
+   ],
+   "size": 5,
+   "co_runners": 5
+  },
+  {
+   "team_id": 41,
+   "members": [
+    "7WZWGBRYMY2UjwCCXvi4T7uhYydv5wo6JGCSYDQWFTyz",
+    "9bpHoDA8HFVRp3rVTCKwHDfNAmMzDruxBvW76LrBPDR4",
+    "BF2EQLUKieKrgbkCpf2Z4E7nww5MjV1ZP7PSFK6SvoQi",
+    "FFqhWGJCUiWta7Ek9me2wgMnm9FCDUhPpkP6CexME9VG"
+   ],
+   "size": 4,
+   "co_runners": 5
+  },
+  {
+   "team_id": 42,
+   "members": [
+    "7otv7Xq4KK1Rzgf1qwGc35fr5bi9v1Jz4dcxFHxzp4ag",
+    "9douUua1kjGnHv6SRUu75CWnWt4pPmFzwo6sekYGhRRK",
+    "ARdUD1WdLz4Ts9NN4F6FPxT7sKT8kvqDXTWYzt8HLGfZ",
+    "JAH3PZLQUuqBKYkoyhm7uDokBYGACgH3ENZVY4fhVsEW"
+   ],
+   "size": 4,
+   "co_runners": 5
+  },
+  {
+   "team_id": 43,
+   "members": [
+    "3NxtfjKwBj2HD2myH6DRu2Hzzz6qNZyWwUL7aUyVDC5L",
+    "C9Efxy4pJtfRTYWxrSYGaR7g3KXco7DdDmCRjZyabS7B",
+    "CyPYsEpWQqS2Cc9kofDXbrVVtmD1PpqMikkhSko9PTgt",
+    "HkhDTEEnsPbyNxfBknG693Bhd3mqczXcDo9RQctR7Pyz"
+   ],
+   "size": 4,
+   "co_runners": 5
+  },
+  {
+   "team_id": 44,
+   "members": [
+    "5dEZWjYSWfRtM4ubKbu3xHXhovMMzvELsv5rwrkter4W",
+    "8JXxjnTPDTBDprjX1vUZXmzAxNuXc43dJBwH8SNxhMhD",
+    "A1HS4hFiTNUrw2KpZodGPQnN5qFQoNFkYzAUBJGqRUTp",
+    "HeD8fA3EMAQAcj35FJhEGoj7XBx7ZhrLKrgv4SraTvk8"
+   ],
+   "size": 4,
+   "co_runners": 5
+  },
+  {
+   "team_id": 45,
+   "members": [
+    "3MQ2WHPnP4NoJWgGuzsVuxUK1owFtC8XAHXMWwJsFfTR",
+    "DCQ6KF3cU5dFycGcTUHH5LypKGzDazh9wEGA9PQrsurK",
+    "GvZPdbPXhmH6SH3GNfnEAuk9RKy5LzHzqyqWgWGR5BVG"
+   ],
+   "size": 3,
+   "co_runners": 5
+  },
+  {
+   "team_id": 46,
+   "members": [
+    "a16ZRRPYzkCgED9ECcFd9vdrFzW775Z2DqmAEsSZDGE",
+    "sAdNbe1cKNMDqDsa4npB3TfL62T14uAo2MsUQfLvzLT"
+   ],
+   "size": 2,
+   "co_runners": 5
+  },
+  {
+   "team_id": 47,
+   "members": [
+    "4gBdqDCpvP97tdi63mC8tsd2td9ev1kfhuSchqe6wBc4",
+    "5E4GidUVmukdw4vFuZQ16fzxaRDu2wYTAFdZLCJXfXpZ"
+   ],
+   "size": 2,
+   "co_runners": 5
+  },
+  {
+   "team_id": 48,
+   "members": [
+    "AXTp1ChXG9N7LED5U6xKr9z9xyLpbKwHQNMYq7o5FHGB",
+    "FLh66qAJLTgNepSET1FCQUqQR7SbuJGF5jRPqCg3kGEd"
+   ],
+   "size": 2,
+   "co_runners": 5
+  },
+  {
+   "team_id": 49,
+   "members": [
+    "HUg1XNBfdJbFDLEaMBmc2VWf6SCrBkFe11E83ktXXz3f",
+    "nigger7UFt7V1oCXM6FfAb7jQcBc1G4pWMqcDakHXjY"
+   ],
+   "size": 2,
+   "co_runners": 5
+  },
+  {
+   "team_id": 50,
+   "members": [
+    "3knkVcGuGgPAtynTp2o9iGayuDvQHfByG4ZDzoHugws3",
+    "An6iHHkufUxE54RMfnvQCJZUX1NwJTQabVjZsEcXd3dJ"
+   ],
+   "size": 2,
+   "co_runners": 5
+  },
+  {
+   "team_id": 51,
+   "members": [
+    "39j2aaXEQhVq7Jur5Wy9XpYqnat7TY5rJL9fLL8NfVU9",
+    "AgEGiKisqM4j2Yc6Rhk6TNRxE4XUZbhTt6Vv96axfqkB"
+   ],
+   "size": 2,
+   "co_runners": 5
+  },
+  {
+   "team_id": 52,
+   "members": [
+    "amd1RSK3aN3uM7A3GCBN9VEWnBPQFVfGYUgr6pKoLAQ",
+    "x4T7hgJqNDBC1cVBeo42hZkQAdSLKwxV8wv9QiDHN2j"
+   ],
+   "size": 2,
+   "co_runners": 5
+  },
+  {
+   "team_id": 53,
+   "members": [
+    "5yqrzkVB8uFNUkYx1WJh1ULVvwFfMxC7SsKozecshXTN",
+    "992MR97y5m5TwpSR2tnNoURBioDGDHCMkLsNZMybvKtT"
+   ],
+   "size": 2,
+   "co_runners": 5
+  },
+  {
+   "team_id": 54,
+   "members": [
+    "2yPhzq64gt59BYvHKoDgd76MnJ1UiRm2HqCSYRwgnuFX",
+    "4UsxfZTBgXSzK9v2Mdwro3T6c3uCHzokpDnppF2mYAVD",
+    "9ihyod3vgxj2NRzwYMTsKEPxnPWy4okGf63NhP7aMtMy",
+    "DUQx19TyhizVc2BENdhu77j6si8S8LWNvW7d1RU9iZvt",
+    "HiK6CJyK3pbYwZZEEBrmaC5B5SiKLCwa6Tbhu6uvpDnw"
+   ],
+   "size": 5,
+   "co_runners": 4
+  },
+  {
+   "team_id": 55,
+   "members": [
+    "3YipoeZeFby7ZWuY8R4RS1wFZjwV1Qn4aPFtKBxZ5tSL",
+    "3pxF6upFnSTwvwLVRs7njG5YvY6czWkerapG4mQQcA6C",
+    "6YjWgr5aCThtR7p5tiVdXBugvHfMYoXj3kv5UnvtWtnq",
+    "Cn4ts8WwVCQtj5NvzcWB951DwVNWXuEBdGmFPrFRKQxV"
+   ],
+   "size": 4,
+   "co_runners": 4
+  },
+  {
+   "team_id": 56,
+   "members": [
+    "3hGSz8NDjRdBj4J142LycC5hF6ALe24wspiayQevqARH",
+    "5F7NBhjk4ZXQbQ2BW6mpiejiazwZPB7fdVUNUC4y1pb6",
+    "BsbwhJ1Aq9WNWdLZo7WeZx9w4srsZhsgNTDTRS2kyRZ2",
+    "F8NijYak2VEzFFNrr5dbjkQ388wjGRyRK3k41vpidBeD"
+   ],
+   "size": 4,
+   "co_runners": 4
+  },
+  {
+   "team_id": 57,
+   "members": [
+    "4VYfTMeN23ECazwtpLnLWf1RVth77LL8eNp3VRnR82fT",
+    "CaApY4fyvMK2Fb1DcwBi2Wa5oWwaVaJLJA3Xz4K8TtMo",
+    "CnaEzKS22GSBQgsyuuxuMNQKHqvuFRKXP34fkgUWYBzj",
+    "RqkBTU7m9vRS8scsnkhN4G6v49VquiTvnY1GKGjvHQ9"
+   ],
+   "size": 4,
+   "co_runners": 4
+  },
+  {
+   "team_id": 58,
+   "members": [
+    "3ofzd2dj5nWxziTLiSnXa5sruMFdm9RVebMLXsaA8hgK",
+    "5ZfPnMh5FeeTUQtsYfFMSz3zCNEz15LeRpTi2jv4zDmN",
+    "9cx6NcP8VW9afbWSnijesu3zjLkXyj9yBuidiEd7uCkd",
+    "BsRtkepsGw4YkzTyN3LxZBcUtJezmZ5t9byH1Ui8snDZ"
+   ],
+   "size": 4,
+   "co_runners": 4
+  },
+  {
+   "team_id": 59,
+   "members": [
+    "5FwFYjD1JkNgJp3d9wE12haxBYcb2JmfygygngRe4LyC",
+    "8ix6J3CZV6Cu4rU1gZJEhCmnW23rL5HdLvRkbzuR2WmS",
+    "HToDJ6FTEKGi6EU6TqfofN1agtcqHKYunFCmxsjZeFiU"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 60,
+   "members": [
+    "4rgNLVEH27Rh99afDqGroTaZKvLZ857UZr1a8fD3XbHV",
+    "5AS9PDq2VCZ7FgBCqSzUokmqYsN7dfv1wqfRFUaFqkD1",
+    "FKLtiA7F9HCWz2jrdiWKx1NhQuKSf6WBGd1bwciFkYJN"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 61,
+   "members": [
+    "2QMCjkbBAkgvW9Az4ThWCUjB6L5oFfTgpbxeCrLi2xvQ",
+    "DCLc9vFdEqhKDzvBzcUTpQ5kcFau6nHAbaNLcK4LtzkJ",
+    "FEEXhZ2tBT2FCRj48av3hYLSdRHuidyBhq5uxmKLovzb"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 62,
+   "members": [
+    "Hjxo71ZaUuYMht3gjVcSvaSqtRHB56aw3736GDmon64N",
+    "eY5HvgXi2kjyDyZF18ypWfJywrSFk22nhWXQ4scuDfU",
+    "ojRma2bXjMtvJZmdSLNrNTvfSxsViDz8napLa61FE48"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 63,
+   "members": [
+    "2cTr1NbZCY6mR7bY6KqPWe76ChUBZkxefeDkhPvm8KFp",
+    "2mN7wHSiZeKngQcArAwmNppDvet2aNmuRkNs9STksMaF",
+    "FqvdbWqkx91iaELDEAAaxpw1Gg4f6zBunq6i4fUfizJX"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 64,
+   "members": [
+    "C4WYK8p2PCX91aUCEh5XdTZceSr8FwKDBrFnYisAEuQB",
+    "CJWXnv1XRFNZKL7HsnkMmB8pAD3dg44wwwDKeA5XSeGf",
+    "FyMbdyiCvv7uTabFuycegpFUph9A5Tyap9aXPXNhdaos"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 65,
+   "members": [
+    "27hbpefppiVicaX17j7B7pMCZstKkwLgzusWyEgmkkKA",
+    "DgkYorpAj3PhfgWxpdJDvnHnr6Ch6PPNPnnhozAyAzZj",
+    "F7vTAd6GgwcuP6hs9yvEVy3kVAYiVWDFgZkvMt5q5rUT"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 66,
+   "members": [
+    "Ejhe74yR9VedNNPJvHAwrmvVwQPkTQ8x6ykzYCL88LfN",
+    "FdwVhbBQhY9rwF5yaZwVH2SK6jhtxj67idgVrrGgAmKS",
+    "tCPHCKBKPmVvDCPiv3JmTeXXc7ivPpTRfvPZuzTodir"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 67,
+   "members": [
+    "BpkXQAyZtdra5d1SPe33KBrCZc4dgzeP9tkZmcmfEmpc",
+    "F1NN7aqGKaF34TXsH9CgUGihP4Fph6pxcPtLMDgC9hYm",
+    "FbmpwbSs6KQpSSrYQzhUrUUxc2mgcFCM83M6QC7fho2P"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 68,
+   "members": [
+    "4Pj57MGjCJa39JbwQp5HZmnvTi9zSaFgbF2Ue5Zzoq46",
+    "8x3jSMfjAxKN1TiAv7eAsYZRYTXQTgESVJ1t7nDLhhA7",
+    "A5goNVcGC7G8CCZm2DcLUvaMBMNf815jtfeTs8seqHYv"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 69,
+   "members": [
+    "65tXbswoDh2w35TYa4oar4WgXDS1T9VBtNk4rhhwmYii",
+    "722yF52TpqTeMaLK4yJDhriwqKTmsz3iTf7kbqPwzbpA",
+    "B7ZyY5gqTHNCyrt9oaooGe2poKuMhKYvVzPyYamt3M98"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 70,
+   "members": [
+    "89v1rna9CKV47eQHaDTYzn4zgAn2XM8pXbwpbPGcJ2TE",
+    "9CB6P24oDJCwpQXTx9omPx4fbcXf5CHmfULXcucVKaX1",
+    "9XRLxxFHbpLkXH9tL7zPYbRgunTmeLRbEpupS6SovMRS"
+   ],
+   "size": 3,
+   "co_runners": 4
+  },
+  {
+   "team_id": 71,
+   "members": [
+    "2pdyPtGEXQfyGNE5zarwg5mSFMLHECVTVSDUAxnawuCs",
+    "6WSAnhtyJpUbTRMnjsdU6C76XUQ7pdN4nzerhhoRkpgY"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 72,
+   "members": [
+    "Bng2rKCS4U1FXWbsoqKARNcaQz1Lsrc2pPhJgHBE2vCM",
+    "Huw4oVuzTVirZdB7MwZyoghWxw6UdtJ9oPssLoSYx1da"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 73,
+   "members": [
+    "4FvqTxQqET2pbCyvVZp6SGfV28MAcvDYmKPtxF8emFRT",
+    "CxUrNxiCtJw6Qczm6ZoqPw67CLFuh5Ss22J3tC2RfpkG"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 74,
+   "members": [
+    "99i9uVA7Q56bY22ajKKUfTZTgTeP5yCtVGsrG9J4pDYQ",
+    "CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 75,
+   "members": [
+    "2aYKpP2diniUHt9UaLydTuM7P1Udbje3y7pHxCp8xizZ",
+    "FsTW7kEMF3CLiKMbvb4uDwD9VLVtZCJHukHcXKAtgL39"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 76,
+   "members": [
+    "SsxHXKCfUBuxhtUXtMaYgzUWXjKnvoQBZ7sLAjXVigi",
+    "sea1BTw9iCNV5TwQkqWPZW2GP1zqwFAqd5R5i5dhmcU"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 77,
+   "members": [
+    "A8nvFw2s5su5g3X2gD6YQxegKxBvxigfTypSTNQQa4F5",
+    "oMHLoucsY1RQBUJM5g287JjArtNrxdD7aWKLin4kUrY"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 78,
+   "members": [
+    "5hYsHp8HWFgySy1ZCn7rThQiZ1Cy5qd6mArW3inmMAfG",
+    "CvhUR9GTbMFKFR6Cx24NiDgNcCncyTUGauhq9SWkBYuU"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 79,
+   "members": [
+    "85KLfRapef1TWSprUtqJ8qSeaiqo6ka6bMnZTfTUjWiD",
+    "88DMHhdUJZ2VtAmbe66HvTtxMkaesePYeZS64fHTQch6"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 80,
+   "members": [
+    "9A2ShXJzm7pzP776gaiJYuWQQ8xH6XDA3pg5BqHDWJie",
+    "D39EkUjpW132edSqGTL4ov4na9fqbXnaUfEYPAdVfKkM"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 81,
+   "members": [
+    "CozxEzBdDiGKxREAidMWVPbE2Me9sCqaU4PSUuGWgxCw",
+    "GaG7v3rLYxFxAHV2BBt6bequNBirBwL6qKATwJXntisY"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 82,
+   "members": [
+    "99w9coDUG97dTjS2c3NWnRweqAyL59PEr6Fr1ZjzsPJK",
+    "HL4ZnUDyo9rAacaGVtyL6cpX6zZAwJ96xsTWHuuUY7NE"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 83,
+   "members": [
+    "4kpfKiQVvMx7XLGFL1WXysJZ4ZmJRLjtftWHfVn4VKqP",
+    "BpXMscgdvi6rXfjwHQouER6i298ZA95GhJ9R2iaPXGWH"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 84,
+   "members": [
+    "54xrJ798DGwH1UA2H35QtAzKT55t8pL8bjBs9Arz3eoP",
+    "J9ZFuAdfNAcWiP5kPtv6VxrxxqKsFrJ8pbWT24RGtHyi"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 85,
+   "members": [
+    "335aK8KeLjPWL37b3hs46A2t72bRTVExhRZVHDMhbGdm",
+    "3MJWniyrHzfiU3wv4yHzys7GHwfSjBjxeFjvAh9cPW43"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 86,
+   "members": [
+    "4afLtYsmo54Q49Sx3uLoUH6JaRkd2qmrGuSnKVtBiKwA",
+    "8im4QyQmzJiZsePb9nGRxi8d5kD1NgQifGixxyqsuww5"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 87,
+   "members": [
+    "AXEtCJvSZgKJGsfNdF46b4hVDwLadTdG5yXqsc7T4Hax",
+    "BxStVTd2dx266vkYphdYiNvmbxGhP8HtmXnNKZ43eggC"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 88,
+   "members": [
+    "3r3CFAxMYKqp5YegJgbrzBgWG6Bv3DTYgW7o5HPdVd16",
+    "3x3CjqWseSGuCTiRiAgAv7W9N1LFyJnLn217UxiFGZmZ"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 89,
+   "members": [
+    "9cn9KAwMh81Tmci2HxguRF46a2eH1eTGKU6nSxB2ecMQ",
+    "ZTJggSAtBYgjtejA5TWqGbqRvuXuKD7wj1vE2ETQqN8"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 90,
+   "members": [
+    "GmkPazUfAauDg5UPV4Q3dNXEb4Qen33V13JRmJDwuzUt",
+    "UzuFjhuKCgVMZLp7TL4kErBZDCuTWKSfAMZtr38MHEQ"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 91,
+   "members": [
+    "6MH75jhjiGFRmKDE7MXpyDaxrcieHsLA6BsTUBiUADZ6",
+    "9AtuCMN8yvjiTyBzyNrUXaQdWAv9uF56LvBuzkk85qFP"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 92,
+   "members": [
+    "97sBkGDsdcMYnsBsuP5RWoxAy8M69bdyzzrVGTUzc2Wf",
+    "BZ4QNv3iytUotPwkYDDVXQUZmREgJ87Le8p1miihaYgb"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 93,
+   "members": [
+    "587YFaPUjiFqe9Q4imtQne1RCAU8qzQmyVFYRdB7Vtfc",
+    "ErRaULVtbec4KY6NRPoa6JVV2XoyuBuBPV5CZxnBXJ9x"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 94,
+   "members": [
+    "8vvSE1rn3bD1T7RJw8NTFR2gFPU54Ni3ASGn5nrJVuiT",
+    "GpdU47jiKZ1bRxvNRoBPnfFUoXRJprJ47K97SgaXp7Qj"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 95,
+   "members": [
+    "3YqdnNtaqATD2Yb2rmqSeggfom854DuDwg8UqxKfLzaW",
+    "6HaSu4hZTu8tcNsonyuyE1jVNWdPmsVDnN21qCwvLEZH"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 96,
+   "members": [
+    "39bAGPaUerGs7Gp5Z76EoRipCDtL4B2VHj7F8YYwrpeU",
+    "BFz3fkvQTKVmhs9AjLBTrJFoHhyEWYTv9EQVqDtq2jU6"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 97,
+   "members": [
+    "3XuYowK8jcDHP65pmLEVZ5yW7WKZ1xwbLKnLqargPicB",
+    "7cQjAvzJsmdePPMk8TiW8hYHHhCfdNtEaaNK3o46YP12"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 98,
+   "members": [
+    "BwrUsUUMoFFpYY4pf3eXLwxi3foecucjBH3Gzn1693Qb",
+    "FK5z4HVnGCLbMNATcAVm81551Ng6NZU6uRFezzMKdF3k"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 99,
+   "members": [
+    "8Bmji3Ze7wrkwGPqo6fMRyMmAweQVATRKvCPzvuL7H18",
+    "G8PbJYiN3mBej572vHBmrC3oZ8dJjuKPATQ3UwtVVDg5"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 100,
+   "members": [
+    "D6G5vUbBqsv9DSG472npvFKWmhmsbf1kdLjTgufhsUYu",
+    "FSwFQKFENKuNTGnXBbcYpdtdEKCVrQRNSLvMtzGL9tX"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 101,
+   "members": [
+    "5Bqe8qo619H4opYGVrXUkT6rwMeCt91Y1KGREvY7N5T7",
+    "AYMwxmz48HBJUvQW1zEUPtJnsfDUVgQnmSagqfWZPPLF"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 102,
+   "members": [
+    "9cNRuxQ2RHnD54xvjZ7uXt9ABgBrsiPYj7HSHh7KKtKu",
+    "CKPZkobn6FYmazEm35JWhpVxgLTxekRnqmP6dPY8Q2iX"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 103,
+   "members": [
+    "35uLZiXjpg8yuWYwcRHZp4ybvuUzXHWd7bf5x6BU3tWX",
+    "4AdRzfPHjFLqXL2HtQ1bMco4DTpD4DDRs1XddTZohJxc"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 104,
+   "members": [
+    "F7htbwT8sHGEvRjd5LaVJ9m3D5me6WxRhbsMjFUuLwht",
+    "STorreSu8X6yPLmiEScNHSGDinqV7j84hWjmvH9SPwk"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 105,
+   "members": [
+    "4sAUSQFdvWRBxR8UoLBYbw8CcXuwXWxnN8pXa4mtm5nU",
+    "Gj4qxJU5CpaFGU8dx2KJisfMxjdycyeiur8Z6nCxP82z"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 106,
+   "members": [
+    "3pFYGSypzNZWWkVeaccihJpE8A165eTiSCbM4n2zyRxi",
+    "HNo4uLumgcTELHny4wCyNU4mrvuRSg2y7DvUnpiWgmds"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 107,
+   "members": [
+    "HXp9hzaGG1CsVdRugawHzX6qS6rx44pVKcfoHY2DY9si",
+    "JAN1motxerJQVtUe8aYkwZA6A4PpHh6wfpWjm3W1fVK7"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 108,
+   "members": [
+    "139H21Jzf8tgc7NusPznyUjWqgVgFTiQaEdSbGf9WBnU",
+    "9KPrpjKq9hSK6sPo1QrDQ8rj9HSMoo8vAEsnB9Jsq6qZ"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 109,
+   "members": [
+    "5j7jo4MbXKHwHN1MFZ1B8TcZfFuikDiDhetYvehgDJsb",
+    "83CTKfjMg9FjwVS5ceozJSTXLAxajfN54DZf2qZQzyNH"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 110,
+   "members": [
+    "CRe1BJokzF8TyW9RK1t4uccxrU7Tj2ugJt4y7o6c1Tus",
+    "Hpt8Af8ebvW3EX6jg7JQwqcT8zwHy5znpqLGwk4WaTfv"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 111,
+   "members": [
+    "4QgsFkEp6Z4YR7mXYdcou8ZL6Sgz7rFha2iKj9W2PNua",
+    "NNTEF35sVfcud4BWr8dvLxG98HJJBdPMtKw7LrRZ6rb"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 112,
+   "members": [
+    "7AFxLU4fvvJRXD3Qhg6i44EZSkjBX449p7rx5zDwmTo6",
+    "8GuqLjTdRr3ynrvhfjdSrSabbamZhqtHXb9T4MRNNKf7"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 113,
+   "members": [
+    "2kW5wLFQw1wLuepZTJux1DZsTJSbNi2PGQ1E6hC7xeY8",
+    "DncTAHoJ9ALJAetZCbF7E7LW6BxKE5VfDncHtAsK8STB"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 114,
+   "members": [
+    "643x8w3eFn8FdfwM1vgboZn7vxMSAzcyYke8RLDMPXxX",
+    "CYsVW3CGLZtiBWd4HfbZK26QE2PcquWrNRE6oAY4kwfv"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 115,
+   "members": [
+    "H87Hk58orfNgTc7st5nxcJmMfLPpLpRHRxK4cnJk8wBY",
+    "XXXXXahGswEH6i3Czn19XbGxQrobJoY1TYJegPxp3ex"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 116,
+   "members": [
+    "2jix2ssnrLY3jJFbwxJhXVcEbjk1hSiFm9zPkrPiFAfp",
+    "DRjSFfpMUKYkLNueGdFDgHanyJ2yYxy9mvxn93HRfLoA"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 117,
+   "members": [
+    "2H7ZDMJCiap1KUegqCmizj2HQQAzem5GzTUFfNAbek6X",
+    "E4tYFhV2cP9D9jzvR67SPep3GDAPemrszm5fE63sghJk"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 118,
+   "members": [
+    "CWkUuuKdAJF4qVP2iRv9JtesyYJv4FGzaMfqdmo7Q6X9",
+    "Fn4L1VueRXCWXDVEBK7Kc7ayJNoBxBFMtEV8u1dbp9xp"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 119,
+   "members": [
+    "FYZ24UoeaRDAG72t7BmeELeHbvmRYzGp9vzAEaKA3P6k",
+    "Gr3YeuBRHyb9fQXeThkwL1maanSgT34qMRBYwsEE4djU"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 120,
+   "members": [
+    "7aSFz9LpJDbP7bZ2cgicc5fX1okFZEPsUgFupgxVn1Wv",
+    "BtDaZUqHr2mKH5EYQCztuerHBuBEfQNYdquTDtEZp2Ym"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 121,
+   "members": [
+    "4JYYeJ4v75VFF41qRAEUMFvQgKCPWeywZewGR4TcJBBE",
+    "5afm9bYpLiyNZ592ezPT4qChp9V2RMdk6Sr72pu1GBia"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 122,
+   "members": [
+    "9a5EUUHscK6c37p25gZbRm1Q9bhYmhFfx3k6ZhMNRa4n",
+    "ARPMcYt4dkaQ1sATimcRrAnToR6iHVzLRwhxJNb4n4hs"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 123,
+   "members": [
+    "5Tt6nZ8qrf9ZdJjQdxRdfcDEyJdqn91HQGQmkGTJoSS8",
+    "GzfVj5SiHkASxmSynMXM4HRZ4m6YpmyE7CmNey9zfU8P"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 124,
+   "members": [
+    "3zsrxxcvJxif7eC4nRuRLg5qufxumZo4b2HNwETvuM5B",
+    "57hdTgdcVDyYrZJ3ieeBRn4CDiLWVvBrgjsuDa3gSfzD"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 125,
+   "members": [
+    "F6gEpgNEZAoNwR4NDrJTnSHJu9HRy1LLVKngD4aJCtSo",
+    "GAs7pzTobaUnDNmY3AZ8XZpVGwEY2NSdhxixWLPkSQVo"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 126,
+   "members": [
+    "4i62Kk4DuNgUbmEfwjoz7LFZQk7bkJyX3gfDPdip15MF",
+    "Gt3t9EqcHhYKWRHuV1PwmRqjf3GcBJm3J9f9U1NtQKVX"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 127,
+   "members": [
+    "DUUeetWA7PxFz6kdcVavSNStaRxmKX78Z7dCzXY8GZGD",
+    "GTQrT7KUjngftSA3gbxbvGoJ3nrkLdd3YXxTkP8ZXnS6"
+   ],
+   "size": 2,
+   "co_runners": 4
+  },
+  {
+   "team_id": 128,
+   "members": [
+    "2QLm29fYQVYLB2T4y8V1eUhUuzgUg9mHcZoL3dKafBnz",
+    "HJo7R3mSuZDUdyGPD6bJcDdCiDm7sKwznBSYZEA9iDck"
+   ],
+   "size": 2,
+   "co_runners": 4
+  }
+ ]
+}

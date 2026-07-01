@@ -68,6 +68,7 @@ from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
 from bots.copy.signals.conviction import ConvictionDetector
 from bots.copy.signals.sell_cluster import SellClusterDetector
+from bots.copy.signals.teamfollow import TeamFollowDetector
 from bots.copy import shadow_log
 from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import size_conviction_position, size_position
@@ -90,6 +91,9 @@ from monitoring.alerting.taxonomy import Severity
 
 REDIS_BUYS_CHANNEL = "copy:buys"
 REDIS_SELLS_CHANNEL = "copy:sells"
+# Team-follow experiment: its wallets publish to a SEPARATE channel so they never
+# feed the cluster detector (isolation — see teamfollow tier in webhook_receiver).
+REDIS_TEAMFOLLOW_BUYS_CHANNEL = "copy:teamfollow_buys"
 REDIS_MACRO_CLUSTER_CHANNEL = "copy:macro_cluster"
 # 2026-05-28: every cluster (regardless of asset / HL listing) is published
 # to copy:all_clusters for STRUCTURE's read-only cluster_observations journal.
@@ -226,6 +230,11 @@ class CopyBot(BotLifecycle):
         # buy + sell streams; accumulation params (dust/threshold/window/
         # sell-holdoff) come from settings.
         self.conviction = ConvictionDetector()
+        # Team-follow experiment (2026-07-01): fires on >= min_members of a known
+        # co-buy TEAM. Isolated strategy 'teamfollow' — own bankroll + own Redis
+        # channel (copy:teamfollow_buys) so its wallets NEVER feed the cluster
+        # detector. Roster loaded from bots/copy/teamfollow_roster.json in on_start.
+        self.teamfollow = TeamFollowDetector()
         self.executor = CopyExecutor()
         self._last_reconcile_ts: float = 0.0
         self._last_position_check_ts: float = 0.0
@@ -233,6 +242,7 @@ class CopyBot(BotLifecycle):
         self._session: Optional[aiohttp.ClientSession] = None
         self._buys_subscriber_task: Optional[asyncio.Task] = None
         self._sells_subscriber_task: Optional[asyncio.Task] = None
+        self._teamfollow_buys_subscriber_task: Optional[asyncio.Task] = None
         self._buys_redis: Optional[redis_async.Redis] = None
         # Throttle for price-scale anomaly alerts. Per-trade, 1 hour
         # cool-down — prevents spam if Birdeye is returning persistently
@@ -259,10 +269,18 @@ class CopyBot(BotLifecycle):
         # loaded here: webhook_receiver matches incoming events against the live
         # DB active set, so bot_copy keeps no wallet list of its own.
         self._load_conviction_wallets()
+        # Team-follow roster (JSON in the repo; experiment strategy). Only loaded
+        # when enabled — otherwise the detector stays empty (no triggers).
+        if self.copy_settings.copy_teamfollow_enabled:
+            self._load_teamfollow_roster()
         self._session = aiohttp.ClientSession()
         # Subscribe to wallet-buy events on Redis (published by webhook_receiver)
         self._buys_redis = redis_async.from_url(self.settings.redis_url, decode_responses=True)
         self._buys_subscriber_task = asyncio.create_task(self._buys_subscriber())
+        # Team-follow buys arrive on their OWN channel (isolation from cluster).
+        if self.copy_settings.copy_teamfollow_enabled:
+            self._teamfollow_buys_subscriber_task = asyncio.create_task(
+                self._teamfollow_buys_subscriber())
         # Sell subscriber — shares the same Redis connection. Pubsub objects are
         # created per-subscriber so they coexist without interfering. Started
         # when EITHER the sell-cluster detector OR the conviction
@@ -293,6 +311,8 @@ class CopyBot(BotLifecycle):
             self._buys_subscriber_task.cancel()
         if self._sells_subscriber_task:
             self._sells_subscriber_task.cancel()
+        if self._teamfollow_buys_subscriber_task:
+            self._teamfollow_buys_subscriber_task.cancel()
         if self._buys_redis:
             await self._buys_redis.aclose()
         if self._session:
@@ -324,6 +344,11 @@ class CopyBot(BotLifecycle):
         # Gated by copy_conviction_enabled (ships dark).
         if self.copy_settings.copy_conviction_enabled:
             self._evaluate_conviction()
+
+        # Team-follow experiment (2026-07-01) — isolated strategy, own bankroll +
+        # channel. Fires on >=2 same-team co-buys; gated by copy_teamfollow_enabled.
+        if self.copy_settings.copy_teamfollow_enabled:
+            self._evaluate_teamfollow()
 
         # Shadow log poller — update pending rows on the configured cadence
         if now - self._last_shadow_log_poll_ts >= self.copy_settings.copy_shadow_log_poll_seconds:
@@ -413,6 +438,43 @@ class CopyBot(BotLifecycle):
                 return
             except Exception:
                 self.log.exception("buys_subscriber_failed", backoff=backoff)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 60.0)
+
+    async def _teamfollow_buys_subscriber(self) -> None:
+        """Long-lived subscriber to `copy:teamfollow_buys` (isolated from cluster).
+        webhook_receiver routes teamfollow-tier wallet buys here; we feed ONLY the
+        teamfollow detector. Reconnects on disconnect; mirrors `_buys_subscriber`."""
+        if self._buys_redis is None:
+            return
+        backoff = 1.0
+        while True:
+            try:
+                pubsub = self._buys_redis.pubsub()
+                await pubsub.subscribe(REDIS_TEAMFOLLOW_BUYS_CHANNEL)
+                self.log.info("teamfollow_buys_subscriber_ready",
+                              channel=REDIS_TEAMFOLLOW_BUYS_CHANNEL)
+                backoff = 1.0
+                async for msg in pubsub.listen():
+                    if msg.get("type") != "message":
+                        continue
+                    try:
+                        payload = json.loads(msg["data"])
+                        ev = WalletBuyEvent(
+                            wallet_address=payload["wallet_address"],
+                            chain=payload["chain"],
+                            token_mint=payload["token_mint"],
+                            notional_usd=float(payload["notional_usd"]),
+                            timestamp_ms=int(payload["timestamp_ms"]),
+                            tx_signature=payload.get("tx_signature", ""),
+                        )
+                        self.teamfollow.observe_buy(ev)
+                    except Exception:
+                        self.log.exception("teamfollow_buys_message_parse_failed")
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                self.log.exception("teamfollow_buys_subscriber_failed", backoff=backoff)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 60.0)
 
@@ -863,6 +925,134 @@ class CopyBot(BotLifecycle):
                 except Exception:
                     self.log.exception("token_age_capture_failed",
                                        asset=candidate.asset)
+
+    # ---- Team-follow (known co-buy team) signal handling ------------------
+
+    def _evaluate_teamfollow(self) -> None:
+        """Drain team-follow triggers and act on each. Parallel to
+        _evaluate_clusters but team-scoped + isolated (strategy='teamfollow',
+        own bankroll + halt_id 'copy_teamfollow'). Immediate entry (no persistence
+        gate for v1 — the raised entry-liquidity floor is the quality gate)."""
+        for c in self.teamfollow.evaluate():
+            asyncio.create_task(self._consume_teamfollow_candidate(c))
+
+    async def _consume_teamfollow_candidate(self, candidate: SignalCandidate) -> None:
+        # Independent DD halt for the teamfollow sub-strategy (its own halt_id).
+        try:
+            if is_bot_halted("copy_teamfollow"):
+                self.log.info("teamfollow_halted_skip", asset=candidate.asset)
+                return
+        except Exception:
+            self.log.exception("teamfollow_halt_check_failed")
+
+        # Per-strategy dedup: only an OPEN teamfollow position in this token blocks.
+        if has_open_position(candidate.asset, candidate.venue, strategy="teamfollow"):
+            self.log.info("teamfollow_dedup_skip", asset=candidate.asset, chain=candidate.chain)
+            return
+
+        team_id = (candidate.payload or {}).get("team_id")
+        capital = self.copy_settings.copy_teamfollow_paper_capital_usd
+        current_alloc = open_allocation_pct(capital, strategy="teamfollow")
+        notional_usd = size_position(
+            cluster_size=candidate.cluster_size,
+            paper_capital_usd=capital,
+            current_open_alloc_pct=current_alloc,
+            current_dd_today_pct=0.0,
+        )
+        if notional_usd <= 0:
+            self.log.info("teamfollow_size_zero_skip", current_alloc=current_alloc)
+            return
+        if self._session is None:
+            return
+
+        # Serial-deployer blocklist (fail-open, same as cluster/conviction).
+        token_security: Optional[dict] = None
+        if candidate.venue == "solana":
+            try:
+                token_security = await fetch_token_security(self._session, candidate.asset)
+            except Exception:
+                self.log.exception("teamfollow_token_security_fetch_failed", asset=candidate.asset)
+            if token_security:
+                creator = token_security.get("creator")
+                if creator and creator in self.copy_settings.get_blocked_creators():
+                    self.log.info("teamfollow_blocked_creator_skip",
+                                  asset=candidate.asset, creator=creator)
+                    return
+
+        # THE quality gate — raised entry-liquidity floor ($50k). The DB study
+        # showed higher liquidity => far fewer rugs (the stop can only fill in deep
+        # liquidity). Fail-open: only a KNOWN-thin reading blocks. Stamped for
+        # instrumentation regardless.
+        entry_liq: Optional[float] = None
+        if candidate.venue == "solana":
+            min_liq = self.copy_settings.copy_teamfollow_min_entry_liquidity_usd
+            if min_liq and min_liq > 0:
+                try:
+                    entry_liq = await fetch_token_liquidity(self._session, candidate.asset)
+                except Exception:
+                    entry_liq = None
+                if entry_liq is not None and entry_liq < min_liq:
+                    self.log.info("teamfollow_thin_liquidity_skip",
+                                  asset=candidate.asset, liquidity_usd=entry_liq,
+                                  min_liquidity_usd=min_liq, team_id=team_id)
+                    return
+
+        snapshot = CopyMarketSnapshot(chain=candidate.chain, session=self._session)
+        sim_fill = await self.simulator.simulate_entry_async(
+            asset=candidate.asset,
+            notional_usd=notional_usd,
+            leverage=1.0,
+            direction=candidate.direction,
+            market_snapshot=snapshot,
+        )
+
+        signal_id = persist_signal(candidate)
+        # Paper-only by construction (experiment) — write the paper trade directly,
+        # tagged strategy='teamfollow'.
+        paper_trade_id = persist_paper_trade(
+            signal_id=signal_id,
+            candidate=candidate,
+            sim_fill=sim_fill,
+            notional_usd=notional_usd,
+            leverage=1.0,
+            strategy="teamfollow",
+        )
+        self.log.info(
+            "teamfollow_paper_opened",
+            asset=candidate.asset, team_id=team_id,
+            cluster_size=candidate.cluster_size,
+            notional_usd=round(notional_usd, 2),
+            trade_id=paper_trade_id, fill=sim_fill.fill_price,
+        )
+
+        # Best-effort enrichment (concentration + entry liquidity + token age).
+        if candidate.venue == "solana" and paper_trade_id is not None:
+            if token_security is not None or entry_liq is not None:
+                try:
+                    update_trade_token_meta(
+                        paper_trade_id,
+                        creator=(token_security or {}).get("creator"),
+                        top10_holder_pct=(token_security or {}).get("top10_holder_pct"),
+                        owner_pct=(token_security or {}).get("owner_pct"),
+                        entry_liquidity_usd=entry_liq,
+                    )
+                except Exception:
+                    self.log.exception("teamfollow_token_meta_capture_failed",
+                                       asset=candidate.asset)
+            try:
+                import time as _time
+                info = await fetch_token_creation(self._session, candidate.asset)
+                if info and info.get("created_unix"):
+                    age_hours = max(0.0, (_time.time() - info["created_unix"]) / 3600.0)
+                    update_trade_token_age(
+                        paper_trade_id,
+                        created_unix=info["created_unix"],
+                        age_hours=age_hours,
+                        tx=info.get("tx"),
+                    )
+            except Exception:
+                self.log.exception("teamfollow_token_age_capture_failed",
+                                   asset=candidate.asset)
 
     # ---- Conviction (single-wallet) signal handling -----------------------
 
@@ -1704,6 +1894,30 @@ class CopyBot(BotLifecycle):
             return
         self.conviction.set_wallets(addrs)
         self.log.info("conviction_wallets_loaded", count=len(addrs))
+
+    def _load_teamfollow_roster(self) -> None:
+        """Load the team-follow roster from bots/copy/teamfollow_roster.json and
+        push wallet->team_id into the detector. Non-fatal — on error teamfollow
+        stays empty (no triggers). NOTE: a roster wallet only produces triggers if
+        webhook_receiver publishes its buys to copy:teamfollow_buys, i.e. the wallet
+        is tier='teamfollow' in wallet_pool (Helius-subscribed)."""
+        try:
+            from pathlib import Path
+            p = Path(__file__).parent / "teamfollow_roster.json"
+            data = json.loads(p.read_text())
+            roster: dict[str, int] = {}
+            for team in data.get("teams", []):
+                tid = int(team["team_id"])
+                for w in team.get("members", []):
+                    if w:
+                        roster[w] = tid
+        except Exception:
+            self.log.exception("teamfollow_roster_load_failed")
+            return
+        self.teamfollow.set_roster(roster)
+        self.log.info("teamfollow_roster_loaded",
+                      wallets=self.teamfollow.wallet_count,
+                      teams=self.teamfollow.team_count)
 
 
 def main() -> None:
