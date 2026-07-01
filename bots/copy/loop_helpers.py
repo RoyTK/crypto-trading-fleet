@@ -116,6 +116,11 @@ def persist_paper_trade(
     # if its trigger wallet happens to be active-tier.
     if strategy == "conviction":
         wallet_tier = "conviction"
+    elif strategy == "teamfollow":
+        # Same isolation as conviction: never tag teamfollow 'active' (that's the
+        # cluster kill-criteria filter) — keep the experiment's trades out of the
+        # cluster validation set regardless of the co-buyers' pool tiers.
+        wallet_tier = "teamfollow"
     else:
         wallet_tier = _classify_cluster_wallet_tier(cluster_wallets)
 
@@ -145,6 +150,8 @@ def persist_paper_trade(
                 "cluster_wallets": cluster_wallets,
                 "strategy": strategy,
                 "trigger_wallet": trigger_wallet,
+                # Team-follow: which known team co-bought (None for other strategies).
+                "team_id": (candidate.payload or {}).get("team_id"),
                 # Conviction: the accumulation that triggered the entry (None for
                 # cluster). Used to tune the accumulation threshold/window.
                 "conviction_accumulated_usd": (candidate.payload or {}).get("accumulated_usd"),

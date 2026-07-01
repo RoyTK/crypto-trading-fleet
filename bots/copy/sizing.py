@@ -92,3 +92,37 @@ def size_conviction_position(
         notional_usd *= discount
 
     return notional_usd
+
+
+def size_teamfollow_position(
+    paper_capital_usd: float,
+    current_open_alloc_pct: float = 0.0,
+    current_dd_today_pct: float = 0.0,
+) -> float:
+    """Size a team-follow trade. Returns notional USD (0 = skip).
+
+    FLAT sizing (like conviction, NOT the cluster band) — team-follow's min_members
+    is 2, so the cluster_size→% map returns 0 for it (cluster requires >=3). Flat
+    also matches the backtest's equal-size-per-signal model. Uses
+    `copy_teamfollow_sizing_pct` against the teamfollow bankroll + alloc cap.
+    """
+    settings = get_copy_settings()
+    base_pct = settings.copy_teamfollow_sizing_pct
+    if base_pct <= 0:
+        return 0.0
+
+    cap_pct = settings.copy_teamfollow_alloc_cap_pct
+    headroom_pct = cap_pct - current_open_alloc_pct
+    if headroom_pct <= 0:
+        return 0.0
+    final_pct = min(base_pct, headroom_pct)
+
+    notional_usd = paper_capital_usd * (final_pct / 100.0)
+
+    dd_halt_pct = settings.copy_dd_daily_pct
+    if current_dd_today_pct > 0 and dd_halt_pct > 0:
+        dd_ratio = min(current_dd_today_pct / dd_halt_pct, 1.0)
+        discount = max(0.5, 1.0 - dd_ratio * 0.5)
+        notional_usd *= discount
+
+    return notional_usd

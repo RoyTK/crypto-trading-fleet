@@ -399,6 +399,10 @@ class CopySettings(BaseSettings):
     copy_teamfollow_min_entry_liquidity_usd: float = Field(default=50000.0)
     copy_teamfollow_paper_capital_usd: float = Field(default=25000.0)  # isolated bankroll
     copy_teamfollow_alloc_cap_pct: float = Field(default=50.0)
+    # FLAT per-trade size (% of the teamfollow bankroll). Team-follow's cluster_size
+    # is 2-5 (a different scale than cluster's >=3 band), so it uses a flat sizer, not
+    # cluster_size_to_pct (which returns 0 below 3 wallets). ~$500 on the $25k bankroll.
+    copy_teamfollow_sizing_pct: float = Field(default=2.0)
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)

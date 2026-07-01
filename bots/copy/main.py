@@ -71,7 +71,11 @@ from bots.copy.signals.sell_cluster import SellClusterDetector
 from bots.copy.signals.teamfollow import TeamFollowDetector
 from bots.copy import shadow_log
 from bots.copy.loop_helpers import _classify_cluster_wallet_tier
-from bots.copy.sizing import size_conviction_position, size_position
+from bots.copy.sizing import (
+    size_conviction_position,
+    size_position,
+    size_teamfollow_position,
+)
 from bots.copy.venue.dex_quoter import (
     fetch_token_creation,
     fetch_token_liquidity,
@@ -953,8 +957,7 @@ class CopyBot(BotLifecycle):
         team_id = (candidate.payload or {}).get("team_id")
         capital = self.copy_settings.copy_teamfollow_paper_capital_usd
         current_alloc = open_allocation_pct(capital, strategy="teamfollow")
-        notional_usd = size_position(
-            cluster_size=candidate.cluster_size,
+        notional_usd = size_teamfollow_position(
             paper_capital_usd=capital,
             current_open_alloc_pct=current_alloc,
             current_dd_today_pct=0.0,
