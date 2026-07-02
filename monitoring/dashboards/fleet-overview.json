@@ -41,7 +41,7 @@
       "gridPos": {"x": 18, "y": 3, "w": 6, "h": 4},
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed'"}],
+        "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy' IN ('cluster','conviction','teamfollow')"}],
       "fieldConfig": {"defaults": {"unit": "currencyUSD", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}, "color": {"mode": "thresholds"}}},
       "options": {"colorMode": "value", "graphMode": "none"}
     },
@@ -65,7 +65,7 @@
       "gridPos": {"x": 0, "y": 14, "w": 24, "h": 8},
       "datasource": {"type": "postgres", "uid": "fleet-postgres"},
       "targets": [{"refId": "A", "format": "time_series",
-        "rawSql": "SELECT exit_at AS time, sim_metadata->>'strategy' AS metric, SUM(pnl_usd) OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at) AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy' IS NOT NULL ORDER BY exit_at"}],
+        "rawSql": "SELECT exit_at AS time, sim_metadata->>'strategy' AS metric, SUM(pnl_usd) OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at) AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy' IN ('cluster','conviction','teamfollow') ORDER BY exit_at"}],
       "fieldConfig": {"defaults": {"unit": "currencyUSD", "custom": {"drawStyle": "line", "lineWidth": 2}}}
     },
 
