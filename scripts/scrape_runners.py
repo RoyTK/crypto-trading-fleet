@@ -36,7 +36,7 @@ import os
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
@@ -66,6 +66,16 @@ MIN_RECUR = int(os.getenv("SCRAPE_MIN_RECUR", "3"))            # recurrence repo
 RECUR_WINDOW_DAYS = int(os.getenv("SCRAPE_RECUR_WINDOW_DAYS", "90"))
 RATE_SLEEP = float(os.getenv("SCRAPE_RATE_SLEEP", "1.1"))       # Birdeye free tier ~1 RPS
 GT_SLEEP = float(os.getenv("SCRAPE_GT_SLEEP", "2.2"))          # GeckoTerminal free ~30/min
+# Skip a token whose run we already captured — re-scanning a past run returns
+# byte-identical data (window is fixed in the past). A GENUINELY NEW run gets a
+# new run_date > TOLERANCE days from the old one and passes through ("skip after
+# the run unless it runs again"). This keeps each night's Birdeye budget on
+# net-new runners; most dupes also age out of "trending" within ~24h anyway.
+RESCAN_TOLERANCE_DAYS = int(os.getenv("SCRAPE_RESCAN_TOLERANCE_DAYS", "5"))
+
+# Birdeye call counter — logged per run so we can MEASURE real usage against the
+# free-tier budget (30k CU/mo) instead of guessing. Reset at main() start.
+_BE_CALLS = 0
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120 Safari/537.36")
@@ -89,6 +99,8 @@ def _gt(path: str) -> dict:
 
 
 def _be(path: str) -> dict:
+    global _BE_CALLS
+    _BE_CALLS += 1  # count every HTTP hit (incl. retries) for budget measurement
     r = urllib.request.Request(
         "https://public-api.birdeye.so" + path,
         headers={"X-API-KEY": _KEY, "x-chain": "solana",
@@ -235,7 +247,8 @@ def prerun_accumulators(mint: str, run_start_ts: int) -> dict[str, dict]:
                  oldest_day=datetime.fromtimestamp(oldest, tz=timezone.utc).date().isoformat(),
                  target_day=datetime.fromtimestamp(window_start, tz=timezone.utc).date().isoformat())
     # accumulator filter: real committed money, not a single dust nibble
-    return {w: a for w, a in agg.items() if a["bought_usd"] >= MIN_PRERUN_USD}
+    accums = {w: a for w, a in agg.items() if a["bought_usd"] >= MIN_PRERUN_USD}
+    return accums, (not reached)
 
 
 # --------------------------- 4/5. persist + report --------------------------
@@ -259,6 +272,19 @@ CREATE TABLE IF NOT EXISTS prerun_accumulators (
 );
 CREATE INDEX IF NOT EXISTS ix_prerun_wallet ON prerun_accumulators (wallet);
 CREATE INDEX IF NOT EXISTS ix_prerun_token ON prerun_accumulators (token);
+CREATE TABLE IF NOT EXISTS prerun_scans (
+    id           BIGSERIAL PRIMARY KEY,
+    token        VARCHAR(128) NOT NULL,
+    run_date     DATE NOT NULL,
+    symbol       VARCHAR(64),
+    run_x        DOUBLE PRECISION,
+    accums       INTEGER,
+    truncated    BOOLEAN,
+    birdeye_calls INTEGER,
+    observed     DATE,
+    ingested_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (token, run_date)
+);
 """
 
 UPSERT = text("""
@@ -283,6 +309,42 @@ def _pool_tiers(wallets: list[str]) -> dict[str, str]:
             {"w": wallets},
         ).fetchall()
     return {r[0]: r[1] for r in rows}
+
+
+def _already_scanned(mint: str, run_start_ts: int) -> bool:
+    """True if we already scanned THIS run — a prerun_scans ledger row for this mint
+    with a run_date within RESCAN_TOLERANCE_DAYS of the detected run_start. A new run
+    (weeks later) falls outside the tolerance and is scanned fresh. Guards the
+    EXPENSIVE seek_by_time paging; the cheap run-start history call still runs so a
+    genuine re-run is detected. The LEDGER (not the observations table) is the source
+    of truth so busy tokens that yielded 0 accumulators are also not re-paged."""
+    d = datetime.fromtimestamp(run_start_ts, tz=timezone.utc).date()
+    lo, hi = d - timedelta(days=RESCAN_TOLERANCE_DAYS), d + timedelta(days=RESCAN_TOLERANCE_DAYS)
+    with session_scope() as s:
+        n = s.execute(
+            text("SELECT COUNT(*) FROM prerun_scans "
+                 "WHERE token = :t AND run_date BETWEEN :lo AND :hi"),
+            {"t": mint, "lo": lo, "hi": hi},
+        ).scalar()
+    return (n or 0) > 0
+
+
+def record_scan(mint: str, symbol: str, run_start_ts: int, run_x: float,
+                accums: int, truncated: bool, calls: int) -> None:
+    """Ledger a completed scan (even 0-accumulator ones) so we never re-page it and
+    so per-token Birdeye cost is measurable."""
+    run_date = datetime.fromtimestamp(run_start_ts, tz=timezone.utc).date()
+    with session_scope() as s:
+        s.execute(text("""
+            INSERT INTO prerun_scans
+              (token, run_date, symbol, run_x, accums, truncated, birdeye_calls, observed)
+            VALUES (:t, :rd, :sym, :rx, :ac, :tr, :ca, :ob)
+            ON CONFLICT (token, run_date) DO UPDATE SET
+              accums = EXCLUDED.accums, truncated = EXCLUDED.truncated,
+              birdeye_calls = EXCLUDED.birdeye_calls, observed = EXCLUDED.observed
+        """), {"t": mint, "rd": run_date, "sym": symbol[:64] if symbol else None,
+               "rx": round(run_x, 2), "ac": accums, "tr": truncated,
+               "ca": calls, "ob": datetime.now(timezone.utc).date()})
 
 
 def persist(mint: str, symbol: str, run_start_ts: int, run_x: float,
@@ -334,6 +396,8 @@ def recurrence_report() -> None:
 
 
 def main() -> None:
+    global _BE_CALLS
+    _BE_CALLS = 0
     if not _KEY:
         log.error("scrape_no_birdeye_key")
         return
@@ -345,11 +409,11 @@ def main() -> None:
     log.info("scrape_discovered", n=len(runners))
     print(f"Discovered {len(runners)} candidate runners (liq>={MIN_LIQ_USD:.0f}, "
           f"vol24>={MIN_VOL24_USD:.0f}); processing up to {MAX_TOKENS}.")
-    processed = confirmed = total_rows = 0
+    processed = confirmed = skipped = total_rows = 0
     for r in runners[:MAX_TOKENS]:
         mint, sym = r["mint"], r["symbol"]
         try:
-            run = detect_run_start(mint)
+            run = detect_run_start(mint)  # 1 cheap Birdeye call; detects re-runs
         except Exception as e:  # noqa: BLE001
             log.warning("run_detect_failed", mint=mint[:10], err=str(e))
             continue
@@ -358,20 +422,30 @@ def main() -> None:
             continue
         confirmed += 1
         rs = datetime.fromtimestamp(run["run_start_ts"], tz=timezone.utc).date()
+        # Skip the EXPENSIVE pre-run paging if we already captured this run.
+        if _already_scanned(mint, run["run_start_ts"]):
+            skipped += 1
+            print(f"  {sym:<16} {mint[:10]} run_start={rs} — already scanned, skip")
+            continue
+        calls_before = _BE_CALLS
         try:
-            accums = prerun_accumulators(mint, run["run_start_ts"])
+            accums, truncated = prerun_accumulators(mint, run["run_start_ts"])
         except Exception as e:  # noqa: BLE001
             log.warning("prerun_fetch_failed", mint=mint[:10], err=str(e))
             continue
         tiers = _pool_tiers(list(accums.keys()))
         n = persist(mint, sym, run["run_start_ts"], run["run_x"], accums, tiers)
+        record_scan(mint, sym, run["run_start_ts"], run["run_x"],
+                    len(accums), truncated, _BE_CALLS - calls_before)
         total_rows += n
         known = sum(1 for w in accums if tiers.get(w, "none") != "none")
         print(f"  {sym:<16} {mint[:10]} run_start={rs} run_x={run['run_x']:.1f} "
               f"accumulators={len(accums)} known_in_pool={known} persisted={n}")
-    log.info("scrape_done", processed=processed, confirmed=confirmed, rows=total_rows)
+    log.info("scrape_done", processed=processed, confirmed=confirmed,
+             skipped=skipped, rows=total_rows, birdeye_calls=_BE_CALLS)
     print(f"\nProcessed {processed}, confirmed runs {confirmed}, "
-          f"persisted {total_rows} accumulator observations.")
+          f"skipped {skipped} already-scanned, persisted {total_rows} obs. "
+          f"Birdeye calls this run: {_BE_CALLS}.")
     recurrence_report()
 
 
