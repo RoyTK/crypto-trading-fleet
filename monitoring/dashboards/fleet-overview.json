@@ -2,115 +2,109 @@
   "uid": "fleet-overview",
   "title": "Fleet Overview",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "1m",
+  "time": {"from": "now-7d", "to": "now"},
   "tags": ["fleet"],
   "panels": [
     {
-      "id": 1,
-      "type": "stat",
-      "title": "Bots tracked",
-      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
-      "targets": [{"refId": "A", "rawSql": "SELECT COUNT(*) FROM bot_state", "format": "table"}],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "id": 900, "type": "text", "title": "", "transparent": true,
+      "gridPos": {"x": 0, "y": 0, "w": 24, "h": 3},
+      "options": {"mode": "markdown", "content": "# Fleet Overview — COPY (cluster · conviction · team-follow)"}
+    },
+
+    {
+      "id": 1, "type": "stat", "title": "Open positions (all strategies)",
+      "gridPos": {"x": 0, "y": 3, "w": 6, "h": 4},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "table",
+        "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open'"}]
     },
     {
-      "id": 2,
-      "type": "stat",
-      "title": "Halts (24h)",
-      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT COUNT(*) FROM halts WHERE halted_at >= NOW() - INTERVAL '24 hours'",
-          "format": "table"
-        }
-      ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "id": 2, "type": "stat", "title": "Trades (24h)",
+      "gridPos": {"x": 6, "y": 3, "w": 6, "h": 4},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "table",
+        "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at >= NOW() - INTERVAL '24 hours'"}]
     },
     {
-      "id": 3,
-      "type": "stat",
-      "title": "Trades (24h)",
-      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT COUNT(*) FROM trades WHERE created_at >= NOW() - INTERVAL '24 hours'",
-          "format": "table"
-        }
-      ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "id": 3, "type": "stat", "title": "Halts (24h)",
+      "gridPos": {"x": 12, "y": 3, "w": 6, "h": 4},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "table",
+        "rawSql": "SELECT COUNT(*) FROM halts WHERE halted_at >= NOW() - INTERVAL '24 hours'"}],
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}, "color": {"mode": "thresholds"}}},
+      "options": {"colorMode": "value", "graphMode": "none"}
     },
     {
-      "id": 4,
-      "type": "stat",
-      "title": "Signals (24h)",
-      "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT COUNT(*) FROM signals WHERE created_at >= NOW() - INTERVAL '24 hours'",
-          "format": "table"
-        }
-      ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "id": 4, "type": "stat", "title": "Net PnL — all strategies (closed, USD)",
+      "gridPos": {"x": 18, "y": 3, "w": 6, "h": 4},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "table",
+        "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed'"}],
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}, "color": {"mode": "thresholds"}}},
+      "options": {"colorMode": "value", "graphMode": "none"}
+    },
+
+    {
+      "id": 5, "type": "table", "title": "Per-strategy scorecard — profitability is the bottom line",
+      "gridPos": {"x": 0, "y": 7, "w": 24, "h": 7},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "table",
+        "rawSql": "SELECT 'cluster' AS strategy, (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END) AS state, (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='cluster') AS open_pos, (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cluster') AS trades_24h, (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster') AS net_total_usd, (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cluster') AS net_24h_usd, (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster') AS win_rate, (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster') AS closed_n UNION ALL SELECT 'conviction', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_conviction' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='conviction'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='conviction'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='conviction'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction') UNION ALL SELECT 'teamfollow', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_teamfollow' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='teamfollow'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow')"}],
+      "fieldConfig": {"defaults": {}, "overrides": [
+        {"matcher": {"id": "byName", "options": "net_total_usd"}, "properties": [{"id": "unit", "value": "currencyUSD"}, {"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "thresholds", "value": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}}]},
+        {"matcher": {"id": "byName", "options": "net_24h_usd"}, "properties": [{"id": "unit", "value": "currencyUSD"}, {"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "thresholds", "value": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}}]},
+        {"matcher": {"id": "byName", "options": "win_rate"}, "properties": [{"id": "unit", "value": "percent"}]},
+        {"matcher": {"id": "byName", "options": "state"}, "properties": [{"id": "mappings", "value": [{"type": "value", "options": {"HALTED": {"color": "red", "index": 0}, "running": {"color": "green", "index": 1}}}]}, {"id": "custom.cellOptions", "value": {"type": "color-text"}}]}
+      ]}
+    },
+
+    {
+      "id": 6, "type": "timeseries", "title": "Cumulative paper PnL by strategy (USD)",
+      "gridPos": {"x": 0, "y": 14, "w": 24, "h": 8},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "time_series",
+        "rawSql": "SELECT exit_at AS time, sim_metadata->>'strategy' AS metric, SUM(pnl_usd) OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at) AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy' IS NOT NULL ORDER BY exit_at"}],
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "custom": {"drawStyle": "line", "lineWidth": 2}}}
+    },
+
+    {
+      "id": 7, "type": "table", "title": "Open paper positions (all strategies)",
+      "gridPos": {"x": 0, "y": 22, "w": 24, "h": 8},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "table",
+        "rawSql": "SELECT sim_metadata->>'strategy' AS strategy, id, asset, venue AS chain, ROUND(size_usd::numeric,0) AS size_usd, entry_price, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric,1) AS peak_pct, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric,0) AS entry_liq, entry_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' ORDER BY entry_at DESC"}]
+    },
+
+    {
+      "id": 8, "type": "table", "title": "Last 50 closed paper trades (all strategies)",
+      "gridPos": {"x": 0, "y": 30, "w": 24, "h": 10},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "table",
+        "rawSql": "SELECT sim_metadata->>'strategy' AS strategy, id, asset, ROUND(pnl_pct::numeric,2) AS pnl_pct, ROUND(pnl_usd::numeric,2) AS pnl_usd, exit_reason, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' ORDER BY exit_at DESC NULLS LAST LIMIT 50"}],
+      "fieldConfig": {"defaults": {}, "overrides": [
+        {"matcher": {"id": "byName", "options": "pnl_usd"}, "properties": [{"id": "unit", "value": "currencyUSD"}, {"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "thresholds", "value": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}}]},
+        {"matcher": {"id": "byName", "options": "pnl_pct"}, "properties": [{"id": "unit", "value": "percent"}, {"id": "custom.cellOptions", "value": {"type": "color-text"}}, {"id": "thresholds", "value": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}}]}
+      ]}
+    },
+
+    {
+      "id": 9, "type": "table", "title": "Heartbeat status (live = ≤2 min ago)",
+      "gridPos": {"x": 0, "y": 40, "w": 12, "h": 7},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "table",
+        "rawSql": "SELECT process_name, last_ping_at, EXTRACT(EPOCH FROM (NOW() - last_ping_at))::int AS seconds_ago, CASE WHEN last_ping_at >= NOW() - INTERVAL '2 minutes' THEN 'live' ELSE 'stale' END AS status FROM heartbeats ORDER BY process_name"}],
+      "fieldConfig": {"defaults": {}, "overrides": [
+        {"matcher": {"id": "byName", "options": "status"}, "properties": [{"id": "mappings", "value": [{"type": "value", "options": {"live": {"color": "green", "index": 0}, "stale": {"color": "red", "index": 1}}}]}, {"id": "custom.cellOptions", "value": {"type": "color-text"}}]}
+      ]}
     },
     {
-      "id": 5,
-      "type": "table",
-      "title": "Per-bot state",
-      "gridPos": {"x": 0, "y": 4, "w": 24, "h": 8},
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT bs.bot_id, bs.state, CASE WHEN bs.paper_clock_started_at IS NULL THEN NULL ELSE GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (NOW() - bs.paper_clock_started_at)) / 86400)::int) END AS paper_day, ROUND(bs.promotion_score::numeric, 3) AS score, bs.allocation_pct, (SELECT COUNT(*) FROM trades t WHERE t.bot_id = bs.bot_id AND t.mode='paper' AND t.fill_status='open') AS open_pos, (SELECT COUNT(*) FROM trades t WHERE t.bot_id = bs.bot_id AND t.created_at >= NOW() - INTERVAL '24 hours') AS trades_24h, bs.halt_reason, bs.updated_at FROM bot_state bs ORDER BY bs.bot_id",
-          "format": "table"
-        }
-      ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
-    },
-    {
-      "id": 7,
-      "type": "table",
-      "title": "Heartbeat status (live = ≤2 min ago)",
-      "gridPos": {"x": 0, "y": 21, "w": 12, "h": 6},
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT process_name, last_ping_at, EXTRACT(EPOCH FROM (NOW() - last_ping_at))::int AS seconds_ago, CASE WHEN last_ping_at >= NOW() - INTERVAL '2 minutes' THEN 'live' ELSE 'stale' END AS status FROM heartbeats ORDER BY process_name",
-          "format": "table"
-        }
-      ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
-    },
-    {
-      "id": 8,
-      "type": "table",
-      "title": "Recent halts (7d)",
-      "gridPos": {"x": 12, "y": 21, "w": 12, "h": 6},
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT bot_id, halt_type, severity, halted_at, resumed_at, LEFT(reason, 80) AS reason FROM halts WHERE halted_at >= NOW() - INTERVAL '7 days' ORDER BY halted_at DESC LIMIT 30",
-          "format": "table"
-        }
-      ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
-    },
-    {
-      "id": 6,
-      "type": "timeseries",
-      "title": "PromotionScore over time",
-      "gridPos": {"x": 0, "y": 12, "w": 24, "h": 9},
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT computed_at AS time, bot_id AS metric, promotion_score AS value FROM scores WHERE computed_at >= NOW() - INTERVAL '14 days' ORDER BY computed_at",
-          "format": "time_series"
-        }
-      ],
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"}
+      "id": 10, "type": "table", "title": "Recent halts (7d)",
+      "gridPos": {"x": 12, "y": 40, "w": 12, "h": 7},
+      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
+      "targets": [{"refId": "A", "format": "table",
+        "rawSql": "SELECT bot_id, halt_type, severity, halted_at, resumed_at, LEFT(reason, 80) AS reason FROM halts WHERE halted_at >= NOW() - INTERVAL '7 days' ORDER BY halted_at DESC LIMIT 30"}]
     }
   ]
 }

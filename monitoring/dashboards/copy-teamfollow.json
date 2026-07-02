@@ -4,110 +4,381 @@
   "schemaVersion": 39,
   "version": 1,
   "refresh": "1m",
-  "time": {"from": "now-7d", "to": "now"},
-  "tags": ["bot", "copy", "teamfollow"],
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "tags": [
+    "bot",
+    "copy",
+    "teamfollow"
+  ],
   "panels": [
     {
-      "id": 1, "type": "stat", "title": "State",
-      "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM halts WHERE bot_id='copy_teamfollow' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END AS state"}],
-      "fieldConfig": {"defaults": {"mappings": [
-        {"type": "value", "options": {"running": {"text": "running", "color": "green"}}},
-        {"type": "value", "options": {"HALTED": {"text": "HALTED", "color": "red"}}}
-      ]}},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "/^state$/"}, "textMode": "value", "colorMode": "value", "graphMode": "none"}
+      "id": 900,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "transparent": true,
+      "options": {
+        "mode": "markdown",
+        "content": "# COPY · Team-Follow (experiment)"
+      }
     },
     {
-      "id": 2, "type": "stat", "title": "Open positions",
-      "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='teamfollow'"}]
+      "id": 1,
+      "type": "stat",
+      "title": "State",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM halts WHERE bot_id='copy_teamfollow' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END AS state"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "running": {
+                  "text": "running",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "HALTED": {
+                  "text": "HALTED",
+                  "color": "red"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^state$/"
+        },
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
     },
     {
-      "id": 3, "type": "stat", "title": "Closed (paper)",
-      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"}]
+      "id": 2,
+      "type": "stat",
+      "title": "Open positions",
+      "gridPos": {
+        "x": 4,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='teamfollow'"
+        }
+      ]
     },
     {
-      "id": 4, "type": "stat", "title": "Net PnL (closed, USD)",
-      "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"}],
-      "fieldConfig": {"defaults": {"unit": "currencyUSD", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}, "color": {"mode": "thresholds"}}},
-      "options": {"colorMode": "value", "graphMode": "none"}
+      "id": 3,
+      "type": "stat",
+      "title": "Closed (paper)",
+      "gridPos": {
+        "x": 8,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
+        }
+      ]
     },
     {
-      "id": 5, "type": "stat", "title": "Win rate (closed)",
-      "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd > 0)::float / NULLIF(COUNT(*),0) * 100)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"}],
-      "fieldConfig": {"defaults": {"unit": "percent"}}
+      "id": 4,
+      "type": "stat",
+      "title": "Net PnL (closed, USD)",
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none"
+      }
     },
     {
-      "id": 6, "type": "stat", "title": "Halts 24h",
-      "gridPos": {"x": 20, "y": 0, "w": 4, "h": 4},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT COUNT(*) FROM halts WHERE bot_id='copy_teamfollow' AND halted_at >= NOW() - INTERVAL '24 hours'"}]
-    },
-
-    {
-      "id": 10, "type": "timeseries", "title": "Cumulative paper PnL (USD)",
-      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "time_series",
-        "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='teamfollow' ORDER BY exit_at"}]
-    },
-    {
-      "id": 11, "type": "timeseries", "title": "PnL per trade (%)",
-      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "time_series",
-        "rawSql": "SELECT exit_at AS time, pnl_pct AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='teamfollow' ORDER BY exit_at"}]
-    },
-
-    {
-      "id": 12, "type": "barchart", "title": "Net PnL by team (closed)",
-      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT sim_metadata->>'team_id' AS team, ROUND(SUM(pnl_usd)::numeric, 2) AS net_pnl, COUNT(*) AS n FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow' AND sim_metadata->>'team_id' IS NOT NULL GROUP BY 1 ORDER BY net_pnl DESC"}]
+      "id": 5,
+      "type": "stat",
+      "title": "Win rate (closed)",
+      "gridPos": {
+        "x": 16,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd > 0)::float / NULLIF(COUNT(*),0) * 100)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      }
     },
     {
-      "id": 13, "type": "barchart", "title": "Entry liquidity distribution (validates $50k floor)",
-      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "WITH liq AS (SELECT (sim_metadata->>'entry_liquidity_usd')::float AS l FROM trades WHERE bot_id='copy' AND sim_metadata->>'strategy'='teamfollow' AND sim_metadata->>'entry_liquidity_usd' IS NOT NULL) SELECT CASE WHEN l < 50000 THEN '<50k' WHEN l < 100000 THEN '50-100k' WHEN l < 250000 THEN '100-250k' WHEN l < 1000000 THEN '250k-1M' ELSE '1M+' END AS bucket, MIN(l) AS sort_key, COUNT(*) AS count FROM liq GROUP BY 1 ORDER BY sort_key"}]
+      "id": 6,
+      "type": "stat",
+      "title": "Halts 24h",
+      "gridPos": {
+        "x": 20,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) FROM halts WHERE bot_id='copy_teamfollow' AND halted_at >= NOW() - INTERVAL '24 hours'"
+        }
+      ]
     },
-
     {
-      "id": 20, "type": "table", "title": "Open paper trades",
-      "gridPos": {"x": 0, "y": 20, "w": 24, "h": 8},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT id, asset, venue AS chain, sim_metadata->>'team_id' AS team, sim_metadata->>'cluster_size' AS members, entry_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='teamfollow' ORDER BY entry_at DESC"}]
+      "id": 10,
+      "type": "timeseries",
+      "title": "Cumulative paper PnL (USD)",
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='teamfollow' ORDER BY exit_at"
+        }
+      ]
     },
     {
-      "id": 21, "type": "table", "title": "Closed paper trades (last 50)",
-      "gridPos": {"x": 0, "y": 28, "w": 24, "h": 10},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT id, asset, sim_metadata->>'team_id' AS team, sim_metadata->>'cluster_size' AS members, entry_price, exit_price, size_usd, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow' ORDER BY exit_at DESC NULLS LAST LIMIT 50"}]
+      "id": 11,
+      "type": "timeseries",
+      "title": "PnL per trade (%)",
+      "gridPos": {
+        "x": 12,
+        "y": 7,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT exit_at AS time, pnl_pct AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='teamfollow' ORDER BY exit_at"
+        }
+      ]
     },
     {
-      "id": 22, "type": "table", "title": "Team-follow halts (14d)",
-      "gridPos": {"x": 0, "y": 38, "w": 24, "h": 6},
-      "datasource": {"type": "postgres", "uid": "fleet-postgres"},
-      "targets": [{"refId": "A", "format": "table",
-        "rawSql": "SELECT halted_at, halt_type, severity, LEFT(reason, 100) AS reason, resumed_at, resumed_by FROM halts WHERE bot_id='copy_teamfollow' AND halted_at >= NOW() - INTERVAL '14 days' ORDER BY halted_at DESC"}]
+      "id": 12,
+      "type": "barchart",
+      "title": "Net PnL by team (closed)",
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT sim_metadata->>'team_id' AS team, ROUND(SUM(pnl_usd)::numeric, 2) AS net_pnl, COUNT(*) AS n FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow' AND sim_metadata->>'team_id' IS NOT NULL GROUP BY 1 ORDER BY net_pnl DESC"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "barchart",
+      "title": "Entry liquidity distribution (validates $50k floor)",
+      "gridPos": {
+        "x": 12,
+        "y": 15,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH liq AS (SELECT (sim_metadata->>'entry_liquidity_usd')::float AS l FROM trades WHERE bot_id='copy' AND sim_metadata->>'strategy'='teamfollow' AND sim_metadata->>'entry_liquidity_usd' IS NOT NULL) SELECT CASE WHEN l < 50000 THEN '<50k' WHEN l < 100000 THEN '50-100k' WHEN l < 250000 THEN '100-250k' WHEN l < 1000000 THEN '250k-1M' ELSE '1M+' END AS bucket, MIN(l) AS sort_key, COUNT(*) AS count FROM liq GROUP BY 1 ORDER BY sort_key"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "table",
+      "title": "Open paper trades",
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT id, asset, venue AS chain, sim_metadata->>'team_id' AS team, sim_metadata->>'cluster_size' AS members, entry_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='teamfollow' ORDER BY entry_at DESC"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "table",
+      "title": "Closed paper trades (last 50)",
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT id, asset, sim_metadata->>'team_id' AS team, sim_metadata->>'cluster_size' AS members, entry_price, exit_price, size_usd, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow' ORDER BY exit_at DESC NULLS LAST LIMIT 50"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "table",
+      "title": "Team-follow halts (14d)",
+      "gridPos": {
+        "x": 0,
+        "y": 41,
+        "w": 24,
+        "h": 6
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "fleet-postgres"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT halted_at, halt_type, severity, LEFT(reason, 100) AS reason, resumed_at, resumed_by FROM halts WHERE bot_id='copy_teamfollow' AND halted_at >= NOW() - INTERVAL '14 days' ORDER BY halted_at DESC"
+        }
+      ]
     }
   ]
 }

@@ -18,7 +18,7 @@ class BotSummary:
     bot_id: str
     state: str
     paper_clock_day: int | None
-    promotion_score: float | None
+    net_total_usd: float  # lifetime closed PnL — profitability is the bottom line now
     trades_24h: int
     pnl_24h_usd: float
     pnl_24h_pct: float | None
@@ -70,6 +70,13 @@ def _bot_summary(s: Session, bot: BotState, since: datetime) -> BotSummary:
 
     pnl_24h_pct = None  # require equity baseline; skip in Phase 0
 
+    net_total_usd = s.execute(
+        select(func.coalesce(func.sum(Trade.pnl_usd), 0.0)).where(
+            Trade.bot_id == bot.bot_id,
+            Trade.fill_status == "closed",
+        )
+    ).scalar() or 0.0
+
     # bot_state.paper_clock_day is a dead column — never written by the
     # scoring engine even though it's in the schema. Compute live from
     # paper_clock_started_at (matches what every Grafana panel does).
@@ -83,7 +90,7 @@ def _bot_summary(s: Session, bot: BotState, since: datetime) -> BotSummary:
         bot_id=bot.bot_id,
         state=bot.state,
         paper_clock_day=paper_clock_day,
-        promotion_score=bot.promotion_score,
+        net_total_usd=float(net_total_usd),
         trades_24h=trades_24h,
         pnl_24h_usd=float(pnl_24h_usd),
         pnl_24h_pct=pnl_24h_pct,
@@ -133,6 +140,10 @@ def _copy_strategy_summary(
             Trade.bot_id == "copy", Trade.exit_at >= since,
             Trade.fill_status == "closed", _strat())
     ).scalar() or 0.0
+    net_total = s.execute(
+        select(func.coalesce(func.sum(Trade.pnl_usd), 0.0)).where(
+            Trade.bot_id == "copy", Trade.fill_status == "closed", _strat())
+    ).scalar() or 0.0
     open_positions = s.execute(
         select(func.count(Trade.id)).where(
             Trade.bot_id == "copy", Trade.fill_status == "open", _strat())
@@ -152,11 +163,8 @@ def _copy_strategy_summary(
         clock = max(0, int(elapsed_s // 86400))
     else:
         clock = None
-    # promotion_score in bot_state is the cluster (bot_id='copy') score; other
-    # sub-strategies have no bot_state score → leave blank rather than mislead.
-    score = copy_bot.promotion_score if (strategy == "cluster" and copy_bot) else None
     return BotSummary(
-        bot_id=label, state=state, paper_clock_day=clock, promotion_score=score,
+        bot_id=label, state=state, paper_clock_day=clock, net_total_usd=float(net_total),
         trades_24h=trades_24h, pnl_24h_usd=float(pnl_24h), pnl_24h_pct=None,
         open_positions=open_positions, halts_24h=halts_24h,
         last_score_at=copy_bot.last_score_at.isoformat() if (copy_bot and copy_bot.last_score_at) else None,
@@ -210,11 +218,10 @@ def render_text(summary: FleetSummary) -> str:
         "Per-bot:",
     ]
     for b in summary.bots:
-        score_str = f"{b.promotion_score:.3f}" if b.promotion_score is not None else "—"
         clock = f"day {b.paper_clock_day}" if b.paper_clock_day is not None else "no clock"
         lines.append(
             f"  {b.bot_id:>15} | {b.state:<14} | {clock:<10} | "
-            f"score {score_str:>6} | trades24h {b.trades_24h:>4} | "
+            f"net ${b.net_total_usd:>+10.2f} | trades24h {b.trades_24h:>4} | "
             f"pnl24h ${b.pnl_24h_usd:>+9.2f} | open {b.open_positions:>3} | halts24h {b.halts_24h:>2}"
         )
     lines.append("")
@@ -229,11 +236,10 @@ def render_discord_embed(summary: FleetSummary) -> dict[str, Any]:
     """Discord-friendly embed payload (used by the alerting Discord bot)."""
     rows = []
     for b in summary.bots:
-        score_str = f"{b.promotion_score:.3f}" if b.promotion_score is not None else "—"
         clock = b.paper_clock_day if b.paper_clock_day is not None else "—"
         rows.append(
-            f"`{b.bot_id:<15}` {b.state:<14} day {clock} score {score_str} "
-            f"tr {b.trades_24h} pnl ${b.pnl_24h_usd:+.2f} open {b.open_positions} halts {b.halts_24h}"
+            f"`{b.bot_id:<15}` {b.state:<14} day {clock} net ${b.net_total_usd:+.2f} "
+            f"tr {b.trades_24h} pnl24h ${b.pnl_24h_usd:+.2f} open {b.open_positions} halts {b.halts_24h}"
         )
     description = "\n".join(rows) if rows else "(no bots yet)"
     return {

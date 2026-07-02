@@ -14,12 +14,28 @@
   ],
   "panels": [
     {
+      "id": 900,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "transparent": true,
+      "options": {
+        "mode": "markdown",
+        "content": "# COPY · Cluster"
+      }
+    },
+    {
       "id": 1,
       "type": "stat",
       "title": "State",
       "gridPos": {
         "x": 0,
-        "y": 0,
+        "y": 3,
         "w": 4,
         "h": 4
       },
@@ -110,7 +126,7 @@
       "title": "Paper clock day",
       "gridPos": {
         "x": 4,
-        "y": 0,
+        "y": 3,
         "w": 4,
         "h": 4
       },
@@ -129,20 +145,22 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "PromotionScore",
+      "title": "Net PnL (closed, USD)",
       "gridPos": {
         "x": 8,
-        "y": 0,
+        "y": 3,
         "w": 4,
         "h": 4
       },
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ROUND(promotion_score::numeric, 3) FROM bot_state WHERE bot_id='copy'",
+          "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster'",
           "format": "table"
         }
       ],
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}, "color": {"mode": "thresholds"}}},
+      "options": {"colorMode": "value", "graphMode": "none"},
       "datasource": {
         "type": "postgres",
         "uid": "fleet-postgres"
@@ -154,7 +172,7 @@
       "title": "Open positions",
       "gridPos": {
         "x": 12,
-        "y": 0,
+        "y": 3,
         "w": 4,
         "h": 4
       },
@@ -176,7 +194,7 @@
       "title": "Trades 24h",
       "gridPos": {
         "x": 16,
-        "y": 0,
+        "y": 3,
         "w": 4,
         "h": 4
       },
@@ -198,7 +216,7 @@
       "title": "Halts 24h",
       "gridPos": {
         "x": 20,
-        "y": 0,
+        "y": 3,
         "w": 4,
         "h": 4
       },
@@ -220,7 +238,7 @@
       "title": "Cluster signals by chain (last 7d)",
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 7,
         "w": 12,
         "h": 8
       },
@@ -242,7 +260,7 @@
       "title": "Cumulative paper PnL (USD)",
       "gridPos": {
         "x": 12,
-        "y": 4,
+        "y": 7,
         "w": 12,
         "h": 8
       },
@@ -262,10 +280,10 @@
       "id": 12,
       "type": "timeseries",
       "title": "no_fill rate per day (pipeline health)",
-      "description": "Daily % of paper trade attempts that failed to fill (Pump.fun pre-grad with no Jupiter route + no Birdeye price, Birdeye quota exhaustion, etc.). 0% = healthy. Any spike = investigate the venue/quote layer immediately. (Calibration ratio panel removed \u00e2\u20ac\u201d will return when Build B shadow execution ships.)",
+      "description": "Daily % of paper trade attempts that failed to fill (Pump.fun pre-grad with no Jupiter route + no Birdeye price, Birdeye quota exhaustion, etc.). 0% = healthy. Any spike = investigate the venue/quote layer immediately. (Calibration ratio panel removed â€” will return when Build B shadow execution ships.)",
       "gridPos": {
         "x": 0,
-        "y": 20,
+        "y": 23,
         "w": 12,
         "h": 8
       },
@@ -319,7 +337,7 @@
       "title": "Slippage distribution (bps, last 7d)",
       "gridPos": {
         "x": 12,
-        "y": 20,
+        "y": 23,
         "w": 12,
         "h": 8
       },
@@ -375,7 +393,7 @@
       "title": "Cluster size distribution (last 7d)",
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 31,
         "w": 12,
         "h": 8
       },
@@ -397,7 +415,7 @@
       "title": "Open allocation (% of paper)",
       "gridPos": {
         "x": 12,
-        "y": 28,
+        "y": 31,
         "w": 6,
         "h": 4
       },
@@ -419,7 +437,7 @@
       "title": "Avg slippage 7d (bps)",
       "gridPos": {
         "x": 18,
-        "y": 28,
+        "y": 31,
         "w": 6,
         "h": 4
       },
@@ -441,7 +459,7 @@
       "title": "Open paper trades",
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 39,
         "w": 24,
         "h": 8
       },
@@ -463,7 +481,7 @@
       "title": "Recent halts (14d)",
       "gridPos": {
         "x": 0,
-        "y": 44,
+        "y": 47,
         "w": 24,
         "h": 8
       },
@@ -482,11 +500,11 @@
     {
       "id": 30,
       "type": "table",
-      "title": "Wallet leaderboard \u00e2\u20ac\u201d PnL attribution (top by total PnL)",
-      "description": "Equal-share attribution per cluster. Use this to identify which wallets in the pool are predictive vs noise. Bottom-of-leaderboard wallets are pruning candidates after \u00e2\u2030\u00a55 attributed trades. The 'status' column shows the wallet's current pool tier (active/watch/pruned) \u00e2\u20ac\u201d or 'removed' if it's no longer in the pool at all; 'conviction'=yes means it's also a conviction-roster trigger wallet.",
+      "title": "Wallet leaderboard â€” PnL attribution (top by total PnL)",
+      "description": "Equal-share attribution per cluster. Use this to identify which wallets in the pool are predictive vs noise. Bottom-of-leaderboard wallets are pruning candidates after â‰¥5 attributed trades. The 'status' column shows the wallet's current pool tier (active/watch/pruned) â€” or 'removed' if it's no longer in the pool at all; 'conviction'=yes means it's also a conviction-roster trigger wallet.",
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 55,
         "w": 24,
         "h": 12
       },
@@ -630,11 +648,11 @@
     {
       "id": 31,
       "type": "stat",
-      "title": "Active wallets (\u00e2\u2030\u00a51 attributed trade)",
+      "title": "Active wallets (â‰¥1 attributed trade)",
       "description": "How many of the 119-wallet pool have actually contributed to a paper trade. Low number = pool curation could be refined.",
       "gridPos": {
         "x": 0,
-        "y": 64,
+        "y": 67,
         "w": 6,
         "h": 4
       },
@@ -657,7 +675,7 @@
       "description": "Sum of all per-wallet attributions. Should equal sum of paper trade pnl_usd (sanity check). Color: green > 0, yellow -500 to 0, red < -500.",
       "gridPos": {
         "x": 6,
-        "y": 64,
+        "y": 67,
         "w": 6,
         "h": 4
       },
@@ -718,7 +736,7 @@
       "title": "Avg cluster size (attributed trades)",
       "gridPos": {
         "x": 12,
-        "y": 64,
+        "y": 67,
         "w": 6,
         "h": 4
       },
@@ -737,11 +755,11 @@
     {
       "id": 34,
       "type": "stat",
-      "title": "Wallets with \u00e2\u2030\u00a55 trades",
+      "title": "Wallets with â‰¥5 trades",
       "description": "Wallets with enough attributed history to be candidates for pruning decisions.",
       "gridPos": {
         "x": 18,
-        "y": 64,
+        "y": 67,
         "w": 6,
         "h": 4
       },
@@ -764,7 +782,7 @@
       "description": "Active wallets feed cluster detector; watch wallets are monitored but not used. Pruned wallets are unsubscribed.",
       "gridPos": {
         "x": 0,
-        "y": 68,
+        "y": 71,
         "w": 24,
         "h": 5
       },
@@ -814,11 +832,11 @@
     {
       "id": 41,
       "type": "table",
-      "title": "Active wallets \u00e2\u20ac\u201d sorted by events_30d (top of pool)",
+      "title": "Active wallets â€” sorted by events_30d (top of pool)",
       "description": "Active-tier wallets sorted by recent webhook event volume. Bottom of this list = first candidates for demotion when below 10 events / 30d threshold.",
       "gridPos": {
         "x": 0,
-        "y": 73,
+        "y": 76,
         "w": 24,
         "h": 10
       },
@@ -841,7 +859,7 @@
       "description": "Count of promote/demote/drop events from the daily cron. Healthy steady-state = small numbers (1-5/day). Spikes worth investigating.",
       "gridPos": {
         "x": 0,
-        "y": 83,
+        "y": 86,
         "w": 12,
         "h": 8
       },
@@ -861,10 +879,10 @@
       "id": 43,
       "type": "table",
       "title": "Top watch-tier candidates (promotion candidates)",
-      "description": "Watch-tier wallets sorted by recent activity. Anything with events_7d \u00e2\u2030\u00a5 5 will be promoted by next daily cron (if WR passes / null).",
+      "description": "Watch-tier wallets sorted by recent activity. Anything with events_7d â‰¥ 5 will be promoted by next daily cron (if WR passes / null).",
       "gridPos": {
         "x": 12,
-        "y": 83,
+        "y": 86,
         "w": 12,
         "h": 8
       },
@@ -883,11 +901,11 @@
     {
       "id": 60,
       "type": "row",
-      "title": "Kill / promotion criteria (pre-registered validation window \u00e2\u20ac\u201d live dates below)",
+      "title": "Kill / promotion criteria (pre-registered validation window â€” live dates below)",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 88,
+        "y": 91,
         "w": 24,
         "h": 1
       }
@@ -899,7 +917,7 @@
       "description": "Auto-extends to 90d total if N target not reached.",
       "gridPos": {
         "x": 0,
-        "y": 89,
+        "y": 92,
         "w": 4,
         "h": 4
       },
@@ -946,7 +964,7 @@
       "title": "Active-tier N closed (need 60)",
       "gridPos": {
         "x": 4,
-        "y": 89,
+        "y": 92,
         "w": 4,
         "h": 4
       },
@@ -989,10 +1007,10 @@
     {
       "id": 63,
       "type": "stat",
-      "title": "Active-tier WR (kill <0.25 / promote \u00e2\u2030\u00a50.55)",
+      "title": "Active-tier WR (kill <0.25 / promote â‰¥0.55)",
       "gridPos": {
         "x": 8,
-        "y": 89,
+        "y": 92,
         "w": 4,
         "h": 4
       },
@@ -1036,10 +1054,10 @@
     {
       "id": 64,
       "type": "stat",
-      "title": "Net PnL % (kill <2% / promote \u00e2\u2030\u00a55%)",
+      "title": "Net PnL % (kill <2% / promote â‰¥5%)",
       "gridPos": {
         "x": 12,
-        "y": 89,
+        "y": 92,
         "w": 4,
         "h": 4
       },
@@ -1083,18 +1101,18 @@
     {
       "id": 66,
       "type": "stat",
-      "title": "Validation window (start \u00e2\u2020\u2019 end, primary)",
+      "title": "Validation window (start â†’ end, primary)",
       "description": "Live from kill_criteria_status->window (re-baselines move these). The row title above is intentionally generic so it can't go stale.",
       "gridPos": {
         "x": 16,
-        "y": 89,
+        "y": 92,
         "w": 4,
         "h": 4
       },
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT (kill_criteria_status->'window'->>'start')::date::text || '  \u00e2\u2020\u2019  ' || (kill_criteria_status->'window'->>'end_primary')::date::text FROM bot_state WHERE bot_id='copy'",
+          "rawSql": "SELECT (kill_criteria_status->'window'->>'start')::date::text || '  â†’  ' || (kill_criteria_status->'window'->>'end_primary')::date::text FROM bot_state WHERE bot_id='copy'",
           "format": "table"
         }
       ],
@@ -1114,7 +1132,7 @@
       "description": "Empty = no criteria fired. Each entry = one alert that fired this window.",
       "gridPos": {
         "x": 20,
-        "y": 89,
+        "y": 92,
         "w": 4,
         "h": 4
       },
@@ -1137,11 +1155,11 @@
     {
       "id": 90,
       "type": "row",
-      "title": "Recent closed positions \u00e2\u20ac\u201d full detail (last 10, both strategies)",
+      "title": "Recent closed positions â€” full detail (last 10, both strategies)",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 94,
+        "y": 97,
         "w": 24,
         "h": 1
       }
@@ -1149,11 +1167,11 @@
     {
       "id": 91,
       "type": "table",
-      "title": "Last 10 tokens held \u00e2\u20ac\u201d buy/sell prices + times, trigger wallets, why sold",
-      "description": "Most recent closed COPY paper trades (cluster + conviction). buy_trigger_wallets = the cluster cohort (or the single conviction wallet). exit_reason = why we sold (stop / take_profit / timeout / tier_complete / sell_cluster / trigger_wallet_exit / rug_no_liquidity). sell_trigger_wallets is populated only for signal-driven exits (sell-cluster cohort or the conviction trigger wallet) \u00e2\u20ac\u201d blank for stop/TP/timeout/ladder exits. Note: sell_trigger_wallets only fills for trades closed AFTER 2026-06-25 (when exit-wallet stamping shipped).",
+      "title": "Last 10 tokens held â€” buy/sell prices + times, trigger wallets, why sold",
+      "description": "Most recent closed COPY paper trades (cluster + conviction). buy_trigger_wallets = the cluster cohort (or the single conviction wallet). exit_reason = why we sold (stop / take_profit / timeout / tier_complete / sell_cluster / trigger_wallet_exit / rug_no_liquidity). sell_trigger_wallets is populated only for signal-driven exits (sell-cluster cohort or the conviction trigger wallet) â€” blank for stop/TP/timeout/ladder exits. Note: sell_trigger_wallets only fills for trades closed AFTER 2026-06-25 (when exit-wallet stamping shipped).",
       "gridPos": {
         "x": 0,
-        "y": 95,
+        "y": 98,
         "w": 24,
         "h": 11
       },
@@ -1231,11 +1249,11 @@
     {
       "id": 96,
       "type": "timeseries",
-      "title": "Cluster cumulative paper PnL \u00e2\u20ac\u201d current mechanism (since reset / window)",
+      "title": "Cluster cumulative paper PnL â€” current mechanism (since reset / window)",
       "description": "CURRENT-mechanism cluster PnL: CLUSTER only (excludes the conviction family), cumulative over the CURRENT kill-criteria window (reads bot_state copy window start; resets when the mechanism changes, i.e. since the 06-27 reset). The all-time line above is the longer-history reference.",
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 15,
         "w": 24,
         "h": 8
       },
