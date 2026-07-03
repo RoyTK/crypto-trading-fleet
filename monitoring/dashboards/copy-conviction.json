@@ -354,7 +354,7 @@
         {
           "refId": "A",
           "format": "table",
-          "rawSql": "SELECT id, asset, LEFT(sim_metadata->>'trigger_wallet', 8) AS trigger, sim_metadata->>'conviction_n_buys' AS n_buys, ROUND((sim_metadata->>'conviction_accumulated_usd')::numeric, 0) AS accum_usd, entry_price, exit_price, size_usd, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction' ORDER BY exit_at DESC NULLS LAST LIMIT 50"
+          "rawSql": "SELECT id, asset, LEFT(sim_metadata->>'trigger_wallet', 8) AS trigger, sim_metadata->>'conviction_n_buys' AS n_buys, ROUND((sim_metadata->>'conviction_accumulated_usd')::numeric, 0) AS accum_usd, entry_price, exit_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction' ORDER BY exit_at DESC NULLS LAST LIMIT 50"
         }
       ]
     },
