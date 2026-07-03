@@ -1,6 +1,6 @@
 ## Appendix
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 ### Crontab inventory (server, UTC)
 
@@ -9,11 +9,12 @@ Verify the live set with `crontab -l`. Expected:
 - `0 7 * * *` — `scripts.wallet_pool_daily_cron` (pool reconcile + Helius sync)
 - `30 7 * * *` — `scripts.apply_vetting_results` (ingest vetting)
 - `15 13 * * *` — `scripts.credit_pool_snapshot` (credit/pool curve)
-- `~13:00` — `scripts.daily_digest` (COPY 24h summary — verify installed)
-- every 5h — STRUCTURE whale_pool_growth
-- weekly — STRUCTURE whale_graduation_scan
-- `0 14 1 2,5,8,11 *` — `scripts.quarterly_whale_refresh`
+- `~13:00` — `scripts.daily_digest` (COPY 24h summary, per-strategy — verify installed)
+- `10 4 * * *` — `scripts/scrape_runners.py` (fresh-runner → pre-run-accumulator discovery; framework container)
 - `0 6/14/22 * * *` — 3× `scripts.wallet_pool_discovery` — **PAUSED** (commented)
+
+The STRUCTURE crons (`whale_pool_growth`, `whale_graduation_scan`,
+`quarterly_whale_refresh`) were removed when STRUCTURE was decommissioned (2026-06-25).
 
 ### Env-var reference (names + purpose only — values live in `.env`)
 
@@ -25,9 +26,12 @@ Verify the live set with `crontab -l`. Expected:
 | `COPY_LIVE_ENABLED`, `COPY_LIVE_FULL_ENABLED` | real-money gates (OFF) |
 | `COPY_SOLANA_PRIVATE_KEY` | COPY trading wallet secret (empty until live) |
 | `COPY_CLUSTER_BUY_ENABLED` | COPY buying on/off (currently ON) |
+| `COPY_CLUSTER_MIN_ENTRY_LIQUIDITY_USD` | cluster entry-liquidity floor (=$50k as of 2026-07-01) |
+| `COPY_CLUSTER_MIN_NOTIONAL_PER_WALLET_USD` | per-wallet co-buy size for the cluster trigger |
+| `copy_conviction_stop_pct` | conviction hard stop (=25%) |
 | `COPY_DISCORD_WEBHOOK` | discovery health pings |
-| `HYPERLIQUID_AGENT_PRIVATE_KEY`, `HYPERLIQUID_*` | STRUCTURE venue (trade-only key) |
-| `COINGLASS_API_KEY`, `STRUCTURE_LIQ_CASCADE_ENABLED` | liquidation feed (disabled) |
+| `HYPERLIQUID_AGENT_PRIVATE_KEY`, `HYPERLIQUID_*` | STRUCTURE venue — **decommissioned** (unused) |
+| `COINGLASS_API_KEY`, `STRUCTURE_LIQ_CASCADE_ENABLED` | STRUCTURE liquidation feed — **decommissioned** (unused) |
 | `DISCORD_*`, `TELEGRAM_*` | alerting channels (active) |
 | `TWILIO_*` | SMS — **not configured** (no SMS in paper phase) |
 | `SMTP_*`, `SMTP_TO` | email digest/report; `SMTP_TO` = `trading@generalaisystems.com` |
@@ -40,22 +44,26 @@ See `.env.example` for the full list.
 
 | Path | What |
 |---|---|
-| `docker-compose.yml` | all services |
+| `docker-compose.yml` | all services (no `bot_structure` — decommissioned) |
 | `scripts/hetzner_autopull.sh` | auto-deploy |
-| `bots/copy/config.py`, `bots/structure/config.py` | locked thresholds |
+| `bots/copy/config.py` | locked thresholds (`bots/structure/config.py` retained but unused) |
 | `bots/copy/wallet_pool_manager.py` | tier-decision logic |
+| `bots/copy/teamfollow_roster.json` | team-follow experiment roster (129 teams / 338 wallets) |
 | `scripts/apply_vetting_results.py` | vetting → pool |
 | `scripts/credit_pool_snapshot.py` | credit/pool snapshot |
+| `scripts/scrape_runners.py` | fresh-runner → pre-run-accumulator discovery (staging) |
 | `bots/copy/discovery_automation/` | wallet discovery prompt + (attended) wrapper |
 | `framework/models.py` | DB tables |
 | `framework/kill_criteria_monitor.py` | scorecard + window dates |
 
 ### DB tables (quick map)
 
-`bot_state` (state + kill-criteria JSON), `trades`, `signals`, `wallet_pool`,
-`wallet_events_log`, `wallet_attributions`, `cluster_detections`, `shadow_signals`,
-`copy_signal_shadow_log`, `structure_whale_pool`, `halts`, `scores`, `audit_log`,
-`heartbeats`.
+`bot_state` (state + kill-criteria JSON), `trades` (strategy in `sim_metadata`), `signals`,
+`wallet_pool`, `wallet_events_log`, `wallet_swaps_log`, `wallet_attributions`,
+`cluster_detections`, `shadow_signals`, `copy_signal_shadow_log`, `halts`, `scores`,
+`audit_log`, `heartbeats`. Plus `prerun_accumulators` + `prerun_scans` — created directly by
+`scripts/scrape_runners.py` (raw SQL, not in `models.py`). `structure_whale_pool` remains but
+is unused (STRUCTURE decommissioned).
 
 ### Deeper docs (read these for detail this manual summarizes)
 

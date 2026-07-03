@@ -1,14 +1,14 @@
 ## Deployment & Infrastructure
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 ### Topology
 
 One Hetzner VPS runs everything via `docker-compose.yml`: `postgres`, `redis`,
-`prometheus`, `grafana`, `framework`, `scoring`, `alerting`, `report_cron`,
-`bot_structure`, `bot_copy`, `bot_copy_webhook_receiver`, and a one-shot `migrate`
-(profile `tools`). A single `framework/Dockerfile` builds the Python image used by all
-app services.
+`prometheus`, `grafana`, `framework`, `scoring`, `alerting`, `report_cron`, `bot_copy`,
+`bot_copy_webhook_receiver`, and a one-shot `migrate` (profile `tools`). (`bot_structure`
+was removed from compose on 2026-06-25 — STRUCTURE is decommissioned.) A single
+`framework/Dockerfile` builds the Python image used by all app services.
 
 ### How code reaches the server (auto-pull deploy)
 
@@ -27,7 +27,7 @@ So the normal deploy is just: **commit and push to `main`** → live within ~60s
 | Changed path | Restarts |
 |---|---|
 | `bots/copy/**` | `bot_copy` + `bot_copy_webhook_receiver` |
-| `bots/structure/**` | `bot_structure` |
+| `bots/structure/**` | *(no-op — `bot_structure` is decommissioned/removed from compose)* |
 | `framework/scoring/`, `kill_criteria_monitor.py`, etc. | `scoring` |
 | `framework/alembic/versions/**` | run migrations, then `scoring` |
 | shared framework (`models.py`, `db.py`, `alerts.py`, …) | all services |

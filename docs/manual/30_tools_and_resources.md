@@ -1,6 +1,6 @@
 ## Tools & Resources
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 Every external service the project depends on — what it's for, what it costs, where its
 console is, how to get in, and the `.env` variable name(s). **Actual passwords/keys are on
@@ -12,11 +12,13 @@ the Access Sheet, never here.**
 |---|---|---|---|---|---|
 | **Hetzner** | The always-on server (and backups) | ~$25 + $4 backup | console.hetzner.cloud | Account login; SSH key for the box | (SSH key, not in `.env`) |
 | **GitHub** | Source code; `git push` = deploy | Free | github.com/RoyTK/crypto-trading-fleet | SSH key with push to `main` | (SSH key) |
-| **Helius** | Solana wallet webhooks (COPY's lifeblood) | **$49** Developer (10M credits) + autoscale $5/1M, **$149 cap = 30M** | dashboard.helius.dev | **Reach via the SSH SOCKS tunnel** (account is German-IP bound) — see below. Usage alerts + bills emailed to **roytkelly@gmail.com** | `HELIUS_API_KEY`, `HELIUS_WEBHOOK_AUTH_SECRET`, `HELIUS_RPC_URL` |
+| **Helius** | Solana wallet webhooks (COPY's lifeblood) — **three tiers** (active, watch, teamfollow) | **$49** Developer (10M credits) + autoscale $5/1M, **$149 cap = 30M** | dashboard.helius.dev | **Reach via the SSH SOCKS tunnel** (account is German-IP bound) — see below. Usage alerts + bills emailed to **roytkelly@gmail.com** | `HELIUS_API_KEY`, `HELIUS_WEBHOOK_AUTH_SECRET`, `HELIUS_RPC_URL` |
 | **Cielo** | Wallet PnL/win-rate stats (curation) | $65 Pro | app.cielo.finance | Account login | `CIELO_API_KEY` |
-| **Birdeye** | Token prices, liquidity, trader discovery | Free/Lite (~$0–19) | birdeye.so | Logged-in Chrome session (used by discovery) + API key | `BIRDEYE_API_KEY` |
+| **Birdeye** | Token prices, liquidity, token-creation checks (used by the live bot **and** the scrape-runners cron) | **Paid Lite plan** — 2.5M compute-units/mo (~12% used) | birdeye.so | Logged-in Chrome session (used by discovery) + API key | `BIRDEYE_API_KEY` |
+| **GeckoTerminal** | Trending/new/top pool discovery for the scrape-runners cron | Free | geckoterminal.com | Public API, no key | (none) |
+| **Dune** | Local research tool (runner/co-buyer SQL for roster building) | Free (3 accounts; currently exhausted until monthly reset) | dune.com | Roy's PC only, not on the server | `DUNE_API_KEY` (local) |
 | **Jupiter** | Solana DEX quotes/swaps | Free | jup.ag | Public API, no key | (none) |
-| **Coinglass** | Liquidation data (STRUCTURE) | $0 (disabled) | coinglass.com | Disabled via `STRUCTURE_LIQ_CASCADE_ENABLED=false`; its **real-time tier (~$500/mo)** is the upgrade STRUCTURE would need to be revived — not justified in paper phase | `COINGLASS_API_KEY` |
+| **Coinglass** | Liquidation data (was STRUCTURE) | $0 (unused) | coinglass.com | STRUCTURE is decommissioned, so this feed is unused; its **real-time tier (~$500/mo)** would be the upgrade a STRUCTURE revival needs | `COINGLASS_API_KEY` |
 | **Discord** | Alerts + `/panic` + `/status` | Free | discord.com | Bot in the server; owner ID authorizes `/panic` | `DISCORD_BOT_TOKEN`, `DISCORD_*_CHANNEL_ID`, `DISCORD_OWNER_USER_ID`, `COPY_DISCORD_WEBHOOK` |
 | **Telegram** | Alerts + `/panic` (backup channel) | Free | t.me | Bot via BotFather; owner ID | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_USER_ID` |
 | **Twilio** | P0 emergency SMS | **$0 — NOT set up** | console.twilio.com | Not configured during paper phase (SMS wasn't worth paying for); P0 reaches you via Discord + Telegram instead. Add if going live. | `TWILIO_*` (unset) |

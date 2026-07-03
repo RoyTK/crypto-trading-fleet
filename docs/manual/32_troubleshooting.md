@@ -1,6 +1,6 @@
 ## Troubleshooting
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 Symptom → likely cause → fix. Start with the symptom you see in Discord/logs.
 
@@ -47,6 +47,11 @@ Symptom → likely cause → fix. Start with the symptom you see in Discord/logs
 ### "I changed `.env` but nothing happened"
 - **Cause:** `restart` doesn't re-read `.env`.
 - **Fix:** `docker compose up -d --force-recreate <svc>`; verify `docker compose exec <svc> printenv VAR`.
+
+### "I changed the conviction/team-follow roster but nothing changed"
+- **Cause:** rosters are read **only at `bot_copy` startup**.
+- **Fix:** `docker compose restart bot_copy` after the roster file lands, then confirm in the
+  logs that it reloaded the expected wallet count.
 
 ### "A deploy broke something"
 - **Fix:** `git revert <commit> && git push` — auto-pull rolls it forward in ~60s. Or

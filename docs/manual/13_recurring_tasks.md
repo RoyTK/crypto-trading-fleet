@@ -1,6 +1,6 @@
 ## Recurring Tasks — Step by Step
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 These are the hands-on chores. Each is written as a recipe. They assume you can open a
 terminal and Discord; the engineer sections explain the commands in more depth.
@@ -97,9 +97,12 @@ See the alert table in *Operator Basics*. In short:
   information.
 - **P2/P3:** read when convenient.
 
-### E. Quarterly whale-list refresh (STRUCTURE) — review only
+### E. Runner-scraper (pre-run accumulator discovery) — automatic, no action
 
-Four times a year (Feb/May/Aug/Nov 1) the server automatically re-checks STRUCTURE's
-"whale" wallet list and posts a Discord summary. **You don't have to run anything** — just
-read the summary. If it flags that many whales have gone bad, tell the engineer; updating
-the list is a small code change they make.
+Once a day (04:10 UTC) the server automatically runs `scripts/scrape_runners.py`. It finds
+tokens that just "ran" (pumped), figures out when each run started, and records the wallets
+that were **quietly accumulating before the run** into a research table — then prints a
+report of wallets that keep showing up across multiple runners. **You don't run anything**
+and it does **not** add anyone to a live list; it only *stages* candidate wallets for later
+vetting/forward-testing (see task A). It's a research feed, not a trading change. If you
+want to see its output, an engineer can read `~/logs/scrape_runners.log` on the server.

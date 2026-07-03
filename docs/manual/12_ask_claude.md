@@ -1,6 +1,6 @@
 ## Ask Claude — Your Built-In Expert
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 **This is the single most useful skill for maintaining the project. If in doubt, ask
 Claude.** Claude is an AI assistant that can read this entire project, explain anything in

@@ -1,6 +1,6 @@
 ## Project Overview
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 ### What the project is
 
@@ -14,16 +14,24 @@ are real, but it is not yet flying a real plane.
 
 ### The bots
 
-The fleet is now **COPY-only**. (STRUCTURE was decommissioned on 2026-06-25 — see below.)
+The fleet is now **COPY-only**. There is one bot, **COPY**, running **three independent
+strategies**. (STRUCTURE was decommissioned on 2026-06-25 — see below. SNIPER and EVENT
+from the original plan were never built.)
 
 - **COPY** — trades **Solana "memecoins"** (tiny, very risky new tokens). It watches a
   curated list of skilled trader wallets and buys when they do, then sells quickly to lock
-  in gains before the token (often) collapses. COPY runs **two independent strategies**:
+  in gains before the token (often) collapses. COPY runs **three independent strategies**,
+  each with its own bankroll, metrics, and emergency stop:
   - **Cluster** — buys when several tracked wallets buy the same brand-new token within
     ~15 minutes (the original COPY strategy).
-  - **Conviction** — buys when a *single* highly-trusted wallet accumulates a meaningful
-    position in one token (its buys sum past a threshold within ~60 min, with no offsetting
-    sells). It has its own **$10k paper bankroll** and separate metrics.
+  - **Conviction** — buys when a *single* highly-trusted wallet **deliberately accumulates**
+    a position in one token (at least 3 buys spread over at least ~5 minutes — not a single
+    snipe). It has its own **$10k paper bankroll** and separate metrics.
+  - **Team-Follow** — an **experiment** (added 2026-07-01). It buys when **2 or more members
+    of the same known "team"** of wallets co-buy the same token in a short window, drawn from
+    a roster of 129 teams / 338 wallets. Own **$25k paper bankroll**; it's a forward test of
+    the "many small losses, rare moonshots pay for it all" thesis and is net-negative so far
+    on a small sample.
 
 - **STRUCTURE** *(decommissioned 2026-06-25)* — formerly traded **Hyperliquid perpetual
   futures**, looking for unusual market conditions (e.g. lots of forced selling) and betting
@@ -37,13 +45,15 @@ The fleet is now **COPY-only**. (STRUCTURE was decommissioned on 2026-06-25 — 
 - **Mode:** Paper + a small "shadow" sample of real trades. **No meaningful real money is
   at risk.**
 - **COPY** is the whole fleet now: it trades on a **curated, vetted** list of wallets that
-  grows as Roy runs wallet discovery, via two strategies (cluster + conviction). Buying is
-  currently **ON**.
+  grows as Roy runs wallet discovery, via three strategies (cluster + conviction +
+  team-follow). Buying is currently **ON**.
 - **STRUCTURE** is **DECOMMISSIONED** (removed 2026-06-25 — it was losing paper money and the
   likely fix needs a costly ~$500/mo data upgrade not worth paying for during the paper
   phase). Its code is retained and it can be revived later.
-- The system is being **measured** against pass/fail criteria (the "kill criteria") over a
-  ~60–90 day window before any decision to use real money.
+- The bottom-line measure is now simply **profitability (net PnL) per strategy** — shown on
+  the daily digest and Grafana. (The old composite "promotion score," built for the original
+  4-bot competition, has been retired.) The system is measured over a ~60–90 day window
+  before any decision to use real money.
 
 ### The core philosophy (please respect these)
 

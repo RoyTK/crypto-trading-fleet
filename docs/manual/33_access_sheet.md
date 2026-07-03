@@ -1,6 +1,6 @@
 ## Access Sheet (PRINT THIS — fill by hand)
 
-<h3 class="hsplit"><span>Accounts &amp; consoles</span><span class="rev">Last reviewed: 2026-06-24</span></h3>
+<h3 class="hsplit"><span>Accounts &amp; consoles</span><span class="rev">Last reviewed: 2026-07-02</span></h3>
 
 The **Account/email, Username, Password** columns are wide and blank — fill them by hand.
 Tick **2FA** where enabled.

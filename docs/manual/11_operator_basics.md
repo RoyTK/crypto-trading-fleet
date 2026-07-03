@@ -1,6 +1,6 @@
 ## Operator Basics — Keeping It Alive
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 This section is for the day-to-day "is it healthy, and what do I do if not" job. You do
 **not** need to understand the code.
@@ -9,9 +9,9 @@ This section is for the day-to-day "is it healthy, and what do I do if not" job.
 
 Everything runs on a **rented Linux server from Hetzner** (a company in Germany), inside
 "containers" managed by a tool called **Docker**. You normally never touch the server —
-it runs by itself. The pieces are: the two bots, a database (stores all the trades), a
-dashboard (Grafana), and an alerter (sends Discord messages). The wallet-discovery work is
-the one task done from **Roy's office Windows PC**, not the server.
+it runs by itself. The pieces are: the COPY bot (running its three strategies), a database
+(stores all the trades), a dashboard (Grafana), and an alerter (sends Discord messages). The
+wallet-discovery work is the one task done from **Roy's office Windows PC**, not the server.
 
 ### How to tell it's healthy (your 2-minute daily check)
 
@@ -74,5 +74,4 @@ When unsure, the safe move is always: **halt with `/panic`, then ask.**
   (see *Recurring Tasks*). This is the main recurring chore.
 - **Occasionally:** check Helius credit usage so the monthly bill stays in budget (see
   *Recurring Tasks*).
-- **Quarterly:** a whale-list refresh for STRUCTURE runs automatically; you just review it.
 - **On a red alert:** follow the table above.

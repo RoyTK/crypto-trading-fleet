@@ -1,12 +1,14 @@
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 ## Summary
 
-This project is a small **fleet of automated crypto-trading "bots"** that Roy built. It is
+This project is a small **automated crypto-trading system** ("bots") that Roy built. It is
 deliberately running in **paper mode** (simulated money) plus a tiny "shadow" sample of
-real trades — it is **not** trading meaningful real money yet, by design. The system runs
-on a rented Linux server ("Hetzner"), watches crypto markets and wallets, and records how
-it *would* have traded so its edge can be measured before any real capital is risked.
+real trades — it is **not** trading meaningful real money yet, by design. It is now
+**COPY-only**: one bot running three isolated strategies (cluster, conviction, teamfollow).
+The system runs on a rented Linux server ("Hetzner"), watches crypto markets and wallets,
+and records how it *would* have traded so its edge can be measured before any real capital
+is risked.
 
 This manual exists so that **someone other than Roy can keep it alive and continue it.**
 It is written in two layers: a plain-language **Operator track** for keeping things running,

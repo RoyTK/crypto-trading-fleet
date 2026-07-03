@@ -1,6 +1,6 @@
 ## Operations (Technical)
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 ### Scheduled jobs
 
@@ -15,11 +15,12 @@ every 5 min, kill-criteria every 60 min, scoring, daily report ~07:00 local), an
 | `0 7 * * *` | `scripts.wallet_pool_daily_cron` | recompute activity, demote/prune, **sync Helius** |
 | `30 7 * * *` | `scripts.apply_vetting_results` | ingest vetting verdicts (after `docker compose cp` of the file) |
 | `15 13 * * *` | `scripts.credit_pool_snapshot` | daily Helius credit/pool snapshot → audit_log + Discord |
-| `~13:00` | `scripts.daily_digest` | COPY 24h summary (verify it's installed) |
-| every 5h | whale_pool_growth (STRUCTURE) | |
-| weekly | whale_graduation_scan (STRUCTURE) | |
-| `0 14 1 2,5,8,11 *` | `scripts.quarterly_whale_refresh` | quarterly whale review |
+| `~13:00` | `scripts.daily_digest` | COPY 24h summary, broken out **per strategy** (net PnL, not promotion_score) |
+| `10 4 * * *` | `scripts/scrape_runners.py` | **NEW (2026-07-02)** fresh-runner → pre-run-accumulator discovery (framework container); stages candidates only; logs `~/logs/scrape_runners.log` |
 | `0 6/14/22 * * *` | 3× `scripts.wallet_pool_discovery` | **PAUSED** (commented out — 0% keepers; replaced by browser discovery) |
+
+The STRUCTURE crons (`whale_pool_growth`, `whale_graduation_scan`, `quarterly_whale_refresh`)
+were **removed** when STRUCTURE was decommissioned (2026-06-25).
 
 To re-pause/resume a cron line, edit non-interactively, e.g.:
 `(crontab -l; echo '<line>') | crontab -` — never paste a cron line straight into the shell.
@@ -33,8 +34,8 @@ To re-pause/resume a cron line, edit non-interactively, e.g.:
 | `apply_vetting_results.py` | KEEP→active, REJECT→pruned, TOO_FAST→logged; idempotent; `--dry-run` |
 | `credit_pool_snapshot.py` | credits-vs-wallets curve into audit_log (proxy = `wallet_events_log` count) |
 | `helius_webhook_setup.py` | create/sync/`--list`/`--delete` Helius webhooks |
-| `daily_digest.py` | COPY daily Discord summary |
-| `quarterly_whale_refresh.py` | STRUCTURE whale re-check (review-only output) |
+| `daily_digest.py` | COPY daily Discord summary (per-strategy net PnL) |
+| `scrape_runners.py` | fresh-runner → pre-run-accumulator discovery → `prerun_accumulators` (staging only) |
 | `correct_rug_trade.py` | fix a fictitious post-rug paper exit (targeted, audited) |
 | `build_manual.py` | **this manual's builder** |
 

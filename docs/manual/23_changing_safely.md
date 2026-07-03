@@ -1,6 +1,6 @@
 ## Changing Safely
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 The system is a **measurement experiment**. Careless changes either corrupt the
 measurement or risk real money. These are the guardrails.
@@ -30,7 +30,7 @@ Real money is gated behind explicit flags, currently **off**:
 - `COPY_LIVE_ENABLED` — enables the real-swap signing path (shadow).
 - `COPY_LIVE_FULL_ENABLED` — full-size real swaps.
 - `COPY_SOLANA_PRIVATE_KEY` — the funded wallet's secret (empty now).
-- STRUCTURE: `HYPERLIQUID_AGENT_PRIVATE_KEY` (trade-only agent key).
+- *(STRUCTURE's `HYPERLIQUID_AGENT_PRIVATE_KEY` is moot — STRUCTURE is decommissioned.)*
 
 **Do not flip these casually.** The go-live procedure (only after the data justifies it and
 Roy decides) is roughly: generate/fund a wallet → set the key in `.env` →
@@ -50,6 +50,9 @@ monitored.
   drive trades; discovery output is bounded per run.
 - **kill-criteria = alerts only** — strategy failure warns a human; it does not auto-trade
   or auto-promote.
+- **Roster reloads happen at startup only** — the conviction roster (and the team-follow
+  roster) are read when `bot_copy` starts. After changing a roster you **must**
+  `docker compose restart bot_copy`, or the change won't take effect.
 
 ### Process for any change
 

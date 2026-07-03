@@ -1,6 +1,6 @@
 ## Why It Is The Way It Is
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 The load-bearing decisions behind the design. A maintainer should understand these before
 changing anything — several look like "inefficiencies" but are deliberate. Full history is
@@ -18,6 +18,24 @@ in `memory/project_decision_log.md` and `memory/project_fleet_design_state.md`.
 - **Paper-first, with a kill-criteria window.** The entire point is to *measure* whether an
   edge exists before risking money. Hence locked config during the window, and a Sharpe/win-rate
   scorecard. Don't short-circuit it by going live early or tuning mid-window.
+
+- **The bottom line is profitability, not a composite score.** The old "promotion_score"
+  was built for the original 4-bot competition (which bot wins the slot). With the fleet now
+  COPY-only, that framing is gone — each strategy is judged on **net PnL**, plain and simple.
+  The daily digest and Grafana show net PnL per strategy; promotion_score was retired.
+
+- **COPY now runs three strategies, not one.** *Cluster* (co-buy), *conviction*
+  (single-wallet deliberate accumulation), and *teamfollow* (an experiment: ≥2 members of a
+  known co-buying "team"). They share the exit/paper-fill machinery but keep isolated
+  bankrolls, metrics, and halt ids so one can't mask another. Team-follow is explicitly a
+  forward test of the "many small losses, rare moonshots pay" thesis — it's allowed to run
+  net-negative on a small sample while that's measured.
+
+- **Discovery-then-validate, staged not auto-promoted.** The `scrape_runners` cron mines
+  freshly-run tokens for the wallets that accumulated *before* the run, but it only **stages**
+  candidates into a research table — nothing it finds trades until it's separately vetted or
+  forward-validated. Raw recurrence is a "spray farm"; only a thin validated subset is
+  actually followable, so promotion stays deliberate.
 
 - **kill-criteria alerts a human; it does not auto-halt for strategy.** Deliberate — to
   keep human judgment in the loop and avoid bots reacting to bots. (Severe drawdown limits

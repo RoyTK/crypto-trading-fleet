@@ -1,6 +1,6 @@
 ## Disaster Recovery
 
-_Last reviewed: 2026-06-24_
+_Last reviewed: 2026-07-02_
 
 ### What can break, and how bad it is
 

@@ -25,7 +25,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-06-28 00:50 UTC.</em></p>
+<em>Last built: 2026-07-03 20:01 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -70,18 +70,19 @@ or Ctrl-F to jump around.</p>
 <li><a href="#b-sync-vetting-results-into-the-live-system">B. Sync vetting results into the live system</a></li>
 <li><a href="#c-check-helius-credit-usage-watch-the-bill">C. Check Helius credit usage (watch the bill)</a></li>
 <li><a href="#d-responding-to-alerts">D. Responding to alerts</a></li>
-<li><a href="#e-quarterly-whale-list-refresh-structure-review-only">E. Quarterly whale-list refresh (STRUCTURE) — review only</a></li>
+<li><a href="#e-runner-scraper-pre-run-accumulator-discovery-automatic-no-action">E. Runner-scraper (pre-run accumulator discovery) — automatic, no action</a></li>
 </ul>
 </li>
 <li><a href="#14-glossary-plain-language">1.4 Glossary (plain language)</a></li>
 <li><strong><a href="#part-2-engineer-track-understand-continue-technical">Part 2 · Engineer Track — Understand &amp; Continue (technical)</a></strong></li>
 <li><a href="#20-architecture-codebase-map">2.0 Architecture &amp; Codebase Map</a><ul>
 <li><a href="#high-level-shape">High-level shape</a></li>
-<li><a href="#the-bots-1">The bots</a></li>
+<li><a href="#the-bot-its-strategies">The bot &amp; its strategies</a></li>
 <li><a href="#copy-data-flow-webhook-trade-measurement">COPY data flow (webhook → trade → measurement)</a></li>
 <li><a href="#the-wallet-pool-lifecycle">The wallet pool lifecycle</a></li>
 <li><a href="#the-framework">The framework</a></li>
 <li><a href="#monitoring">Monitoring</a></li>
+<li><a href="#server-side-research-cron-scrape-runners">Server-side research cron (scrape-runners)</a></li>
 <li><a href="#where-to-look-for-x">Where to look for X</a></li>
 </ul>
 </li>
@@ -137,6 +138,7 @@ or Ctrl-F to jump around.</p>
 <li><a href="#helius-webhook-400-sync-errors">"Helius webhook 400 / sync errors"</a></li>
 <li><a href="#a-trade-booked-a-fake-profit-on-a-rugged-token">"A trade booked a fake profit on a rugged token"</a></li>
 <li><a href="#i-changed-env-but-nothing-happened">"I changed <code>.env</code> but nothing happened"</a></li>
+<li><a href="#i-changed-the-convictionteam-follow-roster-but-nothing-changed">"I changed the conviction/team-follow roster but nothing changed"</a></li>
 <li><a href="#a-deploy-broke-something">"A deploy broke something"</a></li>
 <li><a href="#helius-dashboard-wont-load">"Helius dashboard won't load"</a></li>
 <li><a href="#known-non-obvious-gotchas-catalog">Known non-obvious gotchas (catalog)</a></li>
@@ -161,13 +163,15 @@ or Ctrl-F to jump around.</p>
 </li>
 </ul>
 <hr />
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <h2 id="summary">Summary</h2>
-<p>This project is a small <strong>fleet of automated crypto-trading "bots"</strong> that Roy built. It is
+<p>This project is a small <strong>automated crypto-trading system</strong> ("bots") that Roy built. It is
 deliberately running in <strong>paper mode</strong> (simulated money) plus a tiny "shadow" sample of
-real trades — it is <strong>not</strong> trading meaningful real money yet, by design. The system runs
-on a rented Linux server ("Hetzner"), watches crypto markets and wallets, and records how
-it <em>would</em> have traded so its edge can be measured before any real capital is risked.</p>
+real trades — it is <strong>not</strong> trading meaningful real money yet, by design. It is now
+<strong>COPY-only</strong>: one bot running three isolated strategies (cluster, conviction, teamfollow).
+The system runs on a rented Linux server ("Hetzner"), watches crypto markets and wallets,
+and records how it <em>would</em> have traded so its edge can be measured before any real capital
+is risked.</p>
 <p>This manual exists so that <strong>someone other than Roy can keep it alive and continue it.</strong>
 It is written in two layers: a plain-language <strong>Operator track</strong> for keeping things running,
 and a technical <strong>Engineer track</strong> for understanding and changing the code.</p>
@@ -237,7 +241,7 @@ flipped, so when in doubt, <strong>stop it and ask</strong> — a halted bot los
 <h1 id="part-1-operator-track-keeping-it-alive-plain-language">Part 1 · Operator Track — Keeping It Alive (plain language)</h1>
 <hr />
 <h2 id="10-project-overview">1.0 Project Overview</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <h3 id="what-the-project-is">What the project is</h3>
 <p>It is an <strong>automated crypto-trading system</strong> — a set of programs ("bots") that watch
 cryptocurrency markets and trader wallets around the clock and decide when they <em>would</em>
@@ -246,17 +250,25 @@ Roy can see whether the strategies actually make money before risking real funds
 <p>Think of it like a flight simulator for trading: the controls are real and the decisions
 are real, but it is not yet flying a real plane.</p>
 <h3 id="the-bots">The bots</h3>
-<p>The fleet is now <strong>COPY-only</strong>. (STRUCTURE was decommissioned on 2026-06-25 — see below.)</p>
+<p>The fleet is now <strong>COPY-only</strong>. There is one bot, <strong>COPY</strong>, running <strong>three independent
+strategies</strong>. (STRUCTURE was decommissioned on 2026-06-25 — see below. SNIPER and EVENT
+from the original plan were never built.)</p>
 <ul>
 <li><strong>COPY</strong> — trades <strong>Solana "memecoins"</strong> (tiny, very risky new tokens). It watches a
   curated list of skilled trader wallets and buys when they do, then sells quickly to lock
-  in gains before the token (often) collapses. COPY runs <strong>two independent strategies</strong>:</li>
+  in gains before the token (often) collapses. COPY runs <strong>three independent strategies</strong>,
+  each with its own bankroll, metrics, and emergency stop:</li>
 <li><strong>Cluster</strong> — buys when several tracked wallets buy the same brand-new token within
     ~15 minutes (the original COPY strategy).</li>
+<li><strong>Conviction</strong> — buys when a <em>single</em> highly-trusted wallet <strong>deliberately accumulates</strong>
+    a position in one token (at least 3 buys spread over at least ~5 minutes — not a single
+    snipe). It has its own <strong>$10k paper bankroll</strong> and separate metrics.</li>
 <li>
-<p><strong>Conviction</strong> — buys when a <em>single</em> highly-trusted wallet accumulates a meaningful
-    position in one token (its buys sum past a threshold within ~60 min, with no offsetting
-    sells). It has its own <strong>$10k paper bankroll</strong> and separate metrics.</p>
+<p><strong>Team-Follow</strong> — an <strong>experiment</strong> (added 2026-07-01). It buys when <strong>2 or more members
+    of the same known "team"</strong> of wallets co-buy the same token in a short window, drawn from
+    a roster of 129 teams / 338 wallets. Own <strong>$25k paper bankroll</strong>; it's a forward test of
+    the "many small losses, rare moonshots pay for it all" thesis and is net-negative so far
+    on a small sample.</p>
 </li>
 <li>
 <p><strong>STRUCTURE</strong> <em>(decommissioned 2026-06-25)</em> — formerly traded <strong>Hyperliquid perpetual
@@ -272,13 +284,15 @@ are real, but it is not yet flying a real plane.</p>
 <li><strong>Mode:</strong> Paper + a small "shadow" sample of real trades. <strong>No meaningful real money is
   at risk.</strong></li>
 <li><strong>COPY</strong> is the whole fleet now: it trades on a <strong>curated, vetted</strong> list of wallets that
-  grows as Roy runs wallet discovery, via two strategies (cluster + conviction). Buying is
-  currently <strong>ON</strong>.</li>
+  grows as Roy runs wallet discovery, via three strategies (cluster + conviction +
+  team-follow). Buying is currently <strong>ON</strong>.</li>
 <li><strong>STRUCTURE</strong> is <strong>DECOMMISSIONED</strong> (removed 2026-06-25 — it was losing paper money and the
   likely fix needs a costly ~$500/mo data upgrade not worth paying for during the paper
   phase). Its code is retained and it can be revived later.</li>
-<li>The system is being <strong>measured</strong> against pass/fail criteria (the "kill criteria") over a
-  ~60–90 day window before any decision to use real money.</li>
+<li>The bottom-line measure is now simply <strong>profitability (net PnL) per strategy</strong> — shown on
+  the daily digest and Grafana. (The old composite "promotion score," built for the original
+  4-bot competition, has been retired.) The system is measured over a ~60–90 day window
+  before any decision to use real money.</li>
 </ul>
 <h3 id="the-core-philosophy-please-respect-these">The core philosophy (please respect these)</h3>
 <p>These principles are the whole point of the project. A maintainer should <strong>not</strong> undo them:</p>
@@ -303,15 +317,15 @@ are real, but it is not yet flying a real plane.</p>
 </ul>
 <hr />
 <h2 id="11-operator-basics-keeping-it-alive">1.1 Operator Basics — Keeping It Alive</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <p>This section is for the day-to-day "is it healthy, and what do I do if not" job. You do
 <strong>not</strong> need to understand the code.</p>
 <h3 id="whats-running-and-where">What's running, and where</h3>
 <p>Everything runs on a <strong>rented Linux server from Hetzner</strong> (a company in Germany), inside
 "containers" managed by a tool called <strong>Docker</strong>. You normally never touch the server —
-it runs by itself. The pieces are: the two bots, a database (stores all the trades), a
-dashboard (Grafana), and an alerter (sends Discord messages). The wallet-discovery work is
-the one task done from <strong>Roy's office Windows PC</strong>, not the server.</p>
+it runs by itself. The pieces are: the COPY bot (running its three strategies), a database
+(stores all the trades), a dashboard (Grafana), and an alerter (sends Discord messages). The
+wallet-discovery work is the one task done from <strong>Roy's office Windows PC</strong>, not the server.</p>
 <h3 id="how-to-tell-its-healthy-your-2-minute-daily-check">How to tell it's healthy (your 2-minute daily check)</h3>
 <ol>
 <li><strong>Discord #alerts channel</strong> — this is the heartbeat. If it's quiet or only shows routine
@@ -395,12 +409,11 @@ engineer is guiding you:</p>
   (see <em>Recurring Tasks</em>). This is the main recurring chore.</li>
 <li><strong>Occasionally:</strong> check Helius credit usage so the monthly bill stays in budget (see
   <em>Recurring Tasks</em>).</li>
-<li><strong>Quarterly:</strong> a whale-list refresh for STRUCTURE runs automatically; you just review it.</li>
 <li><strong>On a red alert:</strong> follow the table above.</li>
 </ul>
 <hr />
 <h2 id="12-ask-claude-your-built-in-expert">1.2 Ask Claude — Your Built-In Expert</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <p><strong>This is the single most useful skill for maintaining the project. If in doubt, ask
 Claude.</strong> Claude is an AI assistant that can read this entire project, explain anything in
 plain language, run the routine tasks for you, and help diagnose problems. You do not need
@@ -447,7 +460,7 @@ point you to the right section or do the task with you.</p>
 </blockquote>
 <hr />
 <h2 id="13-recurring-tasks-step-by-step">1.3 Recurring Tasks — Step by Step</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <p>These are the hands-on chores. Each is written as a recipe. They assume you can open a
 terminal and Discord; the engineer sections explain the commands in more depth.</p>
 <h3 id="a-run-a-wallet-discovery-vetting-pass-the-main-chore">A. Run a wallet discovery + vetting pass (the main chore)</h3>
@@ -526,45 +539,62 @@ or talk to the engineer about raising the budget.</p>
 - <strong>P1 (Discord ping):</strong> look within the hour; a "kill-criteria" warning is just
   information.
 - <strong>P2/P3:</strong> read when convenient.</p>
-<h3 id="e-quarterly-whale-list-refresh-structure-review-only">E. Quarterly whale-list refresh (STRUCTURE) — review only</h3>
-<p>Four times a year (Feb/May/Aug/Nov 1) the server automatically re-checks STRUCTURE's
-"whale" wallet list and posts a Discord summary. <strong>You don't have to run anything</strong> — just
-read the summary. If it flags that many whales have gone bad, tell the engineer; updating
-the list is a small code change they make.</p>
+<h3 id="e-runner-scraper-pre-run-accumulator-discovery-automatic-no-action">E. Runner-scraper (pre-run accumulator discovery) — automatic, no action</h3>
+<p>Once a day (04:10 UTC) the server automatically runs <code>scripts/scrape_runners.py</code>. It finds
+tokens that just "ran" (pumped), figures out when each run started, and records the wallets
+that were <strong>quietly accumulating before the run</strong> into a research table — then prints a
+report of wallets that keep showing up across multiple runners. <strong>You don't run anything</strong>
+and it does <strong>not</strong> add anyone to a live list; it only <em>stages</em> candidate wallets for later
+vetting/forward-testing (see task A). It's a research feed, not a trading change. If you
+want to see its output, an engineer can read <code>~/logs/scrape_runners.log</code> on the server.</p>
 <hr />
 <h2 id="14-glossary-plain-language">1.4 Glossary (plain language)</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <p>Terms you'll meet in this manual, the dashboards, and Discord — in everyday language.</p>
 <ul>
-<li><strong>Bot</strong> — a program that trades automatically by following fixed rules. We have two:
-  STRUCTURE and COPY.</li>
+<li><strong>Bot</strong> — a program that trades automatically by following fixed rules. We now have one:
+  <strong>COPY</strong> (running three strategies). STRUCTURE was decommissioned 2026-06-25.</li>
 <li><strong>Paper trading</strong> — pretend trading. The bot records what it <em>would</em> have done, with no
   real money. This is the current mode.</li>
 <li><strong>Shadow trading</strong> — a small fraction (~10%) of paper trades are also done for real with
   tiny amounts, just to check the simulation is realistic. Still not meaningful money.</li>
 <li><strong>Live trading</strong> — real money. Currently <strong>off</strong>, gated behind explicit switches.</li>
-<li><strong>STRUCTURE</strong> — the bot trading Hyperliquid perpetual futures (big coins, derivatives).</li>
-<li><strong>COPY</strong> — the bot trading Solana memecoins by copying skilled wallets.</li>
+<li><strong>STRUCTURE</strong> — a now-<strong>decommissioned</strong> bot that traded Hyperliquid perpetual futures
+  (code retained, not running).</li>
+<li><strong>COPY</strong> — the bot trading Solana memecoins by copying skilled wallets. It runs three
+  independent strategies: <strong>cluster</strong>, <strong>conviction</strong>, and <strong>team-follow</strong> (below).</li>
 <li><strong>Wallet</strong> — a crypto account, identified by a long string of letters/numbers (an
   "address"). COPY watches a curated list of <em>skilled</em> wallets.</li>
-<li><strong>Cluster</strong> — the core COPY signal: when <strong>several tracked wallets buy the same new token
-  within ~15 minutes</strong>, that "cluster" of buys is the cue for COPY to buy too.</li>
+<li><strong>Cluster</strong> — a COPY strategy/signal: when <strong>several tracked wallets buy the same new
+  token within ~15 minutes</strong>, that "cluster" of buys is the cue for COPY to buy too.</li>
+<li><strong>Conviction</strong> — a COPY strategy: buy when a <strong>single</strong> trusted wallet <em>deliberately
+  accumulates</em> one token (≥3 buys over ≥5 minutes, not a one-off snipe). Own $10k paper
+  bankroll and separate metrics.</li>
+<li><strong>Team-Follow</strong> — an experimental COPY strategy (2026-07-01): buy when <strong>≥2 members of the
+  same known "team"</strong> of wallets co-buy the same token, from a 129-team / 338-wallet roster.
+  Own $25k paper bankroll; a forward test of the "rare moonshots pay for many small losses"
+  idea, net-negative so far on a small sample.</li>
 <li><strong>Vetting</strong> — checking whether a candidate wallet is actually good to follow. Each gets a
   verdict:</li>
 <li><strong>KEEP</strong> — good; the bot should follow it (becomes "active").</li>
 <li><strong>REJECT</strong> — bad (a bag-holder, a bot, junk); discard.</li>
 <li><strong>TOO_FAST</strong> — genuinely skilled but trades <em>so</em> fast (seconds) that COPY can't keep
     up; logged for a possible future faster bot, not used now.</li>
-<li><strong>Active / Watch / Pruned</strong> — the three "tiers" a wallet can be in:</li>
-<li><strong>Active</strong> — followed; its buys can trigger trades.</li>
+<li><strong>Active / Watch / Pruned / Team-Follow</strong> — the "tiers" a wallet can be in:</li>
+<li><strong>Active</strong> — followed; its buys can trigger cluster/conviction trades.</li>
 <li><strong>Watch</strong> — observed but not driving trades (mostly empty now; vetted wallets go
     straight to active).</li>
 <li><strong>Pruned</strong> — dropped; no longer watched.</li>
-<li><strong>Kill criteria</strong> — the pass/fail scorecard for each bot over the measurement window
-  (win rate, profit, risk-adjusted "Sharpe" number). If a bot trips a criterion, the system
-  <strong>warns a human</strong>; it does not auto-shut-down for this.</li>
+<li><strong>Team-Follow</strong> — wallets on the team-follow experiment roster (their co-buys feed that
+    strategy via a separate Helius webhook).</li>
+<li><strong>Kill criteria</strong> — the pass/fail scorecard for each strategy over the measurement window
+  (win rate, profit, risk-adjusted "Sharpe" number). If a strategy trips a criterion, the
+  system <strong>warns a human</strong>; it does not auto-shut-down for this.</li>
+<li><strong>Net PnL / profitability</strong> — the bottom-line measure now: net profit-or-loss per
+  strategy, shown on the daily digest and Grafana. It replaced the old composite "promotion
+  score" (which was built for the original 4-bot competition and has been retired).</li>
 <li><strong>Sharpe</strong> — a number measuring profit <em>relative to</em> how bumpy the ride was. Higher is
-  better; it's the headline "is this strategy actually good" metric.</li>
+  better; one of the kill-criteria metrics.</li>
 <li><strong>Webhook</strong> — a way for the Helius service to instantly notify our system whenever a
   watched wallet trades. Each notification ("delivery") costs a small credit.</li>
 <li><strong>Credits</strong> — the unit Helius bills in. Our budget is 30 million/month (~$149). Watching
@@ -586,63 +616,97 @@ the list is a small code change they make.</p>
 <h1 id="part-2-engineer-track-understand-continue-technical">Part 2 · Engineer Track — Understand &amp; Continue (technical)</h1>
 <hr />
 <h2 id="20-architecture-codebase-map">2.0 Architecture &amp; Codebase Map</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <p>For an engineer who has never seen the repo. Deeper, frozen design rationale lives in
 <code>design_state_2026-04-26.md</code> (a snapshot — treat as history, not current truth).</p>
 <h3 id="high-level-shape">High-level shape</h3>
-<p>A shared <strong>framework</strong> + two <strong>bots</strong>, all Python, all running as Docker containers on one
-Hetzner host, backed by <strong>PostgreSQL</strong> (state) and <strong>Redis</strong> (pubsub/dedup). Code reaches
-the server by <code>git push</code> (auto-pull deploy). Monitoring is <strong>Grafana/Prometheus</strong> +
-multi-channel alerting (Discord/Telegram/Twilio).</p>
+<p>A shared <strong>framework</strong> + one <strong>bot</strong> (<code>bots/copy/</code>, running <strong>three strategies</strong>), all
+Python, all running as Docker containers on one Hetzner host, backed by <strong>PostgreSQL</strong>
+(state) and <strong>Redis</strong> (pubsub/dedup). Code reaches the server by <code>git push</code> (auto-pull
+deploy). Monitoring is <strong>Grafana/Prometheus</strong> + multi-channel alerting (Discord/Telegram).
+<code>bots/structure/</code> remains in the tree but is <strong>decommissioned</strong> (not built into
+docker-compose, not running).</p>
 <pre><code>                 ┌────────── framework/ (shared) ──────────┐
                  │ DB models, kill-criteria, alerts, audit, │
                  │ heartbeat/watchdog, reconciliation,      │
                  │ scoring, reporting                       │
                  └──────────────────────────────────────────┘
-   bots/structure/  (Hyperliquid perps)     bots/copy/  (Solana memecoins)
+        bots/copy/  (Solana memecoins — 3 strategies:
+                     cluster · conviction · teamfollow)
             │                                       │
         Postgres  ◄───────── shared ───────────►  Redis
             │                                       │
    monitoring/ (webhook_receiver, alerting dispatcher, dashboards, prometheus)
+
+   (bots/structure/ retained in-tree but DECOMMISSIONED 2026-06-25)
 </code></pre>
-<h3 id="the-bots_1">The bots</h3>
-<p><strong>STRUCTURE</strong> (<code>bots/structure/</code>) — Hyperliquid perpetual futures. Signals in
-<code>bots/structure/signals/</code>: <code>funding_fade</code>, <code>liquidation_cascade</code>, <code>whale_flip</code>,
-<code>hl_oi_divergence</code>. Reads market data via the Hyperliquid Info API (<code>venue.py</code>). Paper +
-~10% shadow. <strong>Currently PAUSED</strong> — it was losing paper money; the suspected fix needs a
-~$500/mo real-time data-feed upgrade (e.g. the Coinglass liquidation tier feeding
-<code>liquidation_cascade</code>), not justified in the paper phase. Code is intact; revisit later.</p>
-<p><strong>COPY</strong> (<code>bots/copy/</code>) — Solana memecoins via wallet-cluster copying. This is the active
-focus. Key files:
-- <code>main.py</code> — the loop: subscribes to wallet events, runs cluster detection, manages
-  positions.
-- <code>signals/cluster.py</code> — the buy signal (≥3 distinct active wallets buy the same token
-  within a 15-min rolling window, ≥$1k each).
+<h3 id="the-bot-its-strategies">The bot &amp; its strategies</h3>
+<p><strong>COPY</strong> (<code>bots/copy/</code>) — Solana memecoins via wallet copying. This is the whole fleet. It
+runs under a single <code>bot_id='copy'</code>; the three strategies are discriminated by
+<code>sim_metadata-&gt;&gt;'strategy'</code> and each keeps isolated metrics, its own paper bankroll, and its
+own halt id:</p>
+<ol>
+<li><strong>cluster</strong> — ≥3 distinct active wallets co-buy the same token within a 15-min window;
+   40s entry delay; <strong>$50k</strong> entry-liquidity floor (raised from $5k on 2026-07-01); halt id
+   <code>copy</code>. Exit stack: −8% hard stop (widens to −30% when EMA liquidity ≥1.5× entry), partial
+   ladder 4x/10x/50x/1000x (25% each), 45% multiplicative trailing stop after +20%,
+   sell-cluster + price-scale guard, 12h timeout.</li>
+<li><strong>conviction</strong> — a <strong>single</strong> roster wallet <em>deliberately accumulates</em> one token (≥3 buys
+   over ≥5 min — the accumulation gate shipped 2026-07-01, not single-buy snipes). Own $10k
+   paper bankroll; halt id <code>copy_conviction</code>; 25% hard stop. Roster ≈ 23 DB-forward-validated
+   accumulators, <strong>reloaded only at <code>bot_copy</code> startup</strong> (<code>docker compose restart bot_copy</code>
+   after a roster change).</li>
+<li><strong>teamfollow</strong> <em>(experiment, shipped 2026-07-01)</em> — ≥2 members of the same known "team"
+   co-buy within a window, from a <strong>129-team / 338-wallet</strong> roster
+   (<code>bots/copy/teamfollow_roster.json</code>). Own $25k paper bankroll; $50k entry-liquidity floor;
+   reuses the cluster exit stack; halt id <code>copy_teamfollow</code>; isolated Helius webhook + Redis
+   channel <code>copy:teamfollow_buys</code>. Net-negative so far (small sample) — a forward test of the
+   "many small losses, rare moonshots pay" thesis.</li>
+</ol>
+<p>Key COPY files:
+- <code>main.py</code> — the loop: subscribes to wallet events, runs the three strategies' detectors,
+  manages positions.
+- <code>signals/cluster.py</code> — the cluster buy signal.
 - <code>signals/sell_cluster.py</code> — the defensive exit (≥2 tracked wallets selling).
 - <code>trailing_stop.py</code> — tiered partial-exit ladder + price-scale anomaly guard.
 - <code>wallet_pool_manager.py</code> — <strong>pure logic</strong> for active/watch/pruned tier decisions.
+- <code>teamfollow_roster.json</code> — the team-follow experiment roster (teams + members).
 - <code>venue/</code> — external integrations: <code>helius_webhooks.py</code>, <code>helius_solana.py</code>, <code>birdeye.py</code>,
   <code>dex_quoter.py</code>, <code>jupiter_swap.py</code>, <code>cielo.py</code>.
 - <code>config.py</code> — locked thresholds (see <em>Changing Safely</em>). <strong>Current state: cluster buys
   ENABLED; <code>copy_active_list_target = 300</code>; KEEP wallets go directly to <code>active</code>.</strong></p>
+<p><strong>STRUCTURE</strong> (<code>bots/structure/</code>) — <em>decommissioned 2026-06-25.</em> Formerly Hyperliquid
+perpetual futures (signals <code>funding_fade</code>, <code>liquidation_cascade</code>, <code>whale_flip</code>,
+<code>hl_oi_divergence</code>). Removed from docker-compose + the kill/dd monitors + scoring crons; the
+code is intact but <strong>not running</strong>. Revive = restore the compose block + re-add its cron
+hooks. Was losing paper money; the suspected fix needs a ~$500/mo real-time data feed not
+justified in the paper phase.</p>
 <h3 id="copy-data-flow-webhook-trade-measurement">COPY data flow (webhook → trade → measurement)</h3>
 <ol>
 <li>A tracked wallet trades on Solana → <strong>Helius</strong> sends a webhook to
-   <code>monitoring/webhook_receiver/main.py</code> (one endpoint for <code>active</code>, one for <code>watch</code>).</li>
+   <code>monitoring/webhook_receiver/main.py</code>. There are <strong>three tiers</strong> of subscription, each
+   with its own webhook: <code>active</code>, <code>watch</code>, and <code>teamfollow</code>.</li>
 <li>The receiver validates the auth header, logs a row to <code>wallet_events_log</code>
-   (<code>source_webhook</code> = active|watch), and for <strong>active</strong> wallets publishes a buy/sell event
-   to Redis (<code>copy:buys</code> / <code>copy:sells</code>).</li>
-<li><code>bots/copy/main.py</code> subscribes, feeds buys to <code>signals/cluster.py</code> (in-memory 15-min
-   rolling window per token).</li>
-<li>When ≥3 distinct active wallets cluster on a token, a signal fires → de-duped via the
-   <code>cluster_detections</code> table → a paper trade is opened (<code>executor.py</code> → <code>trades</code> row),
-   optionally a ~10% <strong>shadow</strong> swap via Jupiter.</li>
+   (<code>source_webhook</code> = active|watch|teamfollow), and publishes buy/sell events to Redis —
+   <code>copy:buys</code> / <code>copy:sells</code> for active wallets, and <code>copy:teamfollow_buys</code> for the
+   team-follow roster.</li>
+<li><code>bots/copy/main.py</code> subscribes and feeds events to the three strategies' detectors:
+   cluster (in-memory 15-min rolling window per token), conviction (per-wallet accumulation
+   over ≥5 min), and team-follow (≥2 same-team members co-buying).</li>
+<li>When a strategy fires, the signal is de-duped (e.g. <code>cluster_detections</code>) → a paper trade
+   is opened (<code>executor.py</code> → <code>trades</code> row, stamped with the <code>strategy</code> in <code>sim_metadata</code>),
+   optionally a ~10% <strong>shadow</strong> swap via Jupiter. Each strategy honors its own
+   entry-liquidity floor (cluster/teamfollow = $50k).</li>
 <li>Positions are managed every ~60s: price via Birdeye/Jupiter, tiered partial exits,
-   stops, <strong>rug check</strong> (Birdeye liquidity &lt; floor → book ~total loss), sell-cluster exit.</li>
+   stops, <strong>rug check</strong> (Birdeye liquidity &lt; floor → book ~total loss), sell-cluster exit.
+   Each trade also stamps <code>sim_metadata.token_age_at_entry_hours</code> (+ <code>token_created_unix</code>)
+   at entry, and records <code>peak_pct_since_entry</code> (max favorable excursion while held).</li>
 <li>On close, <strong>PnL is attributed</strong> equally to the wallets in the cluster
-   (<code>wallet_attributions</code>) — this feeds wallet promotion/demotion and the leaderboard.</li>
+   (<code>wallet_attributions</code>, a fair <code>pnl/cluster_size</code> share) — this feeds wallet
+   demotion/pruning and the leaderboard.</li>
 <li><strong>kill-criteria</strong> (<code>framework/kill_criteria_monitor.py</code>) reads closed trades and scores
-   the bot (N, win rate, net PnL, Sharpe) against its window.</li>
+   each strategy (N, win rate, net PnL, Sharpe) against its window; the headline measure is
+   <strong>net PnL</strong> (the old composite promotion_score is retired).</li>
 </ol>
 <h3 id="the-wallet-pool-lifecycle">The wallet pool lifecycle</h3>
 <ul>
@@ -671,16 +735,32 @@ focus. Key files:
 <li><code>heartbeat.py</code> / <code>watchdog.py</code> — every process pings every 30s; watchdog escalates
   staleness.</li>
 <li><code>reconciliation.py</code> — periodic paper-vs-venue consistency check.</li>
-<li><code>scoring/</code> — promotion score; <code>reporting/</code> — daily report + digest.</li>
+<li><code>scoring/</code> — per-strategy scoring; <code>reporting/</code> — daily report + digest (net PnL per
+  strategy; the old composite promotion_score is retired).</li>
 </ul>
 <h3 id="monitoring">Monitoring</h3>
 <ul>
-<li><code>monitoring/webhook_receiver/</code> — the public HTTPS endpoint Helius calls.</li>
+<li><code>monitoring/webhook_receiver/</code> — the public HTTPS endpoint Helius calls (active / watch /
+  teamfollow tiers).</li>
 <li><code>monitoring/alerting/</code> — taxonomy (P0–P3), dispatcher, connectors.</li>
-<li><code>monitoring/dashboards/*.json</code> — Grafana (fleet-overview, structure-detail, copy-detail,
-  cluster diagnostics); auto-reloaded, no restart needed.</li>
+<li><code>monitoring/dashboards/*.json</code> — Grafana, file-provisioned (~30s poll), auto-reloaded:
+  <strong>Fleet Overview</strong> (strategy-aware per-strategy scorecard: state / open / trades-24h /
+  net-total / net-24h / win-rate, plus open positions, last-50 closed with <code>peak_pct</code>,
+  cumulative PnL by strategy, heartbeat, halts), <strong>COPY Cluster</strong> (<code>copy-detail.json</code>),
+  <strong>COPY Conviction</strong> (<code>copy-conviction.json</code>), and <strong>COPY Team-Follow</strong>
+  (<code>copy-teamfollow.json</code>). Each has a title panel at the top. (<code>structure-detail.json</code>
+  remains in-tree but its bot is decommissioned.)</li>
 <li><code>monitoring/prometheus/</code> — scrape config.</li>
 </ul>
+<h3 id="server-side-research-cron-scrape-runners">Server-side research cron (scrape-runners)</h3>
+<p><code>scripts/scrape_runners.py</code> — a daily host cron (04:10 UTC, in the <code>framework</code> container)
+that discovers freshly-run tokens (GeckoTerminal trending/new/top), detects each token's
+run-start (Birdeye <code>history_price</code>), fetches the pre-run trade window (Birdeye
+<code>seek_by_time</code>), and records the wallets that accumulated <strong>before</strong> the run into a Postgres
+table <code>prerun_accumulators</code> (with a scan-once ledger <code>prerun_scans</code>). It prints a recurrence
+report of wallets appearing across ≥3 runners and <strong>stages</strong> candidates for later
+forward-validation — it does <strong>not</strong> auto-promote anyone to a roster. Logs to
+<code>~/logs/scrape_runners.log</code>.</p>
 <h3 id="where-to-look-for-x">Where to look for X</h3>
 <table>
 <thead>
@@ -722,13 +802,13 @@ focus. Key files:
 </table>
 <hr />
 <h2 id="21-deployment-infrastructure">2.1 Deployment &amp; Infrastructure</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <h3 id="topology">Topology</h3>
 <p>One Hetzner VPS runs everything via <code>docker-compose.yml</code>: <code>postgres</code>, <code>redis</code>,
-<code>prometheus</code>, <code>grafana</code>, <code>framework</code>, <code>scoring</code>, <code>alerting</code>, <code>report_cron</code>,
-<code>bot_structure</code>, <code>bot_copy</code>, <code>bot_copy_webhook_receiver</code>, and a one-shot <code>migrate</code>
-(profile <code>tools</code>). A single <code>framework/Dockerfile</code> builds the Python image used by all
-app services.</p>
+<code>prometheus</code>, <code>grafana</code>, <code>framework</code>, <code>scoring</code>, <code>alerting</code>, <code>report_cron</code>, <code>bot_copy</code>,
+<code>bot_copy_webhook_receiver</code>, and a one-shot <code>migrate</code> (profile <code>tools</code>). (<code>bot_structure</code>
+was removed from compose on 2026-06-25 — STRUCTURE is decommissioned.) A single
+<code>framework/Dockerfile</code> builds the Python image used by all app services.</p>
 <h3 id="how-code-reaches-the-server-auto-pull-deploy">How code reaches the server (auto-pull deploy)</h3>
 <p>A cron on the server runs <code>scripts/hetzner_autopull.sh</code> <strong>every minute</strong>. It:
 1. <code>git fetch origin main</code>; if <code>origin/main</code> is ahead, <code>git reset --hard origin/main</code>.
@@ -744,7 +824,7 @@ vetting results live in the repo.)</p>
 | Changed path | Restarts |
 |---|---|
 | <code>bots/copy/**</code> | <code>bot_copy</code> + <code>bot_copy_webhook_receiver</code> |
-| <code>bots/structure/**</code> | <code>bot_structure</code> |
+| <code>bots/structure/**</code> | <em>(no-op — <code>bot_structure</code> is decommissioned/removed from compose)</em> |
 | <code>framework/scoring/</code>, <code>kill_criteria_monitor.py</code>, etc. | <code>scoring</code> |
 | <code>framework/alembic/versions/**</code> | run migrations, then <code>scoring</code> |
 | shared framework (<code>models.py</code>, <code>db.py</code>, <code>alerts.py</code>, …) | all services |
@@ -802,7 +882,7 @@ a revision, test locally, commit — it deploys and applies automatically.</p>
 </ul>
 <hr />
 <h2 id="22-operations-technical">2.2 Operations (Technical)</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <h3 id="scheduled-jobs">Scheduled jobs</h3>
 <p>Two layers: <strong>APScheduler</strong> inside the <code>scoring</code>/<code>report_cron</code> containers (drawdown checks
 every 5 min, kill-criteria every 60 min, scoring, daily report ~07:00 local), and the
@@ -840,22 +920,12 @@ every 5 min, kill-criteria every 60 min, scoring, daily report ~07:00 local), an
 <tr>
 <td><code>~13:00</code></td>
 <td><code>scripts.daily_digest</code></td>
-<td>COPY 24h summary (verify it's installed)</td>
+<td>COPY 24h summary, broken out <strong>per strategy</strong> (net PnL, not promotion_score)</td>
 </tr>
 <tr>
-<td>every 5h</td>
-<td>whale_pool_growth (STRUCTURE)</td>
-<td></td>
-</tr>
-<tr>
-<td>weekly</td>
-<td>whale_graduation_scan (STRUCTURE)</td>
-<td></td>
-</tr>
-<tr>
-<td><code>0 14 1 2,5,8,11 *</code></td>
-<td><code>scripts.quarterly_whale_refresh</code></td>
-<td>quarterly whale review</td>
+<td><code>10 4 * * *</code></td>
+<td><code>scripts/scrape_runners.py</code></td>
+<td><strong>NEW (2026-07-02)</strong> fresh-runner → pre-run-accumulator discovery (framework container); stages candidates only; logs <code>~/logs/scrape_runners.log</code></td>
 </tr>
 <tr>
 <td><code>0 6/14/22 * * *</code></td>
@@ -864,6 +934,8 @@ every 5 min, kill-criteria every 60 min, scoring, daily report ~07:00 local), an
 </tr>
 </tbody>
 </table>
+<p>The STRUCTURE crons (<code>whale_pool_growth</code>, <code>whale_graduation_scan</code>, <code>quarterly_whale_refresh</code>)
+were <strong>removed</strong> when STRUCTURE was decommissioned (2026-06-25).</p>
 <p>To re-pause/resume a cron line, edit non-interactively, e.g.:
 <code>(crontab -l; echo '&lt;line&gt;') | crontab -</code> — never paste a cron line straight into the shell.</p>
 <h3 id="key-scripts-scripts">Key scripts (<code>scripts/</code>)</h3>
@@ -897,11 +969,11 @@ every 5 min, kill-criteria every 60 min, scoring, daily report ~07:00 local), an
 </tr>
 <tr>
 <td><code>daily_digest.py</code></td>
-<td>COPY daily Discord summary</td>
+<td>COPY daily Discord summary (per-strategy net PnL)</td>
 </tr>
 <tr>
-<td><code>quarterly_whale_refresh.py</code></td>
-<td>STRUCTURE whale re-check (review-only output)</td>
+<td><code>scrape_runners.py</code></td>
+<td>fresh-runner → pre-run-accumulator discovery → <code>prerun_accumulators</code> (staging only)</td>
 </tr>
 <tr>
 <td><code>correct_rug_trade.py</code></td>
@@ -961,7 +1033,7 @@ SELECT process_name, last_ping_at FROM heartbeats ORDER BY last_ping_at DESC;
 host file otherwise.)</p>
 <hr />
 <h2 id="23-changing-safely">2.3 Changing Safely</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <p>The system is a <strong>measurement experiment</strong>. Careless changes either corrupt the
 measurement or risk real money. These are the guardrails.</p>
 <h3 id="the-kill-criteria-window-lock">The kill-criteria window lock</h3>
@@ -986,7 +1058,7 @@ the window.</strong></p>
 - <code>COPY_LIVE_ENABLED</code> — enables the real-swap signing path (shadow).
 - <code>COPY_LIVE_FULL_ENABLED</code> — full-size real swaps.
 - <code>COPY_SOLANA_PRIVATE_KEY</code> — the funded wallet's secret (empty now).
-- STRUCTURE: <code>HYPERLIQUID_AGENT_PRIVATE_KEY</code> (trade-only agent key).</p>
+- <em>(STRUCTURE's <code>HYPERLIQUID_AGENT_PRIVATE_KEY</code> is moot — STRUCTURE is decommissioned.)</em></p>
 <p><strong>Do not flip these casually.</strong> The go-live procedure (only after the data justifies it and
 Roy decides) is roughly: generate/fund a wallet → set the key in <code>.env</code> →
 <code>COPY_LIVE_ENABLED=true</code> with <code>COPY_LIVE_FULL_ENABLED=false</code> (shadow only) → watch
@@ -1004,6 +1076,9 @@ monitored.</p>
   drive trades; discovery output is bounded per run.</li>
 <li><strong>kill-criteria = alerts only</strong> — strategy failure warns a human; it does not auto-trade
   or auto-promote.</li>
+<li><strong>Roster reloads happen at startup only</strong> — the conviction roster (and the team-follow
+  roster) are read when <code>bot_copy</code> starts. After changing a roster you <strong>must</strong>
+  <code>docker compose restart bot_copy</code>, or the change won't take effect.</li>
 </ul>
 <h3 id="process-for-any-change">Process for any change</h3>
 <ol>
@@ -1021,7 +1096,7 @@ branch, merge after a glance) instead of auto-pushing — untrusted page content
 real-money bot needs a person in the loop.</p>
 <hr />
 <h2 id="24-disaster-recovery">2.4 Disaster Recovery</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <h3 id="what-can-break-and-how-bad-it-is">What can break, and how bad it is</h3>
 <table>
 <thead>
@@ -1096,7 +1171,7 @@ and for Helius re-run <code>helius_webhook_setup</code>. Never put the new secre
 <h1 id="part-3-reference">Part 3 · Reference</h1>
 <hr />
 <h2 id="30-tools-resources">3.0 Tools &amp; Resources</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <p>Every external service the project depends on — what it's for, what it costs, where its
 console is, how to get in, and the <code>.env</code> variable name(s). <strong>Actual passwords/keys are on
 the Access Sheet, never here.</strong></p>
@@ -1131,7 +1206,7 @@ the Access Sheet, never here.</strong></p>
 </tr>
 <tr>
 <td><strong>Helius</strong></td>
-<td>Solana wallet webhooks (COPY's lifeblood)</td>
+<td>Solana wallet webhooks (COPY's lifeblood) — <strong>three tiers</strong> (active, watch, teamfollow)</td>
 <td><strong>$49</strong> Developer (10M credits) + autoscale $5/1M, <strong>$149 cap = 30M</strong></td>
 <td>dashboard.helius.dev</td>
 <td><strong>Reach via the SSH SOCKS tunnel</strong> (account is German-IP bound) — see below. Usage alerts + bills emailed to <strong>roytkelly@gmail.com</strong></td>
@@ -1147,11 +1222,27 @@ the Access Sheet, never here.</strong></p>
 </tr>
 <tr>
 <td><strong>Birdeye</strong></td>
-<td>Token prices, liquidity, trader discovery</td>
-<td>Free/Lite (~$0–19)</td>
+<td>Token prices, liquidity, token-creation checks (used by the live bot <strong>and</strong> the scrape-runners cron)</td>
+<td><strong>Paid Lite plan</strong> — 2.5M compute-units/mo (~12% used)</td>
 <td>birdeye.so</td>
 <td>Logged-in Chrome session (used by discovery) + API key</td>
 <td><code>BIRDEYE_API_KEY</code></td>
+</tr>
+<tr>
+<td><strong>GeckoTerminal</strong></td>
+<td>Trending/new/top pool discovery for the scrape-runners cron</td>
+<td>Free</td>
+<td>geckoterminal.com</td>
+<td>Public API, no key</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><strong>Dune</strong></td>
+<td>Local research tool (runner/co-buyer SQL for roster building)</td>
+<td>Free (3 accounts; currently exhausted until monthly reset)</td>
+<td>dune.com</td>
+<td>Roy's PC only, not on the server</td>
+<td><code>DUNE_API_KEY</code> (local)</td>
 </tr>
 <tr>
 <td><strong>Jupiter</strong></td>
@@ -1163,10 +1254,10 @@ the Access Sheet, never here.</strong></p>
 </tr>
 <tr>
 <td><strong>Coinglass</strong></td>
-<td>Liquidation data (STRUCTURE)</td>
-<td>$0 (disabled)</td>
+<td>Liquidation data (was STRUCTURE)</td>
+<td>$0 (unused)</td>
 <td>coinglass.com</td>
-<td>Disabled via <code>STRUCTURE_LIQ_CASCADE_ENABLED=false</code>; its <strong>real-time tier (~$500/mo)</strong> is the upgrade STRUCTURE would need to be revived — not justified in paper phase</td>
+<td>STRUCTURE is decommissioned, so this feed is unused; its <strong>real-time tier (~$500/mo)</strong> would be the upgrade a STRUCTURE revival needs</td>
 <td><code>COINGLASS_API_KEY</code></td>
 </tr>
 <tr>
@@ -1273,7 +1364,7 @@ not a market-maker bot. A high rug-rate is <em>expected and good</em> — the ed
 fresh-mint pumps and exiting before they collapse. ~90% of candidates are REJECTed.</p>
 <hr />
 <h2 id="31-why-it-is-the-way-it-is">3.1 Why It Is The Way It Is</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <p>The load-bearing decisions behind the design. A maintainer should understand these before
 changing anything — several look like "inefficiencies" but are deliberate. Full history is
 in <code>memory/project_decision_log.md</code> and <code>memory/project_fleet_design_state.md</code>.</p>
@@ -1292,6 +1383,27 @@ in <code>memory/project_decision_log.md</code> and <code>memory/project_fleet_de
 <p><strong>Paper-first, with a kill-criteria window.</strong> The entire point is to <em>measure</em> whether an
   edge exists before risking money. Hence locked config during the window, and a Sharpe/win-rate
   scorecard. Don't short-circuit it by going live early or tuning mid-window.</p>
+</li>
+<li>
+<p><strong>The bottom line is profitability, not a composite score.</strong> The old "promotion_score"
+  was built for the original 4-bot competition (which bot wins the slot). With the fleet now
+  COPY-only, that framing is gone — each strategy is judged on <strong>net PnL</strong>, plain and simple.
+  The daily digest and Grafana show net PnL per strategy; promotion_score was retired.</p>
+</li>
+<li>
+<p><strong>COPY now runs three strategies, not one.</strong> <em>Cluster</em> (co-buy), <em>conviction</em>
+  (single-wallet deliberate accumulation), and <em>teamfollow</em> (an experiment: ≥2 members of a
+  known co-buying "team"). They share the exit/paper-fill machinery but keep isolated
+  bankrolls, metrics, and halt ids so one can't mask another. Team-follow is explicitly a
+  forward test of the "many small losses, rare moonshots pay" thesis — it's allowed to run
+  net-negative on a small sample while that's measured.</p>
+</li>
+<li>
+<p><strong>Discovery-then-validate, staged not auto-promoted.</strong> The <code>scrape_runners</code> cron mines
+  freshly-run tokens for the wallets that accumulated <em>before</em> the run, but it only <strong>stages</strong>
+  candidates into a research table — nothing it finds trades until it's separately vetted or
+  forward-validated. Raw recurrence is a "spray farm"; only a thin validated subset is
+  actually followable, so promotion stays deliberate.</p>
 </li>
 <li>
 <p><strong>kill-criteria alerts a human; it does not auto-halt for strategy.</strong> Deliberate — to
@@ -1347,7 +1459,7 @@ in <code>memory/project_decision_log.md</code> and <code>memory/project_fleet_de
 </ul>
 <hr />
 <h2 id="32-troubleshooting">3.2 Troubleshooting</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <p>Symptom → likely cause → fix. Start with the symptom you see in Discord/logs.</p>
 <h3 id="a-discovery-pass-added-0-rows-discord-shows-0-rows">"A discovery pass added 0 rows" / Discord shows ⚠ 0-rows</h3>
 <ul>
@@ -1401,6 +1513,12 @@ in <code>memory/project_decision_log.md</code> and <code>memory/project_fleet_de
 <li><strong>Cause:</strong> <code>restart</code> doesn't re-read <code>.env</code>.</li>
 <li><strong>Fix:</strong> <code>docker compose up -d --force-recreate &lt;svc&gt;</code>; verify <code>docker compose exec &lt;svc&gt; printenv VAR</code>.</li>
 </ul>
+<h3 id="i-changed-the-convictionteam-follow-roster-but-nothing-changed">"I changed the conviction/team-follow roster but nothing changed"</h3>
+<ul>
+<li><strong>Cause:</strong> rosters are read <strong>only at <code>bot_copy</code> startup</strong>.</li>
+<li><strong>Fix:</strong> <code>docker compose restart bot_copy</code> after the roster file lands, then confirm in the
+  logs that it reloaded the expected wallet count.</li>
+</ul>
 <h3 id="a-deploy-broke-something">"A deploy broke something"</h3>
 <ul>
 <li><strong>Fix:</strong> <code>git revert &lt;commit&gt; &amp;&amp; git push</code> — auto-pull rolls it forward in ~60s. Or
@@ -1420,7 +1538,7 @@ untracked files; <code>restart</code> ignores <code>.env</code>; PowerShell 5.1 
 When something weird happens, check there.</p>
 <hr />
 <h2 id="33-access-sheet-print-this-fill-by-hand">3.3 Access Sheet (PRINT THIS — fill by hand)</h2>
-<h3 class="hsplit"><span>Accounts &amp; consoles</span><span class="rev">Last reviewed: 2026-06-24</span></h3>
+<h3 class="hsplit"><span>Accounts &amp; consoles</span><span class="rev">Last reviewed: 2026-07-02</span></h3>
 
 <p>The <strong>Account/email, Username, Password</strong> columns are wide and blank — fill them by hand.
 Tick <strong>2FA</strong> where enabled.</p>
@@ -1502,18 +1620,18 @@ ssh fleet 'cat ~/crypto-fleet/.env'
 keys to a safe — anyone with it can move money once live trading is on.</p>
 <hr />
 <h2 id="34-appendix">3.4 Appendix</h2>
-<p><em>Last reviewed: 2026-06-24</em></p>
+<p><em>Last reviewed: 2026-07-02</em></p>
 <h3 id="crontab-inventory-server-utc">Crontab inventory (server, UTC)</h3>
 <p>Verify the live set with <code>crontab -l</code>. Expected:
 - <code>* * * * *</code> — <code>scripts/hetzner_autopull.sh</code> (auto-deploy)
 - <code>0 7 * * *</code> — <code>scripts.wallet_pool_daily_cron</code> (pool reconcile + Helius sync)
 - <code>30 7 * * *</code> — <code>scripts.apply_vetting_results</code> (ingest vetting)
 - <code>15 13 * * *</code> — <code>scripts.credit_pool_snapshot</code> (credit/pool curve)
-- <code>~13:00</code> — <code>scripts.daily_digest</code> (COPY 24h summary — verify installed)
-- every 5h — STRUCTURE whale_pool_growth
-- weekly — STRUCTURE whale_graduation_scan
-- <code>0 14 1 2,5,8,11 *</code> — <code>scripts.quarterly_whale_refresh</code>
+- <code>~13:00</code> — <code>scripts.daily_digest</code> (COPY 24h summary, per-strategy — verify installed)
+- <code>10 4 * * *</code> — <code>scripts/scrape_runners.py</code> (fresh-runner → pre-run-accumulator discovery; framework container)
 - <code>0 6/14/22 * * *</code> — 3× <code>scripts.wallet_pool_discovery</code> — <strong>PAUSED</strong> (commented)</p>
+<p>The STRUCTURE crons (<code>whale_pool_growth</code>, <code>whale_graduation_scan</code>,
+<code>quarterly_whale_refresh</code>) were removed when STRUCTURE was decommissioned (2026-06-25).</p>
 <h3 id="env-var-reference-names-purpose-only-values-live-in-env">Env-var reference (names + purpose only — values live in <code>.env</code>)</h3>
 <table>
 <thead>
@@ -1548,16 +1666,28 @@ keys to a safe — anyone with it can move money once live trading is on.</p>
 <td>COPY buying on/off (currently ON)</td>
 </tr>
 <tr>
+<td><code>COPY_CLUSTER_MIN_ENTRY_LIQUIDITY_USD</code></td>
+<td>cluster entry-liquidity floor (=$50k as of 2026-07-01)</td>
+</tr>
+<tr>
+<td><code>COPY_CLUSTER_MIN_NOTIONAL_PER_WALLET_USD</code></td>
+<td>per-wallet co-buy size for the cluster trigger</td>
+</tr>
+<tr>
+<td><code>copy_conviction_stop_pct</code></td>
+<td>conviction hard stop (=25%)</td>
+</tr>
+<tr>
 <td><code>COPY_DISCORD_WEBHOOK</code></td>
 <td>discovery health pings</td>
 </tr>
 <tr>
 <td><code>HYPERLIQUID_AGENT_PRIVATE_KEY</code>, <code>HYPERLIQUID_*</code></td>
-<td>STRUCTURE venue (trade-only key)</td>
+<td>STRUCTURE venue — <strong>decommissioned</strong> (unused)</td>
 </tr>
 <tr>
 <td><code>COINGLASS_API_KEY</code>, <code>STRUCTURE_LIQ_CASCADE_ENABLED</code></td>
-<td>liquidation feed (disabled)</td>
+<td>STRUCTURE liquidation feed — <strong>decommissioned</strong> (unused)</td>
 </tr>
 <tr>
 <td><code>DISCORD_*</code>, <code>TELEGRAM_*</code></td>
@@ -1593,19 +1723,23 @@ keys to a safe — anyone with it can move money once live trading is on.</p>
 <tbody>
 <tr>
 <td><code>docker-compose.yml</code></td>
-<td>all services</td>
+<td>all services (no <code>bot_structure</code> — decommissioned)</td>
 </tr>
 <tr>
 <td><code>scripts/hetzner_autopull.sh</code></td>
 <td>auto-deploy</td>
 </tr>
 <tr>
-<td><code>bots/copy/config.py</code>, <code>bots/structure/config.py</code></td>
-<td>locked thresholds</td>
+<td><code>bots/copy/config.py</code></td>
+<td>locked thresholds (<code>bots/structure/config.py</code> retained but unused)</td>
 </tr>
 <tr>
 <td><code>bots/copy/wallet_pool_manager.py</code></td>
 <td>tier-decision logic</td>
+</tr>
+<tr>
+<td><code>bots/copy/teamfollow_roster.json</code></td>
+<td>team-follow experiment roster (129 teams / 338 wallets)</td>
 </tr>
 <tr>
 <td><code>scripts/apply_vetting_results.py</code></td>
@@ -1614,6 +1748,10 @@ keys to a safe — anyone with it can move money once live trading is on.</p>
 <tr>
 <td><code>scripts/credit_pool_snapshot.py</code></td>
 <td>credit/pool snapshot</td>
+</tr>
+<tr>
+<td><code>scripts/scrape_runners.py</code></td>
+<td>fresh-runner → pre-run-accumulator discovery (staging)</td>
 </tr>
 <tr>
 <td><code>bots/copy/discovery_automation/</code></td>
@@ -1630,10 +1768,12 @@ keys to a safe — anyone with it can move money once live trading is on.</p>
 </tbody>
 </table>
 <h3 id="db-tables-quick-map">DB tables (quick map)</h3>
-<p><code>bot_state</code> (state + kill-criteria JSON), <code>trades</code>, <code>signals</code>, <code>wallet_pool</code>,
-<code>wallet_events_log</code>, <code>wallet_attributions</code>, <code>cluster_detections</code>, <code>shadow_signals</code>,
-<code>copy_signal_shadow_log</code>, <code>structure_whale_pool</code>, <code>halts</code>, <code>scores</code>, <code>audit_log</code>,
-<code>heartbeats</code>.</p>
+<p><code>bot_state</code> (state + kill-criteria JSON), <code>trades</code> (strategy in <code>sim_metadata</code>), <code>signals</code>,
+<code>wallet_pool</code>, <code>wallet_events_log</code>, <code>wallet_swaps_log</code>, <code>wallet_attributions</code>,
+<code>cluster_detections</code>, <code>shadow_signals</code>, <code>copy_signal_shadow_log</code>, <code>halts</code>, <code>scores</code>,
+<code>audit_log</code>, <code>heartbeats</code>. Plus <code>prerun_accumulators</code> + <code>prerun_scans</code> — created directly by
+<code>scripts/scrape_runners.py</code> (raw SQL, not in <code>models.py</code>). <code>structure_whale_pool</code> remains but
+is unused (STRUCTURE decommissioned).</p>
 <h3 id="deeper-docs-read-these-for-detail-this-manual-summarizes">Deeper docs (read these for detail this manual summarizes)</h3>
 <ul>
 <li><code>OPERATIONS.md</code> — full ops runbook (phases, costs, deploy, backups, /panic).</li>
