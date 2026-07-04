@@ -14,6 +14,8 @@ contract:
 """
 from __future__ import annotations
 
+import pytest
+
 from bots.copy.config import (
     EXIT_STOP_PCT,
     EXIT_TAKE_PROFIT_PCT,
@@ -34,9 +36,11 @@ def _at_pct(entry: float, pct: float) -> float:
 # ---------------------------------------------------------------------------
 
 def test_static_stop_fires_at_threshold():
+    # Use a price clearly below the stop — the exact -stop boundary is
+    # float-fragile (equity lands at -7.9999… and misses the `<=`).
     _, reason = evaluate_trailing_exit(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, -EXIT_STOP_PCT),
+        current_price=_at_pct(ENTRY, -(EXIT_STOP_PCT + 2.0)),
         stored_peak_pct=None,
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
@@ -72,12 +76,13 @@ def test_no_stop_when_stop_pct_is_none():
 # ---------------------------------------------------------------------------
 
 def test_trailing_uses_multiplicative_math_low_peak():
-    """Peak 50%, current 12.5%. Multiplicative: 1.5 × 0.75 - 1 = 0.125
-    = 12.5% trail level. Current at level → fires."""
+    """Peak 100% (2x), current +9%. Multiplicative trail = 2 × 0.55 - 1 =
+    +10%; current below it → fires. (Peak must be > ~67% so the 45% trail
+    level sits above the -8% hard stop — otherwise the stop preempts.)"""
     _, reason = evaluate_trailing_exit(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 12.0),
-        stored_peak_pct=50.0,
+        current_price=_at_pct(ENTRY, 9.0),
+        stored_peak_pct=100.0,
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
@@ -85,17 +90,16 @@ def test_trailing_uses_multiplicative_math_low_peak():
 
 
 def test_trailing_holds_above_multiplicative_level():
-    """Peak 50%, current 20%. Trail = 12.5%. Current > trail → hold."""
+    """Peak 100%, current 30%. Trail = +10%. Current > trail → hold."""
     _, reason = evaluate_trailing_exit(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 20.0),
-        stored_peak_pct=50.0,
+        current_price=_at_pct(ENTRY, 30.0),
+        stored_peak_pct=100.0,
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
-    # The shim sees peak 50% which would trigger tier 1 (200%)? NO — tier 1
-    # threshold is 200%, peak is only 50%. So no partials. Just trailing
-    # which doesn't fire. → no reason.
+    # Peak 100% is below tier 0 (300%) so no partials; trailing level +10%
+    # not breached by current +30%. → no reason.
     assert reason is None
 
 
@@ -109,12 +113,13 @@ def test_shim_synthesizes_trailing_stop_when_tier_would_fire():
     than silently expecting partial-exit machinery they don't have."""
     _, reason = evaluate_trailing_exit(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 200.0),     # 3x = tier 1 threshold
+        current_price=_at_pct(ENTRY, 350.0),     # 4.5x — past tier 0 (300% = 4x)
         stored_peak_pct=None,
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
-    # Tier 1 fires in the new function. Shim conservatively closes.
+    # Tier 0 fires in the new function; trailing doesn't (equity 350% >
+    # the 45% trail level). Shim conservatively closes for legacy callers.
     assert reason == "trailing_stop"
 
 
@@ -152,8 +157,8 @@ def test_zero_entry_price_returns_no_exit():
 
 def test_leverage_scales_equity_pct():
     """Price move +15% × 2x leverage = +30% equity. Above activation,
-    becomes peak. Trail level at peak=30% multiplicative = (1.3)(0.75)-1
-    = -2.5% pct. Current 30% > trail → hold."""
+    becomes peak. Trail level at peak=30% multiplicative = (1.3)(0.55)-1
+    = -28.5% pct. Current 30% > trail → hold."""
     new_peak, reason = evaluate_trailing_exit(
         entry_price=ENTRY,
         current_price=_at_pct(ENTRY, 15.0),
@@ -162,9 +167,8 @@ def test_leverage_scales_equity_pct():
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
     )
-    assert new_peak == 30.0
-    # Tier 1 at 200% not met; no trailing fire; no TP since equity_pct=30
-    # which equals EXIT_TAKE_PROFIT_PCT — actually let's see:
+    # +15% × 2x = +30% (float lands at 29.9999…; compare with tolerance).
+    assert new_peak == pytest.approx(30.0)
     # Activation reached → trailing branch claims control. trail_pct =
-    # (1.3)(0.75)-1 = -0.025 = -2.5%. Current 30% > -2.5%. Hold.
+    # (1.3)(0.55)-1 = -0.285 = -28.5%. Current 30% > -28.5%. Hold.
     assert reason is None

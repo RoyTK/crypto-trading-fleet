@@ -11,12 +11,13 @@ the full bot surface area. Caller is responsible for firing the actions
 
 Key design notes:
 
-1. **Multiplicative trailing stop.** A 25% trailing drop applies to PRICE,
-   not to the percentage gain. At a peak of 4900% (50x), 25 percentage
-   points off would be 4875% (a 0.5% price drop — would fire on a single
-   tick of noise). 25% multiplicative is 3650% (50x → 37.5x, a real
-   pullback). The old percentage-point math was strictly wrong; this is
-   the corrected formula.
+1. **Multiplicative trailing stop.** The trailing drop
+   (EXIT_TRAILING_STOP_PCT, default 45%) applies to PRICE, not to the
+   percentage gain. At a peak of 4900% (50x), 45 percentage points off
+   would be 4855% (a 0.9% price drop — would fire on a single tick of
+   noise). 45% multiplicative is 2650% (50x → 27.5x, a real pullback).
+   The old percentage-point math was strictly wrong; this is the
+   corrected formula.
 
 2. **Partials fire in tier order.** If peak gap-ups past multiple tiers
    in one cycle, ALL eligible tiers fire — caller iterates the list.
@@ -28,9 +29,9 @@ Key design notes:
 
 4. **Trailing stop fires AFTER partials in the same cycle.** Partials
    sell defined fractions at current price; the remainder then evaluates
-   trailing. So peak=300% → tier 1 fires (sells 25% at 3x), then if
-   current dropped below trailing level (peak × 0.75 = 225%), full close
-   fires on remainder.
+   trailing. So peak=300% → tier 0 fires (sells 25% at 4x), then if
+   current dropped below trailing level (peak × 0.55 = 120% at the 45%
+   default), full close fires on remainder.
 
 Returns three things per call:
 - new_peak_pct: updated peak (caller persists if higher than stored)

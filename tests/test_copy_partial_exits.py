@@ -47,10 +47,12 @@ def _at_pct(entry: float, pct: float) -> float:
 
 def test_static_stop_terminates_with_no_partials():
     """Even if peak previously crossed tier 1, a stop-out closes
-    everything (no piecewise sells of a loser)."""
+    everything (no piecewise sells of a loser). Use a price clearly below the
+    stop (−2% past it) — testing the exact −stop boundary is float-fragile
+    (equity lands at −7.9999… and misses the `<=` by rounding)."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, -EXIT_STOP_PCT),
+        current_price=_at_pct(ENTRY, -(EXIT_STOP_PCT + 2.0)),
         stored_peak_pct=400.0,    # had been at 5x peak previously
         completed_tier_indexes=(0,),    # tier 0 (4x) already fired
         stop_pct=EXIT_STOP_PCT,
@@ -167,11 +169,11 @@ def test_gap_up_through_tier_3_fires_all_four():
 # ---------------------------------------------------------------------------
 
 def test_trailing_uses_multiplicative_math_at_high_peak():
-    """At peak 4900% (50x), trailing fires at 3650% (37.5x = 25% multiplicative drop).
-    Old pct-point math would have fired at 4875% (0.5% price drop — noise)."""
+    """At peak 4900% (50x), trailing fires at 2650% (27.5x = 45% multiplicative drop).
+    Old pct-point math would have fired at 4855% (0.9% price drop — noise)."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 3650.0),    # exactly trail level
+        current_price=_at_pct(ENTRY, 2650.0),    # exactly trail level (50x × 0.55)
         stored_peak_pct=4900.0,
         completed_tier_indexes=(0, 1, 2),    # all lower tiers fired
         stop_pct=EXIT_STOP_PCT,
@@ -200,13 +202,13 @@ def test_trailing_holds_above_multiplicative_stop():
 # ---------------------------------------------------------------------------
 
 def test_partial_and_trailing_can_fire_together():
-    """Peak ratchets to 400% (5x), current dips to 275%.
+    """Peak ratchets to 400% (5x), current dips to 175%.
     Tier 0 (300%) eligible because peak crossed it. Trailing also fires
-    on the remainder because trail mult = 5 × 0.75 = 3.75 → trail_pct
-    275% and current = 275% (at trail level)."""
+    on the remainder because trail mult = 5 × 0.55 = 2.75 → trail_pct
+    175% and current = 175% (at trail level)."""
     new_peak, partials, full = evaluate_exit_actions(
         entry_price=ENTRY,
-        current_price=_at_pct(ENTRY, 275.0),
+        current_price=_at_pct(ENTRY, 175.0),
         stored_peak_pct=400.0,
         completed_tier_indexes=(),
         stop_pct=EXIT_STOP_PCT,
