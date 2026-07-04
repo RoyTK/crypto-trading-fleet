@@ -86,6 +86,29 @@ def is_price_scale_anomaly(
     return (hi / lo) > ratio_threshold
 
 
+def is_rug_collapse(
+    entry_price: float,
+    current_price: float,
+    liquidity: Optional[float],
+    rug_floor: float,
+) -> bool:
+    """When a price-scale anomaly fires, tell a GENUINE RUG apart from a
+    price-FEED scale bug.
+
+    Only the COLLAPSE direction (current < entry) with DEAD liquidity
+    (< rug_floor) is a rug — the token fell toward zero and its pool is gone,
+    so the position must close at ~-100% instead of getting stuck skipping
+    forever (2026-07-04: two teamfollow mints rugged to 1e-10 and re-alerted
+    hourly). The GAIN direction (current >> entry) is the cbBTC-style feed
+    cascade the anomaly guard exists for and must stay skipped; a tiny-price
+    glitch on a still-liquid pool is likewise not a rug (liquidity intact), so
+    we never wrongly realize a loss on a healthy token.
+    """
+    if entry_price <= 0 or current_price <= 0 or liquidity is None:
+        return False
+    return current_price < entry_price and liquidity < rug_floor
+
+
 def liquidity_aware_stop_pct(
     entry_liq: Optional[float],
     liq_smoothed: Optional[float],

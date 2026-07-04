@@ -29,6 +29,7 @@ from bots.copy.trailing_stop import (
     PartialExitAction,
     evaluate_exit_actions,
     is_price_scale_anomaly,
+    is_rug_collapse,
 )
 
 
@@ -396,6 +397,44 @@ def test_anomaly_zero_entry_returns_false():
 
 def test_anomaly_negative_entry_returns_false():
     assert is_price_scale_anomaly(entry_price=-1.0, current_price=100.0) is False
+
+
+# --- rug-vs-feed-glitch discriminator (is_rug_collapse) --------------------
+# Only a COLLAPSE (current < entry) with DEAD liquidity is a rug to close at
+# ~-100%; everything else stays skipped by the anomaly guard.
+
+def test_rug_collapse_dead_pool_is_rug():
+    """The 2026-07-04 case: entry $3.50, current 1.41e-10, pool ~$0."""
+    assert is_rug_collapse(entry_price=3.5, current_price=1.41e-10,
+                           liquidity=0.0, rug_floor=50.0) is True
+
+
+def test_rug_collapse_gain_direction_not_rug():
+    """cbBTC-style: current >> entry (feed cascade) is NOT a rug even with a
+    dead-looking pool — must stay skipped, never book -100%."""
+    assert is_rug_collapse(entry_price=0.0006242655, current_price=60832.91,
+                           liquidity=0.0, rug_floor=50.0) is False
+
+
+def test_rug_collapse_live_pool_not_rug():
+    """Tiny-price feed glitch on a STILL-LIQUID pool is not a rug — don't
+    wrongly realize a loss on a healthy token."""
+    assert is_rug_collapse(entry_price=3.5, current_price=1.41e-10,
+                           liquidity=80_000.0, rug_floor=50.0) is False
+
+
+def test_rug_collapse_missing_liquidity_not_rug():
+    """Unknown liquidity → cannot confirm a rug → not a rug (safe default)."""
+    assert is_rug_collapse(entry_price=3.5, current_price=1.41e-10,
+                           liquidity=None, rug_floor=50.0) is False
+
+
+def test_rug_collapse_at_floor_boundary():
+    """Strict < floor: liquidity exactly at the floor is not below it."""
+    assert is_rug_collapse(entry_price=3.5, current_price=0.001,
+                           liquidity=50.0, rug_floor=50.0) is False
+    assert is_rug_collapse(entry_price=3.5, current_price=0.001,
+                           liquidity=49.9, rug_floor=50.0) is True
 
 
 def test_anomaly_zero_current_returns_false():

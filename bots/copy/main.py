@@ -53,6 +53,7 @@ from bots.copy.executor import CopyExecutor
 from bots.copy.trailing_stop import (
     evaluate_exit_actions,
     is_price_scale_anomaly,
+    is_rug_collapse,
     liquidity_aware_stop_pct,
 )
 from bots.copy.config import (
@@ -1512,6 +1513,26 @@ class CopyBot(BotLifecycle):
                 # don't fire partials, don't close. Position waits for
                 # sane prices. Caught the 2026-06-09 cbBTC cascade.
                 if is_price_scale_anomaly(trade.entry_price, mid):
+                    # Genuine RUG (collapsed toward zero + dead pool) must close
+                    # at ~-100%, not skip forever re-alerting. A feed scale bug
+                    # (gain-direction cbBTC cascade, or tiny-price glitch on a
+                    # still-live pool) keeps the skip-and-alert behavior.
+                    cur_liq = sol_liq.get(trade.asset) if trade.venue == "solana" else None
+                    if is_rug_collapse(trade.entry_price, mid, cur_liq,
+                                       self.copy_settings.copy_rug_liquidity_floor_usd):
+                        close_price, exit_fill, reason = await self._build_paper_exit(
+                            asset=trade.asset, venue=trade.venue, mid=mid,
+                            entry_price=trade.entry_price, size_usd=trade.size_usd,
+                            base_exit_reason="rug_no_liquidity",
+                        )
+                        close_paper_trade(trade_id=trade.trade_id, exit_price=close_price,
+                                          exit_fill=exit_fill, exit_reason=reason)
+                        self._liq_ema.pop(trade.trade_id, None)
+                        self.log.warning(
+                            "price_scale_anomaly_rug_close", trade_id=trade.trade_id,
+                            asset=trade.asset, entry_price=trade.entry_price,
+                            current_price=mid, liquidity_usd=cur_liq)
+                        continue
                     self.log.warning(
                         "price_scale_anomaly_skip",
                         trade_id=trade.trade_id,
@@ -1799,6 +1820,11 @@ class CopyBot(BotLifecycle):
                     # path. Extra critical here because the shadow/live
                     # path actually swaps tokens on-chain — a bogus
                     # cascade would burn real SOL on real-bad fills.
+                    # NOTE: unlike the paper path we do NOT auto rug-close a
+                    # collapse here — a rugged pool can't be sold on-chain, so
+                    # marking it closed would be fictitious. Real-money is OFF +
+                    # shadow is a tiny sample; revisit (abandon-mark accounting)
+                    # before live-full. A rugged shadow trade times out instead.
                     if is_price_scale_anomaly(trade.entry_price, mid):
                         self.log.warning(
                             "price_scale_anomaly_skip",
