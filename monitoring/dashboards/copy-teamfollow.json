@@ -292,7 +292,80 @@
         }
       ],
       "options": {
-        "showValue": "always"
+        "showValue": "always",
+        "stacking": "none",
+        "orientation": "vertical",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "legend": {
+          "showLegend": true,
+          "placement": "bottom",
+          "displayMode": "list"
+        },
+        "xTickLabelRotation": -45
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "net_pnl"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "net PnL (USD)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "n"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "trades (N)"
+              },
+              {
+                "id": "custom.axisSoftMin",
+                "value": 0
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -386,7 +459,7 @@
     {
       "id": 30,
       "type": "stat",
-      "title": "Teams traded",
+      "title": "Teams (traded / total)",
       "gridPos": {
         "x": 4,
         "y": 3,
@@ -401,9 +474,20 @@
         {
           "refId": "A",
           "format": "table",
-          "rawSql": "SELECT COUNT(DISTINCT sim_metadata->>'team_id') FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy'='teamfollow' AND sim_metadata->>'team_id' IS NOT NULL"
+          "rawSql": "SELECT COUNT(DISTINCT sim_metadata->>'team_id')::text || ' / 129' AS teams FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy'='teamfollow' AND sim_metadata->>'team_id' IS NOT NULL"
         }
-      ]
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^teams$/"
+        },
+        "textMode": "value",
+        "colorMode": "none",
+        "graphMode": "none"
+      }
     }
   ]
 }
