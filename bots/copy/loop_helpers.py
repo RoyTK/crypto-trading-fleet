@@ -51,6 +51,9 @@ class OpenPaperTrade:
     # Birdeye liquidity (USD) at entry — baseline for the live liquidity-momentum
     # stop (cluster). None for trades entered before the 2026-06-25 instrumentation.
     entry_liquidity_usd: Optional[float] = None
+    # Team-follow: the team members that co-bought into this position (used by the
+    # follow-the-team-out exit). None for cluster/conviction.
+    cluster_wallets: Optional[list[str]] = None
 
 
 def persist_signal(candidate: SignalCandidate) -> int:
@@ -229,6 +232,7 @@ def list_open_paper_trades(strategy: Optional[str] = None) -> list[OpenPaperTrad
                 strategy=md.get("strategy") or "cluster",
                 trigger_wallet=md.get("trigger_wallet"),
                 entry_liquidity_usd=_to_float_or_none(md.get("entry_liquidity_usd")),
+                cluster_wallets=md.get("cluster_wallets") or None,
             ))
     return out
 

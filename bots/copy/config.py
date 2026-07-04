@@ -413,6 +413,11 @@ class CopySettings(BaseSettings):
     # is 2-5 (a different scale than cluster's >=3 band), so it uses a flat sizer, not
     # cluster_size_to_pct (which returns 0 below 3 wallets). ~$500 on the $25k bankroll.
     copy_teamfollow_sizing_pct: float = Field(default=2.0)
+    # Follow-the-team-out exit: when a team member that BOUGHT into a held
+    # team-follow position sells that token, close the position (hold while the
+    # smart money holds, exit when it leaves). Mirrors conviction's
+    # follow-the-wallet-out. Needs the teamfollow SELL stream (copy:teamfollow_sells).
+    copy_teamfollow_follow_team_exit: bool = Field(default=True)
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)

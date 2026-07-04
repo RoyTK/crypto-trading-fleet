@@ -72,6 +72,9 @@ REDIS_BUYS_CHANNEL = "copy:buys"
 # Team-follow experiment: teamfollow-tier wallet BUYS publish here (isolated from
 # copy:buys) so they never feed the cluster detector. Buys only (no sell stream).
 REDIS_TEAMFOLLOW_BUYS_CHANNEL = "copy:teamfollow_buys"
+# Team-follow SELLS publish here (isolated from copy:sells so they never feed
+# the cluster/conviction detectors) — powers the follow-the-team-out exit.
+REDIS_TEAMFOLLOW_SELLS_CHANNEL = "copy:teamfollow_sells"
 REDIS_SELLS_CHANNEL = "copy:sells"
 REDIS_DEDUP_PREFIX = "copy:webhook_dedup:"
 DEDUP_TTL_SECONDS = 600  # 10 min — Helius retries within this window
@@ -674,7 +677,8 @@ async def _process_webhook(
         matched_event = buy or sell  # exactly one is truthy here
         kind = "buy" if buy is not None else "sell"
         if tier == "teamfollow":
-            channel = REDIS_TEAMFOLLOW_BUYS_CHANNEL   # buys only (guarded below)
+            channel = (REDIS_TEAMFOLLOW_BUYS_CHANNEL if buy is not None
+                       else REDIS_TEAMFOLLOW_SELLS_CHANNEL)
         else:
             channel = REDIS_BUYS_CHANNEL if buy is not None else REDIS_SELLS_CHANNEL
         log_rows.append((matched_event["wallet_address"], tier))
@@ -691,10 +695,10 @@ async def _process_webhook(
             "event_at": _ms_to_dt(matched_event["timestamp_ms"]),
         })
 
-        # Publish for active (buys+sells) and teamfollow (BUYS ONLY — the experiment
-        # uses cluster's exit stack, no sell-side follow-out stream). Dedup key is
+        # Publish for active (buys+sells) and teamfollow (buys → follow-in signal,
+        # sells → follow-the-team-out exit, on separate channels). Dedup key is
         # tier+kind namespaced so cross-tier/side deliveries never collide.
-        should_publish = (tier == "active") or (tier == "teamfollow" and kind == "buy")
+        should_publish = (tier == "active") or (tier == "teamfollow")
         if should_publish:
             sig = matched_event["tx_signature"]
             if sig:

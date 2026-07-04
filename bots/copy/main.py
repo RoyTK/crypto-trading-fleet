@@ -99,6 +99,7 @@ REDIS_SELLS_CHANNEL = "copy:sells"
 # Team-follow experiment: its wallets publish to a SEPARATE channel so they never
 # feed the cluster detector (isolation — see teamfollow tier in webhook_receiver).
 REDIS_TEAMFOLLOW_BUYS_CHANNEL = "copy:teamfollow_buys"
+REDIS_TEAMFOLLOW_SELLS_CHANNEL = "copy:teamfollow_sells"
 REDIS_MACRO_CLUSTER_CHANNEL = "copy:macro_cluster"
 # 2026-05-28: every cluster (regardless of asset / HL listing) is published
 # to copy:all_clusters for STRUCTURE's read-only cluster_observations journal.
@@ -248,6 +249,7 @@ class CopyBot(BotLifecycle):
         self._buys_subscriber_task: Optional[asyncio.Task] = None
         self._sells_subscriber_task: Optional[asyncio.Task] = None
         self._teamfollow_buys_subscriber_task: Optional[asyncio.Task] = None
+        self._teamfollow_sells_subscriber_task: Optional[asyncio.Task] = None
         self._buys_redis: Optional[redis_async.Redis] = None
         # Throttle for price-scale anomaly alerts. Per-trade, 1 hour
         # cool-down — prevents spam if Birdeye is returning persistently
@@ -286,6 +288,10 @@ class CopyBot(BotLifecycle):
         if self.copy_settings.copy_teamfollow_enabled:
             self._teamfollow_buys_subscriber_task = asyncio.create_task(
                 self._teamfollow_buys_subscriber())
+            # Team-follow SELLS (own channel) power the follow-the-team-out exit.
+            if self.copy_settings.copy_teamfollow_follow_team_exit:
+                self._teamfollow_sells_subscriber_task = asyncio.create_task(
+                    self._teamfollow_sells_subscriber())
         # Sell subscriber — shares the same Redis connection. Pubsub objects are
         # created per-subscriber so they coexist without interfering. Started
         # when EITHER the sell-cluster detector OR the conviction
@@ -318,6 +324,8 @@ class CopyBot(BotLifecycle):
             self._sells_subscriber_task.cancel()
         if self._teamfollow_buys_subscriber_task:
             self._teamfollow_buys_subscriber_task.cancel()
+        if self._teamfollow_sells_subscriber_task:
+            self._teamfollow_sells_subscriber_task.cancel()
         if self._buys_redis:
             await self._buys_redis.aclose()
         if self._session:
@@ -480,6 +488,44 @@ class CopyBot(BotLifecycle):
                 return
             except Exception:
                 self.log.exception("teamfollow_buys_subscriber_failed", backoff=backoff)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 60.0)
+
+    async def _teamfollow_sells_subscriber(self) -> None:
+        """Long-lived subscriber to `copy:teamfollow_sells` (isolated). A team
+        member selling a token we hold is the follow-the-team-out exit signal —
+        we do NOT feed the cluster/conviction detectors (they have their own
+        streams). Reconnects on disconnect; mirrors `_teamfollow_buys_subscriber`."""
+        if self._buys_redis is None:
+            return
+        backoff = 1.0
+        while True:
+            try:
+                pubsub = self._buys_redis.pubsub()
+                await pubsub.subscribe(REDIS_TEAMFOLLOW_SELLS_CHANNEL)
+                self.log.info("teamfollow_sells_subscriber_ready",
+                              channel=REDIS_TEAMFOLLOW_SELLS_CHANNEL)
+                backoff = 1.0
+                async for msg in pubsub.listen():
+                    if msg.get("type") != "message":
+                        continue
+                    try:
+                        payload = json.loads(msg["data"])
+                        ev = WalletSellEvent(
+                            wallet_address=payload["wallet_address"],
+                            chain=payload["chain"],
+                            token_mint=payload["token_mint"],
+                            notional_usd=float(payload["notional_usd"]),
+                            timestamp_ms=int(payload["timestamp_ms"]),
+                            tx_signature=payload.get("tx_signature", ""),
+                        )
+                        asyncio.create_task(self._follow_team_out(ev))
+                    except Exception:
+                        self.log.exception("teamfollow_sells_message_parse_failed")
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                self.log.exception("teamfollow_sells_subscriber_failed", backoff=backoff)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 60.0)
 
@@ -1341,6 +1387,52 @@ class CopyBot(BotLifecycle):
                 )
             except Exception:
                 self.log.exception("conviction_trigger_wallet_close_failed",
+                                   trade_id=t.trade_id, asset=ev.token_mint)
+
+    async def _follow_team_out(self, ev: WalletSellEvent) -> None:
+        """Close any open team-follow position when one of the team members that
+        BOUGHT into it sells that token — hold while the smart money holds, exit
+        when it starts leaving. The team-follow analogue of conviction's
+        follow-the-wallet-out. Additive to the exit stack; best-effort.
+        """
+        matches = [
+            t for t in list_open_paper_trades(strategy="teamfollow")
+            if t.asset == ev.token_mint
+            and t.venue == ev.chain
+            and ev.wallet_address in (t.cluster_wallets or [])
+        ]
+        if not matches:
+            return
+        self.log.warning(
+            "teamfollow_team_exit",
+            asset=ev.token_mint, wallet=ev.wallet_address, count=len(matches),
+        )
+        mid: Optional[float] = None
+        if self._session is not None and ev.chain == "solana":
+            try:
+                prices = await multi_price_solana(self._session, [ev.token_mint])
+                mid = prices.get(ev.token_mint)
+            except Exception:
+                self.log.warning("teamfollow_exit_price_fetch_failed", asset=ev.token_mint)
+        for t in matches:
+            close_price, exit_fill, exit_reason = await self._build_paper_exit(
+                asset=ev.token_mint, venue=ev.chain, mid=mid,
+                entry_price=t.entry_price, size_usd=t.size_usd,
+                base_exit_reason="team_exit",
+            )
+            try:
+                close_paper_trade(
+                    trade_id=t.trade_id,
+                    exit_price=close_price,
+                    exit_fill=exit_fill,
+                    exit_reason=exit_reason,
+                    exit_meta={
+                        "exit_signal": "team_exit",
+                        "exit_trigger_wallets": [ev.wallet_address],
+                    },
+                )
+            except Exception:
+                self.log.exception("teamfollow_team_close_failed",
                                    trade_id=t.trade_id, asset=ev.token_mint)
 
     # ---- Position management ----------------------------------------------

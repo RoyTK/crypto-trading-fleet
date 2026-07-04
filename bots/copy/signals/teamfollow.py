@@ -130,7 +130,10 @@ class TeamFollowDetector:
                     cluster_size=len(wallets),
                     stop_pct=EXIT_STOP_PCT,
                     take_profit_pct=EXIT_TAKE_PROFIT_PCT,
-                    timeout_hours=EXIT_TIMEOUT_HOURS,
+                    # No hard timeout — team-follow holds runners (the 12h clock
+                    # cut multi-day runners like manlet/ANSEM). Exits are governed
+                    # by the trailing stop + follow-the-team-out + rug-close.
+                    timeout_hours=None,
                     payload={
                         "strategy": "teamfollow",
                         "team_id": team,

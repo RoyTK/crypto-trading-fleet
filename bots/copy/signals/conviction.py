@@ -171,7 +171,10 @@ class ConvictionDetector:
                 cluster_size=1,
                 stop_pct=self._stop_pct,
                 take_profit_pct=EXIT_TAKE_PROFIT_PCT,
-                timeout_hours=EXIT_TIMEOUT_HOURS,
+                # No hard timeout — conviction follows deliberate accumulators
+                # through multi-day holds; the follow-the-wallet-out exit + 25%
+                # stop + trailing + rug-close govern exits, not a clock.
+                timeout_hours=None,
                 payload={
                     "strategy": "conviction",
                     "trigger_wallet": wallet,
