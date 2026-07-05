@@ -51,6 +51,7 @@ LOOKBACK_DAYS = int(os.getenv("SCRAPE_LOOKBACK_DAYS", "45"))       # run-start s
 PRERUN_DAYS = int(os.getenv("SCRAPE_PRERUN_DAYS", "14"))          # accumulation window before run_start
 MIN_LIQ_USD = float(os.getenv("SCRAPE_MIN_LIQ_USD", "30000"))    # discovery liquidity floor
 MIN_VOL24_USD = float(os.getenv("SCRAPE_MIN_VOL24_USD", "100000"))  # discovery 24h volume floor
+DISC_PAGES = int(os.getenv("SCRAPE_DISC_PAGES", "3"))          # GeckoTerminal pages per feed (breadth)
 MIN_RUN_X = float(os.getenv("SCRAPE_MIN_RUN_X", "3.0"))          # peak/base to count as a run
 PEAK_FRACTION = float(os.getenv("SCRAPE_PEAK_FRACTION", "0.12"))  # run_start = last pre-peak pt <= this*peak
 DUST_USD = float(os.getenv("SCRAPE_DUST_USD", "50"))             # ignore sub-dust buy legs
@@ -136,32 +137,37 @@ def _be_retry(path: str, tries: int = 3) -> dict | None:
 
 # ----------------------------- 1. discovery ---------------------------------
 def discover_runners() -> list[dict]:
-    """GeckoTerminal trending/new/top -> deduped base mints past liq/vol floors."""
+    """GeckoTerminal trending/new/top pools across DISC_PAGES pages each -> deduped
+    base mints past liq/vol floors. Broader = more distinct recent runners, so genuine
+    low-frequency accumulators can recur across enough tokens to clear the bot filter
+    (a thin corpus only lets high-coverage bots recur)."""
     seen: dict[str, dict] = {}
-    for feed in ("/networks/solana/trending_pools?page=1",
-                 "/networks/solana/new_pools?page=1",
-                 "/networks/solana/pools?page=1"):
-        try:
-            d = _gt(feed)
-        except Exception as e:  # noqa: BLE001
-            log.warning("gt_feed_failed", feed=feed, err=str(e))
+    for feed in ("trending_pools", "new_pools", "pools"):
+        for page in range(1, DISC_PAGES + 1):
+            try:
+                d = _gt(f"/networks/solana/{feed}?page={page}")
+            except Exception as e:  # noqa: BLE001
+                log.warning("gt_feed_failed", feed=feed, page=page, err=str(e))
+                time.sleep(GT_SLEEP)
+                continue
+            data = d.get("data", [])
+            if not data:
+                break  # no more pages on this feed
+            for p in data:
+                a = p.get("attributes", {})
+                rel = p.get("relationships", {}).get("base_token", {}).get("data", {})
+                mint = (rel.get("id") or "").replace("solana_", "")
+                if not mint:
+                    continue
+                liq = float(a.get("reserve_in_usd") or 0)
+                v24 = float((a.get("volume_usd") or {}).get("h24") or 0)
+                if liq < MIN_LIQ_USD or v24 < MIN_VOL24_USD:
+                    continue
+                prev = seen.get(mint)
+                if prev is None or v24 > prev["v24"]:
+                    seen[mint] = {"mint": mint, "symbol": (a.get("name") or "").split(" /")[0],
+                                  "liq": liq, "v24": v24}
             time.sleep(GT_SLEEP)
-            continue
-        for p in d.get("data", []):
-            a = p.get("attributes", {})
-            rel = p.get("relationships", {}).get("base_token", {}).get("data", {})
-            mint = (rel.get("id") or "").replace("solana_", "")
-            if not mint:
-                continue
-            liq = float(a.get("reserve_in_usd") or 0)
-            v24 = float((a.get("volume_usd") or {}).get("h24") or 0)
-            if liq < MIN_LIQ_USD or v24 < MIN_VOL24_USD:
-                continue
-            prev = seen.get(mint)
-            if prev is None or v24 > prev["v24"]:
-                seen[mint] = {"mint": mint, "symbol": (a.get("name") or "").split(" /")[0],
-                              "liq": liq, "v24": v24}
-        time.sleep(GT_SLEEP)
     return sorted(seen.values(), key=lambda x: x["v24"], reverse=True)
 
 
