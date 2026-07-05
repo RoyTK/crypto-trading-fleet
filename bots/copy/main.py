@@ -1047,6 +1047,29 @@ class CopyBot(BotLifecycle):
                                   min_liquidity_usd=min_liq, team_id=team_id)
                     return
 
+        # SECOND quality gate — minimum token age. Live data proved teamfollow's
+        # losses are entirely fresh-mint adverse selection (<6h old = -$2791, incl
+        # team 96's rug pair 1033/1034); the edge is in 6h-7d established tokens.
+        # Fetched pre-placement here; the same reading is reused for the
+        # post-placement age stamp below (no double fetch). Fail-open: only a
+        # KNOWN-fresh reading blocks.
+        creation_info: Optional[dict] = None
+        if candidate.venue == "solana":
+            min_age_h = self.copy_settings.copy_teamfollow_min_token_age_hours
+            if min_age_h and min_age_h > 0:
+                import time as _time
+                try:
+                    creation_info = await fetch_token_creation(self._session, candidate.asset)
+                except Exception:
+                    creation_info = None
+                if creation_info and creation_info.get("created_unix"):
+                    age_h = max(0.0, (_time.time() - creation_info["created_unix"]) / 3600.0)
+                    if age_h < min_age_h:
+                        self.log.info("teamfollow_fresh_mint_skip",
+                                      asset=candidate.asset, age_hours=round(age_h, 2),
+                                      min_age_hours=min_age_h, team_id=team_id)
+                        return
+
         snapshot = CopyMarketSnapshot(chain=candidate.chain, session=self._session)
         sim_fill = await self.simulator.simulate_entry_async(
             asset=candidate.asset,
@@ -1091,7 +1114,10 @@ class CopyBot(BotLifecycle):
                                        asset=candidate.asset)
             try:
                 import time as _time
-                info = await fetch_token_creation(self._session, candidate.asset)
+                # Reuse the age-gate fetch when available (avoids a 2nd Birdeye call).
+                info = creation_info
+                if info is None:
+                    info = await fetch_token_creation(self._session, candidate.asset)
                 if info and info.get("created_unix"):
                     age_hours = max(0.0, (_time.time() - info["created_unix"]) / 3600.0)
                     update_trade_token_age(

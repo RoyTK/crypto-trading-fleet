@@ -407,6 +407,14 @@ class CopySettings(BaseSettings):
     # far fewer rugs (the stop can only fill in deep liquidity). $50k is the sweet spot
     # (sim: 47% win, tiny drawdown vs 25%/huge at $5k). Birdeye depth, fail-open.
     copy_teamfollow_min_entry_liquidity_usd: float = Field(default=50000.0)
+    # SECOND quality gate — minimum token age at entry. Live data (n=80, 2026-07-04)
+    # showed teamfollow's losses are entirely fresh-mint adverse selection: <1h
+    # -$1736 (0/7 win), 1-6h -$1055 (2/26); the sign flips at 6h (6-24h +$278,
+    # 1-7d +$1495). A 6h floor removes -$2791 of fresh-mint rugs (incl team 96's
+    # -$1000) while keeping the profitable established-token entries. Fetched via
+    # Birdeye token_creation_info pre-placement; fail-open (only a KNOWN-fresh
+    # reading blocks). Same adverse-selection theme as the liquidity floor.
+    copy_teamfollow_min_token_age_hours: float = Field(default=6.0)
     copy_teamfollow_paper_capital_usd: float = Field(default=25000.0)  # isolated bankroll
     copy_teamfollow_alloc_cap_pct: float = Field(default=50.0)
     # FLAT per-trade size (% of the teamfollow bankroll). Team-follow's cluster_size
