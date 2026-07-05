@@ -64,6 +64,14 @@ MAX_TOKENS = int(os.getenv("SCRAPE_MAX_TOKENS", "40"))          # throttle: toke
 MAX_PRERUN_PAGES = int(os.getenv("SCRAPE_MAX_PRERUN_PAGES", "40"))  # ~2000 trades/token
 MIN_RECUR = int(os.getenv("SCRAPE_MIN_RECUR", "3"))            # recurrence report threshold
 RECUR_WINDOW_DAYS = int(os.getenv("SCRAPE_RECUR_WINDOW_DAYS", "90"))
+# Bot-frequency filter (2026-07-05): recurrence surfaces BOTS — a wallet that buys
+# everything is "pre-run" on every runner by pure coverage, so it always tops the
+# recurrence list. Forward-validation proved every high-recurrence candidate was a
+# 200-100,000 trades/day spray/router/MEV bot with NO follow-edge. A genuine
+# deliberate accumulator is LOW-frequency + selective. So we measure each candidate's
+# trades/day and filter bots out of the promotable list.
+BOT_FREQ_PER_DAY = float(os.getenv("SCRAPE_BOT_FREQ_PER_DAY", "50"))  # > this = automated bot
+ACTIVITY_TTL_DAYS = int(os.getenv("SCRAPE_ACTIVITY_TTL_DAYS", "7"))   # re-measure only if staler
 RATE_SLEEP = float(os.getenv("SCRAPE_RATE_SLEEP", "1.1"))       # Birdeye free tier ~1 RPS
 GT_SLEEP = float(os.getenv("SCRAPE_GT_SLEEP", "2.2"))          # GeckoTerminal free ~30/min
 # Skip a token whose run we already captured — re-scanning a past run returns
@@ -285,6 +293,13 @@ CREATE TABLE IF NOT EXISTS prerun_scans (
     ingested_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (token, run_date)
 );
+CREATE TABLE IF NOT EXISTS wallet_activity (
+    wallet         VARCHAR(64) PRIMARY KEY,
+    trades_per_day DOUBLE PRECISION,
+    sample_trades  INTEGER,
+    span_hours     DOUBLE PRECISION,
+    measured_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 """
 
 UPSERT = text("""
@@ -309,6 +324,43 @@ def _pool_tiers(wallets: list[str]) -> dict[str, str]:
             {"w": wallets},
         ).fetchall()
     return {r[0]: r[1] for r in rows}
+
+
+def _measure_wallet_activity(wallet: str) -> tuple[float, int, float]:
+    """Trades/day from a wallet's most-recent ~100 swaps (Birdeye trader trade feed).
+    High frequency = automated bot/router/MEV, which disqualifies a 'pre-run
+    accumulator' as a followable deliberate accumulator."""
+    now = int(time.time())
+    b = _be_retry(f"/trader/txs/seek_by_time?address={wallet}"
+                  f"&before_time={now}&tx_type=swap&limit=100")
+    time.sleep(RATE_SLEEP)
+    items = ((b or {}).get("data") or {}).get("items") or []
+    ts = [int(it.get("block_unix_time") or 0) for it in items if it.get("block_unix_time")]
+    if len(ts) < 2:
+        return 0.0, len(ts), 0.0
+    span_h = (max(ts) - min(ts)) / 3600.0
+    tpd = len(ts) / (span_h / 24.0) if span_h > 0 else 1e9  # 100 trades in ~0 span = extreme bot
+    return round(tpd, 1), len(ts), round(span_h, 2)
+
+
+def _wallet_trades_per_day(wallet: str) -> float:
+    """Cached trades/day — re-measures only if missing or older than ACTIVITY_TTL_DAYS."""
+    with session_scope() as s:
+        row = s.execute(
+            text("SELECT trades_per_day, measured_at FROM wallet_activity WHERE wallet = :w"),
+            {"w": wallet},
+        ).fetchone()
+    if row and row[1] and (datetime.now(timezone.utc) - row[1]).days < ACTIVITY_TTL_DAYS:
+        return float(row[0] or 0.0)
+    tpd, n, span = _measure_wallet_activity(wallet)
+    with session_scope() as s:
+        s.execute(text("""
+            INSERT INTO wallet_activity (wallet, trades_per_day, sample_trades, span_hours, measured_at)
+            VALUES (:w, :t, :n, :s, now())
+            ON CONFLICT (wallet) DO UPDATE SET
+              trades_per_day = :t, sample_trades = :n, span_hours = :s, measured_at = now()
+        """), {"w": wallet, "t": tpd, "n": n, "s": span})
+    return tpd
 
 
 def _already_scanned(mint: str, run_start_ts: int) -> bool:
@@ -386,13 +438,27 @@ def recurrence_report() -> None:
             ORDER BY runners DESC, avg_usd DESC
             LIMIT 40
         """)).fetchall()
-    log.info("recurrence_report", n=len(rows))
-    print(f"\n=== Recurring pre-run accumulators (>= {MIN_RECUR} runners, "
-          f"last {RECUR_WINDOW_DAYS}d) — CANDIDATES, not auto-promoted ===")
-    print(f"{'wallet':<46} {'runners':>7} {'avg_lead_d':>10} {'avg_usd':>10} {'tier':>10}")
-    for w, n, lead, usd, tier in rows:
+    # Classify each candidate by trades/day (cached). Recurrence alone surfaces bots;
+    # the frequency gate isolates genuine low-frequency deliberate accumulators.
+    graded = [(w, n, lead, usd, tier, _wallet_trades_per_day(w))
+              for (w, n, lead, usd, tier) in rows]
+    accum = sorted((g for g in graded if g[5] <= BOT_FREQ_PER_DAY),
+                   key=lambda g: (-g[1], -float(g[3] or 0)))
+    bots = sorted((g for g in graded if g[5] > BOT_FREQ_PER_DAY), key=lambda g: -g[1])
+    log.info("recurrence_report", n=len(rows), accumulators=len(accum), bots_filtered=len(bots))
+    print(f"\n=== Recurring pre-run accumulators (>= {MIN_RECUR} runners, last {RECUR_WINDOW_DAYS}d) ===")
+    print(f"{len(bots)} filtered as BOTS (> {BOT_FREQ_PER_DAY:.0f} trades/day); "
+          f"{len(accum)} genuine low-frequency accumulators — CANDIDATES (not auto-promoted):")
+    print(f"{'wallet':<46} {'runners':>7} {'trades/d':>9} {'avg_lead_d':>10} {'avg_usd':>10} {'tier':>10}")
+    for w, n, lead, usd, tier, tpd in accum:
         flag = "" if tier in (None, "none") else "  <-- already in pool"
-        print(f"{w:<46} {n:>7} {lead:>10} {usd:>10} {(tier or 'none'):>10}{flag}")
+        print(f"{w:<46} {n:>7} {tpd:>9.0f} {lead:>10} {usd:>10} {(tier or 'none'):>10}{flag}")
+    if not accum:
+        print("  (none yet — every recurring wallet so far is a high-frequency bot; "
+              "genuine accumulators need corpus growth + broader discovery)")
+    if bots:
+        print("  [top filtered bots]: " + ", ".join(
+            f"{w[:8]}(rn={n},{tpd:.0f}/d)" for w, n, lead, usd, tier, tpd in bots[:6]))
 
 
 def main() -> None:
