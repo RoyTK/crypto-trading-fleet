@@ -309,7 +309,7 @@ CREATE TABLE IF NOT EXISTS wallet_activity (
 -- Persistent watchlist of wallets recurring across >= MIN_RECUR runners. Upserted every
 -- run so a promising accumulator's emergence + history is tracked over time (first_seen,
 -- peak_runners) instead of only re-derived into the nightly log. peak_runners is kept even
--- if a wallet later drops below threshold; a manual status (validated/rejected/promoted/
+-- if a wallet later drops below threshold. A manual status (validated/rejected/promoted/
 -- watching) is preserved across runs so vetting decisions aren't overwritten by the auto pass.
 CREATE TABLE IF NOT EXISTS recurrence_candidates (
     wallet         VARCHAR(64) PRIMARY KEY,
