@@ -306,6 +306,27 @@ CREATE TABLE IF NOT EXISTS wallet_activity (
     span_hours     DOUBLE PRECISION,
     measured_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Persistent watchlist of wallets recurring across >= MIN_RECUR runners. Upserted every
+-- run so a promising accumulator's emergence + history is tracked over time (first_seen,
+-- peak_runners) instead of only re-derived into the nightly log. peak_runners is kept even
+-- if a wallet later drops below threshold; a manual status (validated/rejected/promoted/
+-- watching) is preserved across runs so vetting decisions aren't overwritten by the auto pass.
+CREATE TABLE IF NOT EXISTS recurrence_candidates (
+    wallet         VARCHAR(64) PRIMARY KEY,
+    runners        INTEGER,
+    peak_runners   INTEGER,
+    avg_lead_days  DOUBLE PRECISION,
+    avg_usd        DOUBLE PRECISION,
+    trades_per_day DOUBLE PRECISION,
+    is_bot         BOOLEAN,
+    tier           VARCHAR(32),
+    status         VARCHAR(32) NOT NULL DEFAULT 'candidate',
+    first_seen     DATE NOT NULL DEFAULT CURRENT_DATE,
+    last_seen      DATE NOT NULL DEFAULT CURRENT_DATE,
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_reccand_status ON recurrence_candidates (status);
+CREATE INDEX IF NOT EXISTS ix_reccand_genuine ON recurrence_candidates (is_bot, peak_runners);
 """
 
 UPSERT = text("""
@@ -318,6 +339,33 @@ VALUES
 ON CONFLICT (dedup_key) DO UPDATE SET
   n_buys = EXCLUDED.n_buys, bought_usd = EXCLUDED.bought_usd,
   lead_days = EXCLUDED.lead_days, pool_tier = EXCLUDED.pool_tier
+""")
+
+# Upsert into the persistent candidate watchlist. peak_runners never shrinks; a manually
+# set status (validated/rejected/promoted/watching) is preserved so vetting isn't clobbered.
+REC_CAND_UPSERT = text("""
+INSERT INTO recurrence_candidates
+  (wallet, runners, peak_runners, avg_lead_days, avg_usd, trades_per_day,
+   is_bot, tier, status, first_seen, last_seen, updated_at)
+VALUES
+  (:wallet, :runners, :runners, :avg_lead_days, :avg_usd, :tpd,
+   :is_bot, :tier, :status, CURRENT_DATE, CURRENT_DATE, now())
+ON CONFLICT (wallet) DO UPDATE SET
+  runners        = EXCLUDED.runners,
+  peak_runners   = GREATEST(recurrence_candidates.peak_runners, EXCLUDED.runners),
+  avg_lead_days  = EXCLUDED.avg_lead_days,
+  avg_usd        = EXCLUDED.avg_usd,
+  trades_per_day = EXCLUDED.trades_per_day,
+  is_bot         = EXCLUDED.is_bot,
+  tier           = EXCLUDED.tier,
+  last_seen      = CURRENT_DATE,
+  updated_at     = now(),
+  status = CASE
+             WHEN recurrence_candidates.status IN
+                  ('validated','rejected','promoted','watching')
+               THEN recurrence_candidates.status
+             ELSE EXCLUDED.status
+           END
 """)
 
 
@@ -442,7 +490,7 @@ def recurrence_report() -> None:
             GROUP BY wallet
             HAVING COUNT(DISTINCT token) >= {MIN_RECUR}
             ORDER BY runners DESC, avg_usd DESC
-            LIMIT 40
+            LIMIT 200
         """)).fetchall()
     # Classify each candidate by trades/day (cached). Recurrence alone surfaces bots;
     # the frequency gate isolates genuine low-frequency deliberate accumulators.
@@ -451,7 +499,17 @@ def recurrence_report() -> None:
     accum = sorted((g for g in graded if g[5] <= BOT_FREQ_PER_DAY),
                    key=lambda g: (-g[1], -float(g[3] or 0)))
     bots = sorted((g for g in graded if g[5] > BOT_FREQ_PER_DAY), key=lambda g: -g[1])
-    log.info("recurrence_report", n=len(rows), accumulators=len(accum), bots_filtered=len(bots))
+    # Persist the watchlist ledger so promising wallets are tracked over time (not just
+    # printed). Manual vetting statuses are preserved by REC_CAND_UPSERT.
+    with session_scope() as s:
+        for w, n, lead, usd, tier, tpd in graded:
+            s.execute(REC_CAND_UPSERT, {
+                "wallet": w, "runners": n, "avg_lead_days": lead, "avg_usd": usd,
+                "tpd": tpd, "is_bot": tpd > BOT_FREQ_PER_DAY, "tier": tier,
+                "status": "bot" if tpd > BOT_FREQ_PER_DAY else "candidate",
+            })
+    log.info("recurrence_report", n=len(rows), accumulators=len(accum),
+             bots_filtered=len(bots), ledger_upserted=len(graded))
     print(f"\n=== Recurring pre-run accumulators (>= {MIN_RECUR} runners, last {RECUR_WINDOW_DAYS}d) ===")
     print(f"{len(bots)} filtered as BOTS (> {BOT_FREQ_PER_DAY:.0f} trades/day); "
           f"{len(accum)} genuine low-frequency accumulators — CANDIDATES (not auto-promoted):")
