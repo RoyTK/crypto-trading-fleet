@@ -334,7 +334,30 @@
           "format": "table",
           "rawSql": "SELECT id, asset, venue AS chain, LEFT(sim_metadata->>'trigger_wallet', 8) AS trigger, sim_metadata->>'conviction_n_buys' AS n_buys, ROUND((sim_metadata->>'conviction_accumulated_usd')::numeric, 0) AS accum_usd, entry_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='conviction' ORDER BY entry_at DESC"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "asset"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open ${__value.raw} on Birdeye",
+                    "targetBlank": true,
+                    "url": "https://birdeye.so/solana/token/${__value.raw}?tab=trades&trades_layout=table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": 21,
@@ -356,7 +379,30 @@
           "format": "table",
           "rawSql": "SELECT id, asset, LEFT(sim_metadata->>'trigger_wallet', 8) AS trigger, sim_metadata->>'conviction_n_buys' AS n_buys, ROUND((sim_metadata->>'conviction_accumulated_usd')::numeric, 0) AS accum_usd, entry_price, exit_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction' ORDER BY exit_at DESC NULLS LAST LIMIT 50"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "asset"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open ${__value.raw} on Birdeye",
+                    "targetBlank": true,
+                    "url": "https://birdeye.so/solana/token/${__value.raw}?tab=trades&trades_layout=table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": 22,

@@ -159,8 +159,30 @@
           "format": "table"
         }
       ],
-      "fieldConfig": {"defaults": {"unit": "currencyUSD", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}, "color": {"mode": "thresholds"}}},
-      "options": {"colorMode": "value", "graphMode": "none"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none"
+      },
       "datasource": {
         "type": "postgres",
         "uid": "fleet-postgres"
@@ -473,6 +495,29 @@
       "datasource": {
         "type": "postgres",
         "uid": "fleet-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "asset"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open ${__value.raw} on Birdeye",
+                    "targetBlank": true,
+                    "url": "https://birdeye.so/solana/token/${__value.raw}?tab=trades&trades_layout=table"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -1240,6 +1285,24 @@
               {
                 "id": "unit",
                 "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "asset"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open ${__value.raw} on Birdeye",
+                    "targetBlank": true,
+                    "url": "https://birdeye.so/solana/token/${__value.raw}?tab=trades&trades_layout=table"
+                  }
+                ]
               }
             ]
           }
