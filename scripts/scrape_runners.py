@@ -74,7 +74,7 @@ RECUR_WINDOW_DAYS = int(os.getenv("SCRAPE_RECUR_WINDOW_DAYS", "90"))
 BOT_FREQ_PER_DAY = float(os.getenv("SCRAPE_BOT_FREQ_PER_DAY", "50"))  # > this = automated bot
 ACTIVITY_TTL_DAYS = int(os.getenv("SCRAPE_ACTIVITY_TTL_DAYS", "7"))   # re-measure only if staler
 RATE_SLEEP = float(os.getenv("SCRAPE_RATE_SLEEP", "1.1"))       # Birdeye free tier ~1 RPS
-GT_SLEEP = float(os.getenv("SCRAPE_GT_SLEEP", "2.2"))          # GeckoTerminal free ~30/min
+GT_SLEEP = float(os.getenv("SCRAPE_GT_SLEEP", "5.0"))          # GeckoTerminal free tier throttles bursts (429 at ~27/min); ~12/min stays clear
 # Skip a token whose run we already captured — re-scanning a past run returns
 # byte-identical data (window is fixed in the past). A GENUINELY NEW run gets a
 # new run_date > TOLERANCE days from the old one and passes through ("skip after

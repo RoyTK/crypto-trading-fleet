@@ -92,7 +92,7 @@ def med(xs):
 with session_scope() as s:
     wallets = [(r[0], r[1], r[2], r[3]) for r in s.execute(text("""
         SELECT wallet, runners, round(trades_per_day::numeric,0), round(avg_lead_days::numeric,1)
-        FROM recurrence_candidates WHERE NOT is_bot ORDER BY runners DESC, avg_usd DESC
+        FROM recurrence_candidates WHERE NOT is_bot AND status='candidate' ORDER BY runners DESC, avg_usd DESC
     """)).fetchall()]
 
 print(f"forward-validating {len(wallets)} genuine candidates INCL DUDS "
