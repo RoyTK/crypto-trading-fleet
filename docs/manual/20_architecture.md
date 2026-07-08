@@ -48,11 +48,16 @@ own halt id:
    accumulators, **reloaded only at `bot_copy` startup** (`docker compose restart bot_copy`
    after a roster change).
 3. **teamfollow** *(experiment, shipped 2026-07-01)* — ≥2 members of the same known "team"
-   co-buy within a window, from a **129-team / 338-wallet** roster
-   (`bots/copy/teamfollow_roster.json`). Own $25k paper bankroll; $50k entry-liquidity floor;
-   reuses the cluster exit stack; halt id `copy_teamfollow`; isolated Helius webhook + Redis
-   channel `copy:teamfollow_buys`. Net-negative so far (small sample) — a forward test of the
-   "many small losses, rare moonshots pay" thesis.
+   co-buy within a window, from a **128-team / 336-wallet** roster
+   (`bots/copy/teamfollow_roster.json`; team 96 pruned 2026-07-04 as a fresh-mint sniper pair).
+   Own $25k paper bankroll; **two entry gates: $50k liquidity floor + a 6-hour minimum token-age
+   gate** (`copy_teamfollow_min_token_age_hours`, added 2026-07-04 — teamfollow's losses were
+   almost entirely fresh-mint rugs, so entries into tokens <6h old are blocked); reuses the
+   cluster exit stack; halt id `copy_teamfollow`; isolated Helius webhook + Redis channel
+   `copy:teamfollow_buys`. **Reset 2026-07-04** (prior trades retagged `teamfollow_pre_reset`) to
+   measure the gated version on a clean window — a forward test of the "many small losses, rare
+   moonshots pay" thesis. Low trade volume (~few/day) is genuine signal scarcity after the gates,
+   not a bug (verified: the teams co-buy almost only fresh mints / thin tokens, both filtered).
 
 Key COPY files:
 - `main.py` — the loop: subscribes to wallet events, runs the three strategies' detectors,

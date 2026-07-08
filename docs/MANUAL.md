@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-07-03 20:01 UTC.*
+*Last built: 2026-07-08 20:13 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -42,6 +42,7 @@
     - [C. Check Helius credit usage (watch the bill)](#c-check-helius-credit-usage-watch-the-bill)
     - [D. Responding to alerts](#d-responding-to-alerts)
     - [E. Runner-scraper (pre-run accumulator discovery) — automatic, no action](#e-runner-scraper-pre-run-accumulator-discovery-automatic-no-action)
+    - [F. Slow-cluster shadow detector — automatic, no action (research/forward test)](#f-slow-cluster-shadow-detector-automatic-no-action-researchforward-test)
   - [1.4 Glossary (plain language)](#14-glossary-plain-language)
 - **[Part 2 · Engineer Track — Understand & Continue (technical)](#part-2-engineer-track-understand-continue-technical)**
   - [2.0 Architecture & Codebase Map](#20-architecture-codebase-map)
@@ -504,6 +505,20 @@ report of wallets that keep showing up across multiple runners. **You don't run 
 and it does **not** add anyone to a live list; it only *stages* candidate wallets for later
 vetting/forward-testing (see task A). It's a research feed, not a trading change. If you
 want to see its output, an engineer can read `~/logs/scrape_runners.log` on the server.
+Promising wallets are now tracked over time in a **`recurrence_candidates` ledger** (the cron
+upserts it each run, preserving any manual `validated`/`rejected`/`watching`/`promoted` status),
+so genuine low-frequency accumulators are flagged the moment they clear the bot filter and can be
+forward-validated with `scripts/fwd_validate_candidates.py` before any roster promotion.
+
+### F. Slow-cluster shadow detector — automatic, no action (research/forward test)
+
+Once a day (05:30 UTC) the server runs `scripts/slow_cluster_detector.py`. It's a **shadow signal
+that never trades**: for each recent traction token (aged 3–6 days) it records how many *genuine*
+(bot-filtered) wallets accumulated ≥$200 over the token's first ~3 days **and held**, then tracks
+each token's forward price multiple in the `slow_cluster_signals` table (a `is_signal` group with
+≥3 such holders, plus a `<3` control group). It's the forward-causal test of whether slow multi-
+wallet accumulation predicts a run — decide from the signal-vs-control comparison after ~3–4 weeks.
+Log: `~/logs/slow_cluster_detector.log`.
 
 ---
 
@@ -629,11 +644,16 @@ own halt id:
    accumulators, **reloaded only at `bot_copy` startup** (`docker compose restart bot_copy`
    after a roster change).
 3. **teamfollow** *(experiment, shipped 2026-07-01)* — ≥2 members of the same known "team"
-   co-buy within a window, from a **129-team / 338-wallet** roster
-   (`bots/copy/teamfollow_roster.json`). Own $25k paper bankroll; $50k entry-liquidity floor;
-   reuses the cluster exit stack; halt id `copy_teamfollow`; isolated Helius webhook + Redis
-   channel `copy:teamfollow_buys`. Net-negative so far (small sample) — a forward test of the
-   "many small losses, rare moonshots pay" thesis.
+   co-buy within a window, from a **128-team / 336-wallet** roster
+   (`bots/copy/teamfollow_roster.json`; team 96 pruned 2026-07-04 as a fresh-mint sniper pair).
+   Own $25k paper bankroll; **two entry gates: $50k liquidity floor + a 6-hour minimum token-age
+   gate** (`copy_teamfollow_min_token_age_hours`, added 2026-07-04 — teamfollow's losses were
+   almost entirely fresh-mint rugs, so entries into tokens <6h old are blocked); reuses the
+   cluster exit stack; halt id `copy_teamfollow`; isolated Helius webhook + Redis channel
+   `copy:teamfollow_buys`. **Reset 2026-07-04** (prior trades retagged `teamfollow_pre_reset`) to
+   measure the gated version on a clean window — a forward test of the "many small losses, rare
+   moonshots pay" thesis. Low trade volume (~few/day) is genuine signal scarcity after the gates,
+   not a bug (verified: the teams co-buy almost only fresh mints / thin tokens, both filtered).
 
 Key COPY files:
 - `main.py` — the loop: subscribes to wallet events, runs the three strategies' detectors,

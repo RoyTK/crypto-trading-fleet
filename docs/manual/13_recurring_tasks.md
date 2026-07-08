@@ -106,3 +106,17 @@ report of wallets that keep showing up across multiple runners. **You don't run 
 and it does **not** add anyone to a live list; it only *stages* candidate wallets for later
 vetting/forward-testing (see task A). It's a research feed, not a trading change. If you
 want to see its output, an engineer can read `~/logs/scrape_runners.log` on the server.
+Promising wallets are now tracked over time in a **`recurrence_candidates` ledger** (the cron
+upserts it each run, preserving any manual `validated`/`rejected`/`watching`/`promoted` status),
+so genuine low-frequency accumulators are flagged the moment they clear the bot filter and can be
+forward-validated with `scripts/fwd_validate_candidates.py` before any roster promotion.
+
+### F. Slow-cluster shadow detector — automatic, no action (research/forward test)
+
+Once a day (05:30 UTC) the server runs `scripts/slow_cluster_detector.py`. It's a **shadow signal
+that never trades**: for each recent traction token (aged 3–6 days) it records how many *genuine*
+(bot-filtered) wallets accumulated ≥$200 over the token's first ~3 days **and held**, then tracks
+each token's forward price multiple in the `slow_cluster_signals` table (a `is_signal` group with
+≥3 such holders, plus a `<3` control group). It's the forward-causal test of whether slow multi-
+wallet accumulation predicts a run — decide from the signal-vs-control comparison after ~3–4 weeks.
+Log: `~/logs/slow_cluster_detector.log`.
