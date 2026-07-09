@@ -107,6 +107,25 @@ def _gt(path: str) -> dict:
         return json.loads(resp.read().decode())
 
 
+def _gt_retry(path: str, tries: int = 4) -> dict | None:
+    """GeckoTerminal with 429 backoff. The free tier throttles bursts even at ~12/min
+    (GT_SLEEP=5 wasn't enough), so on 429 wait escalating 8/16/24s and retry rather than
+    dropping the feed page — recovers the full trending+new+top sweep."""
+    for i in range(tries):
+        try:
+            return _gt(path)
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                time.sleep(8 * (i + 1))
+                continue
+            log.warning("gt_http_error", code=e.code, path=path)
+            return None
+        except Exception as e:  # noqa: BLE001
+            log.warning("gt_exception", err=str(e), path=path)
+            time.sleep(3)
+    return None
+
+
 def _be(path: str) -> dict:
     global _BE_CALLS
     _BE_CALLS += 1  # count every HTTP hit (incl. retries) for budget measurement
@@ -144,11 +163,9 @@ def discover_runners() -> list[dict]:
     seen: dict[str, dict] = {}
     for feed in ("trending_pools", "new_pools", "pools"):
         for page in range(1, DISC_PAGES + 1):
-            try:
-                d = _gt(f"/networks/solana/{feed}?page={page}")
-            except Exception as e:  # noqa: BLE001
-                log.warning("gt_feed_failed", feed=feed, page=page, err=str(e))
-                time.sleep(GT_SLEEP)
+            d = _gt_retry(f"/networks/solana/{feed}?page={page}")
+            if d is None:
+                log.warning("gt_feed_failed", feed=feed, page=page)
                 continue
             data = d.get("data", [])
             if not data:
