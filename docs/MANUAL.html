@@ -25,7 +25,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-07-08 20:13 UTC.</em></p>
+<em>Last built: 2026-07-10 23:48 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -692,7 +692,9 @@ own halt id:</p>
 - <code>venue/</code> — external integrations: <code>helius_webhooks.py</code>, <code>helius_solana.py</code>, <code>birdeye.py</code>,
   <code>dex_quoter.py</code>, <code>jupiter_swap.py</code>, <code>cielo.py</code>.
 - <code>config.py</code> — locked thresholds (see <em>Changing Safely</em>). <strong>Current state: cluster buys
-  ENABLED; <code>copy_active_list_target = 300</code>; KEEP wallets go directly to <code>active</code>.</strong></p>
+  ENABLED; <code>copy_active_list_target = 500</code> (raised from 300 on 2026-07-10 to grow
+  the active pool into the ~3M/mo of unused prepaid Helius plan credits); KEEP
+  wallets go directly to <code>active</code>.</strong></p>
 <p><strong>STRUCTURE</strong> (<code>bots/structure/</code>) — <em>decommissioned 2026-06-25.</em> Formerly Hyperliquid
 perpetual futures (signals <code>funding_fade</code>, <code>liquidation_cascade</code>, <code>whale_flip</code>,
 <code>hl_oi_divergence</code>). Removed from docker-compose + the kill/dd monitors + scoring crons; the

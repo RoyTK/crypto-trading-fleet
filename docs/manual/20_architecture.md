@@ -70,7 +70,9 @@ Key COPY files:
 - `venue/` — external integrations: `helius_webhooks.py`, `helius_solana.py`, `birdeye.py`,
   `dex_quoter.py`, `jupiter_swap.py`, `cielo.py`.
 - `config.py` — locked thresholds (see *Changing Safely*). **Current state: cluster buys
-  ENABLED; `copy_active_list_target = 300`; KEEP wallets go directly to `active`.**
+  ENABLED; `copy_active_list_target = 500` (raised from 300 on 2026-07-10 to grow
+  the active pool into the ~3M/mo of unused prepaid Helius plan credits); KEEP
+  wallets go directly to `active`.**
 
 **STRUCTURE** (`bots/structure/`) — *decommissioned 2026-06-25.* Formerly Hyperliquid
 perpetual futures (signals `funding_fade`, `liquidation_cascade`, `whale_flip`,
