@@ -79,6 +79,13 @@ REDIS_SELLS_CHANNEL = "copy:sells"
 REDIS_DEDUP_PREFIX = "copy:webhook_dedup:"
 DEDUP_TTL_SECONDS = 600  # 10 min — Helius retries within this window
 
+# Real webhook-DELIVERY tally (every event Helius sends ≈ 1 webhookDelivery credit,
+# whether or not it matched a pool wallet). wallet_events_log only holds MATCHED buys
+# (~6% of deliveries), so it badly under-counts credit burn. These cheap per-tier daily
+# Redis counters give credit_pool_snapshot the TRUE burn. Keyed by UTC day; ~45d TTL.
+HELIUS_DELIV_PREFIX = "helius:deliv:"          # helius:deliv:{YYYY-MM-DD}:{tier}
+HELIUS_DELIV_TTL_SECONDS = 45 * 24 * 3600      # rolling ~45d history (covers a cycle)
+
 WALLET_POOL_PATH = Path("/app/bots/copy/wallet_pool.json")
 
 SOL_PRICE_REFRESH_SECONDS = 300  # 5 min
@@ -727,6 +734,17 @@ async def _process_webhook(
             await asyncio.to_thread(_persist_event_batch, log_rows, swap_rows)
         except Exception:
             log.exception("event_log_persist_failed", tier=tier, n=len(log_rows))
+
+    # Tally TRUE deliveries (all events, matched or not) for accurate credit
+    # accounting. Fail-safe: a Redis error here must never affect ingestion.
+    if events:
+        try:
+            day = datetime_now_utc().strftime("%Y-%m-%d")
+            dkey = f"{HELIUS_DELIV_PREFIX}{day}:{tier}"
+            await redis_client.incrby(dkey, len(events))
+            await redis_client.expire(dkey, HELIUS_DELIV_TTL_SECONDS)
+        except Exception:
+            log.debug("delivery_tally_failed", tier=tier)
 
     log.info("webhook_batch",
              tier=tier,

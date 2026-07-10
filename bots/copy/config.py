@@ -240,9 +240,14 @@ class CopySettings(BaseSettings):
     # profits, a larger active list captures more of the edge. Drives the
     # daily cron's promote/demote/swap math — MUST match the real intent or
     # swap_in mass-churns (the 2026-06-21 bug: code said 75, active was 124,
-    # so swap_in fired 24-92x/day). Birdeye CU scales with active size; at
-    # current usage (2.5% of 2.5M) there's headroom, but watch this as it grows.
-    copy_active_list_target: int = Field(default=300)
+    # so swap_in fired 24-92x/day). RAISED 300→500 on 2026-07-10 (Roy): Helius
+    # runs at ~70% of the 10M plan, so there's ~3M/mo of PREPAID headroom to fill
+    # — a bigger active list is how the next discovery passes consume it (going a
+    # little into paid 20M autoscale is fine; don't leave plan credits unused).
+    # Raising the target just lifts the ceiling; the pool only grows as vetted
+    # KEEP wallets arrive (no mass-churn under copy_promote_vetted_only). Watch
+    # the fixed credit_pool_snapshot (real burn vs 10M) as it climbs.
+    copy_active_list_target: int = Field(default=500)
     # Vetted-only promotion (2026-06-22). Only browser_opus* (curated/vetted)
     # wallets get promoted to active. Set false to revert to the old
     # activity-ranked promotion of any watch wallet. See wallet_pool_manager.

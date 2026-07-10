@@ -1,28 +1,29 @@
 """Daily credit/pool snapshot -> audit_log.
 
-Captures the data to build a credits-vs-wallets curve for sizing
-copy_active_list_target against the Helius budget.
+Reports TRUE Helius credit burn vs the plan, so we can deliberately run the
+active pool up toward the 10M plan (Roy 2026-07-10: use the whole plan, a little
+autoscale is fine — don't leave prepaid credits on the table).
 
-Why this works without the Helius usage API: Helius spend is ~99.7%
-`webhookDelivery` (confirmed on the dashboard 2026-06-24), and each delivery is
-one row in `wallet_events_log` (the webhook receiver logs every event). So the
-24h event count is a reliable PROXY for daily credit burn — measured from our
-own DB, no external call.
+CREDIT SOURCE (fixed 2026-07-10): Helius bills per webhook DELIVERY (~1 credit
+each), and ~100% of spend is webhookDelivery. Earlier this script counted rows in
+`wallet_events_log` as a delivery proxy — but the receiver only logs MATCHED buys
+(~6% of deliveries), so it under-reported burn ~17x (said ~2% of cap while the
+dashboard showed ~70% of the 10M plan). The receiver now tallies EVERY delivery
+into per-tier daily Redis counters (`helius:deliv:{YYYY-MM-DD}:{tier}`); this reads
+those for the real number. `wallet_events_log` is kept only as a "signal volume"
+line (matched buys), NOT as the credit measure.
 
-Calibrate once: compare a day's `deliveries_24h` here against that day's credits
-on the Helius dashboard -> credits-per-delivery (~1). After that, the projected
-monthly deliveries map straight to credits vs the 30M cap.
-
-Writes audit_log event 'credit_pool_snapshot' with pool tier counts, subscribed
-count (active + watch = what Helius bills), 24h deliveries, the per-subscribed
-rate, a projection at active_list_target, and the top heavy-hitter wallets.
+Plan = 10M credits/mo; autoscaling = separate PAID 20M bucket (30M ceiling). We
+gauge vs the 10M plan (primary) and flag autoscale territory above it.
 
 Usage:
   docker compose exec framework python -m scripts.credit_pool_snapshot
 """
 from __future__ import annotations
 
+import os
 import sys
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
@@ -39,8 +40,45 @@ except Exception:
 
 log = get_logger("credit_pool_snapshot")
 
-CREDIT_CAP = 30_000_000          # monthly cap (10M Developer + 20M autoscale, $149)
-TARGET_FOR_PROJECTION = 300      # copy_active_list_target — what we're sizing toward
+PLAN_CREDITS = 10_000_000        # monthly Developer plan (prepaid — the target to fill)
+AUTOSCALE_CREDITS = 20_000_000   # optional PAID overage bucket above the plan
+BILLED_TIERS = ("active", "watch", "teamfollow")  # each has its own subscribed webhook
+DELIV_PREFIX = "helius:deliv:"   # receiver key: helius:deliv:{YYYY-MM-DD}:{tier}
+LOOKBACK_DAYS = 7                # trailing full days to average the daily rate over
+
+
+def _redis_client():
+    import redis  # sync client (framework container)
+    url = os.environ.get(
+        "REDIS_URL",
+        f"redis://{os.environ.get('REDIS_HOST', 'redis')}:{os.environ.get('REDIS_PORT', '6379')}/0",
+    )
+    return redis.from_url(url, decode_responses=True)
+
+
+def _read_deliveries(r) -> tuple[dict, dict]:
+    """Return (per_day_totals, yesterday_by_tier) from the receiver's Redis counters.
+
+    per_day_totals: {date_str: total_deliveries} for the last LOOKBACK_DAYS full UTC days.
+    yesterday_by_tier: {tier: deliveries} for the most recent complete UTC day.
+    """
+    today = datetime.now(timezone.utc).date()
+    per_day: dict[str, int] = {}
+    yesterday_by_tier: dict[str, int] = {}
+    for i in range(1, LOOKBACK_DAYS + 1):  # 1 = yesterday (last complete day)
+        d = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+        day_total = 0
+        for tier in BILLED_TIERS:
+            try:
+                v = int(r.get(f"{DELIV_PREFIX}{d}:{tier}") or 0)
+            except Exception:
+                v = 0
+            day_total += v
+            if i == 1:
+                yesterday_by_tier[tier] = v
+        if day_total:
+            per_day[d] = day_total
+    return per_day, yesterday_by_tier
 
 
 def main() -> int:
@@ -55,72 +93,95 @@ def main() -> int:
         )
         active = int(tiers.get("active", 0))
         watch = int(tiers.get("watch", 0))
+        teamfollow = int(tiers.get("teamfollow", 0))
         pruned = int(tiers.get("pruned", 0))
-        subscribed = active + watch      # both tiers are webhook-subscribed = billed
+        subscribed = active + watch + teamfollow  # all three are webhook-billed
 
-        deliveries_24h = int(s.execute(text(
+        # Secondary "signal volume" line only (matched buys ≈ 6% of deliveries) —
+        # NOT the credit measure.
+        matched_buys_24h = int(s.execute(text(
             "SELECT COUNT(*) FROM wallet_events_log "
             "WHERE event_at > now() - interval '24 hours'"
         )).scalar() or 0)
 
-        # Split by which webhook delivered it (active vs watch tier) — shows how
-        # much of the bill each tier drives.
-        by_hook = dict(s.execute(text(
-            "SELECT source_webhook, COUNT(*) FROM wallet_events_log "
-            "WHERE event_at > now() - interval '24 hours' GROUP BY source_webhook"
-        )).all())
-        deliveries_active = int(by_hook.get("active", 0))
-        deliveries_watch = int(by_hook.get("watch", 0))
+    # ---- Real burn from the receiver's delivery counters ----
+    warming_up = False
+    try:
+        r = _redis_client()
+        per_day, yday_by_tier = _read_deliveries(r)
+    except Exception as e:
+        log.warning("delivery_counter_read_failed", err=str(e))
+        per_day, yday_by_tier = {}, {}
 
-        top = s.execute(text(
-            "SELECT wallet_address AS w, COUNT(*) AS n FROM wallet_events_log "
-            "WHERE event_at > now() - interval '24 hours' "
-            "GROUP BY wallet_address ORDER BY n DESC LIMIT 10"
-        )).all()
-        top_list = [{"wallet": r.w, "deliveries_24h": int(r.n)} for r in top]
+    if per_day:
+        daily_avg = int(round(sum(per_day.values()) / len(per_day)))
+        yesterday_total = sum(yday_by_tier.values())
+    else:
+        # Counters not populated yet (first ~1 day after deploy) — be honest.
+        warming_up = True
+        daily_avg = 0
+        yesterday_total = 0
 
-    per_sub = round(deliveries_24h / subscribed, 1) if subscribed else 0.0
-    proj_monthly_at_target = int(per_sub * TARGET_FOR_PROJECTION * 30)
-    pct_of_cap_at_target = round(100 * proj_monthly_at_target / CREDIT_CAP, 1)
+    projected_monthly = daily_avg * 30
+    pct_of_plan = round(100 * projected_monthly / PLAN_CREDITS, 1)
+    over_plan = max(0, projected_monthly - PLAN_CREDITS)
+    pct_of_autoscale = round(100 * over_plan / AUTOSCALE_CREDITS, 1) if over_plan else 0.0
 
     payload = {
-        "active": active, "watch": watch, "pruned": pruned,
+        "active": active, "watch": watch, "teamfollow": teamfollow, "pruned": pruned,
         "subscribed": subscribed,
-        "deliveries_24h": deliveries_24h,
-        "deliveries_active_24h": deliveries_active,
-        "deliveries_watch_24h": deliveries_watch,
-        "deliveries_per_subscribed_24h": per_sub,
-        "projection_target_active": TARGET_FOR_PROJECTION,
-        "projected_monthly_deliveries_at_target": proj_monthly_at_target,
-        "projected_pct_of_30M_cap_at_target": pct_of_cap_at_target,
-        "note": ("deliveries ~= Helius webhookDelivery credits (99.7% of spend); "
-                 "proxy for daily burn, calibrate credits/delivery vs dashboard once"),
-        "top_wallets_24h": top_list,
+        "deliveries_yesterday": yesterday_total,
+        "deliveries_yesterday_by_tier": yday_by_tier,
+        "deliveries_daily_avg_7d": daily_avg,
+        "days_with_data": len(per_day),
+        "projected_monthly_credits": projected_monthly,
+        "plan_credits": PLAN_CREDITS,
+        "pct_of_10M_plan": pct_of_plan,
+        "projected_autoscale_credits": over_plan,
+        "pct_of_20M_autoscale": pct_of_autoscale,
+        "matched_buys_24h_signal_volume": matched_buys_24h,
+        "warming_up": warming_up,
+        "note": ("real burn = per-tier delivery counters (helius:deliv:*); "
+                 "~1 credit/delivery; matched_buys is signal volume only"),
     }
     write_audit("credit_pool_snapshot", bot_id="copy", actor="cron", payload=payload)
 
-    print(f"[credit_pool_snapshot] active={active} watch={watch} pruned={pruned} "
-          f"subscribed={subscribed}")
-    print(f"  deliveries_24h={deliveries_24h:,} (active={deliveries_active:,} "
-          f"watch={deliveries_watch:,})  per_subscribed={per_sub}/day")
-    print(f"  projected at {TARGET_FOR_PROJECTION} active: "
-          f"{proj_monthly_at_target:,}/mo = {pct_of_cap_at_target}% of 30M cap")
-    print("  top heavy-hitters (24h deliveries):")
-    for t in top_list:
-        print(f"    {t['wallet'][:16]}…  {t['deliveries_24h']:,}")
+    print(f"[credit_pool_snapshot] active={active} watch={watch} "
+          f"teamfollow={teamfollow} pruned={pruned} subscribed={subscribed}")
+    if warming_up:
+        print("  ⏳ delivery counters warming up (need 1 full UTC day post-deploy); "
+              "true burn is on the Helius dashboard until then.")
+    else:
+        yt = yday_by_tier
+        print(f"  deliveries yesterday: {yesterday_total:,} "
+              f"(active={yt.get('active',0):,} teamfollow={yt.get('teamfollow',0):,} "
+              f"watch={yt.get('watch',0):,})")
+        print(f"  daily avg ({len(per_day)}d): {daily_avg:,}/day")
+        print(f"  projected: {projected_monthly:,}/mo = {pct_of_plan}% of the 10M plan"
+              + (f"  → +{over_plan:,} into paid autoscale ({pct_of_autoscale}% of 20M)"
+                 if over_plan else "  (no autoscale spend)"))
+    print(f"  [signal volume] matched buys 24h: {matched_buys_24h:,}")
 
     if _ALERTS:
         try:
+            if warming_up:
+                body = (f"active {active} / watch {watch} / teamfollow {teamfollow} "
+                        f"(subscribed {subscribed})\n"
+                        "delivery counters warming up — real burn on the Helius dashboard")
+            else:
+                body = (f"active {active} / watch {watch} / teamfollow {teamfollow} "
+                        f"(subscribed {subscribed})\n"
+                        f"real deliveries yesterday: {yesterday_total:,}\n"
+                        f"projected: {projected_monthly:,}/mo = {pct_of_plan}% of the 10M plan"
+                        + (f" (+{over_plan:,} paid autoscale)" if over_plan else ""))
             emit_alert(
                 severity=Severity.P2,
                 title="[copy] credit/pool snapshot",
-                body=(f"active {active} / watch {watch} (subscribed {subscribed})\n"
-                      f"deliveries 24h: {deliveries_24h:,} (~Helius webhookDelivery credits)\n"
-                      f"per subscribed wallet: {per_sub}/day\n"
-                      f"projected at {TARGET_FOR_PROJECTION} active: "
-                      f"{proj_monthly_at_target:,}/mo = {pct_of_cap_at_target}% of 30M cap"),
+                body=body,
                 bot_id="copy", event_type="credit_pool_snapshot",
-                metadata={"subscribed": subscribed, "deliveries_24h": deliveries_24h},
+                metadata={"subscribed": subscribed,
+                          "projected_monthly_credits": projected_monthly,
+                          "pct_of_10M_plan": pct_of_plan},
             )
         except Exception:
             pass
