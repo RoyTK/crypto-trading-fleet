@@ -58,14 +58,37 @@ _2026-07-11. Corpus: 98 runners (prerun_scans, May 19→Jul 9). Raw data:
 |---|---|---|---|
 | Pre-run mention rate | ≥30% | 38-55/98 depending on staleness cut | ✅ pass |
 | Median lead vs run-start | ≥30 min | ~13h | ✅ pass |
-| Precedes earliest accumulator | ≥25% | 2/8 = 25% | ➖ borderline, n too small |
-| Buy-at-mention sim net-positive | >0 | **NOT YET RUN** | ⏳ next step |
+| Precedes earliest accumulator | ≥25% | 2/8 = 25% | ✅ at threshold (n tiny) |
+| Buy-at-mention sim net-positive | >0 | **+$19.5-23.4k / 33 events** | ✅ pass |
 
-## Next steps
+## Gate-4 sim results (2026-07-11, `research_promo_sim.py`)
 
-1. **Buy-at-promo forward sim** (gate 4): entry at first price ≥ promo ts, our exit
-   stack (or first-pass: 72h MFE/MAE distribution on 1H candles), incl. slippage floor.
-2. **TG arm** — blocked on the 5-min Telethon session step (Roy).
-3. If gates hold → Phase 2 shadow collector: poll `token-boosts/latest/v1` + log every
-   boosted token (signal AND the implicit control = boosted non-runners), track
-   `fwd_mult_max` — answers P(run | promo) properly, slow_cluster pattern.
+Entry = first 1H price after promo payment, 150bps slippage each way, cluster exit
+stack (25% partials 4x/10x/50x/1000x, 45% trailing after +20%), bracketed stop
+(8%/30%) × timeout (12h/72h) = 4 configs. 62 deduped promo events, band-split.
+
+**Adjacent band (n=33): net +$19.5k to +$23.4k on $400 stakes in ALL four configs.**
+WR 36-39%, median trade −17% to −33% (most lose), best +2613% — the canonical
+positive-skew profile (same shape as cluster's 7-small-losses/3-big-wins). Robust to
+exit params = not overfit. Top-1 trade removed → still ~+$13k. MFE: 11-13/33 ≥2x,
+9-11/33 ≥4x within 96h. Stale band: +$1.3-3.8k (weak — the signal is the RECENT promo).
+
+**HONESTY CAP (why this isn't a green light to trade):** runners-only corpus = upper
+bound. 21/33 adjacent entries hard-stopped even among RUNNERS; live, most promoted
+tokens never run, and the dud drag (a −8%..−30% stop × every dud) can flip EV negative
+depending on P(run | promo) and daily promo volume. That denominator is unmeasurable
+retroactively → Phase 2.
+
+## Phase 2 — SHIPPED 2026-07-11 (`promo_shadow_collector.py`)
+
+Shadow collector (never trades), cron every 20 min: polls `token-boosts/latest/v1` +
+`token-profiles/latest/v1`, inserts first-sighting rows (token, source, price at
+signal via Birdeye) into `promo_shadow_signals`, refreshes `fwd_mult_max/min` hourly
+(resolve 30d). **Decide ~2026-08-01:** P(≥2x/≥4x | promo) by source + stack-sim EV on
+the recorded signals, duds included. Decide query in the script docstring.
+
+## Remaining
+
+- **TG arm** — blocked on the 5-min Telethon session step (Roy).
+- Staged idea: "fresh accumulation + promo within hours" coincidence signal (3/8 tight
+  couplings) — revisit after the shadow data lands.
