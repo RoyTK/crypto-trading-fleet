@@ -82,6 +82,7 @@ from bots.copy.sizing import (
 from bots.copy.venue.dex_quoter import (
     fetch_token_creation,
     fetch_token_liquidity,
+    fetch_dexscreener_pair,
     fetch_token_security,
     multi_price_solana,
     multi_price_liq_solana,
@@ -1399,32 +1400,31 @@ class CopyBot(BotLifecycle):
                 self.log.info("promobuy_blocked_creator_skip", asset=token)
                 return
 
+        # ONE Dexscreener call (the promo signal's own source) gives liquidity + age +
+        # marketcap + the practitioner filter-stack inputs — replaces 3 Birdeye
+        # round-trips. Fail-open: on error, gates don't block (same as before).
+        pair: Optional[dict] = None
+        try:
+            pair = await fetch_dexscreener_pair(self._session, token)
+        except Exception:
+            pair = None
+        entry_liq = (pair or {}).get("liquidity_usd")
+        token_age_h = (pair or {}).get("age_hours")
+        creation_info = ({"created_unix": pair["created_unix"]}
+                         if pair and pair.get("created_unix") else None)
+
         # Liquidity floor (lower than cluster/teamfollow — promos hit thinner tokens).
-        entry_liq: Optional[float] = None
         min_liq = self.copy_settings.copy_promobuy_min_entry_liquidity_usd
-        if min_liq and min_liq > 0:
-            try:
-                entry_liq = await fetch_token_liquidity(self._session, token)
-            except Exception:
-                entry_liq = None
-            if entry_liq is not None and entry_liq < min_liq:
-                self.log.info("promobuy_thin_liquidity_skip", asset=token,
-                              liquidity_usd=entry_liq, min_liquidity_usd=min_liq)
-                return
+        if min_liq and min_liq > 0 and entry_liq is not None and entry_liq < min_liq:
+            self.log.info("promobuy_thin_liquidity_skip", asset=token,
+                          liquidity_usd=entry_liq, min_liquidity_usd=min_liq)
+            return
 
         # Token-age window: promos are often fresh (min 0), but don't chase stale-promo
-        # revivals of old tokens (max age). Fail-open.
-        creation_info: Optional[dict] = None
-        token_age_h: Optional[float] = None
+        # revivals of old tokens (max age).
         min_age_h = self.copy_settings.copy_promobuy_min_token_age_hours
         max_age_h = self.copy_settings.copy_promobuy_max_token_age_hours
-        import time as _time
-        try:
-            creation_info = await fetch_token_creation(self._session, token)
-        except Exception:
-            creation_info = None
-        if creation_info and creation_info.get("created_unix"):
-            token_age_h = max(0.0, (_time.time() - creation_info["created_unix"]) / 3600.0)
+        if token_age_h is not None:
             if min_age_h and token_age_h < min_age_h:
                 self.log.info("promobuy_too_fresh_skip", asset=token, age_hours=round(token_age_h, 2))
                 return
@@ -1448,7 +1448,14 @@ class CopyBot(BotLifecycle):
             fid = signal_features.record(
                 "promobuy", token, entry_price=sim_fill.fill_price,
                 liquidity_usd=entry_liq, token_age_h=token_age_h,
-                extra={"source": source, "boost_amount": boost_amount})
+                extra={"source": source, "boost_amount": boost_amount,
+                       # practitioner filter-stack (Paper 1/MELT market-activity), from
+                       # the same Dexscreener call — the features to iterate the gate on.
+                       "market_cap": (pair or {}).get("market_cap"),
+                       "liq_mcap_ratio": (pair or {}).get("liq_mcap_ratio"),
+                       "buy_sell_ratio_h1": (pair or {}).get("buy_sell_ratio_h1"),
+                       "vol_accel": (pair or {}).get("vol_accel"),
+                       "vol_h1": (pair or {}).get("vol_h1")})
             if fid and paper_trade_id:
                 signal_features.link_trade(fid, paper_trade_id)
         except Exception:

@@ -10,6 +10,7 @@ as the slippage_bps for the simulator.
 from __future__ import annotations
 
 import asyncio
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -413,6 +414,59 @@ async def fetch_token_liquidity(
         return float(liq) if liq is not None else None
     except (TypeError, ValueError):
         return None
+
+
+async def fetch_dexscreener_pair(
+    session: aiohttp.ClientSession,
+    mint: str,
+) -> Optional[dict]:
+    """One-call token snapshot from Dexscreener /tokens/v1/solana/{mint} (the promo
+    signal's own source). Returns the highest-liquidity pair's fields parsed into a
+    flat dict — liquidity, price, age, marketcap, and the practitioner filter-stack
+    inputs (liq/mcap ratio, buy/sell ratio, volume acceleration). Best-effort → None.
+
+    Replaces 3 Birdeye round-trips (liquidity + creation + price) for promobuy, and
+    unlocks the market-activity features (Paper 1/MELT + practitioner stack) for free.
+    """
+    url = f"https://api.dexscreener.com/tokens/v1/solana/{mint}"
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as r:
+            if r.status != 200:
+                return None
+            pairs = await r.json()
+    except Exception:
+        return None
+    if not isinstance(pairs, list) or not pairs:
+        return None
+    # main pool = highest USD liquidity
+    p = max(pairs, key=lambda x: ((x.get("liquidity") or {}).get("usd") or 0))
+    liq = (p.get("liquidity") or {}).get("usd")
+    vol = p.get("volume") or {}
+    txns = p.get("txns") or {}
+    h1 = txns.get("h1") or {}
+    buys_h1, sells_h1 = (h1.get("buys") or 0), (h1.get("sells") or 0)
+    mcap = p.get("marketCap") or p.get("fdv")
+    created_ms = p.get("pairCreatedAt")
+    try:
+        price_usd = float(p["priceUsd"]) if p.get("priceUsd") is not None else None
+    except (TypeError, ValueError):
+        price_usd = None
+    vol_h1, vol_h6 = float(vol.get("h1") or 0), float(vol.get("h6") or 0)
+    out = {
+        "price_usd": price_usd,
+        "liquidity_usd": float(liq) if liq is not None else None,
+        "market_cap": float(mcap) if mcap else None,
+        "created_unix": int(created_ms / 1000) if created_ms else None,
+        "age_hours": ((time.time() - created_ms / 1000) / 3600.0) if created_ms else None,
+        "vol_h1": vol_h1, "vol_h6": vol_h6, "vol_h24": float(vol.get("h24") or 0),
+        "buys_h1": buys_h1, "sells_h1": sells_h1,
+        "buy_sell_ratio_h1": (buys_h1 / sells_h1) if sells_h1 else None,
+        # accel: last-hour volume vs the average hourly rate over 6h (>1 = accelerating)
+        "vol_accel": (vol_h1 / (vol_h6 / 6.0)) if vol_h6 > 0 else None,
+        "liq_mcap_ratio": (float(liq) / float(mcap)) if (liq and mcap) else None,
+        "dex_id": p.get("dexId"),
+    }
+    return out
 
 
 async def fetch_token_security(
