@@ -34,7 +34,7 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126 Safari/537.36"
 QUOTES = {"So11111111111111111111111111111111111111112",
           "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
           "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"}
-PRE_H, POST_H = 6, 24
+PRE_H, POST_H = 6, 24   # default window [entry-6h, entry+24h]; override via CLI
 MAX_PAGES = 6
 DUST_USD = 5.0
 RATE = 1.0
@@ -68,8 +68,8 @@ def be(path, tries=3):
     return None
 
 
-def window_trades(mint, entry_ts):
-    lo, hi = entry_ts - PRE_H * 3600, entry_ts + POST_H * 3600
+def window_trades(mint, entry_ts, pre_h=PRE_H, post_h=POST_H):
+    lo, hi = entry_ts - pre_h * 3600, entry_ts + post_h * 3600
     before, oldest, out = hi, hi, []
     prices = []
     for _ in range(MAX_PAGES):
@@ -103,8 +103,12 @@ def window_trades(mint, entry_ts):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--pre-h", type=float, default=PRE_H)
+    ap.add_argument("--post-h", type=float, default=POST_H,
+                    help="0 = strictly pre-entry window (valid entry-filter test)")
     ap.add_argument("--out", default="/tmp/manip_backtest.json")
     args = ap.parse_args()
+    print(f"window: [entry-{args.pre_h}h, entry+{args.post_h}h]")
 
     with session_scope() as s:
         rows = s.execute(text("""
@@ -130,7 +134,7 @@ def main():
     results = []
     t0 = time.time()
     for i, tk in enumerate(tokens):
-        trades, prices = window_trades(tk["asset"], tk["entry_ts"])
+        trades, prices = window_trades(tk["asset"], tk["entry_ts"], args.pre_h, args.post_h)
         rep = analyze(trades)
         lpi = (False, "no_data")
         if prices and len(trades) >= 3:
