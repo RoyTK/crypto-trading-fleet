@@ -88,14 +88,59 @@ losers.** Corrected:
   forward/validity rigor (cf. fast-flip, slow-cluster). Measure-first earned its keep by
   catching my own over-call.
 
-## Where this goes (Roy: build/adapt regardless)
+## Result 4 — concentration + bundle (MELT's dominant features), pre-entry
 
-1. **Don't ship wash as a standalone gate.** Instead **instrument**: log the detector
-   feature-set (zero_risk, circular, wash_score, LPI) on every LIVE signal + outcome →
-   builds a labeled dataset so a *multi-factor* model can be tested (Paper 2 got 73%
-   precision from the COMBINATION of tx-metrics + candles + sentiment, never one detector).
-2. **If chasing the exit signal:** build the intra-hold wash-onset-vs-peak timeline test
-   next (heavier — per-token minute-level wash series through the hold).
-3. Detector module (`manipulation_detectors.py`) is the reusable core; calibrate to OUR
-   zero-risk distribution (win ≈0.06 / loss ≈0.12 pre-entry), not the papers'.
-4. Nothing touches live entry/exit without shadow evidence + Roy's sign-off.
+MELT (arXiv 2602.13480, 41k labeled launches) says the signal is 77% concentration
+(59 feats) + bundle (35), not wash. Tested those on our 266 tokens (pre-entry window):
+
+| bucket | med top-10 buy-conc | cohort-touched | med cohort vol frac |
+|---|---|---|---|
+| our loss (182) | 0.54 | 46% | 0.000 |
+| our win (84) | **0.70** | 31% | 0.000 |
+| runner (25) | 0.65 | 48% | 0.000 |
+| dud (241) | 0.57 | 40% | 0.000 |
+
+**Two findings, one of them a caveat on my own method:**
+1. **Buy-volume concentration runs BACKWARDS vs MELT on our data** (winners 0.70 > losers
+   0.54) — because my proxy measures *buy-flow* concentration (a few big buyers = strong
+   conviction = bullish + partly OUR OWN co-buy signal firing), NOT MELT's *supply/holder*
+   concentration (insiders holding supply = overhang = bearish). **Wrong proxy.** MELT's
+   actual feature needs top-k-holders-%-of-SUPPLY snapshots, which Birdeye doesn't give
+   retroactively for old tokens.
+2. **Cohort-bundle presence weakly points MELT's way** (losers 46% cohort-touched vs
+   winners 31%) but cohort *volume* is ~0 (cohort wallets present but tiny buyers) →
+   marginal. teamfollow is most cohort-touched (60%), as expected.
+
+## Verdict on the whole retro-backtest thread (honest ceiling)
+
+Retro-backtesting manipulation features on our 266 already-traded tokens has hit a wall,
+for structural reasons that won't go away with more runs:
+- **Can't reconstruct launch-time features.** MELT's power is 122 features computed AT
+  MIGRATION on fresh launches (holder snapshots, bundle traces) + a proper label + an ML
+  model. Birdeye can't give historical holder distributions; our tokens are old.
+- **Selection bias.** We only have tokens our strategies already picked — no clean
+  control, and buy-flow features leak our own signal.
+- Single features tested retro (wash weak, buy-conc wrong-signed, bundle marginal, LPI
+  dead) — none is a clean standalone filter, exactly as expected: MELT's result was the
+  COMBINATION in a model, never one feature.
+
+## Where this goes (Roy: build/adapt regardless) — PIVOT to forward instrumentation
+
+**The retro wall is the argument FOR forward instrumentation** — it sidesteps every
+problem above (at signal time we CAN pull the live holder distribution, the token is
+fresh, the label is a real forward outcome, no selection bias on the feature):
+
+1. **Build the forward signal-instrumentation (shadow):** on every LIVE cluster/
+   conviction/teamfollow signal, snapshot the MELT-style feature-set — holder
+   concentration via a live Birdeye holder call (top-k % of SUPPLY, computed RIGHT, at
+   signal time), cohort-bundle overlap, wash/order-flow from recent txns, LPI, context —
+   into a `signal_features` table with the eventual outcome. Never trades. After ~2-4
+   weeks of labeled rows, train the multi-factor model MELT proves works (84.6% precision;
+   loss 61%→27%). This is the honest, non-throwaway path.
+2. Exit-timing use folds in: log the same features + a price/wash timeline through each
+   live position → tests the wash-onset-vs-peak exit thesis on real forward data.
+3. Detector module (`manipulation_detectors.py`) is the reusable core; the concentration
+   proxy needs replacing with a live holder-% call for the forward version.
+4. LICENSE: reimplement MELT methods on OUR data (clean); do NOT use their CC-BY-NC
+   dataset commercially.
+5. Nothing touches live entry/exit without the forward evidence + Roy's sign-off.
