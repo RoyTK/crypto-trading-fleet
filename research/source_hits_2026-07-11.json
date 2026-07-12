@@ -1,0 +1,4669 @@
+[
+ {
+  "token": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+  "run_date": "2026-05-19",
+  "symbol": "TripleT",
+  "run_x": 3.21,
+  "accums": 448,
+  "earliest_accum_buy": "2026-05-15 16:29:42+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1771922308499
+    }
+   ],
+   "n_boosts": 14,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "dviTbFTmf03EBOxKqcLu",
+     "amount": 50,
+     "paymentTimestamp": 1782999334542
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "YbWQZfBbjOwDGtOffoW6",
+     "amount": 10,
+     "paymentTimestamp": 1782765612629
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "zxEbVs6Qm2EXf7YuPjGL",
+     "amount": 10,
+     "paymentTimestamp": 1775400315109
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "vPCqL6m2gEnNwqxb3XZn",
+     "amount": 10,
+     "paymentTimestamp": 1775319755068
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "AEE2o6D7ZpOUYKBiDmbk",
+     "amount": 10,
+     "paymentTimestamp": 1775086833876
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1771921732000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "E167VuSkzyxkpoWe2ZcHSEP7ApypZTSQcAz3BttAWhFF",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "8XtRWb4uAAJFMP4QQhoYYCWR6XXb7ybcCdiqPwz9s5WS",
+  "run_date": "2026-05-22",
+  "symbol": "ALON",
+  "run_x": 4.24,
+  "accums": 1,
+  "earliest_accum_buy": "2026-05-10 19:09:34+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 24,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "8XtRWb4uAAJFMP4QQhoYYCWR6XXb7ybcCdiqPwz9s5WS",
+     "id": "pWNKrmL7tO3WYsuC5qgS",
+     "amount": 500,
+     "paymentTimestamp": 1752357450434
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8XtRWb4uAAJFMP4QQhoYYCWR6XXb7ybcCdiqPwz9s5WS",
+     "id": "rzNCsnh1VPGQ9tymnAy5",
+     "amount": 30,
+     "paymentTimestamp": 1748970237747
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8XtRWb4uAAJFMP4QQhoYYCWR6XXb7ybcCdiqPwz9s5WS",
+     "id": "32ROupZ0RdwHT1jZGfVV",
+     "amount": 10,
+     "paymentTimestamp": 1746560367939
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8XtRWb4uAAJFMP4QQhoYYCWR6XXb7ybcCdiqPwz9s5WS",
+     "id": "KHISBTuDcoDf5KF5DnHh",
+     "amount": 100,
+     "paymentTimestamp": 1739405411848
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8XtRWb4uAAJFMP4QQhoYYCWR6XXb7ybcCdiqPwz9s5WS",
+     "id": "o9mtWCzbzJvRXii5MVvI",
+     "amount": 500,
+     "paymentTimestamp": 1739248144124
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1710138657468,
+   "koth_ts_ms": 1710143145646,
+   "graduated": true,
+   "creator": "CxgPWvH2GoEDENELne2XKAR2z2Fr4shG2uaeyqZceGve",
+   "has_twitter": true,
+   "has_telegram": true
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "2fUFhZyd47Mapv9wcfXh5gnQwFXtqcYu9xAN4THBpump",
+  "run_date": "2026-05-22",
+  "symbol": "RNT",
+  "run_x": 5.93,
+  "accums": 8,
+  "earliest_accum_buy": "2026-05-08 21:31:42+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1732221731170
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1727829437267
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1727829436697
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1727829436552
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1727829436473
+    }
+   ],
+   "n_boosts": 3,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "2fUFhZyd47Mapv9wcfXh5gnQwFXtqcYu9xAN4THBpump",
+     "id": "wAGxQAg4aRmOJo5PsFqz",
+     "amount": 10,
+     "paymentTimestamp": 1728069640040
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "2fUFhZyd47Mapv9wcfXh5gnQwFXtqcYu9xAN4THBpump",
+     "id": "ujuVqpFQsQcvGf26qU8I",
+     "amount": 10,
+     "paymentTimestamp": 1728053867495
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "2fUFhZyd47Mapv9wcfXh5gnQwFXtqcYu9xAN4THBpump",
+     "id": "saCqNeFQwfFefHr6OuAX",
+     "amount": 10,
+     "paymentTimestamp": 1728050387567
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1717769346369,
+   "koth_ts_ms": 1717769368602,
+   "graduated": true,
+   "creator": "J3MtfULicJ68YMkPhZ5sCMEo7RStKgYk9TtHXkYuiUUr",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4Cnk9EPnW5ixfLZatCPJjDB1PUtcRpVVgTQukm9epump",
+  "run_date": "2026-05-22",
+  "symbol": "DADDY",
+  "run_x": 4.55,
+  "accums": 19,
+  "earliest_accum_buy": "2026-05-08 19:43:27+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1729872143020
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1728326618478
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1727829635737
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1727829491674
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1727829491635
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1727829491222
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1727829458832
+    }
+   ],
+   "n_boosts": 8,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "4Cnk9EPnW5ixfLZatCPJjDB1PUtcRpVVgTQukm9epump",
+     "id": "D0is0nrlG75eiFlaZ78z",
+     "amount": 10,
+     "paymentTimestamp": 1737137568514
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4Cnk9EPnW5ixfLZatCPJjDB1PUtcRpVVgTQukm9epump",
+     "id": "jwjIcu8xEi8i9gVOPo9Y",
+     "amount": 10,
+     "paymentTimestamp": 1735282971191
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4Cnk9EPnW5ixfLZatCPJjDB1PUtcRpVVgTQukm9epump",
+     "id": "e5JJLrapdnp6hPQcXnRE",
+     "amount": 10,
+     "paymentTimestamp": 1735241797688
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4Cnk9EPnW5ixfLZatCPJjDB1PUtcRpVVgTQukm9epump",
+     "id": "CXw6VzKkfnGyl1hju0JC",
+     "amount": 10,
+     "paymentTimestamp": 1731394427180
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4Cnk9EPnW5ixfLZatCPJjDB1PUtcRpVVgTQukm9epump",
+     "id": "vMuG3vgIS1T0eW9kef2n",
+     "amount": 30,
+     "paymentTimestamp": 1728066713351
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1717964015852,
+   "koth_ts_ms": 1717964016729,
+   "graduated": true,
+   "creator": "7XpcowtypeJyCRJAgyQmYR4xAgdnykPJXum5b4a843YJ",
+   "has_twitter": false,
+   "has_telegram": true
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "8G5ayEsJF4Q7FEWEGeF4jtnUWZBEKCqhySTFQf9Ppump",
+  "run_date": "2026-05-23",
+  "symbol": "HeavyPulp",
+  "run_x": 7.58,
+  "accums": 33,
+  "earliest_accum_buy": "2026-05-21 01:53:26+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1769553808789
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1769521836907
+    }
+   ],
+   "n_boosts": 18,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "8G5ayEsJF4Q7FEWEGeF4jtnUWZBEKCqhySTFQf9Ppump",
+     "id": "9azBOjjjjqoEkEATPnEz",
+     "amount": 10,
+     "paymentTimestamp": 1783210321717
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8G5ayEsJF4Q7FEWEGeF4jtnUWZBEKCqhySTFQf9Ppump",
+     "id": "Etizvis4klgEE64eNt6K",
+     "amount": 10,
+     "paymentTimestamp": 1781721221993
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8G5ayEsJF4Q7FEWEGeF4jtnUWZBEKCqhySTFQf9Ppump",
+     "id": "rDKg2peSKo6TOmKL3wQ8",
+     "amount": 10,
+     "paymentTimestamp": 1780562132130
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8G5ayEsJF4Q7FEWEGeF4jtnUWZBEKCqhySTFQf9Ppump",
+     "id": "o2r0AjIBCQ9WndNwxHGz",
+     "amount": 10,
+     "paymentTimestamp": 1778380187124
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8G5ayEsJF4Q7FEWEGeF4jtnUWZBEKCqhySTFQf9Ppump",
+     "id": "3qx3c5qimevkTD4q2IYa",
+     "amount": 10,
+     "paymentTimestamp": 1774656620089
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1769521065000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "CL8cS3KUGboEstdLUJi1XXq6KzKbdaFAL7TQjEEgL7hr",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "DiiTPZdpd9t3XorHiuZUu4E1FoSaQ7uGN4q9YkQupump",
+  "run_date": "2026-05-23",
+  "symbol": "ELIZABETH",
+  "run_x": 6.23,
+  "accums": 133,
+  "earliest_accum_buy": "2026-05-09 12:23:38+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1757617345899
+    }
+   ],
+   "n_boosts": 11,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "DiiTPZdpd9t3XorHiuZUu4E1FoSaQ7uGN4q9YkQupump",
+     "id": "GsyisvkT4yCBKA9Tfgov",
+     "amount": 30,
+     "paymentTimestamp": 1783214849623
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "DiiTPZdpd9t3XorHiuZUu4E1FoSaQ7uGN4q9YkQupump",
+     "id": "XQ5t9Rt55PFSG3mnbxs2",
+     "amount": 10,
+     "paymentTimestamp": 1769095048336
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "DiiTPZdpd9t3XorHiuZUu4E1FoSaQ7uGN4q9YkQupump",
+     "id": "6dSeqv6JbrFCbvIx02PI",
+     "amount": 100,
+     "paymentTimestamp": 1763595733730
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "DiiTPZdpd9t3XorHiuZUu4E1FoSaQ7uGN4q9YkQupump",
+     "id": "8Kzappn3Sh6bqrVnYqNi",
+     "amount": 500,
+     "paymentTimestamp": 1762879424412
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "DiiTPZdpd9t3XorHiuZUu4E1FoSaQ7uGN4q9YkQupump",
+     "id": "kKU8FTgQTNlkXxajIMKg",
+     "amount": 500,
+     "paymentTimestamp": 1760382608496
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1757616323003,
+   "koth_ts_ms": 1757619997000,
+   "graduated": true,
+   "creator": "EEtAjUt8sDmcYrX93hQFGTGxkn2Zifqu6TVLfJZNPsdT",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+  "run_date": "2026-05-25",
+  "symbol": "TripleT",
+  "run_x": 3.98,
+  "accums": 452,
+  "earliest_accum_buy": "2026-05-15 16:29:42+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1771922308499
+    }
+   ],
+   "n_boosts": 14,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "dviTbFTmf03EBOxKqcLu",
+     "amount": 50,
+     "paymentTimestamp": 1782999334542
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "YbWQZfBbjOwDGtOffoW6",
+     "amount": 10,
+     "paymentTimestamp": 1782765612629
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "zxEbVs6Qm2EXf7YuPjGL",
+     "amount": 10,
+     "paymentTimestamp": 1775400315109
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "vPCqL6m2gEnNwqxb3XZn",
+     "amount": 10,
+     "paymentTimestamp": 1775319755068
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+     "id": "AEE2o6D7ZpOUYKBiDmbk",
+     "amount": 10,
+     "paymentTimestamp": 1775086833876
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1771921732000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "E167VuSkzyxkpoWe2ZcHSEP7ApypZTSQcAz3BttAWhFF",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "72FkeF1cpBMtbordhTVNVbBGdaN5DfHcchstHwPWpump",
+  "run_date": "2026-05-25",
+  "symbol": "PUMPVILLE",
+  "run_x": 5.87,
+  "accums": 25,
+  "earliest_accum_buy": "2026-05-11 00:12:02+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1762980060196
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1762978772000,
+   "koth_ts_ms": 1762984000000,
+   "graduated": true,
+   "creator": "FarMSYdX83ZBoBXtfNivSAotXsc8YeaA6ZKwjNoHmDKn",
+   "has_twitter": true,
+   "has_telegram": true
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
+  "run_date": "2026-05-25",
+  "symbol": "TRENCHER",
+  "run_x": 3.27,
+  "accums": 65,
+  "earliest_accum_buy": "2026-05-11 00:01:04+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1755402613597
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1746395169719
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1745665271584
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1745616347528
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1745543602461
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1745530960376
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1745525665852
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1745506669346
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1745489180629
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1745487695944
+    }
+   ],
+   "n_boosts": 23,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
+     "id": "KO6SWehVTmvKj8qBXiTv",
+     "amount": 30,
+     "paymentTimestamp": 1778080687523
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
+     "id": "ASSDh6SSx2JFwvovJDHu",
+     "amount": 50,
+     "paymentTimestamp": 1777035937590
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
+     "id": "NvzPquZpfVzsJXvZ94To",
+     "amount": 50,
+     "paymentTimestamp": 1771002235561
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
+     "id": "5QEujDdsF6zrOdgVUj1m",
+     "amount": 50,
+     "paymentTimestamp": 1769690776811
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
+     "id": "lR2DJY570Fch16mwctaQ",
+     "amount": 50,
+     "paymentTimestamp": 1769095744132
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1745485811202,
+   "koth_ts_ms": 1745485837000,
+   "graduated": true,
+   "creator": "4VnN9zHyVGQGymWityKff4Tf1M7AtnAZwbwmgyHfr1An",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4D8qUHm334fxqeTauPvF8gQ7fYgrD4Mpmb1Wy6ftUSWR",
+  "run_date": "2026-05-27",
+  "symbol": "USWR",
+  "run_x": 4.71,
+  "accums": 6,
+  "earliest_accum_buy": "2026-05-26 05:40:04+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1783802615732
+    },
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1783005589422
+    },
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1782752569673
+    },
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1782501755483
+    },
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1782161606632
+    },
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1781703145408
+    },
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1781450899599
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1780842140333
+    },
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1780492408330
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1780492265385
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1780417989755
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1780289175478
+    },
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1780234329471
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1780234167937
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1780118780953
+    },
+    {
+     "type": "trendingBarAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1779903287714
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1779393897736
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "FeMbDoX7R1Psc4GEcvJdsbNbZA3bfztcyDCatJVJpump",
+  "run_date": "2026-05-31",
+  "symbol": "three",
+  "run_x": 43.05,
+  "accums": 97,
+  "earliest_accum_buy": "2026-05-29 18:59:15+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1777443464630
+    }
+   ],
+   "n_boosts": 27,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "FeMbDoX7R1Psc4GEcvJdsbNbZA3bfztcyDCatJVJpump",
+     "id": "j7DAVG5ZDq6JFOJHGA6U",
+     "amount": 10,
+     "paymentTimestamp": 1783650273592
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "FeMbDoX7R1Psc4GEcvJdsbNbZA3bfztcyDCatJVJpump",
+     "id": "Lm8UhdgS9HvVbUHtYLOV",
+     "amount": 10,
+     "paymentTimestamp": 1783430176988
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "FeMbDoX7R1Psc4GEcvJdsbNbZA3bfztcyDCatJVJpump",
+     "id": "dw1Bj1l1pE5MaVRO8mY8",
+     "amount": 10,
+     "paymentTimestamp": 1783272248403
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "FeMbDoX7R1Psc4GEcvJdsbNbZA3bfztcyDCatJVJpump",
+     "id": "YXCHk2ajHF0VMn6L1eGR",
+     "amount": 10,
+     "paymentTimestamp": 1783201503251
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "FeMbDoX7R1Psc4GEcvJdsbNbZA3bfztcyDCatJVJpump",
+     "id": "EL6AJyBzIGlul27cw8K8",
+     "amount": 10,
+     "paymentTimestamp": 1782999862164
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1777441309000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "8xpMZdyhxL1gGsrSLoJpJ3FtsXooC25UtF6EVWgPoEiS",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "24Kko3VWwMKtkB9CVct2ZAZgJzb2R2iNrYxCpTYFpump",
+  "run_date": "2026-06-05",
+  "symbol": "APU",
+  "run_x": 5.96,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1780673175424
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1780667130986
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1780667094000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "6ujZxnphRxTqveaQtLAQHFoWz16xhLWZbTijcgZN4fRp",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "Tqj8yFmagrg7oorpQkVGYR52r96RFTamvWfth9bpump",
+  "run_date": "2026-06-06",
+  "symbol": "KINS",
+  "run_x": 400.13,
+  "accums": 357,
+  "earliest_accum_buy": "2026-06-05 04:44:23+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "on-hold",
+     "payment_ts_ms": 1781843644764
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1781377876471
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1779472292211
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1779471284000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "9RqoLW1RyC2a9zqBj264ENLTvrZ3REoa6Av9n3gW8mz5",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "BcHEaaTCvycPwwsJ9yQTXdHP9X2gCLkznDbZ8VySpump",
+  "run_date": "2026-06-07",
+  "symbol": "Jotchua",
+  "run_x": 113.31,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1780807770983
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "BcHEaaTCvycPwwsJ9yQTXdHP9X2gCLkznDbZ8VySpump",
+     "id": "svltRY6TXh1Y4Fje1NuO",
+     "amount": 10,
+     "paymentTimestamp": 1783131763454
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1780806147000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "C7kRDkkz93Q8noKpPryvMEFL9qFtQJM8dTNW1gvGWZd3",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "B6f27ETGcjgGNB1fqULJbXVmw9FnL8HgBp7R83hmpump",
+  "run_date": "2026-06-08",
+  "symbol": "drooling",
+  "run_x": 969.87,
+  "accums": 313,
+  "earliest_accum_buy": "2026-06-03 00:21:47+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1780382359025
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1780040829402
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1780040668000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "H878d3z7Cp82oFBA7AdeE6URwudETioftDRrX59mqD3X",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+  "run_date": "2026-06-10",
+  "symbol": "HOOD",
+  "run_x": 8.56,
+  "accums": 7,
+  "earliest_accum_buy": "2026-05-27 04:26:59+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1743137480256
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1738446268963
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1738291219822
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1738286945292
+    }
+   ],
+   "n_boosts": 5,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "K3EPODahnDrHMcigKG69",
+     "amount": 10,
+     "paymentTimestamp": 1744932918965
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "Jx3Lw68UV1INKNiCD2Ki",
+     "amount": 500,
+     "paymentTimestamp": 1738893384880
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "asCugYW45iEEqYXa5qnq",
+     "amount": 10,
+     "paymentTimestamp": 1738795706164
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "ccaf0LrFOUst7mmt1UDr",
+     "amount": 500,
+     "paymentTimestamp": 1738440453564
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "efPD7CVqy1nxsmXhxRV2",
+     "amount": 500,
+     "paymentTimestamp": 1738290535279
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4SnKwnz6DyagftnFqdxsvWvehrcbEDhxmmXNQk2Jpump",
+  "run_date": "2026-06-16",
+  "symbol": "Joby",
+  "run_x": 212.32,
+  "accums": 274,
+  "earliest_accum_buy": "2026-06-11 22:48:53+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1781218380857
+    }
+   ],
+   "n_boosts": 14,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "4SnKwnz6DyagftnFqdxsvWvehrcbEDhxmmXNQk2Jpump",
+     "id": "TbUMU4R7odwhW8ewEaWY",
+     "amount": 100,
+     "paymentTimestamp": 1783549634625
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4SnKwnz6DyagftnFqdxsvWvehrcbEDhxmmXNQk2Jpump",
+     "id": "757E2Ge9mr8oAwAYXKS8",
+     "amount": 30,
+     "paymentTimestamp": 1783548472999
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4SnKwnz6DyagftnFqdxsvWvehrcbEDhxmmXNQk2Jpump",
+     "id": "OB0cxrDqOufhFjilYyP7",
+     "amount": 10,
+     "paymentTimestamp": 1783548098047
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4SnKwnz6DyagftnFqdxsvWvehrcbEDhxmmXNQk2Jpump",
+     "id": "oYQn13hkw3YCenmLmdNK",
+     "amount": 10,
+     "paymentTimestamp": 1783273910171
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4SnKwnz6DyagftnFqdxsvWvehrcbEDhxmmXNQk2Jpump",
+     "id": "wRGczYvdpzuW8hjzE00p",
+     "amount": 10,
+     "paymentTimestamp": 1783270502538
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1781218093000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "Cmt2zaoR7UsDd8Gs8hqmNReRfA4NE9ai9r2S2AuBaKA2",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "EmcxFTNVDqyLHp11NvwvLZ4D7LKGbG9i7B8RF7dwpump",
+  "run_date": "2026-06-17",
+  "symbol": "ZERO",
+  "run_x": 74.58,
+  "accums": 408,
+  "earliest_accum_buy": "2026-06-14 10:08:47+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1780602824526
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "EmcxFTNVDqyLHp11NvwvLZ4D7LKGbG9i7B8RF7dwpump",
+     "id": "uXmmbNpHDjaOaB2BhENC",
+     "amount": 10,
+     "paymentTimestamp": 1781841933384
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1780599598000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "zeropP4MuvPZ52Nz3LgQ4jgcNAW7NXBDxaGui5XPtjb",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "8wxkvAfEns76yBzu4MnbV7VnXWjg3iDPA9uwAQ6cpump",
+  "run_date": "2026-06-18",
+  "symbol": "SOLANGELES",
+  "run_x": 24.62,
+  "accums": 186,
+  "earliest_accum_buy": "2026-06-06 05:30:46+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1779398269784
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1779397450751
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1779397322000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "GRDknmrH8FCkuuAxugzNUmVoyctrgKKyFrMA2YU5LFTk",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+  "run_date": "2026-06-22",
+  "symbol": "CATWIF",
+  "run_x": 15.89,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782112590129
+    }
+   ],
+   "n_boosts": 23,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+     "id": "gX0yrQVSPMGxDgCHf31t",
+     "amount": 30,
+     "paymentTimestamp": 1783810461196
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+     "id": "dKWhvebgoo5okgRzXvYT",
+     "amount": 30,
+     "paymentTimestamp": 1783741731705
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+     "id": "rnmo8IE8hjZQHID8LvOp",
+     "amount": 30,
+     "paymentTimestamp": 1783634986513
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+     "id": "UdTZsjqC428m885ziwMT",
+     "amount": 30,
+     "paymentTimestamp": 1783508106636
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+     "id": "l5djvx6YbRH9DzIqSaDP",
+     "amount": 50,
+     "paymentTimestamp": 1783404164086
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782110585000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "6h4Mk1hhuQpUxSKZaSEX6RC23C77Bpi3ZvWmdLQkEMyv",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "FMqh9mqR6drPZqqW6wPqLHxX4rqNDWGhYLaMfoaJpump",
+  "run_date": "2026-06-22",
+  "symbol": "world",
+  "run_x": 2716.94,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782237702263
+    }
+   ],
+   "n_boosts": 2,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "FMqh9mqR6drPZqqW6wPqLHxX4rqNDWGhYLaMfoaJpump",
+     "id": "XCgbx7QY7LvG1xqmJZKA",
+     "amount": 10,
+     "paymentTimestamp": 1783630984157
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "FMqh9mqR6drPZqqW6wPqLHxX4rqNDWGhYLaMfoaJpump",
+     "id": "eiqitIuZRLPY6L45UMfY",
+     "amount": 10,
+     "paymentTimestamp": 1782921341000
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1781816687000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "7hbihgf1myV3DE6PAhBz3ytvnBTV7MZXcsFgsBY6oo2W",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "2dGmaEp7UAPDC71gM3hNH3dQBM3DHNnBH1nXRvQDP39b",
+  "run_date": "2026-06-24",
+  "symbol": "STANDX",
+  "run_x": 6.47,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "HmxxRoFJo5fxFjkLGRQbx94oSprZArLNiXzvYvYNWdpT",
+  "run_date": "2026-06-26",
+  "symbol": "250",
+  "run_x": 5.36,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "3d1qHSAkQhoN7kN1C6tvpAArCkXWxwYdBng6taXCDM6u",
+  "run_date": "2026-06-26",
+  "symbol": "RTM",
+  "run_x": 1498.03,
+  "accums": 271,
+  "earliest_accum_buy": "2026-06-22 12:36:19+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1782217062613
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1782031280698
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1759187346731
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1758025482984
+    }
+   ],
+   "n_boosts": 15,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "3d1qHSAkQhoN7kN1C6tvpAArCkXWxwYdBng6taXCDM6u",
+     "id": "j2FdQcSuDuuarVGfYAmV",
+     "amount": 10,
+     "paymentTimestamp": 1782674991116
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "3d1qHSAkQhoN7kN1C6tvpAArCkXWxwYdBng6taXCDM6u",
+     "id": "axaxsKnPH5VBFVPpsofA",
+     "amount": 10,
+     "paymentTimestamp": 1782479729439
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "3d1qHSAkQhoN7kN1C6tvpAArCkXWxwYdBng6taXCDM6u",
+     "id": "CpoBn3933uLmYw7BxFob",
+     "amount": 10,
+     "paymentTimestamp": 1759254198433
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "3d1qHSAkQhoN7kN1C6tvpAArCkXWxwYdBng6taXCDM6u",
+     "id": "rKqkprxzqpCEF3mH6MT8",
+     "amount": 10,
+     "paymentTimestamp": 1759188084064
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "3d1qHSAkQhoN7kN1C6tvpAArCkXWxwYdBng6taXCDM6u",
+     "id": "VSmaGhgaXTkfK1xFWBrR",
+     "amount": 10,
+     "paymentTimestamp": 1759156027035
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1739742532425,
+   "koth_ts_ms": 1758023789000,
+   "graduated": true,
+   "creator": "EEo6zAuw8UuiRPf9kiyuhioWVzo4KxNj1SanewsSUBEp",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
+  "run_date": "2026-06-27",
+  "symbol": "ANSEM",
+  "run_x": 1471.96,
+  "accums": 72,
+  "earliest_accum_buy": "2026-06-24 10:26:06+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1782637294301
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1781910695212
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1781726737630
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1781644775932
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1781644417822
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1781643948000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "yHCxHBEaJW5tbndqC8JciSThr7U1cqLpdcsvHcx6PRe",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "FDEF2U9geiWS7sdGPCUo2r1wGswkJr2mmVTECiH6pump",
+  "run_date": "2026-06-27",
+  "symbol": "MITCH",
+  "run_x": 20.9,
+  "accums": 50,
+  "earliest_accum_buy": "2026-06-14 08:05:54+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1756853389325
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1756852635643
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1756850595182
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1756850049277,
+   "koth_ts_ms": 1756850048000,
+   "graduated": false,
+   "creator": "4Be9CvxqHW6BYiRAxW9Q3xu1ycTMWaL5z8NX4HR3ha7t",
+   "has_twitter": true,
+   "has_telegram": true
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "BDdzUjksj1J4bSnMveQ5tV9Up8A9c6YS1tHrxNw3pump",
+  "run_date": "2026-06-28",
+  "symbol": "FOMO",
+  "run_x": 7.82,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782671821456
+    }
+   ],
+   "n_boosts": 4,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "BDdzUjksj1J4bSnMveQ5tV9Up8A9c6YS1tHrxNw3pump",
+     "id": "1QEDfhitEYyUf1LC6s5D",
+     "amount": 10,
+     "paymentTimestamp": 1783640909574
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "BDdzUjksj1J4bSnMveQ5tV9Up8A9c6YS1tHrxNw3pump",
+     "id": "XkB6RgH3UqieU7P10cV1",
+     "amount": 10,
+     "paymentTimestamp": 1783534411170
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "BDdzUjksj1J4bSnMveQ5tV9Up8A9c6YS1tHrxNw3pump",
+     "id": "doXP9iZea7bo8OOyRxOs",
+     "amount": 10,
+     "paymentTimestamp": 1783114347197
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "BDdzUjksj1J4bSnMveQ5tV9Up8A9c6YS1tHrxNw3pump",
+     "id": "ko6jETIkSUXex6DelVf0",
+     "amount": 10,
+     "paymentTimestamp": 1782707727969
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782666553000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "6ujZxnphRxTqveaQtLAQHFoWz16xhLWZbTijcgZN4fRp",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "CuGJf6cfDfMh4UxVgNJ5KFQ6v8Wv3qrqop6cFKsGpump",
+  "run_date": "2026-06-28",
+  "symbol": "TATE",
+  "run_x": 3.04,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1782688104539
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782676447775
+    }
+   ],
+   "n_boosts": 6,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "CuGJf6cfDfMh4UxVgNJ5KFQ6v8Wv3qrqop6cFKsGpump",
+     "id": "OuLQfpCS7IJTkHXf8Yks",
+     "amount": 10,
+     "paymentTimestamp": 1783268735235
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "CuGJf6cfDfMh4UxVgNJ5KFQ6v8Wv3qrqop6cFKsGpump",
+     "id": "GyJeu9dGx1PkBCI44IGV",
+     "amount": 100,
+     "paymentTimestamp": 1783095835239
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "CuGJf6cfDfMh4UxVgNJ5KFQ6v8Wv3qrqop6cFKsGpump",
+     "id": "FP6maOQ27LWL7QbIkdZg",
+     "amount": 50,
+     "paymentTimestamp": 1783060746899
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "CuGJf6cfDfMh4UxVgNJ5KFQ6v8Wv3qrqop6cFKsGpump",
+     "id": "lGHl7Inm8cqLAin6x7Ay",
+     "amount": 50,
+     "paymentTimestamp": 1782687837230
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "CuGJf6cfDfMh4UxVgNJ5KFQ6v8Wv3qrqop6cFKsGpump",
+     "id": "nHgJGcqHKL3fYq6Eu7Fr",
+     "amount": 100,
+     "paymentTimestamp": 1782684649319
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782673092000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "Gnyg5rhq86UwoCkmW39GFHaMVGNHhPnvUGFruC2YTGC4",
+   "has_twitter": true,
+   "has_telegram": true
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "HULaBKR1eK3SA18FpfEav8Z2t7TJ1qEC775YHTLNpump",
+  "run_date": "2026-06-28",
+  "symbol": "DAVID",
+  "run_x": 14.44,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1782933761793
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782684620027
+    }
+   ],
+   "n_boosts": 3,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "HULaBKR1eK3SA18FpfEav8Z2t7TJ1qEC775YHTLNpump",
+     "id": "rNCayIkI444wkGLMKxCa",
+     "amount": 50,
+     "paymentTimestamp": 1783319623930
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "HULaBKR1eK3SA18FpfEav8Z2t7TJ1qEC775YHTLNpump",
+     "id": "EoY97JtalMIypcT4DXCp",
+     "amount": 10,
+     "paymentTimestamp": 1783177052601
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "HULaBKR1eK3SA18FpfEav8Z2t7TJ1qEC775YHTLNpump",
+     "id": "R4im5KQjPCwt41jLtB8B",
+     "amount": 10,
+     "paymentTimestamp": 1783098513830
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782681159000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "7Dj7DGddC1hbkomra61norv47xRHs1wkYg2pcsPbpFEQ",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "JCKwsT8UAbygnFkZ7u3amDUM7BXRtwUhCsHQv2khpump",
+  "run_date": "2026-06-28",
+  "symbol": "CHANCE",
+  "run_x": 11.06,
+  "accums": 330,
+  "earliest_accum_buy": "2026-06-18 07:13:24+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1781059645014
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1781059611994
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1781057825000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "6X8dcpdfG7QoEg5RLuLEbh3H1rWPbdNQpKbGf9nUwTpn",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "ERPtViqckt1zqpS2abUx67CgLcP54CkhBPYz3yRUpump",
+  "run_date": "2026-06-29",
+  "symbol": "yep",
+  "run_x": 20.51,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782735279996
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "ERPtViqckt1zqpS2abUx67CgLcP54CkhBPYz3yRUpump",
+     "id": "PnyJ2zOU3rOjtLQKiBI9",
+     "amount": 10,
+     "paymentTimestamp": 1783112085343
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782734404000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "4DrtsW86GarGJJeYrBwYCjoyMgDPG95QWSGhFHvCkU2s",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "2aQKC1xiKpEyAWvzSDrULnYLVuybWyx7qrsnpP8hpump",
+  "run_date": "2026-06-29",
+  "symbol": "Udin",
+  "run_x": 124.11,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1783595832066
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1782816069818
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782800690757
+    }
+   ],
+   "n_boosts": 10,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "2aQKC1xiKpEyAWvzSDrULnYLVuybWyx7qrsnpP8hpump",
+     "id": "2QDZcvPOnqLTYPuW6TfJ",
+     "amount": 50,
+     "paymentTimestamp": 1783688359882
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "2aQKC1xiKpEyAWvzSDrULnYLVuybWyx7qrsnpP8hpump",
+     "id": "JBQY25NKn5yvvNSo2pao",
+     "amount": 10,
+     "paymentTimestamp": 1783611722255
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "2aQKC1xiKpEyAWvzSDrULnYLVuybWyx7qrsnpP8hpump",
+     "id": "M11jjZx4kGLzzjP5NJlF",
+     "amount": 10,
+     "paymentTimestamp": 1783348757792
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "2aQKC1xiKpEyAWvzSDrULnYLVuybWyx7qrsnpP8hpump",
+     "id": "Nv0rN6QYNyUXFsf330TX",
+     "amount": 10,
+     "paymentTimestamp": 1783116281810
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "2aQKC1xiKpEyAWvzSDrULnYLVuybWyx7qrsnpP8hpump",
+     "id": "rPCW6GdHsd74yMRm4mEB",
+     "amount": 10,
+     "paymentTimestamp": 1783064674305
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1742991084504,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "CskUpxE9jsdDg2kCwVSa8jT5Zfbb6tAojpbjc9Qtwi17",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "CfpyW6dps2SExf6Ut9orZS6oCyQhMtPTFPUf9FoRWUZF",
+  "run_date": "2026-06-30",
+  "symbol": "NADO",
+  "run_x": 9.43,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "An6RA7yBCdbbnUtJEqGjEQJnGGnKmQMB2w6NXNq5rhML",
+  "run_date": "2026-06-30",
+  "symbol": "ANSEM",
+  "run_x": 3.97,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "H694ptJDy3GGGuWpsLDfESssWZ8UUY8yupDHQpDmQkxN",
+  "run_date": "2026-06-30",
+  "symbol": "USA250",
+  "run_x": 5.96,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "GHtYnxAnu6CAF7oydQKzkY4dmhtb1xSfj1AQtjpkY39B",
+  "run_date": "2026-07-01",
+  "symbol": "KALSHI",
+  "run_x": 17.5,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "HaJZjZBgfzCPg2w5QDVMwDUtAXszDdSk28NGRmQ9J87h",
+  "run_date": "2026-07-01",
+  "symbol": "OpenClaw",
+  "run_x": 77.65,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+  "run_date": "2026-07-01",
+  "symbol": "manlet",
+  "run_x": 108.51,
+  "accums": 254,
+  "earliest_accum_buy": "2026-06-29 22:31:22+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1782993745353
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782774171115
+    }
+   ],
+   "n_boosts": 5,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+     "id": "Rhw6uw61oG3nGk5N9mak",
+     "amount": 10,
+     "paymentTimestamp": 1783502905832
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+     "id": "8t6JQw6n8OgIxAqJScgm",
+     "amount": 10,
+     "paymentTimestamp": 1783502893429
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+     "id": "7s5EdVZEl8jA0G8bvd6M",
+     "amount": 30,
+     "paymentTimestamp": 1783309930477
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+     "id": "0XIabHq2Hhy1eWTBzC81",
+     "amount": 10,
+     "paymentTimestamp": 1783187803147
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+     "id": "HHolSVJhzBikk3ZMrMTC",
+     "amount": 50,
+     "paymentTimestamp": 1782998531906
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782772282000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "7t89aupXuWC6tqRWejgeZQ2xvBaW7zadk8npg64WpLaH",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "6bwjefQxeUW3K43B6xTEQqdAKQeg6U39KeJLBSdRMf92",
+  "run_date": "2026-07-01",
+  "symbol": "XDAO",
+  "run_x": 15.35,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "AvZUKK1ZPzSZ3NyPmCfsMWJx13LuJZNAH948FLWi2cGG",
+  "run_date": "2026-07-01",
+  "symbol": "BASE",
+  "run_x": 13.53,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "9QTWuqRz65PYDG15UxxUqTyjVYpc9dqaNujGXshshAKG",
+  "run_date": "2026-07-01",
+  "symbol": "TEMPO",
+  "run_x": 15.01,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "CbH68SPTRzq5f3EmfK4c3LSETw8CsbsDC1aTS4iJu7Js",
+  "run_date": "2026-07-01",
+  "symbol": "OUSD",
+  "run_x": 4.84,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "AgpStVUQ1hw4F9d22jQMNnKW6dPPxg6dbdUCsdQEw1KZ",
+  "run_date": "2026-07-01",
+  "symbol": "OUSD",
+  "run_x": 6.94,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "Bqs76KADGDkiwskqdqTu1jaNrpJyzV5ZxpvJrL5npump",
+  "run_date": "2026-07-01",
+  "symbol": "Hobbes",
+  "run_x": 386.59,
+  "accums": 283,
+  "earliest_accum_buy": "2026-06-29 08:40:51+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1783141396244
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782588968375
+    }
+   ],
+   "n_boosts": 7,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "Bqs76KADGDkiwskqdqTu1jaNrpJyzV5ZxpvJrL5npump",
+     "id": "8HmxBVLrHWQ45TRi9y33",
+     "amount": 10,
+     "paymentTimestamp": 1783350144732
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "Bqs76KADGDkiwskqdqTu1jaNrpJyzV5ZxpvJrL5npump",
+     "id": "AZNXLLFLYwCdL5qUG5Os",
+     "amount": 10,
+     "paymentTimestamp": 1783197605104
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "Bqs76KADGDkiwskqdqTu1jaNrpJyzV5ZxpvJrL5npump",
+     "id": "MVE5gp23JFPKSXcXc4Fx",
+     "amount": 10,
+     "paymentTimestamp": 1783172592467
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "Bqs76KADGDkiwskqdqTu1jaNrpJyzV5ZxpvJrL5npump",
+     "id": "Ds8I9WvMsvdjq2EtsRxB",
+     "amount": 30,
+     "paymentTimestamp": 1783160031164
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "Bqs76KADGDkiwskqdqTu1jaNrpJyzV5ZxpvJrL5npump",
+     "id": "bo2molzeyrxg1TIUoCnb",
+     "amount": 10,
+     "paymentTimestamp": 1783105621412
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1781644517000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "W7GWnB5YBJHEqYiGmMbMtbPcraVmJrPYvtb5zkktTFH",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "6hpfrxQb2kn9iprcJcZ6uXruGAwDe12W9zT4y4WSpump",
+  "run_date": "2026-07-01",
+  "symbol": "Goofreck",
+  "run_x": 160.17,
+  "accums": 99,
+  "earliest_accum_buy": "2026-06-28 00:24:01+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1747951140744
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1747862354629
+    }
+   ],
+   "n_boosts": 4,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "6hpfrxQb2kn9iprcJcZ6uXruGAwDe12W9zT4y4WSpump",
+     "id": "9mW6UIwY6SIiDGEvQHhy",
+     "amount": 50,
+     "paymentTimestamp": 1748101294494
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "6hpfrxQb2kn9iprcJcZ6uXruGAwDe12W9zT4y4WSpump",
+     "id": "xtvqGpX6rEi8XJ1gGmPr",
+     "amount": 10,
+     "paymentTimestamp": 1748054683043
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "6hpfrxQb2kn9iprcJcZ6uXruGAwDe12W9zT4y4WSpump",
+     "id": "A7sze8iLylcdMWTcZAgh",
+     "amount": 10,
+     "paymentTimestamp": 1747959634005
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "6hpfrxQb2kn9iprcJcZ6uXruGAwDe12W9zT4y4WSpump",
+     "id": "1TRnABLHN6Y62ohNzLts",
+     "amount": 10,
+     "paymentTimestamp": 1747863999801
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1747862090283,
+   "koth_ts_ms": 1747862091000,
+   "graduated": true,
+   "creator": "DaqayWSuoxJCzJAd5NzsjxdwWSFMMSutBctwucRb4mxU",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4N4DnNo3qpPks9aQCkcWkzoir8tnvT6diS4TnnZibonk",
+  "run_date": "2026-07-01",
+  "symbol": "KITTY",
+  "run_x": 43.53,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1759430705312
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "4N4DnNo3qpPks9aQCkcWkzoir8tnvT6diS4TnnZibonk",
+     "id": "Da0F84A4QjPDwABhEWwH",
+     "amount": 30,
+     "paymentTimestamp": 1783023692716
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "HmTi3CQfKfXWbn1tNoiAxH7GzMV7L3tDAmPWabZEBAGS",
+  "run_date": "2026-07-01",
+  "symbol": "P0",
+  "run_x": 190.74,
+  "accums": 19,
+  "earliest_accum_buy": "2026-06-17 17:48:36+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1772829525434
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1772814153911,
+   "koth_ts_ms": null,
+   "graduated": false,
+   "creator": "93dATRmochQfCtm9FP1aaATxQZctBnP23Y3Ktu6XHutk",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "F5hqdbykXuksp8P78CAZenSvpPShAYKrP2U2MiZMdgFN",
+  "run_date": "2026-07-01",
+  "symbol": "bop",
+  "run_x": 10.56,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1740855405499
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1729914649554
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1729791261871
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1729720242979
+    }
+   ],
+   "n_boosts": 9,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "F5hqdbykXuksp8P78CAZenSvpPShAYKrP2U2MiZMdgFN",
+     "id": "Ygu8Adll5xRuyPENhNvg",
+     "amount": 500,
+     "paymentTimestamp": 1732408221519
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "F5hqdbykXuksp8P78CAZenSvpPShAYKrP2U2MiZMdgFN",
+     "id": "yJWdvLN348NWTnd3KxZl",
+     "amount": 30,
+     "paymentTimestamp": 1731961906608
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "F5hqdbykXuksp8P78CAZenSvpPShAYKrP2U2MiZMdgFN",
+     "id": "M3SvJdLSpNUMxDdOCpcm",
+     "amount": 30,
+     "paymentTimestamp": 1731595548769
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "F5hqdbykXuksp8P78CAZenSvpPShAYKrP2U2MiZMdgFN",
+     "id": "Ssgci1ALtqHQoRINqNuV",
+     "amount": 30,
+     "paymentTimestamp": 1731543024292
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "F5hqdbykXuksp8P78CAZenSvpPShAYKrP2U2MiZMdgFN",
+     "id": "xR863IclEEnvTtW1WFjK",
+     "amount": 30,
+     "paymentTimestamp": 1731166626671
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1712036542000,
+   "koth_ts_ms": 1729720276000,
+   "graduated": true,
+   "creator": "CZxCfyYTrhaeGEjEGRrrBiYd73b8hhYhDBAaRxF9Zy5Z",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "48oT2QgpyPFUiJYXbvZTS1tVDp98R9uYAJX5ojNrpump",
+  "run_date": "2026-07-02",
+  "symbol": "SEMAN",
+  "run_x": 237.77,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783065136874
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782748670000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "HZYSfq2C4bxv5sUj2nioZXdKZmWtB8gAdvgzjKguiJsh",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "CFPkPq1eYPR8GLzEo59wUbbMioX4bshaTQiSGzTSpump",
+  "run_date": "2026-07-02",
+  "symbol": "MENSA",
+  "run_x": 5.24,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1783216379861
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782959300419
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782958801000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "DYmsQudNqJyyDvq86XmzAvrU9T7xwfQEwh6gPQw9TPNF",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "5RyeWfbjVw6Ktj6j8SmTiAnVXWvmV8YxGtTebNsU2dBo",
+  "run_date": "2026-07-02",
+  "symbol": "Pauly",
+  "run_x": 194.96,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1727828227892
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "5RyeWfbjVw6Ktj6j8SmTiAnVXWvmV8YxGtTebNsU2dBo",
+     "id": "LxTtN3ucl4e1854ETmra",
+     "amount": 10,
+     "paymentTimestamp": 1783456844753
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1712188752000,
+   "koth_ts_ms": 1712189142823,
+   "graduated": true,
+   "creator": "2dKSMjAxP5oJgfNNKxHfKHpaUkdyiPvnWH69wija5mMy",
+   "has_twitter": true,
+   "has_telegram": true
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "86HJUo5nJnRchZyEnip5iJfr1NHSPrkw9PcmYCtUVrCg",
+  "run_date": "2026-07-02",
+  "symbol": "dog",
+  "run_x": 37.06,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+  "run_date": "2026-07-02",
+  "symbol": "PATTYICE",
+  "run_x": 21.48,
+  "accums": 233,
+  "earliest_accum_buy": "2026-06-30 02:54:44+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782835819725
+    }
+   ],
+   "n_boosts": 3,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+     "id": "sCvmVQFS1jsm9HbQx06q",
+     "amount": 10,
+     "paymentTimestamp": 1783374196699
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+     "id": "KwFNuLilV0NaP2dCJAsE",
+     "amount": 10,
+     "paymentTimestamp": 1783369221153
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+     "id": "hjIhdvFtHASl5hKipYVi",
+     "amount": 10,
+     "paymentTimestamp": 1782917445503
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782788084000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "4q4GKBpVmXGhXYNaR4DetQjf5WjHEHhbJ9Wgybt7F8Yu",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "CSsAm5FwLedujzBaRbcCEACYt9pzf8uUQ8ppdwi8Tm6Q",
+  "run_date": "2026-07-02",
+  "symbol": "KLED",
+  "run_x": 45.19,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "ADEVGG6hFtBU3yg5oYtbhPCkiwU2CBFR4gxka7wpfoBx",
+  "run_date": "2026-07-02",
+  "symbol": "ANSEM",
+  "run_x": 4.18,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4MrsXQzaosYNyFd4wKDvgnC5xRtRqgXRrijFTGj9pump",
+  "run_date": "2026-07-03",
+  "symbol": "NORMIE",
+  "run_x": 23.66,
+  "accums": 304,
+  "earliest_accum_buy": "2026-07-02 12:49:57+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1783443407488
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782996934495
+    }
+   ],
+   "n_boosts": 4,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "4MrsXQzaosYNyFd4wKDvgnC5xRtRqgXRrijFTGj9pump",
+     "id": "ztm4tmCFJgpfXAvsBw19",
+     "amount": 100,
+     "paymentTimestamp": 1783779192548
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4MrsXQzaosYNyFd4wKDvgnC5xRtRqgXRrijFTGj9pump",
+     "id": "cnGnUsvZL0IUhyAp08uJ",
+     "amount": 50,
+     "paymentTimestamp": 1783710841543
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4MrsXQzaosYNyFd4wKDvgnC5xRtRqgXRrijFTGj9pump",
+     "id": "ucqR159CU3UWdjmWysYd",
+     "amount": 100,
+     "paymentTimestamp": 1783710647095
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4MrsXQzaosYNyFd4wKDvgnC5xRtRqgXRrijFTGj9pump",
+     "id": "94NyCnp1LLFkhG9uyljL",
+     "amount": 10,
+     "paymentTimestamp": 1782997172854
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782996597000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "yHCxHBEaJW5tbndqC8JciSThr7U1cqLpdcsvHcx6PRe",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "Ee4Nm1R32jYuoFAMHSpfNcb1yQYqzGrR9C2nbnHwwTNJ",
+  "run_date": "2026-07-03",
+  "symbol": "Ee4Nm1R32jYuoFAMHSpfNcb1yQYqzGrR9C2nbnHwwTNJ",
+  "run_x": 6.43,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "96X4zg5T4NFWzTVFXHsadvYbxbzFX2Rqt3GXUv92pump",
+  "run_date": "2026-07-03",
+  "symbol": "Balloon",
+  "run_x": 9.44,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783082391619
+    }
+   ],
+   "n_boosts": 2,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "96X4zg5T4NFWzTVFXHsadvYbxbzFX2Rqt3GXUv92pump",
+     "id": "cULSqUO9tz2e7kMkjsET",
+     "amount": 10,
+     "paymentTimestamp": 1783171700869
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "96X4zg5T4NFWzTVFXHsadvYbxbzFX2Rqt3GXUv92pump",
+     "id": "jxfcGoDrfbUmy8YxTgPU",
+     "amount": 10,
+     "paymentTimestamp": 1783093823505
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783080128000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "J98XWJ7DMKGy3DsNc2X8f6pq7xM4JJtWBtXHzKZgjMec",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4Vn4cyu67VJouC3BqEu7AAQix8k7ryLrA6mMmkjjpump",
+  "run_date": "2026-07-03",
+  "symbol": "Z",
+  "run_x": 47.08,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1783340615072
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783167252141
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783098056000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "7ghws6gLDhdm1aZgqNeQsnvcL9YiG7o66YfpKQTNunqC",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "42cXQvAAr7hcPBPWAS4ocVtDyeJ4Fa6gRR2uG4gppump",
+  "run_date": "2026-07-03",
+  "symbol": "TBB",
+  "run_x": 26.41,
+  "accums": 306,
+  "earliest_accum_buy": "2026-06-30 03:03:23+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782832099290
+    }
+   ],
+   "n_boosts": 4,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "42cXQvAAr7hcPBPWAS4ocVtDyeJ4Fa6gRR2uG4gppump",
+     "id": "RSXFJXOktNC8mMHsMxQM",
+     "amount": 30,
+     "paymentTimestamp": 1783535669543
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "42cXQvAAr7hcPBPWAS4ocVtDyeJ4Fa6gRR2uG4gppump",
+     "id": "d2wNGEgMLkKgZosNCDf7",
+     "amount": 10,
+     "paymentTimestamp": 1783381700624
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "42cXQvAAr7hcPBPWAS4ocVtDyeJ4Fa6gRR2uG4gppump",
+     "id": "Ix2l3kTrYv6dINeup4kQ",
+     "amount": 10,
+     "paymentTimestamp": 1782931515612
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "42cXQvAAr7hcPBPWAS4ocVtDyeJ4Fa6gRR2uG4gppump",
+     "id": "uff6jSYBVnyk2gjLzmjJ",
+     "amount": 50,
+     "paymentTimestamp": 1782832220722
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782777991000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "AAgeUpYYFfDQ42wZLFdejMfdssf9rVCVMeZfWzceGA2w",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "ESAYabnPzfaZGcwNtTL5RL1RBaoW7vYUNx5n6QfTpump",
+  "run_date": "2026-07-03",
+  "symbol": "Pigeon",
+  "run_x": 60.01,
+  "accums": 86,
+  "earliest_accum_buy": "2026-06-30 19:37:19+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1783400701280
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782848473739
+    }
+   ],
+   "n_boosts": 3,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "ESAYabnPzfaZGcwNtTL5RL1RBaoW7vYUNx5n6QfTpump",
+     "id": "84Q83e9I4wisRcNaP0Oo",
+     "amount": 10,
+     "paymentTimestamp": 1783438435284
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "ESAYabnPzfaZGcwNtTL5RL1RBaoW7vYUNx5n6QfTpump",
+     "id": "wiWTaCh5l9ouLAcZXr78",
+     "amount": 10,
+     "paymentTimestamp": 1783394648408
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "ESAYabnPzfaZGcwNtTL5RL1RBaoW7vYUNx5n6QfTpump",
+     "id": "5H3N6dW7niMvvabDZ8gF",
+     "amount": 10,
+     "paymentTimestamp": 1783387040988
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782848239000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "gVDXhoGbePACvSqN7CZBtQXFW9eyJwsgudPEwSydAkx",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "8oQEW25mcVzeWvcjkGup9ob3KafVMNdzAi8XXmmWpump",
+  "run_date": "2026-07-04",
+  "symbol": "Fro",
+  "run_x": 33.82,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1773863057558
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1758501110822
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1758500396411
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "8oQEW25mcVzeWvcjkGup9ob3KafVMNdzAi8XXmmWpump",
+     "id": "Fo36bLQzXNyPphldp3NO",
+     "amount": 10,
+     "paymentTimestamp": 1773824973640
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1758417315211,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "CnPh97GMn68v1voRh9qrdSTfQS3GiDfqgrREZUGUxvwj",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "GbpARMvdpDpavgLJXzTSgWAcSta2FeEYfjAZZ91upump",
+  "run_date": "2026-07-04",
+  "symbol": "MURAD",
+  "run_x": 169.8,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783272816965
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "GbpARMvdpDpavgLJXzTSgWAcSta2FeEYfjAZZ91upump",
+     "id": "9f13ts9bVmTwefuOBYMW",
+     "amount": 10,
+     "paymentTimestamp": 1783436287675
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783178578000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "9ZKZTvjbzJCYyhQZs9gRi3xYJF7LrJSLaZ94BfXwHptU",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "CvqxZzFZqDKSpD1bNSkwQ6j9stSCBVgQ9GT4tLdKpump",
+  "run_date": "2026-07-04",
+  "symbol": "TOLY",
+  "run_x": 3.27,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783201439281
+    }
+   ],
+   "n_boosts": 2,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "CvqxZzFZqDKSpD1bNSkwQ6j9stSCBVgQ9GT4tLdKpump",
+     "id": "VNsLqs2HvJWFbNiEKYkw",
+     "amount": 10,
+     "paymentTimestamp": 1783314767869
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "CvqxZzFZqDKSpD1bNSkwQ6j9stSCBVgQ9GT4tLdKpump",
+     "id": "FVbKlTrppWJgobDsORPE",
+     "amount": 10,
+     "paymentTimestamp": 1783219742701
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783201275000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "yHCxHBEaJW5tbndqC8JciSThr7U1cqLpdcsvHcx6PRe",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "EYvkcWB5S4DFv7gJqR8D2W76U9n7kD3jvYcbSXdppump",
+  "run_date": "2026-07-04",
+  "symbol": "HAALAND",
+  "run_x": 56.81,
+  "accums": 182,
+  "earliest_accum_buy": "2026-06-25 08:10:52+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1782377388918
+    }
+   ],
+   "n_boosts": 4,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "EYvkcWB5S4DFv7gJqR8D2W76U9n7kD3jvYcbSXdppump",
+     "id": "3su1tbb9CG8vF3R78w08",
+     "amount": 10,
+     "paymentTimestamp": 1783607916240
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "EYvkcWB5S4DFv7gJqR8D2W76U9n7kD3jvYcbSXdppump",
+     "id": "94sVnstKsvmf0sE8EylF",
+     "amount": 10,
+     "paymentTimestamp": 1783532665733
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "EYvkcWB5S4DFv7gJqR8D2W76U9n7kD3jvYcbSXdppump",
+     "id": "UTo6MhIFAhTs4DSq1via",
+     "amount": 10,
+     "paymentTimestamp": 1783440000964
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "EYvkcWB5S4DFv7gJqR8D2W76U9n7kD3jvYcbSXdppump",
+     "id": "PmAbEzWuRFVibYYuUr5E",
+     "amount": 10,
+     "paymentTimestamp": 1783364870385
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782375046000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "2mH9uqVAaoBAjpmbmNC42DYxgDMNFqEwgwq5DERv9LYg",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4PRz3EwhbjrrX6YksMDuUzrXT51pr7CQtXNCravhpump",
+  "run_date": "2026-07-04",
+  "symbol": "ACM",
+  "run_x": 333.46,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783230637145
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "4PRz3EwhbjrrX6YksMDuUzrXT51pr7CQtXNCravhpump",
+     "id": "F9lXP9i1tsHeGd21PfdK",
+     "amount": 10,
+     "paymentTimestamp": 1783233523373
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1758313073825,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "Fc8T5MKEsqkK24JpQv8VNmk7cNehTN1RuixTtr1RUyho",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "7thY5PzYdH311NXYE6mecBjUs7wcosk1bWw2qfH4pump",
+  "run_date": "2026-07-05",
+  "symbol": "Sapijiju",
+  "run_x": 112.42,
+  "accums": 82,
+  "earliest_accum_buy": "2026-06-21 03:17:26+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1764213536398
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "7thY5PzYdH311NXYE6mecBjUs7wcosk1bWw2qfH4pump",
+     "id": "VyaC59SxSN60aEmToJ8K",
+     "amount": 10,
+     "paymentTimestamp": 1783479675016
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1737676939304,
+   "koth_ts_ms": 1737677029000,
+   "graduated": true,
+   "creator": "6i2aHtxfqkC2biTo98FSkP59FVHPKFRLZWDbdghN6WKK",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+  "run_date": "2026-07-05",
+  "symbol": "HOOD",
+  "run_x": 11.33,
+  "accums": 16,
+  "earliest_accum_buy": "2026-05-27 04:26:59+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1743137480256
+    },
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1738446268963
+    },
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1738291219822
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1738286945292
+    }
+   ],
+   "n_boosts": 5,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "K3EPODahnDrHMcigKG69",
+     "amount": 10,
+     "paymentTimestamp": 1744932918965
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "Jx3Lw68UV1INKNiCD2Ki",
+     "amount": 500,
+     "paymentTimestamp": 1738893384880
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "asCugYW45iEEqYXa5qnq",
+     "amount": 10,
+     "paymentTimestamp": 1738795706164
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "ccaf0LrFOUst7mmt1UDr",
+     "amount": 500,
+     "paymentTimestamp": 1738440453564
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+     "id": "efPD7CVqy1nxsmXhxRV2",
+     "amount": 500,
+     "paymentTimestamp": 1738290535279
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "5jycPAWLGHqV1NWWGneVhg2uMtt2jP2Wn641XMtd1oBy",
+  "run_date": "2026-07-05",
+  "symbol": "NADO",
+  "run_x": 137.76,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
+  "run_date": "2026-07-05",
+  "symbol": "LEVI",
+  "run_x": 118.87,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "cancelled",
+     "payment_ts_ms": 1783371590185
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783309186452
+    }
+   ],
+   "n_boosts": 3,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
+     "id": "LQjI1GHlv5MxAHagC6VA",
+     "amount": 10,
+     "paymentTimestamp": 1783376042044
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
+     "id": "fNNZVIpBAnoMeNjOmRdm",
+     "amount": 10,
+     "paymentTimestamp": 1783376021996
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
+     "id": "5GUkLonP1QdmHBBL62gJ",
+     "amount": 50,
+     "paymentTimestamp": 1783309198945
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783285512000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "8UrMcr7LazNCNq1s7chvNwCms5gxCS4V2CbLiG7L65Z8",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "6UGNg119LV6YjSCQ5K6Z6jsLLLetpMJ1vPdhiU8qpump",
+  "run_date": "2026-07-05",
+  "symbol": "CURB",
+  "run_x": 4.17,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1783346819847
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783261474959
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783261081000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "yHCxHBEaJW5tbndqC8JciSThr7U1cqLpdcsvHcx6PRe",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "E2ueKQ3EDTTmCkUA17j3KeTb2u6VT91xiyECdKRzpump",
+  "run_date": "2026-07-06",
+  "symbol": "tolywifhat",
+  "run_x": 5.16,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783320989756
+    }
+   ],
+   "n_boosts": 5,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "E2ueKQ3EDTTmCkUA17j3KeTb2u6VT91xiyECdKRzpump",
+     "id": "QbDKjdKbQLVIcxConmPS",
+     "amount": 100,
+     "paymentTimestamp": 1783695402964
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "E2ueKQ3EDTTmCkUA17j3KeTb2u6VT91xiyECdKRzpump",
+     "id": "aSLs7p4DWBOWqLXekv7a",
+     "amount": 100,
+     "paymentTimestamp": 1783607851078
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "E2ueKQ3EDTTmCkUA17j3KeTb2u6VT91xiyECdKRzpump",
+     "id": "nbcVJTmEsTLl9au4Adso",
+     "amount": 100,
+     "paymentTimestamp": 1783515418571
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "E2ueKQ3EDTTmCkUA17j3KeTb2u6VT91xiyECdKRzpump",
+     "id": "P5B6mne3Sy9C92ctUsaF",
+     "amount": 100,
+     "paymentTimestamp": 1783421135856
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "E2ueKQ3EDTTmCkUA17j3KeTb2u6VT91xiyECdKRzpump",
+     "id": "jeCQBpoNm3jioOFCwEck",
+     "amount": 100,
+     "paymentTimestamp": 1783323111801
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783319214000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "ueYxLWJLz98fSpt4zuLuUGt9kC32Ei2NDx3EymAk1Yr",
+   "has_twitter": false,
+   "has_telegram": true
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4eKYoR1hBHnRaYyg2d57H36uUatRNyZr1NRP9ScNpump",
+  "run_date": "2026-07-06",
+  "symbol": "DONALT",
+  "run_x": 10.61,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783312206854
+    }
+   ],
+   "n_boosts": 6,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "4eKYoR1hBHnRaYyg2d57H36uUatRNyZr1NRP9ScNpump",
+     "id": "lA69kjLQ7JFx3DDXs7yR",
+     "amount": 10,
+     "paymentTimestamp": 1783651260871
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4eKYoR1hBHnRaYyg2d57H36uUatRNyZr1NRP9ScNpump",
+     "id": "DTbY0Qb5HVv7pvFvlun8",
+     "amount": 10,
+     "paymentTimestamp": 1783573843627
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4eKYoR1hBHnRaYyg2d57H36uUatRNyZr1NRP9ScNpump",
+     "id": "B0cAZVgZMlfaR4tOO409",
+     "amount": 10,
+     "paymentTimestamp": 1783507727781
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4eKYoR1hBHnRaYyg2d57H36uUatRNyZr1NRP9ScNpump",
+     "id": "nACNxFzLo8WhwhCnHWBc",
+     "amount": 100,
+     "paymentTimestamp": 1783413451106
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "4eKYoR1hBHnRaYyg2d57H36uUatRNyZr1NRP9ScNpump",
+     "id": "ltzOPKyhYp8QEzbsyILL",
+     "amount": 10,
+     "paymentTimestamp": 1783407662872
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783307967000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "DH8b85f6uSdNLdRPBJ8WhEZpssh1CcC3JCxBPFUjKaz4",
+   "has_twitter": false,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "6NwarBvDkXhByqVp2Qkq5i9XbtA2B3Bwe8SWGu9vpump",
+  "run_date": "2026-07-06",
+  "symbol": "Cupsey",
+  "run_x": 32.56,
+  "accums": 259,
+  "earliest_accum_buy": "2026-06-22 01:52:27+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenAd",
+     "order_status": "approved",
+     "payment_ts_ms": 1783450720952
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1768936361921
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "6NwarBvDkXhByqVp2Qkq5i9XbtA2B3Bwe8SWGu9vpump",
+     "id": "f5n4EksQSZmF9UAmRQzd",
+     "amount": 50,
+     "paymentTimestamp": 1783451022408
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1768935571000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "ATp2cipw8TgLVGWQXGyV3pURUDfg6sVkVEkvPxRnB8BM",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "CizcDa22HJjXybKLriibqP167GcJjqiDHDPtuiMmpump",
+  "run_date": "2026-07-06",
+  "symbol": "ok",
+  "run_x": 34.07,
+  "accums": 230,
+  "earliest_accum_buy": "2026-07-03 03:56:24+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783037824685
+    }
+   ],
+   "n_boosts": 2,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "CizcDa22HJjXybKLriibqP167GcJjqiDHDPtuiMmpump",
+     "id": "ob1aXMsDLCfpW2yPGmcp",
+     "amount": 10,
+     "paymentTimestamp": 1783792409950
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "CizcDa22HJjXybKLriibqP167GcJjqiDHDPtuiMmpump",
+     "id": "wo4wHLOPZRchqtN0Uza2",
+     "amount": 10,
+     "paymentTimestamp": 1783050946759
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783036838000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "Guok2WjfqbQgsWdiQVFFN19ZyNYcCcVhcs9euSj4gm3o",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "Ds8YCVhKM1RChk58KtWgL7HyBMMqYPGdqTN8BhnQuihf",
+  "run_date": "2026-07-07",
+  "symbol": "SUNUSI",
+  "run_x": 36.32,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4uWHndfSJhAxLXGCG72wNWUqMMcijwTvQ4sm8sP9P2rn",
+  "run_date": "2026-07-07",
+  "symbol": "spcx\u00f0\u0178\u0161\u20ac",
+  "run_x": 1241.96,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "6xCtR2Eq1VumsoRdNutcfSQfLMk7xUa2BrMx18tqpump",
+  "run_date": "2026-07-07",
+  "symbol": "DEXBULL",
+  "run_x": 430.25,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783513897918
+    }
+   ],
+   "n_boosts": 1,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "6xCtR2Eq1VumsoRdNutcfSQfLMk7xUa2BrMx18tqpump",
+     "id": "K6teDNSDLmvth2JuMWqE",
+     "amount": 10,
+     "paymentTimestamp": 1783603959533
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783464945000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "3vU5HSbmB4k29ezFPYeLxLtmzG2Z5Fqph1FtegMcptYd",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "78FDCD2gDFXZJbv8GHu6hxVSSKFV4jAxd9eeBvwwYpMj",
+  "run_date": "2026-07-07",
+  "symbol": "TENEO",
+  "run_x": 7.73,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "22deNCri9bBae1GWZxdaDxipMWdwAUQ2ddvxdSmgpump",
+  "run_date": "2026-07-07",
+  "symbol": "CASHCAT",
+  "run_x": 372.37,
+  "accums": 132,
+  "earliest_accum_buy": "2026-07-01 20:33:37+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1783487975325
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783483672911
+    }
+   ],
+   "n_boosts": 3,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "22deNCri9bBae1GWZxdaDxipMWdwAUQ2ddvxdSmgpump",
+     "id": "gvvaxcVHvnBGDk2kq1rg",
+     "amount": 50,
+     "paymentTimestamp": 1783770297346
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "22deNCri9bBae1GWZxdaDxipMWdwAUQ2ddvxdSmgpump",
+     "id": "gU0B2ImSWe2Fn4wplFXQ",
+     "amount": 50,
+     "paymentTimestamp": 1783684454874
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "22deNCri9bBae1GWZxdaDxipMWdwAUQ2ddvxdSmgpump",
+     "id": "hM4IohKMa4iukSUoXWXj",
+     "amount": 50,
+     "paymentTimestamp": 1783596394237
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1782647804000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "CRchcPJtoUDJNor4nSBRDGEkWVnMyCHecQkoa8GFwcpX",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "3Esi8v4N2KVrx2NZWaC372VkfTGE4EVZePqK8g9HqcfS",
+  "run_date": "2026-07-07",
+  "symbol": "OUSD",
+  "run_x": 84.19,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "EcqrUE8Ti2PXBAeTMCL5A7q6xaySQJn1tGvtVXz9nmnE",
+  "run_date": "2026-07-07",
+  "symbol": "STANDX",
+  "run_x": 25.53,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "9y6hXFBFN1fJGfAAYgkXVVfQATG1mEJsmTrCXcT6pump",
+  "run_date": "2026-07-08",
+  "symbol": "Silk",
+  "run_x": 31.72,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783512120407
+    }
+   ],
+   "n_boosts": 2,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "9y6hXFBFN1fJGfAAYgkXVVfQATG1mEJsmTrCXcT6pump",
+     "id": "l2rJawceWw9mYH9ByTQp",
+     "amount": 100,
+     "paymentTimestamp": 1783725962387
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "9y6hXFBFN1fJGfAAYgkXVVfQATG1mEJsmTrCXcT6pump",
+     "id": "RJD55AurI7h3bfEhUPtJ",
+     "amount": 30,
+     "paymentTimestamp": 1783688766268
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1722372322977,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "EUpKEFLxsYKt68PtLbEjKZ61ikva4frnjZedFRTgohKG",
+   "has_twitter": false,
+   "has_telegram": true
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "EVxusEJrJmzfrUmMnCyfUX66dMqg3w5n4UsHojGTx6q2",
+  "run_date": "2026-07-08",
+  "symbol": "OpenSea",
+  "run_x": 52.62,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "3jWhU31ncqB4CS3vncWktno3bQnXYTfVj7asfJjEUNBm",
+  "run_date": "2026-07-08",
+  "symbol": "SAPIJIJU",
+  "run_x": 618.2,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "7CxUj2xMtpAubvQb3TgeWkAdyfnGUBdS13AmvFdSSMk4",
+  "run_date": "2026-07-08",
+  "symbol": "DREAM",
+  "run_x": 26.64,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "5wLXYZVjPv4i1Zw1jG6hLQmTmz7YXQANeq8qshiZSxVf",
+  "run_date": "2026-07-08",
+  "symbol": "RTM",
+  "run_x": 119.18,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "8FMMLBED9nUfxYShzat45snmmGcnB5e8b3HpCD8AtDLm",
+  "run_date": "2026-07-08",
+  "symbol": "AnsemAI",
+  "run_x": 34.8,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4BwfNjYLseCc8EEALEYYM6nyUR5jfvuU3FEfSNP35X2M",
+  "run_date": "2026-07-08",
+  "symbol": "W26",
+  "run_x": 353.16,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "FbMMPq12FPqS2no283ZR5LvBvZyayqRhwZ3hB89143Pe",
+  "run_date": "2026-07-08",
+  "symbol": "Bepe",
+  "run_x": 262.45,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "7ycQfB18Uuj3qguwmEAPMXme5JDA6MsE2YRuJW22Ljmv",
+  "run_date": "2026-07-08",
+  "symbol": "GPT",
+  "run_x": 12.19,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "Hn1wEgZU9Tdos56Bo9Qks1xszKyHr6xAXWuNTUnNjhYS",
+  "run_date": "2026-07-08",
+  "symbol": "USA250",
+  "run_x": 15.27,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "4ko5tSr5o3H4v1sFtjTSd9MPUW7yx5AFCpkNPoL6pump",
+  "run_date": "2026-07-08",
+  "symbol": "febu",
+  "run_x": 58.49,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783548435566
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783548118000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "ApWpkd8tpPTdTFNihoYuF5en8Y27TQn4LAQTvvmf8faG",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "J5ZognFJEepsWsCQPmqVchvEvsUMomEkxd8LbMrH2J7",
+  "run_date": "2026-07-08",
+  "symbol": "Bullscan",
+  "run_x": 45.61,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783535255199
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783534324000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "BFiJLccn9TTGqPZ6u3t8YYrMwpS9soM9bBgUBn4UXWKj",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "CLuoaiRJj3c2rEjPVtbY8dHJyPTXPbdSNwAzRUDUQE33",
+  "run_date": "2026-07-08",
+  "symbol": "Codex",
+  "run_x": 12.19,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "BtUiqGdsW3H47yvtyKSLhQfzVpwov3wyYY6qssU9pump",
+  "run_date": "2026-07-09",
+  "symbol": "reptilecoin",
+  "run_x": 52.75,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783639996882
+    }
+   ],
+   "n_boosts": 2,
+   "boosts": [
+    {
+     "chainId": "solana",
+     "tokenAddress": "BtUiqGdsW3H47yvtyKSLhQfzVpwov3wyYY6qssU9pump",
+     "id": "cvEw5O2lQUGZENDBKhlo",
+     "amount": 10,
+     "paymentTimestamp": 1783656411973
+    },
+    {
+     "chainId": "solana",
+     "tokenAddress": "BtUiqGdsW3H47yvtyKSLhQfzVpwov3wyYY6qssU9pump",
+     "id": "q5S8dmBM1OzQlX9Snhw7",
+     "amount": 10,
+     "paymentTimestamp": 1783645735924
+    }
+   ]
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783571342000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "HFRZBu9DAESDTYEoxYcevWo8eoYUTdW4srdhzm7NpbNt",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "CgnQ8a1u99Gk7qoySMd2wrGPMPm9bdcSJNhqMEkYpump",
+  "run_date": "2026-07-09",
+  "symbol": "Loom",
+  "run_x": 37.69,
+  "accums": 300,
+  "earliest_accum_buy": "2026-07-08 10:01:59+00",
+  "dexscreener": {
+   "status": 200,
+   "orders": [
+    {
+     "type": "communityTakeover",
+     "order_status": "approved",
+     "payment_ts_ms": 1783507948934
+    },
+    {
+     "type": "tokenProfile",
+     "order_status": "approved",
+     "payment_ts_ms": 1783474144346
+    }
+   ],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 200,
+   "created_ts_ms": 1783472078000,
+   "koth_ts_ms": null,
+   "graduated": true,
+   "creator": "6FBJ95rSAniMGaZmp619Rz9Eq1ykbEDch1FbXCMcocqx",
+   "has_twitter": true,
+   "has_telegram": false
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ },
+ {
+  "token": "3D5bNDXTN9gfte1wV7g6342ApnDswYAgT1FiRrYy2mYR",
+  "run_date": "2026-07-09",
+  "symbol": "INK",
+  "run_x": 92.57,
+  "accums": 0,
+  "earliest_accum_buy": null,
+  "dexscreener": {
+   "status": 200,
+   "orders": [],
+   "n_boosts": 0,
+   "boosts": []
+  },
+  "pumpfun": {
+   "status": 404
+  },
+  "warosu": {
+   "status": 200,
+   "hits": 0,
+   "earliest_epoch_s": null,
+   "latest_epoch_s": null,
+   "note": "page-1 parse; ordering not guaranteed oldest-first"
+  }
+ }
+]
