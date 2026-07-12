@@ -65,6 +65,15 @@ CREATE TABLE IF NOT EXISTS promo_shadow_signals (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ix_ps_resolved ON promo_shadow_signals (resolved, signal_at);
+-- 2026-07-12: promo-CHARACTERISTIC columns (from Dexscreener /tokens/v1 at signal time)
+-- so the ~08-01 P(run|promo) verdict can tell WHICH promos run (liq/mcap band, buy/sell,
+-- vol accel = the practitioner filter stack). Additive; safe to re-run.
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS liquidity_usd DOUBLE PRECISION;
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS market_cap DOUBLE PRECISION;
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS liq_mcap_ratio DOUBLE PRECISION;
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS buy_sell_ratio_h1 DOUBLE PRECISION;
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS vol_accel DOUBLE PRECISION;
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS age_hours DOUBLE PRECISION;
 """
 
 
@@ -109,6 +118,17 @@ def _be(path: str, tries: int = 3):
     return None
 
 
+def _token_pair(token: str) -> dict | None:
+    """Sync Dexscreener /tokens/v1 snapshot (price+liq+mcap+practitioner features),
+    parsed by the shared parse_dexscreener_pairs. Fail-open."""
+    from bots.copy.venue.dex_quoter import parse_dexscreener_pairs
+    try:
+        d = _http_json(f"https://api.dexscreener.com/tokens/v1/solana/{token}")
+        return parse_dexscreener_pairs(d)
+    except Exception:
+        return None
+
+
 def _price_now(token: str) -> float | None:
     d = _be(f"/defi/price?address={token}")
     v = ((d or {}).get("data") or {}).get("value")
@@ -145,14 +165,24 @@ def collect_new() -> int:
     now = int(time.time())
     rpub = _redis_pub()
     for tok, (source, amount) in fresh.items():
-        px = _price_now(tok)
+        pair = _token_pair(tok)                      # one Dexscreener call: price+liq+mcap+features
+        px = (pair or {}).get("price_usd") or _price_now(tok)
         time.sleep(RATE)
         with session_scope() as s:
             s.execute(text(
                 "INSERT INTO promo_shadow_signals "
-                "(token, source, boost_amount, signal_unix, price_at_signal) "
-                "VALUES (:t, :src, :amt, :u, :px) ON CONFLICT (token) DO NOTHING"
-            ), {"t": tok, "src": source, "amt": amount, "u": now, "px": px})
+                "(token, source, boost_amount, signal_unix, price_at_signal, "
+                " liquidity_usd, market_cap, liq_mcap_ratio, buy_sell_ratio_h1, "
+                " vol_accel, age_hours) "
+                "VALUES (:t, :src, :amt, :u, :px, :liq, :mc, :lmr, :bsr, :va, :age) "
+                "ON CONFLICT (token) DO NOTHING"
+            ), {"t": tok, "src": source, "amt": amount, "u": now, "px": px,
+                "liq": (pair or {}).get("liquidity_usd"),
+                "mc": (pair or {}).get("market_cap"),
+                "lmr": (pair or {}).get("liq_mcap_ratio"),
+                "bsr": (pair or {}).get("buy_sell_ratio_h1"),
+                "va": (pair or {}).get("vol_accel"),
+                "age": (pair or {}).get("age_hours")})
         inserted += 1
         log.info("promo_signal", token=tok[:12], source=source, price=px)
         # Feed the live promobuy strategy (fail-open; no-op if nobody subscribes).

@@ -436,6 +436,13 @@ async def fetch_dexscreener_pair(
             pairs = await r.json()
     except Exception:
         return None
+    return parse_dexscreener_pairs(pairs)
+
+
+def parse_dexscreener_pairs(pairs) -> Optional[dict]:
+    """Pure parser for a Dexscreener /tokens/v1 or /latest/dex response list — picks
+    the highest-liquidity pair and flattens the useful fields. Shared by the async
+    fetch above and the sync promo_shadow_collector. No I/O."""
     if not isinstance(pairs, list) or not pairs:
         return None
     # main pool = highest USD liquidity
