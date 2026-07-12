@@ -67,8 +67,8 @@ CREATE TABLE IF NOT EXISTS promo_shadow_signals (
 CREATE INDEX IF NOT EXISTS ix_ps_resolved ON promo_shadow_signals (resolved, signal_at);
 -- 2026-07-12 promo-CHARACTERISTIC columns (Dexscreener tokens/v1 at signal time) so the
 -- ~08-01 P(run|promo) verdict can tell WHICH promos run (liq/mcap band, buy/sell, vol
--- accel = the practitioner filter stack). Additive, safe to re-run (NO semicolons in this
--- comment — the DDL executor splits on ';').
+-- accel = the practitioner filter stack). Additive, safe to re-run. KEEP THIS COMMENT
+-- FREE OF THE SEMICOLON CHARACTER — the DDL executor splits statements on it.
 ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS liquidity_usd DOUBLE PRECISION;
 ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS market_cap DOUBLE PRECISION;
 ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS liq_mcap_ratio DOUBLE PRECISION;
