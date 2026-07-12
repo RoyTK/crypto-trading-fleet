@@ -432,6 +432,38 @@ class CopySettings(BaseSettings):
     # follow-the-wallet-out. Needs the teamfollow SELL stream (copy:teamfollow_sells).
     copy_teamfollow_follow_team_exit: bool = Field(default=True)
 
+    # COHORT-FIRE experiment (2026-07-12) — isolated strategy 'cohortfire'. Fires when
+    # >= min_members of a known RED-COHORT coordinated launch-sniper ring (arXiv
+    # 2602.13480/2607.02795; roster research/redcohort_all_wallets.json) co-buy the same
+    # token within the window. Same isolation contract + gates as teamfollow (the 6h age +
+    # $50k liq floors keep only the rings' informative ESTABLISHED-token re-entries, which
+    # is where teamfollow's cohort-teams made their money). OWN bankroll/halt/tag. Logs the
+    # MELT feature-set on entry. OFF by default — enable via .env after wiring is verified.
+    copy_cohortfire_enabled: bool = Field(default=False)
+    copy_cohortfire_min_members: int = Field(default=2)
+    copy_cohortfire_window_minutes: float = Field(default=15.0)
+    copy_cohortfire_dust_floor_usd: float = Field(default=50.0)
+    copy_cohortfire_min_entry_liquidity_usd: float = Field(default=50000.0)
+    copy_cohortfire_min_token_age_hours: float = Field(default=6.0)
+    copy_cohortfire_paper_capital_usd: float = Field(default=25000.0)  # isolated bankroll
+    copy_cohortfire_alloc_cap_pct: float = Field(default=50.0)
+    copy_cohortfire_sizing_pct: float = Field(default=2.0)
+
+    # PROMO-BUY experiment (2026-07-12) — isolated strategy 'promobuy'. Fires when a token
+    # receives PAID Dexscreener promotion (the promo_shadow_collector feed → Redis
+    # copy:promo_signals). Retro: 65% of runners had paid promo, precedes ignition ~13h,
+    # gate-4 sim net-positive on runners (upper bound — P(run|promo) resolves ~08-01). OWN
+    # bankroll/halt/tag. Universal coverage (fires on tokens no roster wallet touches). Logs
+    # the MELT feature-set on entry. OFF by default — enable via .env after wiring verified.
+    copy_promobuy_enabled: bool = Field(default=False)
+    copy_promobuy_min_entry_liquidity_usd: float = Field(default=20000.0)  # lower — promos hit thinner tokens
+    copy_promobuy_min_token_age_hours: float = Field(default=0.0)          # promos ARE often fresh; gate via features
+    copy_promobuy_max_token_age_hours: float = Field(default=72.0)         # don't chase stale-promo revivals
+    copy_promobuy_paper_capital_usd: float = Field(default=25000.0)        # isolated bankroll
+    copy_promobuy_alloc_cap_pct: float = Field(default=50.0)
+    copy_promobuy_sizing_pct: float = Field(default=2.0)
+    copy_promobuy_source_min_boost: float = Field(default=0.0)             # 0 = accept profiles+boosts; raise to require paid boost amount
+
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)
     # ------------------------------------------------------------------
