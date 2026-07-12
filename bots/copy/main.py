@@ -83,6 +83,7 @@ from bots.copy.venue.dex_quoter import (
     fetch_token_creation,
     fetch_token_liquidity,
     fetch_dexscreener_pair,
+    fetch_first_buyers,
     fetch_token_security,
     multi_price_solana,
     multi_price_liq_solana,
@@ -1292,14 +1293,22 @@ class CopyBot(BotLifecycle):
                       cluster_size=candidate.cluster_size, notional_usd=round(notional_usd, 2),
                       trade_id=paper_trade_id, fill=sim_fill.fill_price)
 
-        # MELT feature-log at signal time (fail-open; never blocks the trade).
+        # MELT feature-log at signal time (fail-open; never blocks the trade). Includes
+        # the LIVE first-buyers bundle signal (this token's actual launch snipers +
+        # their dump rate — cohort overlap for ANY token, not just our 81-wallet roster).
         try:
+            fb = None
+            try:
+                fb = await fetch_first_buyers(self._session, candidate.asset)
+            except Exception:
+                fb = None
             fid = signal_features.record(
                 "cohortfire", candidate.asset,
                 entry_price=sim_fill.fill_price, liquidity_usd=entry_liq,
                 token_age_h=token_age_h,
                 trigger_wallets=(candidate.payload or {}).get("wallets"),
-                extra={"cohort_id": cohort_id, "cluster_size": candidate.cluster_size},
+                extra={"cohort_id": cohort_id, "cluster_size": candidate.cluster_size,
+                       **signal_features.first_buyer_features(fb)},
             )
             if fid and paper_trade_id:
                 signal_features.link_trade(fid, paper_trade_id)
@@ -1445,6 +1454,11 @@ class CopyBot(BotLifecycle):
                       fill=sim_fill.fill_price)
 
         try:
+            fb = None
+            try:
+                fb = await fetch_first_buyers(self._session, token)
+            except Exception:
+                fb = None
             fid = signal_features.record(
                 "promobuy", token, entry_price=sim_fill.fill_price,
                 liquidity_usd=entry_liq, token_age_h=token_age_h,
@@ -1455,7 +1469,8 @@ class CopyBot(BotLifecycle):
                        "liq_mcap_ratio": (pair or {}).get("liq_mcap_ratio"),
                        "buy_sell_ratio_h1": (pair or {}).get("buy_sell_ratio_h1"),
                        "vol_accel": (pair or {}).get("vol_accel"),
-                       "vol_h1": (pair or {}).get("vol_h1")})
+                       "vol_h1": (pair or {}).get("vol_h1"),
+                       **signal_features.first_buyer_features(fb)})
             if fid and paper_trade_id:
                 signal_features.link_trade(fid, paper_trade_id)
         except Exception:

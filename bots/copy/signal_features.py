@@ -143,6 +143,25 @@ def record(strategy: str, token: str, *, entry_price=None, liquidity_usd=None,
         return None
 
 
+def first_buyer_features(fb: dict | None) -> dict:
+    """Turn a fetch_first_buyers result into loggable bundle features: what fraction of
+    the token's earliest buyers are known RED-COHORT coordinated wallets, plus the
+    sniper dump rate. Empty dict if no data. Pure (uses the cached cohort set)."""
+    if not fb or not fb.get("buyer_wallets"):
+        return {}
+    cset = _cohort_set()
+    wallets = fb["buyer_wallets"]
+    n = len(wallets)
+    n_cohort = sum(1 for w in wallets if w in cset)
+    return {
+        "n_first_buyers": fb.get("n_first_buyers"),
+        "first_buyer_cohort_frac": (n_cohort / n) if n else None,
+        "n_first_buyer_cohort": n_cohort,
+        "first_buyer_sell_all_frac": fb.get("first_buyer_sell_all_frac"),
+        "first_buyer_hold_frac": fb.get("first_buyer_hold_frac"),
+    }
+
+
 def link_trade(feature_id: int, trade_id: int) -> None:
     if not feature_id:
         return

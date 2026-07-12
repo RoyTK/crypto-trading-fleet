@@ -476,6 +476,47 @@ def parse_dexscreener_pairs(pairs) -> Optional[dict]:
     return out
 
 
+async def fetch_first_buyers(
+    session: aiohttp.ClientSession,
+    mint: str,
+    limit: int = 100,
+) -> Optional[dict]:
+    """Birdeye `/token/v1/first-buyers` — the token's earliest buyers (the launch
+    snipers / coordinated ring) + their aggregate sell behavior. LIVE per-token bundle
+    detection for ANY token (vs the static RED-COHORT roster). Returns the buyer wallet
+    list + dump rate; the caller computes cohort overlap. Best-effort → None.
+
+    `page_summary` over the first `limit` buyers gives buy_more/hold/sell_partial/sell_all;
+    first_buyer_sell_all_frac ≈ 1 = the snipers already dumped (we'd be exit liquidity).
+    """
+    settings = get_copy_settings()
+    if not settings.birdeye_api_key:
+        return None
+    url = (f"https://public-api.birdeye.so/token/v1/first-buyers"
+           f"?token_address={mint}&limit={int(limit)}&offset=0")
+    headers = {"X-API-KEY": settings.birdeye_api_key, "x-chain": "solana",
+               "accept": "application/json"}
+    try:
+        async with session.get(url, headers=headers,
+                                timeout=aiohttp.ClientTimeout(total=8)) as r:
+            if r.status != 200:
+                return None
+            body = await r.json()
+    except Exception:
+        return None
+    data = (body or {}).get("data") or {}
+    buyers = data.get("buyers") or []
+    ps = data.get("page_summary") or {}
+    n = int(ps.get("total_wallets") or len(buyers) or 0)
+    wallets = [b.get("wallet_address") for b in buyers if b.get("wallet_address")]
+    return {
+        "n_first_buyers": n,
+        "buyer_wallets": wallets,
+        "first_buyer_sell_all_frac": (int(ps.get("sell_all") or 0) / n) if n else None,
+        "first_buyer_hold_frac": (int(ps.get("hold") or 0) / n) if n else None,
+    }
+
+
 async def fetch_token_security(
     session: aiohttp.ClientSession,
     mint: str,
