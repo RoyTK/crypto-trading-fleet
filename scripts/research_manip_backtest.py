@@ -27,7 +27,17 @@ from datetime import timezone
 from sqlalchemy import text
 from framework.db import session_scope
 from bots.copy.config import get_copy_settings
-from scripts.manipulation_detectors import analyze, lpi_signature
+from scripts.manipulation_detectors import (analyze, lpi_signature,
+                                            buy_concentration, cohort_bundle_fraction)
+
+# RED-COHORT coordinated-wallet catalogue (bundle proxy, MELT feature group 4)
+try:
+    _COHORT = set(json.load(open("/app/research/redcohort_all_wallets.json")))
+except Exception:
+    try:
+        _COHORT = set(json.load(open("research/redcohort_all_wallets.json")))
+    except Exception:
+        _COHORT = set()
 
 _KEY = get_copy_settings().birdeye_api_key
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126 Safari/537.36"
@@ -143,6 +153,8 @@ def main():
             fetch_fail += 1
             continue
         rep = analyze(trades)
+        conc, n_buyers = buy_concentration(trades, top_k=10)
+        cvol_f, cbuy_f, n_coh = cohort_bundle_fraction(trades, _COHORT)
         lpi = (False, "no_data")
         if prices and len(trades) >= 3:
             prices.sort()
@@ -155,6 +167,9 @@ def main():
                         "wash_flag": rep.wash_flagged,
                         "zero_risk": round(rep.zero_risk_vol_frac, 3),
                         "circular": round(rep.circular_vol_frac, 3),
+                        "top10_conc": round(conc, 3), "n_buyers": n_buyers,
+                        "cohort_vol_frac": round(cvol_f, 3),
+                        "cohort_buyer_frac": round(cbuy_f, 3), "n_cohort": n_coh,
                         "lpi": lpi[0]})
         if (i + 1) % 25 == 0:
             print(f"  {i+1}/{len(tokens)} ({(time.time()-t0)/60:.0f} min)")
@@ -174,11 +189,10 @@ def main():
         for g in sorted(groups):
             rs2 = groups[g]
             print(f"  {g:<18} n={len(rs2):>3}  "
-                  f"wash_flag {100*sum(x['wash_flag'] for x in rs2)/len(rs2):>3.0f}%  "
-                  f"zero_risk>=.5 {100*sum(x['zero_risk']>=.5 for x in rs2)/len(rs2):>3.0f}%  "
-                  f"circular>=.9 {100*sum(x['circular']>=.9 for x in rs2)/len(rs2):>3.0f}%  "
-                  f"lpi {100*sum(x['lpi'] for x in rs2)/len(rs2):>3.0f}%  "
-                  f"med_zr {st.median([x['zero_risk'] for x in rs2]):.2f}")
+                  f"med_zr {st.median([x['zero_risk'] for x in rs2]):.2f}  "
+                  f"med_top10conc {st.median([x['top10_conc'] for x in rs2]):.2f}  "
+                  f"med_cohortVol {st.median([x['cohort_vol_frac'] for x in rs2]):.3f}  "
+                  f"cohort>0 {100*sum(x['n_cohort']>0 for x in rs2)/len(rs2):>3.0f}%")
 
     bucketize(covered, lambda r: "runner(peak>=100%)" if r["best_peak"] >= 100 else "dud(peak<100%)",
               "Q1  manipulation by RUN outcome")

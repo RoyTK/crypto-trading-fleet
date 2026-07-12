@@ -134,6 +134,43 @@ def concentration_flag(top10_frac: float, threshold: float = CONCENTRATION_TOP10
     return (top10_frac is not None and top10_frac > threshold), top10_frac
 
 
+def buy_concentration(trades, top_k: int = 10):
+    """MELT's dominant signal (59/122 features = 'holding concentration'). Share of
+    the window's BUY volume captured by the top_k buyers — a knowable-at-entry proxy
+    for early-holder concentration (MELT computes it from pre-migration txns; we
+    compute it from the pre-entry window). Higher = more concentrated = MELT's
+    strongest high-risk marker. Returns (top_k_buy_frac, n_buyers)."""
+    buys = defaultdict(float)
+    for t in trades:
+        if t.get("side") == "buy":
+            buys[t["owner"]] += abs(float(t.get("usd") or t.get("base_amount") or 0))
+    total = sum(buys.values())
+    if total <= 0:
+        return 0.0, 0
+    topk = sum(sorted(buys.values(), reverse=True)[:top_k])
+    return topk / total, len(buys)
+
+
+def cohort_bundle_fraction(trades, cohort_wallets: set):
+    """MELT's 'bundle statistics' (35/122 features) via a ready-made coordinated-wallet
+    catalogue (RED-COHORT). Share of window BUY volume + share of buyers that are known
+    coordinated-cohort wallets. Returns (cohort_vol_frac, cohort_buyer_frac, n_cohort)."""
+    cvol = tvol = 0.0
+    cbuyers, buyers = set(), set()
+    for t in trades:
+        if t.get("side") != "buy":
+            continue
+        usd = abs(float(t.get("usd") or t.get("base_amount") or 0))
+        tvol += usd
+        buyers.add(t["owner"])
+        if t["owner"] in cohort_wallets:
+            cvol += usd
+            cbuyers.add(t["owner"])
+    vfrac = cvol / tvol if tvol > 0 else 0.0
+    bfrac = len(cbuyers) / len(buyers) if buyers else 0.0
+    return vfrac, bfrac, len(cbuyers)
+
+
 def analyze(trades, *, wash_flag=WASH_SCORE_FLAG, zr_tol=ZERO_RISK_TOL) -> ManipReport:
     """Run the transaction-based detectors over one token's window of trades."""
     r = ManipReport(n_trades=len(trades))
