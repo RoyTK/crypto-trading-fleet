@@ -1,0 +1,1069 @@
+[
+ {
+  "token": "J8PSdNP3QewKq2Z1JJJFDMaqF7KcaiJhR7gbr5KZpump",
+  "symbol": "TripleT",
+  "run_date": "2026-05-19",
+  "earliest_accum_buy": "2026-05-15 16:29:42+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1772137953,
+    "msg_id": 100944
+   }
+  }
+ },
+ {
+  "token": "8XtRWb4uAAJFMP4QQhoYYCWR6XXb7ybcCdiqPwz9s5WS",
+  "symbol": "ALON",
+  "run_date": "2026-05-22",
+  "earliest_accum_buy": "2026-05-10 19:09:34+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1715757687,
+    "msg_id": 31759
+   },
+   "pumpdotfunchat": {
+    "ts": 1721442013,
+    "msg_id": 25601
+   }
+  }
+ },
+ {
+  "token": "2fUFhZyd47Mapv9wcfXh5gnQwFXtqcYu9xAN4THBpump",
+  "symbol": "RNT",
+  "run_date": "2026-05-22",
+  "earliest_accum_buy": "2026-05-08 21:31:42+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1717774882,
+    "msg_id": 34643
+   }
+  }
+ },
+ {
+  "token": "4Cnk9EPnW5ixfLZatCPJjDB1PUtcRpVVgTQukm9epump",
+  "symbol": "DADDY",
+  "run_date": "2026-05-22",
+  "earliest_accum_buy": "2026-05-08 19:43:27+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1721209851,
+    "msg_id": 138
+   },
+   "CallAnalyserSol": {
+    "ts": 1718055731,
+    "msg_id": 34983
+   }
+  }
+ },
+ {
+  "token": "8G5ayEsJF4Q7FEWEGeF4jtnUWZBEKCqhySTFQf9Ppump",
+  "symbol": "HeavyPulp",
+  "run_date": "2026-05-23",
+  "earliest_accum_buy": "2026-05-21 01:53:26+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1769522218,
+    "msg_id": 17961
+   },
+   "CallAnalyserSol": {
+    "ts": 1769521209,
+    "msg_id": 97757
+   }
+  }
+ },
+ {
+  "token": "DiiTPZdpd9t3XorHiuZUu4E1FoSaQ7uGN4q9YkQupump",
+  "symbol": "ELIZABETH",
+  "run_date": "2026-05-23",
+  "earliest_accum_buy": "2026-05-09 12:23:38+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1757920734,
+    "msg_id": 88258
+   }
+  }
+ },
+ {
+  "token": "72FkeF1cpBMtbordhTVNVbBGdaN5DfHcchstHwPWpump",
+  "symbol": "PUMPVILLE",
+  "run_date": "2026-05-25",
+  "earliest_accum_buy": "2026-05-11 00:12:02+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1783390271,
+    "msg_id": 37051
+   },
+   "CallAnalyserSol": {
+    "ts": 1762984161,
+    "msg_id": 91508
+   }
+  }
+ },
+ {
+  "token": "8ncucXv6U6epZKHPbgaEBcEK399TpHGKCquSt4RnmX4f",
+  "symbol": "TRENCHER",
+  "run_date": "2026-05-25",
+  "earliest_accum_buy": "2026-05-11 00:01:04+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1745506091,
+    "msg_id": 72563
+   }
+  }
+ },
+ {
+  "token": "4D8qUHm334fxqeTauPvF8gQ7fYgrD4Mpmb1Wy6ftUSWR",
+  "symbol": "USWR",
+  "run_date": "2026-05-27",
+  "earliest_accum_buy": "2026-05-26 05:40:04+00",
+  "mentions": {}
+ },
+ {
+  "token": "FeMbDoX7R1Psc4GEcvJdsbNbZA3bfztcyDCatJVJpump",
+  "symbol": "three",
+  "run_date": "2026-05-31",
+  "earliest_accum_buy": "2026-05-29 18:59:15+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1778006924,
+    "msg_id": 107088
+   },
+   "pumpdotfunchat": {
+    "ts": 1782718936,
+    "msg_id": 182442
+   }
+  }
+ },
+ {
+  "token": "24Kko3VWwMKtkB9CVct2ZAZgJzb2R2iNrYxCpTYFpump",
+  "symbol": "APU",
+  "run_date": "2026-06-05",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1780667157,
+    "msg_id": 31648
+   },
+   "CallAnalyserSol": {
+    "ts": 1780766833,
+    "msg_id": 109216
+   }
+  }
+ },
+ {
+  "token": "Tqj8yFmagrg7oorpQkVGYR52r96RFTamvWfth9bpump",
+  "symbol": "KINS",
+  "run_date": "2026-06-06",
+  "earliest_accum_buy": "2026-06-05 04:44:23+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1781146742,
+    "msg_id": 32882
+   },
+   "CallAnalyserSol": {
+    "ts": 1779552715,
+    "msg_id": 108559
+   }
+  }
+ },
+ {
+  "token": "BcHEaaTCvycPwwsJ9yQTXdHP9X2gCLkznDbZ8VySpump",
+  "symbol": "Jotchua",
+  "run_date": "2026-06-07",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1780808243,
+    "msg_id": 31966
+   },
+   "CallAnalyserSol": {
+    "ts": 1780852127,
+    "msg_id": 109251
+   }
+  }
+ },
+ {
+  "token": "B6f27ETGcjgGNB1fqULJbXVmw9FnL8HgBp7R83hmpump",
+  "symbol": "drooling",
+  "run_date": "2026-06-08",
+  "earliest_accum_buy": "2026-06-03 00:21:47+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1781413786,
+    "msg_id": 109552
+   }
+  }
+ },
+ {
+  "token": "h5NciPdMZ5QCB5BYETJMYBMpVx9ZuitR6HcVjyBhood",
+  "symbol": "HOOD",
+  "run_date": "2026-06-10",
+  "earliest_accum_buy": "2026-05-27 04:26:59+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1738289148,
+    "msg_id": 64297
+   },
+   "CryptoAlphaGems": {
+    "ts": 1738760431,
+    "msg_id": 1710
+   }
+  }
+ },
+ {
+  "token": "4SnKwnz6DyagftnFqdxsvWvehrcbEDhxmmXNQk2Jpump",
+  "symbol": "Joby",
+  "run_date": "2026-06-16",
+  "earliest_accum_buy": "2026-06-11 22:48:53+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1781218495,
+    "msg_id": 109489
+   },
+   "solcallbot": {
+    "ts": 1781218696,
+    "msg_id": 42004
+   }
+  }
+ },
+ {
+  "token": "EmcxFTNVDqyLHp11NvwvLZ4D7LKGbG9i7B8RF7dwpump",
+  "symbol": "ZERO",
+  "run_date": "2026-06-17",
+  "earliest_accum_buy": "2026-06-14 10:08:47+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1780600739,
+    "msg_id": 109147
+   }
+  }
+ },
+ {
+  "token": "8wxkvAfEns76yBzu4MnbV7VnXWjg3iDPA9uwAQ6cpump",
+  "symbol": "SOLANGELES",
+  "run_date": "2026-06-18",
+  "earliest_accum_buy": "2026-06-06 05:30:46+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782053531,
+    "msg_id": 34810
+   },
+   "CallAnalyserSol": {
+    "ts": 1779433074,
+    "msg_id": 108489
+   }
+  }
+ },
+ {
+  "token": "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+  "symbol": "CATWIF",
+  "run_date": "2026-06-22",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782112618,
+    "msg_id": 34875
+   },
+   "CallAnalyserSol": {
+    "ts": 1782216015,
+    "msg_id": 109990
+   }
+  }
+ },
+ {
+  "token": "FMqh9mqR6drPZqqW6wPqLHxX4rqNDWGhYLaMfoaJpump",
+  "symbol": "world",
+  "run_date": "2026-06-22",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782240080,
+    "msg_id": 35071
+   },
+   "CallAnalyserSol": {
+    "ts": 1782334523,
+    "msg_id": 110062
+   }
+  }
+ },
+ {
+  "token": "2dGmaEp7UAPDC71gM3hNH3dQBM3DHNnBH1nXRvQDP39b",
+  "symbol": "STANDX",
+  "run_date": "2026-06-24",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "HmxxRoFJo5fxFjkLGRQbx94oSprZArLNiXzvYvYNWdpT",
+  "symbol": "250",
+  "run_date": "2026-06-26",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "3d1qHSAkQhoN7kN1C6tvpAArCkXWxwYdBng6taXCDM6u",
+  "symbol": "RTM",
+  "run_date": "2026-06-26",
+  "earliest_accum_buy": "2026-06-22 12:36:19+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782410052,
+    "msg_id": 35347
+   },
+   "CallAnalyserSol": {
+    "ts": 1758827841,
+    "msg_id": 89139
+   }
+  }
+ },
+ {
+  "token": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
+  "symbol": "ANSEM",
+  "run_date": "2026-06-27",
+  "earliest_accum_buy": "2026-06-24 10:26:06+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1781644227,
+    "msg_id": 34105
+   },
+   "CallAnalyserSol": {
+    "ts": 1781647620,
+    "msg_id": 109669
+   },
+   "pumpdotfunchat": {
+    "ts": 1782835523,
+    "msg_id": 182647
+   }
+  }
+ },
+ {
+  "token": "FDEF2U9geiWS7sdGPCUo2r1wGswkJr2mmVTECiH6pump",
+  "symbol": "MITCH",
+  "run_date": "2026-06-27",
+  "earliest_accum_buy": "2026-06-14 08:05:54+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782915304,
+    "msg_id": 36410
+   },
+   "CallAnalyserSol": {
+    "ts": 1756850770,
+    "msg_id": 87031
+   }
+  }
+ },
+ {
+  "token": "BDdzUjksj1J4bSnMveQ5tV9Up8A9c6YS1tHrxNw3pump",
+  "symbol": "FOMO",
+  "run_date": "2026-06-28",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782666674,
+    "msg_id": 35928
+   },
+   "CallAnalyserSol": {
+    "ts": 1782939380,
+    "msg_id": 110519
+   }
+  }
+ },
+ {
+  "token": "CuGJf6cfDfMh4UxVgNJ5KFQ6v8Wv3qrqop6cFKsGpump",
+  "symbol": "TATE",
+  "run_date": "2026-06-28",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1782678926,
+    "msg_id": 110302
+   },
+   "pumpdotfunchat": {
+    "ts": 1783096821,
+    "msg_id": 183074
+   }
+  }
+ },
+ {
+  "token": "HULaBKR1eK3SA18FpfEav8Z2t7TJ1qEC775YHTLNpump",
+  "symbol": "DAVID",
+  "run_date": "2026-06-28",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1782780807,
+    "msg_id": 110372
+   }
+  }
+ },
+ {
+  "token": "JCKwsT8UAbygnFkZ7u3amDUM7BXRtwUhCsHQv2khpump",
+  "symbol": "CHANCE",
+  "run_date": "2026-06-28",
+  "earliest_accum_buy": "2026-06-18 07:13:24+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1781059818,
+    "msg_id": 32651
+   },
+   "CallAnalyserSol": {
+    "ts": 1782865021,
+    "msg_id": 110470
+   }
+  }
+ },
+ {
+  "token": "ERPtViqckt1zqpS2abUx67CgLcP54CkhBPYz3yRUpump",
+  "symbol": "yep",
+  "run_date": "2026-06-29",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1782853074,
+    "msg_id": 110448
+   },
+   "solcallbot": {
+    "ts": 1782738794,
+    "msg_id": 42666
+   }
+  }
+ },
+ {
+  "token": "2aQKC1xiKpEyAWvzSDrULnYLVuybWyx7qrsnpP8hpump",
+  "symbol": "Udin",
+  "run_date": "2026-06-29",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "CfpyW6dps2SExf6Ut9orZS6oCyQhMtPTFPUf9FoRWUZF",
+  "symbol": "NADO",
+  "run_date": "2026-06-30",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "An6RA7yBCdbbnUtJEqGjEQJnGGnKmQMB2w6NXNq5rhML",
+  "symbol": "ANSEM",
+  "run_date": "2026-06-30",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "H694ptJDy3GGGuWpsLDfESssWZ8UUY8yupDHQpDmQkxN",
+  "symbol": "USA250",
+  "run_date": "2026-06-30",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "GHtYnxAnu6CAF7oydQKzkY4dmhtb1xSfj1AQtjpkY39B",
+  "symbol": "KALSHI",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "HaJZjZBgfzCPg2w5QDVMwDUtAXszDdSk28NGRmQ9J87h",
+  "symbol": "OpenClaw",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+  "symbol": "manlet",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": "2026-06-29 22:31:22+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782994392,
+    "msg_id": 36493
+   },
+   "CallAnalyserSol": {
+    "ts": 1782937674,
+    "msg_id": 110517
+   }
+  }
+ },
+ {
+  "token": "6bwjefQxeUW3K43B6xTEQqdAKQeg6U39KeJLBSdRMf92",
+  "symbol": "XDAO",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "AvZUKK1ZPzSZ3NyPmCfsMWJx13LuJZNAH948FLWi2cGG",
+  "symbol": "BASE",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "9QTWuqRz65PYDG15UxxUqTyjVYpc9dqaNujGXshshAKG",
+  "symbol": "TEMPO",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "CbH68SPTRzq5f3EmfK4c3LSETw8CsbsDC1aTS4iJu7Js",
+  "symbol": "OUSD",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "AgpStVUQ1hw4F9d22jQMNnKW6dPPxg6dbdUCsdQEw1KZ",
+  "symbol": "OUSD",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "Bqs76KADGDkiwskqdqTu1jaNrpJyzV5ZxpvJrL5npump",
+  "symbol": "Hobbes",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": "2026-06-29 08:40:51+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1781735760,
+    "msg_id": 109724
+   }
+  }
+ },
+ {
+  "token": "6hpfrxQb2kn9iprcJcZ6uXruGAwDe12W9zT4y4WSpump",
+  "symbol": "Goofreck",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": "2026-06-28 00:24:01+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1747862988,
+    "msg_id": 76652
+   }
+  }
+ },
+ {
+  "token": "4N4DnNo3qpPks9aQCkcWkzoir8tnvT6diS4TnnZibonk",
+  "symbol": "KITTY",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "HmTi3CQfKfXWbn1tNoiAxH7GzMV7L3tDAmPWabZEBAGS",
+  "symbol": "P0",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": "2026-06-17 17:48:36+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1772823763,
+    "msg_id": 101774
+   }
+  }
+ },
+ {
+  "token": "F5hqdbykXuksp8P78CAZenSvpPShAYKrP2U2MiZMdgFN",
+  "symbol": "bop",
+  "run_date": "2026-07-01",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1730701469,
+    "msg_id": 48884
+   }
+  }
+ },
+ {
+  "token": "48oT2QgpyPFUiJYXbvZTS1tVDp98R9uYAJX5ojNrpump",
+  "symbol": "SEMAN",
+  "run_date": "2026-07-02",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1783098844,
+    "msg_id": 36638
+   },
+   "CallAnalyserSol": {
+    "ts": 1783098469,
+    "msg_id": 110645
+   }
+  }
+ },
+ {
+  "token": "CFPkPq1eYPR8GLzEo59wUbbMioX4bshaTQiSGzTSpump",
+  "symbol": "MENSA",
+  "run_date": "2026-07-02",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1783083282,
+    "msg_id": 110633
+   }
+  }
+ },
+ {
+  "token": "5RyeWfbjVw6Ktj6j8SmTiAnVXWvmV8YxGtTebNsU2dBo",
+  "symbol": "Pauly",
+  "run_date": "2026-07-02",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1712252941,
+    "msg_id": 26683
+   }
+  }
+ },
+ {
+  "token": "86HJUo5nJnRchZyEnip5iJfr1NHSPrkw9PcmYCtUVrCg",
+  "symbol": "dog",
+  "run_date": "2026-07-02",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+  "symbol": "PATTYICE",
+  "run_date": "2026-07-02",
+  "earliest_accum_buy": "2026-06-30 02:54:44+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1782879454,
+    "msg_id": 110480
+   }
+  }
+ },
+ {
+  "token": "CSsAm5FwLedujzBaRbcCEACYt9pzf8uUQ8ppdwi8Tm6Q",
+  "symbol": "KLED",
+  "run_date": "2026-07-02",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "ADEVGG6hFtBU3yg5oYtbhPCkiwU2CBFR4gxka7wpfoBx",
+  "symbol": "ANSEM",
+  "run_date": "2026-07-02",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "4MrsXQzaosYNyFd4wKDvgnC5xRtRqgXRrijFTGj9pump",
+  "symbol": "NORMIE",
+  "run_date": "2026-07-03",
+  "earliest_accum_buy": "2026-07-02 12:49:57+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782997565,
+    "msg_id": 36499
+   },
+   "CallAnalyserSol": {
+    "ts": 1783204879,
+    "msg_id": 110740
+   }
+  }
+ },
+ {
+  "token": "Ee4Nm1R32jYuoFAMHSpfNcb1yQYqzGrR9C2nbnHwwTNJ",
+  "symbol": "Ee4Nm1R32jYuoFAMHSpfNcb1yQYqzGrR9C2nbnHwwTNJ",
+  "run_date": "2026-07-03",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "96X4zg5T4NFWzTVFXHsadvYbxbzFX2Rqt3GXUv92pump",
+  "symbol": "Balloon",
+  "run_date": "2026-07-03",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1783084013,
+    "msg_id": 110635
+   }
+  }
+ },
+ {
+  "token": "4Vn4cyu67VJouC3BqEu7AAQix8k7ryLrA6mMmkjjpump",
+  "symbol": "Z",
+  "run_date": "2026-07-03",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1783175685,
+    "msg_id": 110708
+   }
+  }
+ },
+ {
+  "token": "42cXQvAAr7hcPBPWAS4ocVtDyeJ4Fa6gRR2uG4gppump",
+  "symbol": "TBB",
+  "run_date": "2026-07-03",
+  "earliest_accum_buy": "2026-06-30 03:03:23+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782782441,
+    "msg_id": 36237
+   }
+  }
+ },
+ {
+  "token": "ESAYabnPzfaZGcwNtTL5RL1RBaoW7vYUNx5n6QfTpump",
+  "symbol": "Pigeon",
+  "run_date": "2026-07-03",
+  "earliest_accum_buy": "2026-06-30 19:37:19+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1783177637,
+    "msg_id": 36735
+   }
+  }
+ },
+ {
+  "token": "8oQEW25mcVzeWvcjkGup9ob3KafVMNdzAi8XXmmWpump",
+  "symbol": "Fro",
+  "run_date": "2026-07-04",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1783475593,
+    "msg_id": 110938
+   }
+  }
+ },
+ {
+  "token": "GbpARMvdpDpavgLJXzTSgWAcSta2FeEYfjAZZ91upump",
+  "symbol": "MURAD",
+  "run_date": "2026-07-04",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "CvqxZzFZqDKSpD1bNSkwQ6j9stSCBVgQ9GT4tLdKpump",
+  "symbol": "TOLY",
+  "run_date": "2026-07-04",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1783201729,
+    "msg_id": 36807
+   },
+   "CallAnalyserSol": {
+    "ts": 1783202365,
+    "msg_id": 110739
+   }
+  }
+ },
+ {
+  "token": "EYvkcWB5S4DFv7gJqR8D2W76U9n7kD3jvYcbSXdppump",
+  "symbol": "HAALAND",
+  "run_date": "2026-07-04",
+  "earliest_accum_buy": "2026-06-25 08:10:52+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1782377407,
+    "msg_id": 35275
+   }
+  }
+ },
+ {
+  "token": "4PRz3EwhbjrrX6YksMDuUzrXT51pr7CQtXNCravhpump",
+  "symbol": "ACM",
+  "run_date": "2026-07-04",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1783233431,
+    "msg_id": 110756
+   }
+  }
+ },
+ {
+  "token": "7thY5PzYdH311NXYE6mecBjUs7wcosk1bWw2qfH4pump",
+  "symbol": "Sapijiju",
+  "run_date": "2026-07-05",
+  "earliest_accum_buy": "2026-06-21 03:17:26+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1767810121,
+    "msg_id": 95628
+   }
+  }
+ },
+ {
+  "token": "5jycPAWLGHqV1NWWGneVhg2uMtt2jP2Wn641XMtd1oBy",
+  "symbol": "NADO",
+  "run_date": "2026-07-05",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
+  "symbol": "LEVI",
+  "run_date": "2026-07-05",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1783299585,
+    "msg_id": 36884
+   },
+   "CallAnalyserSol": {
+    "ts": 1783311299,
+    "msg_id": 110797
+   }
+  }
+ },
+ {
+  "token": "6UGNg119LV6YjSCQ5K6Z6jsLLLetpMJ1vPdhiU8qpump",
+  "symbol": "CURB",
+  "run_date": "2026-07-05",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1783305890,
+    "msg_id": 36890
+   }
+  }
+ },
+ {
+  "token": "E2ueKQ3EDTTmCkUA17j3KeTb2u6VT91xiyECdKRzpump",
+  "symbol": "tolywifhat",
+  "run_date": "2026-07-06",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "4eKYoR1hBHnRaYyg2d57H36uUatRNyZr1NRP9ScNpump",
+  "symbol": "DONALT",
+  "run_date": "2026-07-06",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "6NwarBvDkXhByqVp2Qkq5i9XbtA2B3Bwe8SWGu9vpump",
+  "symbol": "Cupsey",
+  "run_date": "2026-07-06",
+  "earliest_accum_buy": "2026-06-22 01:52:27+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1783456084,
+    "msg_id": 37118
+   },
+   "CallAnalyserSol": {
+    "ts": 1768941525,
+    "msg_id": 96930
+   }
+  }
+ },
+ {
+  "token": "CizcDa22HJjXybKLriibqP167GcJjqiDHDPtuiMmpump",
+  "symbol": "ok",
+  "run_date": "2026-07-06",
+  "earliest_accum_buy": "2026-07-03 03:56:24+00",
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1783462948,
+    "msg_id": 37130
+   },
+   "CallAnalyserSol": {
+    "ts": 1783517106,
+    "msg_id": 110954
+   }
+  }
+ },
+ {
+  "token": "Ds8YCVhKM1RChk58KtWgL7HyBMMqYPGdqTN8BhnQuihf",
+  "symbol": "SUNUSI",
+  "run_date": "2026-07-07",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "4uWHndfSJhAxLXGCG72wNWUqMMcijwTvQ4sm8sP9P2rn",
+  "symbol": "spcx\u00f0\u0178\u0161\u20ac",
+  "run_date": "2026-07-07",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "6xCtR2Eq1VumsoRdNutcfSQfLMk7xUa2BrMx18tqpump",
+  "symbol": "DEXBULL",
+  "run_date": "2026-07-07",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1783518899,
+    "msg_id": 110956
+   }
+  }
+ },
+ {
+  "token": "78FDCD2gDFXZJbv8GHu6hxVSSKFV4jAxd9eeBvwwYpMj",
+  "symbol": "TENEO",
+  "run_date": "2026-07-07",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "22deNCri9bBae1GWZxdaDxipMWdwAUQ2ddvxdSmgpump",
+  "symbol": "CASHCAT",
+  "run_date": "2026-07-07",
+  "earliest_accum_buy": "2026-07-01 20:33:37+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1783491881,
+    "msg_id": 110946
+   }
+  }
+ },
+ {
+  "token": "3Esi8v4N2KVrx2NZWaC372VkfTGE4EVZePqK8g9HqcfS",
+  "symbol": "OUSD",
+  "run_date": "2026-07-07",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "EcqrUE8Ti2PXBAeTMCL5A7q6xaySQJn1tGvtVXz9nmnE",
+  "symbol": "STANDX",
+  "run_date": "2026-07-07",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "9y6hXFBFN1fJGfAAYgkXVVfQATG1mEJsmTrCXcT6pump",
+  "symbol": "Silk",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "EVxusEJrJmzfrUmMnCyfUX66dMqg3w5n4UsHojGTx6q2",
+  "symbol": "OpenSea",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "3jWhU31ncqB4CS3vncWktno3bQnXYTfVj7asfJjEUNBm",
+  "symbol": "SAPIJIJU",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "7CxUj2xMtpAubvQb3TgeWkAdyfnGUBdS13AmvFdSSMk4",
+  "symbol": "DREAM",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "5wLXYZVjPv4i1Zw1jG6hLQmTmz7YXQANeq8qshiZSxVf",
+  "symbol": "RTM",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "8FMMLBED9nUfxYShzat45snmmGcnB5e8b3HpCD8AtDLm",
+  "symbol": "AnsemAI",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "4BwfNjYLseCc8EEALEYYM6nyUR5jfvuU3FEfSNP35X2M",
+  "symbol": "W26",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "FbMMPq12FPqS2no283ZR5LvBvZyayqRhwZ3hB89143Pe",
+  "symbol": "Bepe",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "7ycQfB18Uuj3qguwmEAPMXme5JDA6MsE2YRuJW22Ljmv",
+  "symbol": "GPT",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "Hn1wEgZU9Tdos56Bo9Qks1xszKyHr6xAXWuNTUnNjhYS",
+  "symbol": "USA250",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "4ko5tSr5o3H4v1sFtjTSd9MPUW7yx5AFCpkNPoL6pump",
+  "symbol": "febu",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "solana100xcall": {
+    "ts": 1783555149,
+    "msg_id": 37217
+   },
+   "CallAnalyserSol": {
+    "ts": 1783619431,
+    "msg_id": 111021
+   }
+  }
+ },
+ {
+  "token": "J5ZognFJEepsWsCQPmqVchvEvsUMomEkxd8LbMrH2J7",
+  "symbol": "Bullscan",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "CLuoaiRJj3c2rEjPVtbY8dHJyPTXPbdSNwAzRUDUQE33",
+  "symbol": "Codex",
+  "run_date": "2026-07-08",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ },
+ {
+  "token": "BtUiqGdsW3H47yvtyKSLhQfzVpwov3wyYY6qssU9pump",
+  "symbol": "reptilecoin",
+  "run_date": "2026-07-09",
+  "earliest_accum_buy": null,
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1783758820,
+    "msg_id": 111072
+   },
+   "solcallbot": {
+    "ts": 1783648196,
+    "msg_id": 42690
+   }
+  }
+ },
+ {
+  "token": "CgnQ8a1u99Gk7qoySMd2wrGPMPm9bdcSJNhqMEkYpump",
+  "symbol": "Loom",
+  "run_date": "2026-07-09",
+  "earliest_accum_buy": "2026-07-08 10:01:59+00",
+  "mentions": {
+   "CallAnalyserSol": {
+    "ts": 1783472695,
+    "msg_id": 110933
+   }
+  }
+ },
+ {
+  "token": "3D5bNDXTN9gfte1wV7g6342ApnDswYAgT1FiRrYy2mYR",
+  "symbol": "INK",
+  "run_date": "2026-07-09",
+  "earliest_accum_buy": null,
+  "mentions": {}
+ }
+]
