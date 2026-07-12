@@ -76,6 +76,9 @@ REDIS_TEAMFOLLOW_BUYS_CHANNEL = "copy:teamfollow_buys"
 # the cluster/conviction detectors) — powers the follow-the-team-out exit.
 REDIS_TEAMFOLLOW_SELLS_CHANNEL = "copy:teamfollow_sells"
 REDIS_SELLS_CHANNEL = "copy:sells"
+# Cohort-fire (2026-07-12): republish watch-tier BUYS from RED-COHORT wallets here so
+# the cohortfire strategy can act on them (watch tier is otherwise observe-only).
+REDIS_COHORTFIRE_BUYS_CHANNEL = "copy:cohort_buys"
 REDIS_DEDUP_PREFIX = "copy:webhook_dedup:"
 DEDUP_TTL_SECONDS = 600  # 10 min — Helius retries within this window
 
@@ -87,6 +90,20 @@ HELIUS_DELIV_PREFIX = "helius:deliv:"          # helius:deliv:{YYYY-MM-DD}:{tier
 HELIUS_DELIV_TTL_SECONDS = 45 * 24 * 3600      # rolling ~45d history (covers a cycle)
 
 WALLET_POOL_PATH = Path("/app/bots/copy/wallet_pool.json")
+
+
+def _load_cohort_wallets() -> set[str]:
+    """RED-COHORT wallets the cohortfire strategy acts on (bots/copy/cohortfire_roster.json).
+    Their watch-tier buys get republished to copy:cohort_buys. Empty on any error."""
+    for p in ("/app/bots/copy/cohortfire_roster.json", "bots/copy/cohortfire_roster.json"):
+        try:
+            return set((json.loads(Path(p).read_text()).get("wallets") or {}).keys())
+        except Exception:
+            continue
+    return set()
+
+
+COHORT_WALLETS: set[str] = _load_cohort_wallets()
 
 SOL_PRICE_REFRESH_SECONDS = 300  # 5 min
 SOL_PRICE_FALLBACK_USD = 150.0
@@ -727,6 +744,22 @@ async def _process_webhook(
                 matched_buys += 1
             else:
                 matched_sells += 1
+
+        # Cohort-fire: republish watch-tier BUYS from RED-COHORT wallets to their own
+        # channel (independent of should_publish — watch is otherwise observe-only).
+        if (tier == "watch" and kind == "buy"
+                and matched_event["wallet_address"] in COHORT_WALLETS):
+            csig = matched_event.get("tx_signature")
+            cok = True
+            if csig:
+                cdk = f"{REDIS_DEDUP_PREFIX}cohort:buy:{csig}"
+                cok = await redis_client.set(cdk, "1", nx=True, ex=DEDUP_TTL_SECONDS)
+            if cok:
+                try:
+                    await redis_client.publish(REDIS_COHORTFIRE_BUYS_CHANNEL,
+                                               json.dumps(matched_event))
+                except Exception:
+                    log.exception("cohort_publish_failed")
 
     # Persist event log + bump counters + raw swap log in one batched DB roundtrip
     if log_rows or swap_rows:

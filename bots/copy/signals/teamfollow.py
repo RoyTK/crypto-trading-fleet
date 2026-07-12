@@ -45,9 +45,14 @@ class TeamFollowDetector:
         min_members: Optional[int] = None,
         window_minutes: Optional[float] = None,
         dust_floor_usd: Optional[float] = None,
+        strategy_name: str = "teamfollow",
     ) -> None:
         s = get_copy_settings()
-        # wallet -> team_id
+        # strategy tag on emitted candidates — lets the SAME detector power a sibling
+        # group-cobuy strategy (e.g. 'cohortfire' on the RED-COHORT roster) with its own
+        # isolated bankroll/halt. Default keeps teamfollow behaviour identical.
+        self._strategy = strategy_name
+        # wallet -> team_id (or cohort_id)
         self._roster: dict[str, int] = {w: int(t) for w, t in (roster or {}).items() if w}
         self._min = int(
             min_members if min_members is not None
@@ -123,7 +128,7 @@ class TeamFollowDetector:
                     continue  # already fired for this team+token this window
                 total = sum(wallets.values())
                 out.append(SignalCandidate(
-                    signal_type="teamfollow_buy",
+                    signal_type=f"{self._strategy}_buy",
                     asset=token,
                     chain=chain,
                     direction="long",
@@ -135,7 +140,7 @@ class TeamFollowDetector:
                     # by the trailing stop + follow-the-team-out + rug-close.
                     timeout_hours=None,
                     payload={
-                        "strategy": "teamfollow",
+                        "strategy": self._strategy,
                         "team_id": team,
                         "wallets": sorted(wallets.keys()),
                         "wallet_notionals": wallets,

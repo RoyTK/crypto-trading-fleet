@@ -1,0 +1,226 @@
+{
+ "_meta": {
+  "source": "RED-COHORT-2026-v1 (doi:10.5281/zenodo.20978741, CC-BY-4.0), cohorts with n_launches>=20",
+  "generated": "2026-07-12",
+  "n_cohorts": 22,
+  "n_wallets": 81,
+  "note": "cohortfire fires on >=min_members of the same cohort_id co-buying; wallets live in watch tier",
+  "cohorts": [
+   {
+    "cohort_id": 0,
+    "size": 9,
+    "n_launches": 42,
+    "score": 430.4
+   },
+   {
+    "cohort_id": 1,
+    "size": 3,
+    "n_launches": 41,
+    "score": 413.2
+   },
+   {
+    "cohort_id": 2,
+    "size": 3,
+    "n_launches": 28,
+    "score": 286.6
+   },
+   {
+    "cohort_id": 3,
+    "size": 3,
+    "n_launches": 27,
+    "score": 274.1
+   },
+   {
+    "cohort_id": 4,
+    "size": 3,
+    "n_launches": 26,
+    "score": 267.0
+   },
+   {
+    "cohort_id": 5,
+    "size": 2,
+    "n_launches": 25,
+    "score": 256.4
+   },
+   {
+    "cohort_id": 6,
+    "size": 6,
+    "n_launches": 25,
+    "score": 254.9
+   },
+   {
+    "cohort_id": 7,
+    "size": 3,
+    "n_launches": 24,
+    "score": 248.5
+   },
+   {
+    "cohort_id": 8,
+    "size": 3,
+    "n_launches": 24,
+    "score": 246.0
+   },
+   {
+    "cohort_id": 9,
+    "size": 3,
+    "n_launches": 23,
+    "score": 238.4
+   },
+   {
+    "cohort_id": 10,
+    "size": 3,
+    "n_launches": 23,
+    "score": 236.9
+   },
+   {
+    "cohort_id": 11,
+    "size": 4,
+    "n_launches": 23,
+    "score": 236.1
+   },
+   {
+    "cohort_id": 12,
+    "size": 3,
+    "n_launches": 23,
+    "score": 235.7
+   },
+   {
+    "cohort_id": 13,
+    "size": 2,
+    "n_launches": 23,
+    "score": 234.3
+   },
+   {
+    "cohort_id": 14,
+    "size": 5,
+    "n_launches": 21,
+    "score": 219.1
+   },
+   {
+    "cohort_id": 15,
+    "size": 3,
+    "n_launches": 21,
+    "score": 218.6
+   },
+   {
+    "cohort_id": 16,
+    "size": 2,
+    "n_launches": 21,
+    "score": 215.7
+   },
+   {
+    "cohort_id": 17,
+    "size": 2,
+    "n_launches": 21,
+    "score": 213.3
+   },
+   {
+    "cohort_id": 18,
+    "size": 2,
+    "n_launches": 20,
+    "score": 207.5
+   },
+   {
+    "cohort_id": 19,
+    "size": 8,
+    "n_launches": 20,
+    "score": 205.1
+   },
+   {
+    "cohort_id": 20,
+    "size": 7,
+    "n_launches": 20,
+    "score": 205.1
+   },
+   {
+    "cohort_id": 21,
+    "size": 2,
+    "n_launches": 20,
+    "score": 204.9
+   }
+  ]
+ },
+ "wallets": {
+  "789sBYAGntSyAPoS4ZH3zo3SUFuv1jeAjPeaq7muVany": 0,
+  "AyFPwAkdddDiRqw911GXDghY65vjbcwQ3R7n6jBaw62b": 0,
+  "BTPaogPrK2YXjymqXFWq6hpX3KisbGynzAbV3LnBLNZV": 0,
+  "CC5nggDWgVrJjPsfHxSnLPz311yZcKseWC9rsGvoXAsM": 0,
+  "DGuoMqwahcJzqhgf6D5199ztLzVn4oEcmYJHuP9H6Q3t": 0,
+  "ED28Sp1M8BUsKDMWm8UsVmPJ67smq3Vp6QMewm7D93c": 0,
+  "EFhdxiifzuHr29eErt1WZE1uzWrJFra4RZNF9vT6KdGc": 0,
+  "Fn6WMrUUmCDHp6iag4PyWkcdL4h3ZTgXhKGqqKG7BY1G": 0,
+  "iirLZS3cE6i5QXavqUNDLZCqxR72buNLYAPYqY4wpeb": 0,
+  "6CbDVFWUBgCQSxymh7VNfZk6im5NEWLGcDrVTHAJDJdp": 1,
+  "F6zvmnwCKXGV9UDmFPoiuJzPj3bkxo4MDUFMihiecxSi": 1,
+  "GGBmJtKHSgMAGLA9fMF5HX4qzhP5qwBdhUfg29qAXfhP": 1,
+  "4o4Cz2DLhnQY9M33BFUZZwiucTNA6E4Pv9A3K85k6g9e": 2,
+  "ZGH8ziM6n8ceVirjHimajaufFJi1BYrkY1pAhnKkWDS": 2,
+  "opZiPzWTrfwmPcENVK8s6ZHbedkdVvxdzMCQWzrbbdF": 2,
+  "6EPfYrXWAh8izj9e7CEofgydHKhyJeSCQX2aixEBbBUJ": 3,
+  "6kcDcAvTreBRw6tanBPKPUUSDdR4bftd3azEVYHhrutn": 3,
+  "7mg92Wf4YoYK753q8jj8Ds984gQTP6TBnCUC1FkM9QLn": 3,
+  "DJT7655sqtNTsk3LbAqYwXNyLo5rM2X5nyrzFRjehdjU": 4,
+  "HLyTyZ4Fd5pyG84VAEGSqXuiGZW4FvK8KpCrFUaEg4Jw": 4,
+  "UfZRqMk1tEP8LHKCHHZPhCb1AeR6kgnWg4mZxCteeVj": 4,
+  "7Je3VJ1vQBrxZgA4q4biyJFGxD9qFJbRRPM9hTMbpxJB": 5,
+  "BbbAY4xmo6wcY1LAN833nQVxJEhevhosrfnX8Bfej6wg": 5,
+  "51hxxgZH1AZARnDWKZneS9QJGtPqxZaDFJoFvqWKqbGS": 6,
+  "6H9Hj7vQAjui4FoY4a7Cc9yK2YozpyxgGmZdxvX22SFn": 6,
+  "7Gc57mfScTxr7hLH9nRb8FhNN6sK1bMdon5sRhFjCMoZ": 6,
+  "DJxCWxNuwB4qkkYmkjP1dd43YYJAVvS91cNXaFgaJCvn": 6,
+  "EyQQihS53m5gDHs9LJeZAW3rEieF4ousbwbkEGrtnxMH": 6,
+  "HcJmNW6wEhihULGwdTUfpK2Xf1vDnEMvNqrmZbZBjJWc": 6,
+  "6AGC34uagDffo9uvJR6D5auA2UCY7aCvNcZM6dvAG2PD": 7,
+  "9LaDFiTmPqdJYTf2sKHeehLJTxUY9aavhUr3wVaRfrQk": 7,
+  "BQAf3pQzUj53badMY6P4M4jwBv7aER8H9tmW2DAg8pyT": 7,
+  "7Ubnf4g8gebvUbQdJwi7g3yQmiU3nKPGgGxdvbgCCnBF": 8,
+  "8aUg2gMwPnqhLN9K7GLY7xJwucJfnBg6CwqA98njQCHt": 8,
+  "EKJACnHVGNHDm5zzFxXQUTAtGdV4tCcwXV6wv5Hj3oxE": 8,
+  "27KnsCtPQP3QvALzcc4dpiSi5NA51weN8dubpBb4qCgt": 9,
+  "27uKfiSGAZdqNrYrZSiEsfXt77s15sKikgSJkFoF48Mr": 9,
+  "Cvmo9SmWvBabC6ssW5uwThNKWipYJ6UUycBf4dibdQ97": 9,
+  "2WxJhCLEMtdsyaJb3EQ5hZB7yc5TGmtGUDqwxX8hZZKy": 10,
+  "AUjsRX65PsQ5gLUp7iuYCGXBdD3AK18p8s9bYFBLmpkH": 10,
+  "DajKAVujGeMy5HTZQqGWv4tMuTx6hAWaFzdrjfxKmpkU": 10,
+  "2cnxtRSdeAXnB9LZYo4oUxAFctqqDV36RmLZvT8WnKZh": 11,
+  "643pUYe9Y5mzuYNUVyhrcYSAusQziEnzUi8VteE7qTwY": 11,
+  "Dq3Vr8v9uyBJmq3fhLhLEYKnenHAHBBg3AUJzbC5WsaL": 11,
+  "Ghtf3uao2DMx93HFF1kLogSPfAihcDz8jKZLJwYk6kVB": 11,
+  "57WkTbDxxu3tC9Nhve8hQms5KBRa7MFEPSnnEeThivvX": 12,
+  "9khkRvs76cmVAfRHswogDqBwikdHDKBH2e9zXLuaYrTn": 12,
+  "9pqbbqUw1Z3zVv4upx6jPKhmCaGbuXCZThhqWoTaR3cH": 12,
+  "DSwyCbJxVXLQxt4winXZxBH5sFMYc9ya2ATNFiP9Nn2T": 13,
+  "HD3CvkH47kwkMnu9V2UCmfSJrgBM76kBsPWJagakhjVT": 13,
+  "CMXa5G93tWQn64U9eJs1i7ywMvFyAj1oQUBTGkUtSVq": 14,
+  "CVSCeUd54X8BX8QAzJ3V2rZ5ZLbExJPaHpjrUdRJj5KX": 14,
+  "EAczSHBEJCxjs3JRVeVWZjYPUfeH2ui6AN6VafjSXojP": 14,
+  "F68JEZmPaGHYjApdjc6JgYfDJvB9hgfRSd9EndGsYy2h": 14,
+  "J33cFVQ7oPtg34MBvP2jxMwwAPGv4sMSnG8XrLSvZG9P": 14,
+  "FASTESTv3ZKg9hbwQHf64pBfRxaD3NyP3exgCFhKeyX5": 15,
+  "HUg1XNBfdJbFDLEaMBmc2VWf6SCrBkFe11E83ktXXz3f": 15,
+  "REDACTED7UFt7V1oCXM6FfAb7jQcBc1G4pWMqcDakHXjY": 15,
+  "86NGsPriuVsREvNnpJe1HGke8rSxjXNLp35gmKJZYhfJ": 16,
+  "GMywMfRbyLvi51P9U6AAL7m2ckSGCSLTe9AW5EeipJNA": 16,
+  "F36ovpQyPiZn6pCrzMxHxMFt3KTo8u1tizxVxcgdn9oa": 17,
+  "F64QJNbwbAZLAbvzNYkxjHirfTWQDqj3Vz1FrBEDL5Q8": 17,
+  "2RRKiWes8bSifxUARdAk5pojZQheHnoGFz1KJN4LyuRo": 18,
+  "2SJVK1Xhz2WWmsFhLHNpP9CM8q1mTwW7EXSVpHgsFJEs": 18,
+  "28JTBrWW75BrRskCrCSWLSWSkatVFLGfSBDwJFzwonDd": 19,
+  "2qJTrHC4EoxunSHkZQ2dn9m2S4ybnWm4qEATfaxWPnma": 19,
+  "4kUTurL49JHxLnRdoCiCtGgCNoxMu3pzzED7kiUp35TM": 19,
+  "7pDhG6NqfzQzw5KvtGXJbVRUh4iTBgYAn68BSKjdMNC1": 19,
+  "7tzb3wupH4RtUTXMuvMkdT7fefEbtPGwhwTzTxfeggev": 19,
+  "7yGSDgQ1XC6SWZ9EEpW53G1VYTNRaRajAptgA1tJYfxE": 19,
+  "DsbJELFdN5QwNHB5nSEm95k5g5anLq2TtVGiZCcqHCpB": 19,
+  "mNTDPWbv3TS6AZMAK6bvcwmaEsHSgzUqBFpSyXfcs1S": 19,
+  "59ThKJRi1ECaPVjanCzYRAgN3xqcbeNsR9RjjB8yuCfU": 20,
+  "5uqo466xyPgpxfeSf9jA5EEXvt8RCwq76WstjgT3EGEb": 20,
+  "6SWBimMfUP6zs8Y4oGUcFSkYmpFyoBTdu3TG9CP3WwZ3": 20,
+  "97gigkBjXNDk5ojTsGBmKviHqgqN62Rn4rrBfrRvq5PJ": 20,
+  "9gcWxaBs8peHvajEWW2v8fdH2D2gW6HnDd2MZCGZ3gEd": 20,
+  "G3dbVm66NNRf6epGTEWd2viCZL1qYzcoXbbB3eUKQ46j": 20,
+  "HhU1FpegfpEWJ6jaMgwictRZ23MiB4TZdn7t6BCjBStt": 20,
+  "3wV8LdaX5cxruZUegcHq4d5JzUYWNafXKi3G1NDyER7g": 21,
+  "6Eh9A7wAzYEo8jTB3BAQAcGriQugSmyz7UGmJZUs4MZk": 21
+ }
+}

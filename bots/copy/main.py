@@ -70,6 +70,7 @@ from bots.copy.signals.cluster import ClusterDetector
 from bots.copy.signals.conviction import ConvictionDetector
 from bots.copy.signals.sell_cluster import SellClusterDetector
 from bots.copy.signals.teamfollow import TeamFollowDetector
+from bots.copy import signal_features
 from bots.copy import shadow_log
 from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import (
@@ -100,6 +101,9 @@ REDIS_SELLS_CHANNEL = "copy:sells"
 # feed the cluster detector (isolation — see teamfollow tier in webhook_receiver).
 REDIS_TEAMFOLLOW_BUYS_CHANNEL = "copy:teamfollow_buys"
 REDIS_TEAMFOLLOW_SELLS_CHANNEL = "copy:teamfollow_sells"
+# Cohort-fire (2026-07-12): RED-COHORT coordinated-sniper co-buys. webhook_receiver
+# republishes watch-tier buys from cohort wallets here; isolated from cluster/teamfollow.
+REDIS_COHORTFIRE_BUYS_CHANNEL = "copy:cohort_buys"
 REDIS_MACRO_CLUSTER_CHANNEL = "copy:macro_cluster"
 # 2026-05-28: every cluster (regardless of asset / HL listing) is published
 # to copy:all_clusters for STRUCTURE's read-only cluster_observations journal.
@@ -241,6 +245,15 @@ class CopyBot(BotLifecycle):
         # channel (copy:teamfollow_buys) so its wallets NEVER feed the cluster
         # detector. Roster loaded from bots/copy/teamfollow_roster.json in on_start.
         self.teamfollow = TeamFollowDetector()
+        # Cohort-fire (2026-07-12): same group-cobuy detector on the RED-COHORT roster
+        # (bots/copy/cohortfire_roster.json). Isolated strategy 'cohortfire' — own
+        # bankroll + halt + Redis channel (copy:cohort_buys). OFF unless enabled.
+        self.cohortfire = TeamFollowDetector(
+            min_members=self.copy_settings.copy_cohortfire_min_members,
+            window_minutes=self.copy_settings.copy_cohortfire_window_minutes,
+            dust_floor_usd=self.copy_settings.copy_cohortfire_dust_floor_usd,
+            strategy_name="cohortfire",
+        )
         self.executor = CopyExecutor()
         self._last_reconcile_ts: float = 0.0
         self._last_position_check_ts: float = 0.0
@@ -250,6 +263,7 @@ class CopyBot(BotLifecycle):
         self._sells_subscriber_task: Optional[asyncio.Task] = None
         self._teamfollow_buys_subscriber_task: Optional[asyncio.Task] = None
         self._teamfollow_sells_subscriber_task: Optional[asyncio.Task] = None
+        self._cohortfire_buys_subscriber_task: Optional[asyncio.Task] = None
         self._buys_redis: Optional[redis_async.Redis] = None
         # Throttle for price-scale anomaly alerts. Per-trade, 1 hour
         # cool-down — prevents spam if Birdeye is returning persistently
@@ -292,6 +306,11 @@ class CopyBot(BotLifecycle):
             if self.copy_settings.copy_teamfollow_follow_team_exit:
                 self._teamfollow_sells_subscriber_task = asyncio.create_task(
                     self._teamfollow_sells_subscriber())
+        # Cohort-fire buys arrive on their OWN channel (copy:cohort_buys), isolated.
+        if self.copy_settings.copy_cohortfire_enabled:
+            self._load_cohortfire_roster()
+            self._cohortfire_buys_subscriber_task = asyncio.create_task(
+                self._cohortfire_buys_subscriber())
         # Sell subscriber — shares the same Redis connection. Pubsub objects are
         # created per-subscriber so they coexist without interfering. Started
         # when EITHER the sell-cluster detector OR the conviction
@@ -326,6 +345,8 @@ class CopyBot(BotLifecycle):
             self._teamfollow_buys_subscriber_task.cancel()
         if self._teamfollow_sells_subscriber_task:
             self._teamfollow_sells_subscriber_task.cancel()
+        if self._cohortfire_buys_subscriber_task:
+            self._cohortfire_buys_subscriber_task.cancel()
         if self._buys_redis:
             await self._buys_redis.aclose()
         if self._session:
@@ -362,6 +383,9 @@ class CopyBot(BotLifecycle):
         # channel. Fires on >=2 same-team co-buys; gated by copy_teamfollow_enabled.
         if self.copy_settings.copy_teamfollow_enabled:
             self._evaluate_teamfollow()
+        # Cohort-fire — >=2 same RED-COHORT ring members co-buy; gated by its flag.
+        if self.copy_settings.copy_cohortfire_enabled:
+            self._evaluate_cohortfire()
 
         # Shadow log poller — update pending rows on the configured cadence
         if now - self._last_shadow_log_poll_ts >= self.copy_settings.copy_shadow_log_poll_seconds:
@@ -488,6 +512,43 @@ class CopyBot(BotLifecycle):
                 return
             except Exception:
                 self.log.exception("teamfollow_buys_subscriber_failed", backoff=backoff)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 60.0)
+
+    async def _cohortfire_buys_subscriber(self) -> None:
+        """Long-lived subscriber to `copy:cohort_buys` (isolated from cluster/teamfollow).
+        webhook_receiver republishes watch-tier buys from RED-COHORT wallets here; we
+        feed ONLY the cohortfire detector. Mirrors `_teamfollow_buys_subscriber`."""
+        if self._buys_redis is None:
+            return
+        backoff = 1.0
+        while True:
+            try:
+                pubsub = self._buys_redis.pubsub()
+                await pubsub.subscribe(REDIS_COHORTFIRE_BUYS_CHANNEL)
+                self.log.info("cohortfire_buys_subscriber_ready",
+                              channel=REDIS_COHORTFIRE_BUYS_CHANNEL)
+                backoff = 1.0
+                async for msg in pubsub.listen():
+                    if msg.get("type") != "message":
+                        continue
+                    try:
+                        payload = json.loads(msg["data"])
+                        ev = WalletBuyEvent(
+                            wallet_address=payload["wallet_address"],
+                            chain=payload["chain"],
+                            token_mint=payload["token_mint"],
+                            notional_usd=float(payload["notional_usd"]),
+                            timestamp_ms=int(payload["timestamp_ms"]),
+                            tx_signature=payload.get("tx_signature", ""),
+                        )
+                        self.cohortfire.observe_buy(ev)
+                    except Exception:
+                        self.log.exception("cohortfire_buys_message_parse_failed")
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                self.log.exception("cohortfire_buys_subscriber_failed", backoff=backoff)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 60.0)
 
@@ -1129,6 +1190,129 @@ class CopyBot(BotLifecycle):
             except Exception:
                 self.log.exception("teamfollow_token_age_capture_failed",
                                    asset=candidate.asset)
+
+    # ---- Cohort-fire (RED-COHORT group co-buy) signal handling ------------
+
+    def _evaluate_cohortfire(self) -> None:
+        """Drain cohort-fire triggers (>=2 same-cohort members co-buy). Parallel to
+        _evaluate_teamfollow, isolated (strategy='cohortfire', halt_id 'copy_cohortfire')."""
+        for c in self.cohortfire.evaluate():
+            asyncio.create_task(self._consume_cohortfire_candidate(c))
+
+    async def _consume_cohortfire_candidate(self, candidate: SignalCandidate) -> None:
+        try:
+            if is_bot_halted("copy_cohortfire"):
+                self.log.info("cohortfire_halted_skip", asset=candidate.asset)
+                return
+        except Exception:
+            self.log.exception("cohortfire_halt_check_failed")
+
+        if has_open_position(candidate.asset, candidate.venue, strategy="cohortfire"):
+            self.log.info("cohortfire_dedup_skip", asset=candidate.asset)
+            return
+
+        cohort_id = (candidate.payload or {}).get("team_id")
+        capital = self.copy_settings.copy_cohortfire_paper_capital_usd
+        current_alloc = open_allocation_pct(capital, strategy="cohortfire")
+        notional_usd = size_teamfollow_position(
+            paper_capital_usd=capital,
+            current_open_alloc_pct=current_alloc,
+            current_dd_today_pct=0.0,
+        )
+        if notional_usd <= 0 or self._session is None:
+            return
+
+        # Serial-deployer blocklist (fail-open).
+        token_security: Optional[dict] = None
+        if candidate.venue == "solana":
+            try:
+                token_security = await fetch_token_security(self._session, candidate.asset)
+            except Exception:
+                self.log.exception("cohortfire_token_security_fetch_failed", asset=candidate.asset)
+            if token_security:
+                creator = token_security.get("creator")
+                if creator and creator in self.copy_settings.get_blocked_creators():
+                    self.log.info("cohortfire_blocked_creator_skip", asset=candidate.asset)
+                    return
+
+        # Quality gate — entry-liquidity floor (same rationale as teamfollow).
+        entry_liq: Optional[float] = None
+        if candidate.venue == "solana":
+            min_liq = self.copy_settings.copy_cohortfire_min_entry_liquidity_usd
+            if min_liq and min_liq > 0:
+                try:
+                    entry_liq = await fetch_token_liquidity(self._session, candidate.asset)
+                except Exception:
+                    entry_liq = None
+                if entry_liq is not None and entry_liq < min_liq:
+                    self.log.info("cohortfire_thin_liquidity_skip", asset=candidate.asset,
+                                  liquidity_usd=entry_liq, min_liquidity_usd=min_liq)
+                    return
+
+        # Quality gate — min token age (cohorts snipe launches; the edge is the ring
+        # RE-ENGAGING an established token, so block fresh mints like teamfollow).
+        creation_info: Optional[dict] = None
+        token_age_h: Optional[float] = None
+        if candidate.venue == "solana":
+            min_age_h = self.copy_settings.copy_cohortfire_min_token_age_hours
+            import time as _time
+            try:
+                creation_info = await fetch_token_creation(self._session, candidate.asset)
+            except Exception:
+                creation_info = None
+            if creation_info and creation_info.get("created_unix"):
+                token_age_h = max(0.0, (_time.time() - creation_info["created_unix"]) / 3600.0)
+                if min_age_h and min_age_h > 0 and token_age_h < min_age_h:
+                    self.log.info("cohortfire_fresh_mint_skip", asset=candidate.asset,
+                                  age_hours=round(token_age_h, 2), min_age_hours=min_age_h)
+                    return
+
+        snapshot = CopyMarketSnapshot(chain=candidate.chain, session=self._session)
+        sim_fill = await self.simulator.simulate_entry_async(
+            asset=candidate.asset, notional_usd=notional_usd, leverage=1.0,
+            direction=candidate.direction, market_snapshot=snapshot,
+        )
+        signal_id = persist_signal(candidate)
+        paper_trade_id = persist_paper_trade(
+            signal_id=signal_id, candidate=candidate, sim_fill=sim_fill,
+            notional_usd=notional_usd, leverage=1.0, strategy="cohortfire",
+        )
+        self.log.info("cohortfire_paper_opened", asset=candidate.asset, cohort_id=cohort_id,
+                      cluster_size=candidate.cluster_size, notional_usd=round(notional_usd, 2),
+                      trade_id=paper_trade_id, fill=sim_fill.fill_price)
+
+        # MELT feature-log at signal time (fail-open; never blocks the trade).
+        try:
+            fid = signal_features.record(
+                "cohortfire", candidate.asset,
+                entry_price=sim_fill.fill_price, liquidity_usd=entry_liq,
+                token_age_h=token_age_h,
+                trigger_wallets=(candidate.payload or {}).get("wallets"),
+                extra={"cohort_id": cohort_id, "cluster_size": candidate.cluster_size},
+            )
+            if fid and paper_trade_id:
+                signal_features.link_trade(fid, paper_trade_id)
+        except Exception:
+            self.log.exception("cohortfire_feature_log_failed", asset=candidate.asset)
+
+        # Best-effort token-meta + age enrichment.
+        if candidate.venue == "solana" and paper_trade_id is not None:
+            if token_security is not None or entry_liq is not None:
+                try:
+                    update_trade_token_meta(
+                        paper_trade_id, creator=(token_security or {}).get("creator"),
+                        top10_holder_pct=(token_security or {}).get("top10_holder_pct"),
+                        owner_pct=(token_security or {}).get("owner_pct"),
+                        entry_liquidity_usd=entry_liq)
+                except Exception:
+                    self.log.exception("cohortfire_token_meta_capture_failed", asset=candidate.asset)
+            if creation_info and creation_info.get("created_unix"):
+                try:
+                    update_trade_token_age(
+                        paper_trade_id, created_unix=creation_info["created_unix"],
+                        age_hours=token_age_h, tx=creation_info.get("tx"))
+                except Exception:
+                    self.log.exception("cohortfire_token_age_capture_failed", asset=candidate.asset)
 
     # ---- Conviction (single-wallet) signal handling -----------------------
 
@@ -2065,6 +2249,24 @@ class CopyBot(BotLifecycle):
         self.log.info("teamfollow_roster_loaded",
                       wallets=self.teamfollow.wallet_count,
                       teams=self.teamfollow.team_count)
+
+    def _load_cohortfire_roster(self) -> None:
+        """Load bots/copy/cohortfire_roster.json (RED-COHORT wallet->cohort_id) into
+        the cohortfire detector. Non-fatal. A wallet only fires if webhook_receiver
+        republishes its watch-tier buys to copy:cohort_buys (i.e. it's a monitored
+        cohort wallet)."""
+        try:
+            from pathlib import Path
+            p = Path(__file__).parent / "cohortfire_roster.json"
+            data = json.loads(p.read_text())
+            roster = {w: int(cid) for w, cid in (data.get("wallets") or {}).items() if w}
+        except Exception:
+            self.log.exception("cohortfire_roster_load_failed")
+            return
+        self.cohortfire.set_roster(roster)
+        self.log.info("cohortfire_roster_loaded",
+                      wallets=self.cohortfire.wallet_count,
+                      cohorts=self.cohortfire.team_count)
 
 
 def main() -> None:
