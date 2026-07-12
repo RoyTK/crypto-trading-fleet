@@ -58,6 +58,7 @@ from bots.copy.trailing_stop import (
 )
 from bots.copy.config import (
     EXIT_STOP_PCT,
+    EXIT_TAKE_PROFIT_PCT,
     CLUSTER_LIQ_GROW_RATIO,
     CLUSTER_STOP_PCT_DEEP,
     CLUSTER_FLAT_LIQ_FLOOR_USD,
@@ -104,6 +105,8 @@ REDIS_TEAMFOLLOW_SELLS_CHANNEL = "copy:teamfollow_sells"
 # Cohort-fire (2026-07-12): RED-COHORT coordinated-sniper co-buys. webhook_receiver
 # republishes watch-tier buys from cohort wallets here; isolated from cluster/teamfollow.
 REDIS_COHORTFIRE_BUYS_CHANNEL = "copy:cohort_buys"
+# Promo-buy (2026-07-12): Dexscreener paid-promo tokens from promo_shadow_collector.
+REDIS_PROMOBUY_CHANNEL = "copy:promo_signals"
 REDIS_MACRO_CLUSTER_CHANNEL = "copy:macro_cluster"
 # 2026-05-28: every cluster (regardless of asset / HL listing) is published
 # to copy:all_clusters for STRUCTURE's read-only cluster_observations journal.
@@ -264,6 +267,7 @@ class CopyBot(BotLifecycle):
         self._teamfollow_buys_subscriber_task: Optional[asyncio.Task] = None
         self._teamfollow_sells_subscriber_task: Optional[asyncio.Task] = None
         self._cohortfire_buys_subscriber_task: Optional[asyncio.Task] = None
+        self._promobuy_subscriber_task: Optional[asyncio.Task] = None
         self._buys_redis: Optional[redis_async.Redis] = None
         # Throttle for price-scale anomaly alerts. Per-trade, 1 hour
         # cool-down — prevents spam if Birdeye is returning persistently
@@ -311,6 +315,10 @@ class CopyBot(BotLifecycle):
             self._load_cohortfire_roster()
             self._cohortfire_buys_subscriber_task = asyncio.create_task(
                 self._cohortfire_buys_subscriber())
+        # Promo-buy: paid-promo tokens from promo_shadow_collector on copy:promo_signals.
+        if self.copy_settings.copy_promobuy_enabled:
+            self._promobuy_subscriber_task = asyncio.create_task(
+                self._promobuy_subscriber())
         # Sell subscriber — shares the same Redis connection. Pubsub objects are
         # created per-subscriber so they coexist without interfering. Started
         # when EITHER the sell-cluster detector OR the conviction
@@ -347,6 +355,8 @@ class CopyBot(BotLifecycle):
             self._teamfollow_sells_subscriber_task.cancel()
         if self._cohortfire_buys_subscriber_task:
             self._cohortfire_buys_subscriber_task.cancel()
+        if self._promobuy_subscriber_task:
+            self._promobuy_subscriber_task.cancel()
         if self._buys_redis:
             await self._buys_redis.aclose()
         if self._session:
@@ -1313,6 +1323,154 @@ class CopyBot(BotLifecycle):
                         age_hours=token_age_h, tx=creation_info.get("tx"))
                 except Exception:
                     self.log.exception("cohortfire_token_age_capture_failed", asset=candidate.asset)
+
+    # ---- Promo-buy (Dexscreener paid-promo) signal handling ---------------
+
+    async def _promobuy_subscriber(self) -> None:
+        """Subscribe to copy:promo_signals (promo_shadow_collector publishes each newly
+        paid-promoted token). Each promo is an independent entry candidate — act directly
+        (no co-buy window). Isolated strategy 'promobuy'. Mirrors the other subscribers."""
+        if self._buys_redis is None:
+            return
+        backoff = 1.0
+        while True:
+            try:
+                pubsub = self._buys_redis.pubsub()
+                await pubsub.subscribe(REDIS_PROMOBUY_CHANNEL)
+                self.log.info("promobuy_subscriber_ready", channel=REDIS_PROMOBUY_CHANNEL)
+                backoff = 1.0
+                async for msg in pubsub.listen():
+                    if msg.get("type") != "message":
+                        continue
+                    try:
+                        p = json.loads(msg["data"])
+                        asyncio.create_task(self._consume_promobuy_candidate(
+                            p["token"], p.get("source"), p.get("boost_amount")))
+                    except Exception:
+                        self.log.exception("promobuy_message_parse_failed")
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                self.log.exception("promobuy_subscriber_failed", backoff=backoff)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 60.0)
+
+    async def _consume_promobuy_candidate(self, token: str, source: Optional[str],
+                                          boost_amount: Optional[float]) -> None:
+        try:
+            if is_bot_halted("copy_promobuy"):
+                return
+        except Exception:
+            self.log.exception("promobuy_halt_check_failed")
+        if self._session is None:
+            return
+        if has_open_position(token, "solana", strategy="promobuy"):
+            return
+        # Optional min paid-boost gate (0 accepts profiles + boosts).
+        min_boost = self.copy_settings.copy_promobuy_source_min_boost
+        if min_boost and min_boost > 0 and (boost_amount or 0) < min_boost:
+            return
+
+        candidate = SignalCandidate(
+            signal_type="promobuy_buy", asset=token, chain="solana", direction="long",
+            cluster_size=1, stop_pct=EXIT_STOP_PCT, take_profit_pct=EXIT_TAKE_PROFIT_PCT,
+            timeout_hours=None,
+            payload={"strategy": "promobuy", "source": source, "boost_amount": boost_amount,
+                     "wallets": []},
+        )
+
+        capital = self.copy_settings.copy_promobuy_paper_capital_usd
+        current_alloc = open_allocation_pct(capital, strategy="promobuy")
+        notional_usd = size_teamfollow_position(
+            paper_capital_usd=capital, current_open_alloc_pct=current_alloc,
+            current_dd_today_pct=0.0)
+        if notional_usd <= 0:
+            return
+
+        # Serial-deployer blocklist (fail-open).
+        token_security: Optional[dict] = None
+        try:
+            token_security = await fetch_token_security(self._session, token)
+        except Exception:
+            pass
+        if token_security:
+            creator = token_security.get("creator")
+            if creator and creator in self.copy_settings.get_blocked_creators():
+                self.log.info("promobuy_blocked_creator_skip", asset=token)
+                return
+
+        # Liquidity floor (lower than cluster/teamfollow — promos hit thinner tokens).
+        entry_liq: Optional[float] = None
+        min_liq = self.copy_settings.copy_promobuy_min_entry_liquidity_usd
+        if min_liq and min_liq > 0:
+            try:
+                entry_liq = await fetch_token_liquidity(self._session, token)
+            except Exception:
+                entry_liq = None
+            if entry_liq is not None and entry_liq < min_liq:
+                self.log.info("promobuy_thin_liquidity_skip", asset=token,
+                              liquidity_usd=entry_liq, min_liquidity_usd=min_liq)
+                return
+
+        # Token-age window: promos are often fresh (min 0), but don't chase stale-promo
+        # revivals of old tokens (max age). Fail-open.
+        creation_info: Optional[dict] = None
+        token_age_h: Optional[float] = None
+        min_age_h = self.copy_settings.copy_promobuy_min_token_age_hours
+        max_age_h = self.copy_settings.copy_promobuy_max_token_age_hours
+        import time as _time
+        try:
+            creation_info = await fetch_token_creation(self._session, token)
+        except Exception:
+            creation_info = None
+        if creation_info and creation_info.get("created_unix"):
+            token_age_h = max(0.0, (_time.time() - creation_info["created_unix"]) / 3600.0)
+            if min_age_h and token_age_h < min_age_h:
+                self.log.info("promobuy_too_fresh_skip", asset=token, age_hours=round(token_age_h, 2))
+                return
+            if max_age_h and max_age_h > 0 and token_age_h > max_age_h:
+                self.log.info("promobuy_stale_promo_skip", asset=token, age_hours=round(token_age_h, 2))
+                return
+
+        snapshot = CopyMarketSnapshot(chain="solana", session=self._session)
+        sim_fill = await self.simulator.simulate_entry_async(
+            asset=token, notional_usd=notional_usd, leverage=1.0,
+            direction="long", market_snapshot=snapshot)
+        signal_id = persist_signal(candidate)
+        paper_trade_id = persist_paper_trade(
+            signal_id=signal_id, candidate=candidate, sim_fill=sim_fill,
+            notional_usd=notional_usd, leverage=1.0, strategy="promobuy")
+        self.log.info("promobuy_paper_opened", asset=token, source=source,
+                      notional_usd=round(notional_usd, 2), trade_id=paper_trade_id,
+                      fill=sim_fill.fill_price)
+
+        try:
+            fid = signal_features.record(
+                "promobuy", token, entry_price=sim_fill.fill_price,
+                liquidity_usd=entry_liq, token_age_h=token_age_h,
+                extra={"source": source, "boost_amount": boost_amount})
+            if fid and paper_trade_id:
+                signal_features.link_trade(fid, paper_trade_id)
+        except Exception:
+            self.log.exception("promobuy_feature_log_failed", asset=token)
+
+        if paper_trade_id is not None:
+            if token_security is not None or entry_liq is not None:
+                try:
+                    update_trade_token_meta(
+                        paper_trade_id, creator=(token_security or {}).get("creator"),
+                        top10_holder_pct=(token_security or {}).get("top10_holder_pct"),
+                        owner_pct=(token_security or {}).get("owner_pct"),
+                        entry_liquidity_usd=entry_liq)
+                except Exception:
+                    self.log.exception("promobuy_token_meta_capture_failed", asset=token)
+            if creation_info and creation_info.get("created_unix"):
+                try:
+                    update_trade_token_age(
+                        paper_trade_id, created_unix=creation_info["created_unix"],
+                        age_hours=token_age_h, tx=creation_info.get("tx"))
+                except Exception:
+                    self.log.exception("promobuy_token_age_capture_failed", asset=token)
 
     # ---- Conviction (single-wallet) signal handling -----------------------
 

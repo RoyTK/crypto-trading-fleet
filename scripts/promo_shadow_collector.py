@@ -143,6 +143,7 @@ def collect_new() -> int:
 
     inserted = 0
     now = int(time.time())
+    rpub = _redis_pub()
     for tok, (source, amount) in fresh.items():
         px = _price_now(tok)
         time.sleep(RATE)
@@ -154,7 +155,28 @@ def collect_new() -> int:
             ), {"t": tok, "src": source, "amt": amount, "u": now, "px": px})
         inserted += 1
         log.info("promo_signal", token=tok[:12], source=source, price=px)
+        # Feed the live promobuy strategy (fail-open; no-op if nobody subscribes).
+        if rpub is not None:
+            try:
+                rpub.publish("copy:promo_signals", json.dumps(
+                    {"token": tok, "source": source, "boost_amount": amount,
+                     "price": px, "ts": now}))
+            except Exception:
+                log.warning("promo_publish_failed", token=tok[:12])
     return inserted
+
+
+def _redis_pub():
+    """Sync Redis client for publishing promo signals to the bot. Fail-open."""
+    import os
+    try:
+        import redis
+        url = os.environ.get(
+            "REDIS_URL",
+            f"redis://{os.environ.get('REDIS_HOST', 'redis')}:{os.environ.get('REDIS_PORT', '6379')}/0")
+        return redis.from_url(url, decode_responses=True)
+    except Exception:
+        return None
 
 
 def update_forward() -> int:
