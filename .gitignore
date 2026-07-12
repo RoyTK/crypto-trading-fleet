@@ -33,3 +33,7 @@ Skills/
 
 # Binary reference docs (keep separately; not source code)
 *.pdf
+
+# Telegram MTProto session credentials (info-source research) — never commit
+*.session
+*.session-journal
