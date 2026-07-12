@@ -120,3 +120,15 @@ each token's forward price multiple in the `slow_cluster_signals` table (a `is_s
 ≥3 such holders, plus a `<3` control group). It's the forward-causal test of whether slow multi-
 wallet accumulation predicts a run — decide from the signal-vs-control comparison after ~3–4 weeks.
 Log: `~/logs/slow_cluster_detector.log`.
+
+### G. Paid-promo shadow collector — automatic, no action (research/forward test)
+
+Every 20 minutes the server runs `scripts/promo_shadow_collector.py` (added 2026-07-11, part of
+the info-source study). It's a **shadow signal that never trades**: it polls Dexscreener's
+"latest boosts" and "latest token profiles" feeds (tokens whose promoters just *paid* for
+promotion), records each newly-promoted Solana token with its price at that moment into the
+`promo_shadow_signals` table, and refreshes each token's forward price multiple hourly. Background:
+a retro study showed 65% of runners had paid promo and promo preceded run ignition by a median
+~13h — but only a forward log including the duds can tell whether *buying at promo time* is
+profitable (most promoted tokens may go nowhere). Decide after ~2–4 weeks from the
+signal-vs-outcome table. Log: `~/logs/promo_shadow.log`.

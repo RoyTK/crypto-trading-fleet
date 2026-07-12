@@ -25,7 +25,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-07-10 23:48 UTC.</em></p>
+<em>Last built: 2026-07-12 02:52 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -72,6 +72,7 @@ or Ctrl-F to jump around.</p>
 <li><a href="#d-responding-to-alerts">D. Responding to alerts</a></li>
 <li><a href="#e-runner-scraper-pre-run-accumulator-discovery-automatic-no-action">E. Runner-scraper (pre-run accumulator discovery) — automatic, no action</a></li>
 <li><a href="#f-slow-cluster-shadow-detector-automatic-no-action-researchforward-test">F. Slow-cluster shadow detector — automatic, no action (research/forward test)</a></li>
+<li><a href="#g-paid-promo-shadow-collector-automatic-no-action-researchforward-test">G. Paid-promo shadow collector — automatic, no action (research/forward test)</a></li>
 </ul>
 </li>
 <li><a href="#14-glossary-plain-language">1.4 Glossary (plain language)</a></li>
@@ -560,6 +561,16 @@ each token's forward price multiple in the <code>slow_cluster_signals</code> tab
 ≥3 such holders, plus a <code>&lt;3</code> control group). It's the forward-causal test of whether slow multi-
 wallet accumulation predicts a run — decide from the signal-vs-control comparison after ~3–4 weeks.
 Log: <code>~/logs/slow_cluster_detector.log</code>.</p>
+<h3 id="g-paid-promo-shadow-collector-automatic-no-action-researchforward-test">G. Paid-promo shadow collector — automatic, no action (research/forward test)</h3>
+<p>Every 20 minutes the server runs <code>scripts/promo_shadow_collector.py</code> (added 2026-07-11, part of
+the info-source study). It's a <strong>shadow signal that never trades</strong>: it polls Dexscreener's
+"latest boosts" and "latest token profiles" feeds (tokens whose promoters just <em>paid</em> for
+promotion), records each newly-promoted Solana token with its price at that moment into the
+<code>promo_shadow_signals</code> table, and refreshes each token's forward price multiple hourly. Background:
+a retro study showed 65% of runners had paid promo and promo preceded run ignition by a median
+~13h — but only a forward log including the duds can tell whether <em>buying at promo time</em> is
+profitable (most promoted tokens may go nowhere). Decide after ~2–4 weeks from the
+signal-vs-outcome table. Log: <code>~/logs/promo_shadow.log</code>.</p>
 <hr />
 <h2 id="14-glossary-plain-language">1.4 Glossary (plain language)</h2>
 <p><em>Last reviewed: 2026-07-02</em></p>
