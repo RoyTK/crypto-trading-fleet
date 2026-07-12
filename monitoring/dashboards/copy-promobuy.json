@@ -273,7 +273,7 @@
   {
    "id": 12,
    "type": "barchart",
-   "title": "Net PnL by team (closed)",
+   "title": "Net PnL by promo source (closed)",
    "gridPos": {
     "x": 0,
     "y": 15,
@@ -288,7 +288,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT sim_metadata->>'team_id' AS team, ROUND(SUM(pnl_usd)::numeric, 2) AS net_pnl, COUNT(*) AS n FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy' AND sim_metadata->>'team_id' IS NOT NULL GROUP BY 1 ORDER BY net_pnl DESC"
+     "rawSql": "SELECT sim_metadata->>'source' AS source, ROUND(SUM(pnl_usd)::numeric, 2) AS net_pnl, COUNT(*) AS n FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy' AND sim_metadata->>'source' IS NOT NULL GROUP BY 1 ORDER BY net_pnl DESC"
     }
    ],
    "options": {
@@ -505,7 +505,7 @@
   {
    "id": 30,
    "type": "stat",
-   "title": "Teams (traded / total)",
+   "title": "Promo sources (traded)",
    "gridPos": {
     "x": 4,
     "y": 3,
@@ -520,7 +520,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT COUNT(DISTINCT sim_metadata->>'team_id')::text || ' / 129' AS teams FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy'='promobuy' AND sim_metadata->>'team_id' IS NOT NULL"
+     "rawSql": "SELECT COUNT(DISTINCT sim_metadata->>'source')::text AS sources FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy'='promobuy' AND sim_metadata->>'source' IS NOT NULL"
     }
    ],
    "options": {
