@@ -69,15 +69,18 @@ def be(path, tries=3):
 
 
 def window_trades(mint, entry_ts, pre_h=PRE_H, post_h=POST_H):
-    lo, hi = entry_ts - pre_h * 3600, entry_ts + post_h * 3600
+    # int bounds: Birdeye before_time rejects a non-integer (e.g. "...876.0") -> empty
+    lo, hi = int(entry_ts - pre_h * 3600), int(entry_ts + post_h * 3600)
     before, oldest, out = hi, hi, []
     prices = []
-    for _ in range(MAX_PAGES):
-        t = be(f"/defi/txs/token/seek_by_time?address={mint}&before_time={before}"
+    for page in range(MAX_PAGES):
+        t = be(f"/defi/txs/token/seek_by_time?address={mint}&before_time={int(before)}"
                f"&tx_type=swap&limit=50")
         time.sleep(RATE)
         items = ((t or {}).get("data") or {}).get("items") or []
         if not items:
+            if page == 0 and t is None:   # distinguish API failure from genuine no-data
+                return None, prices        # signals "fetch failed", not "no history"
             break
         for it in items:
             ts = int(it.get("blockUnixTime") or 0)
@@ -132,9 +135,13 @@ def main():
     print(f"tokens: {len(tokens)}")
 
     results = []
+    fetch_fail = 0
     t0 = time.time()
     for i, tk in enumerate(tokens):
         trades, prices = window_trades(tk["asset"], tk["entry_ts"], args.pre_h, args.post_h)
+        if trades is None:            # API fetch failed (rate/error) — not "no history"
+            fetch_fail += 1
+            continue
         rep = analyze(trades)
         lpi = (False, "no_data")
         if prices and len(trades) >= 3:
@@ -154,7 +161,10 @@ def main():
 
     json.dump(results, open(args.out, "w"), indent=1, default=str)
     covered = [r for r in results if r["n_tx"] >= 5]
-    print(f"\ncovered (>=5 tx in window): {len(covered)}/{len(results)}")
+    with_any = [r for r in results if r["n_tx"] > 0]
+    print(f"\nfetch_failed (API): {fetch_fail}/{len(tokens)}  |  "
+          f"had >=1 tx: {len(with_any)}/{len(results)}  |  "
+          f"covered (>=5 tx): {len(covered)}/{len(results)}")
 
     def bucketize(rs, key, label):
         print(f"\n=== {label} ===")
