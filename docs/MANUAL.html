@@ -25,7 +25,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-07-12 02:52 UTC.</em></p>
+<em>Last built: 2026-07-12 22:28 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -73,6 +73,7 @@ or Ctrl-F to jump around.</p>
 <li><a href="#e-runner-scraper-pre-run-accumulator-discovery-automatic-no-action">E. Runner-scraper (pre-run accumulator discovery) — automatic, no action</a></li>
 <li><a href="#f-slow-cluster-shadow-detector-automatic-no-action-researchforward-test">F. Slow-cluster shadow detector — automatic, no action (research/forward test)</a></li>
 <li><a href="#g-paid-promo-shadow-collector-automatic-no-action-researchforward-test">G. Paid-promo shadow collector — automatic, no action (research/forward test)</a></li>
+<li><a href="#h-the-two-new-paper-strategies-cohort-fire-promo-buy-automatic-no-action">H. The two new paper strategies (cohort-fire, promo-buy) — automatic, no action</a></li>
 </ul>
 </li>
 <li><a href="#14-glossary-plain-language">1.4 Glossary (plain language)</a></li>
@@ -286,8 +287,9 @@ from the original plan were never built.)</p>
 <li><strong>Mode:</strong> Paper + a small "shadow" sample of real trades. <strong>No meaningful real money is
   at risk.</strong></li>
 <li><strong>COPY</strong> is the whole fleet now: it trades on a <strong>curated, vetted</strong> list of wallets that
-  grows as Roy runs wallet discovery, via three strategies (cluster + conviction +
-  team-follow). Buying is currently <strong>ON</strong>.</li>
+  grows as Roy runs wallet discovery, via <strong>five strategies</strong> — cluster + conviction +
+  team-follow (wallet-copying), plus cohort-fire (coordinated-sniper rings) and promo-buy
+  (paid promotion), the last two added 2026-07-12 as paper experiments. Buying is <strong>ON</strong>.</li>
 <li><strong>STRUCTURE</strong> is <strong>DECOMMISSIONED</strong> (removed 2026-06-25 — it was losing paper money and the
   likely fix needs a costly ~$500/mo data upgrade not worth paying for during the paper
   phase). Its code is retained and it can be revived later.</li>
@@ -325,7 +327,7 @@ from the original plan were never built.)</p>
 <h3 id="whats-running-and-where">What's running, and where</h3>
 <p>Everything runs on a <strong>rented Linux server from Hetzner</strong> (a company in Germany), inside
 "containers" managed by a tool called <strong>Docker</strong>. You normally never touch the server —
-it runs by itself. The pieces are: the COPY bot (running its three strategies), a database
+it runs by itself. The pieces are: the COPY bot (running its five strategies), a database
 (stores all the trades), a dashboard (Grafana), and an alerter (sends Discord messages). The
 wallet-discovery work is the one task done from <strong>Roy's office Windows PC</strong>, not the server.</p>
 <h3 id="how-to-tell-its-healthy-your-2-minute-daily-check">How to tell it's healthy (your 2-minute daily check)</h3>
@@ -563,21 +565,32 @@ wallet accumulation predicts a run — decide from the signal-vs-control compari
 Log: <code>~/logs/slow_cluster_detector.log</code>.</p>
 <h3 id="g-paid-promo-shadow-collector-automatic-no-action-researchforward-test">G. Paid-promo shadow collector — automatic, no action (research/forward test)</h3>
 <p>Every 20 minutes the server runs <code>scripts/promo_shadow_collector.py</code> (added 2026-07-11, part of
-the info-source study). It's a <strong>shadow signal that never trades</strong>: it polls Dexscreener's
-"latest boosts" and "latest token profiles" feeds (tokens whose promoters just <em>paid</em> for
-promotion), records each newly-promoted Solana token with its price at that moment into the
-<code>promo_shadow_signals</code> table, and refreshes each token's forward price multiple hourly. Background:
-a retro study showed 65% of runners had paid promo and promo preceded run ignition by a median
-~13h — but only a forward log including the duds can tell whether <em>buying at promo time</em> is
-profitable (most promoted tokens may go nowhere). Decide after ~2–4 weeks from the
-signal-vs-outcome table. Log: <code>~/logs/promo_shadow.log</code>.</p>
+the info-source study). It polls Dexscreener's "latest boosts" and "latest token profiles" feeds
+(tokens whose promoters just <em>paid</em> for promotion) and records each newly-promoted Solana token —
+with its price, <strong>liquidity, marketcap, buy/sell ratio, and volume acceleration</strong> at that moment —
+into the <code>promo_shadow_signals</code> table, then refreshes each token's forward price multiple hourly.
+Background: a retro study showed 65% of runners had paid promo, preceding ignition by a median ~13h;
+the enriched columns let us decide (~Aug 2026) not just <em>whether</em> promo predicts runs but <em>which</em>
+promo characteristics do. <strong>This cron now also publishes each new promo to Redis <code>copy:promo_signals</code>,
+which feeds the live <code>promobuy</code> paper strategy</strong> (see task H) — so it is both a shadow research feed
+and the promo-buy signal source. Log: <code>~/logs/promo_shadow.log</code>.</p>
+<h3 id="h-the-two-new-paper-strategies-cohort-fire-promo-buy-automatic-no-action">H. The two new paper strategies (cohort-fire, promo-buy) — automatic, no action</h3>
+<p>Added 2026-07-12, both <strong>paper-only experiments</strong> running inside the COPY bot with their own
+isolated bankroll/halt/dashboard, enabled via <code>.env</code> flags (<code>COPY_COHORTFIRE_ENABLED</code>,
+<code>COPY_PROMOBUY_ENABLED</code>). <strong>cohort-fire</strong> buys when ≥2 wallets from the same academically-catalogued
+coordinated-sniper ring (RED-COHORT) co-buy an established (6h+/$50k) token. <strong>promo-buy</strong> buys on
+paid Dexscreener promotion (fed by task G). Both log a feature snapshot at each entry for later
+model-training, and both accrue trades you tune the entry gates on as data comes in. Watch them on
+the <strong>COPY Cohort-Fire</strong> and <strong>COPY Promo-Buy</strong> Grafana dashboards (and the Fleet Overview
+scorecard). No hands-on step — they trade themselves; you review the dashboards and adjust <code>.env</code>
+thresholds if the data warrants.</p>
 <hr />
 <h2 id="14-glossary-plain-language">1.4 Glossary (plain language)</h2>
 <p><em>Last reviewed: 2026-07-02</em></p>
 <p>Terms you'll meet in this manual, the dashboards, and Discord — in everyday language.</p>
 <ul>
 <li><strong>Bot</strong> — a program that trades automatically by following fixed rules. We now have one:
-  <strong>COPY</strong> (running three strategies). STRUCTURE was decommissioned 2026-06-25.</li>
+  <strong>COPY</strong> (running five strategies). STRUCTURE was decommissioned 2026-06-25.</li>
 <li><strong>Paper trading</strong> — pretend trading. The bot records what it <em>would</em> have done, with no
   real money. This is the current mode.</li>
 <li><strong>Shadow trading</strong> — a small fraction (~10%) of paper trades are also done for real with
@@ -644,7 +657,7 @@ signal-vs-outcome table. Log: <code>~/logs/promo_shadow.log</code>.</p>
 <p>For an engineer who has never seen the repo. Deeper, frozen design rationale lives in
 <code>design_state_2026-04-26.md</code> (a snapshot — treat as history, not current truth).</p>
 <h3 id="high-level-shape">High-level shape</h3>
-<p>A shared <strong>framework</strong> + one <strong>bot</strong> (<code>bots/copy/</code>, running <strong>three strategies</strong>), all
+<p>A shared <strong>framework</strong> + one <strong>bot</strong> (<code>bots/copy/</code>, running <strong>five strategies</strong>), all
 Python, all running as Docker containers on one Hetzner host, backed by <strong>PostgreSQL</strong>
 (state) and <strong>Redis</strong> (pubsub/dedup). Code reaches the server by <code>git push</code> (auto-pull
 deploy). Monitoring is <strong>Grafana/Prometheus</strong> + multi-channel alerting (Discord/Telegram).
@@ -655,8 +668,8 @@ docker-compose, not running).</p>
                  │ heartbeat/watchdog, reconciliation,      │
                  │ scoring, reporting                       │
                  └──────────────────────────────────────────┘
-        bots/copy/  (Solana memecoins — 3 strategies:
-                     cluster · conviction · teamfollow)
+        bots/copy/  (Solana memecoins — 5 strategies: cluster · conviction ·
+                     teamfollow · cohortfire · promobuy)
             │                                       │
         Postgres  ◄───────── shared ───────────►  Redis
             │                                       │
@@ -665,10 +678,11 @@ docker-compose, not running).</p>
    (bots/structure/ retained in-tree but DECOMMISSIONED 2026-06-25)
 </code></pre>
 <h3 id="the-bot-its-strategies">The bot &amp; its strategies</h3>
-<p><strong>COPY</strong> (<code>bots/copy/</code>) — Solana memecoins via wallet copying. This is the whole fleet. It
-runs under a single <code>bot_id='copy'</code>; the three strategies are discriminated by
-<code>sim_metadata-&gt;&gt;'strategy'</code> and each keeps isolated metrics, its own paper bankroll, and its
-own halt id:</p>
+<p><strong>COPY</strong> (<code>bots/copy/</code>) — Solana memecoins. This is the whole fleet. It runs under a single
+<code>bot_id='copy'</code>; the <strong>five strategies</strong> are discriminated by <code>sim_metadata-&gt;&gt;'strategy'</code> and
+each keeps isolated metrics, its own paper bankroll, and its own halt id. The first three copy
+wallets; the last two (added 2026-07-12) act on upstream signals — a coordinated-sniper roster
+and paid promotion:</p>
 <ol>
 <li><strong>cluster</strong> — ≥3 distinct active wallets co-buy the same token within a 15-min window;
    40s entry delay; <strong>$50k</strong> entry-liquidity floor (raised from $5k on 2026-07-01); halt id
@@ -691,17 +705,38 @@ own halt id:</p>
    measure the gated version on a clean window — a forward test of the "many small losses, rare
    moonshots pay" thesis. Low trade volume (~few/day) is genuine signal scarcity after the gates,
    not a bug (verified: the teams co-buy almost only fresh mints / thin tokens, both filtered).</li>
+<li><strong>cohortfire</strong> <em>(experiment, 2026-07-12)</em> — like teamfollow, but the roster is the
+   <strong>RED-COHORT</strong> academic catalogue of coordinated launch-sniper rings (arXiv 2602.13480,
+   CC-BY; <code>bots/copy/cohortfire_roster.json</code>, 81 wallets / 22 cohorts, all live in the watch
+   tier). Fires when ≥2 members of the same cohort co-buy. Own $25k bankroll; halt id
+   <code>copy_cohortfire</code>; Redis channel <code>copy:cohort_buys</code>; same 6h/$50k gates + cluster exit stack.
+   The webhook receiver republishes those wallets' watch-tier buys to the channel (watch is
+   otherwise observe-only). Thesis: teamfollow's biggest wins came from sniper rings <em>re-engaging
+   an established token</em> — this tests that at scale on a validated roster.</li>
+<li><strong>promobuy</strong> <em>(experiment, 2026-07-12)</em> — buys on <strong>paid Dexscreener promotion</strong> (token
+   profiles / boosts / community-takeovers). Not a wallet strategy: the <code>promo_shadow_collector</code>
+   cron publishes each newly-promoted token to <code>copy:promo_signals</code>; the bot evaluates each one
+   directly. Own $25k bankroll; halt id <code>copy_promobuy</code>; gates = $20k liquidity + a 0–72h token-age
+   window + creator blocklist, computed from one Dexscreener <code>/tokens/v1</code> call (which also yields
+   the practitioner filter features — liq/mcap ratio, buy/sell ratio, volume acceleration). Thesis
+   (measured): ~65% of runners had paid promo, which precedes the run by ~13h.</li>
 </ol>
+<p>Every strategy logs a MELT-style feature snapshot at entry (live holder concentration, cohort
+overlap, wash/order-flow) into <code>signal_features</code> via <code>bots/copy/signal_features.py</code>, building a
+labeled dataset to later train a multi-factor quality model. All experiment strategies (teamfollow,
+cohortfire, promobuy) default <strong>OFF</strong> and are enabled per-<code>.env</code> flag.</p>
 <p>Key COPY files:
-- <code>main.py</code> — the loop: subscribes to wallet events, runs the three strategies' detectors,
-  manages positions.
+- <code>main.py</code> — the loop: subscribes to the wallet/cohort/promo event streams, runs the five
+  strategies' detectors, manages positions.
 - <code>signals/cluster.py</code> — the cluster buy signal.
+- <code>signals/teamfollow.py</code> — group-cobuy detector (reused by cohortfire via a <code>strategy_name</code> arg).
 - <code>signals/sell_cluster.py</code> — the defensive exit (≥2 tracked wallets selling).
 - <code>trailing_stop.py</code> — tiered partial-exit ladder + price-scale anomaly guard.
 - <code>wallet_pool_manager.py</code> — <strong>pure logic</strong> for active/watch/pruned tier decisions.
-- <code>teamfollow_roster.json</code> — the team-follow experiment roster (teams + members).
+- <code>teamfollow_roster.json</code> / <code>cohortfire_roster.json</code> — the group-cobuy experiment rosters.
+- <code>signal_features.py</code> — MELT-style feature snapshot logged at every entry (<code>signal_features</code> table).
 - <code>venue/</code> — external integrations: <code>helius_webhooks.py</code>, <code>helius_solana.py</code>, <code>birdeye.py</code>,
-  <code>dex_quoter.py</code>, <code>jupiter_swap.py</code>, <code>cielo.py</code>.
+  <code>dex_quoter.py</code> (Birdeye + Dexscreener <code>/tokens/v1</code>), <code>jupiter_swap.py</code>, <code>cielo.py</code>.
 - <code>config.py</code> — locked thresholds (see <em>Changing Safely</em>). <strong>Current state: cluster buys
   ENABLED; <code>copy_active_list_target = 500</code> (raised from 300 on 2026-07-10 to grow
   the active pool into the ~3M/mo of unused prepaid Helius plan credits); KEEP
@@ -715,15 +750,16 @@ justified in the paper phase.</p>
 <h3 id="copy-data-flow-webhook-trade-measurement">COPY data flow (webhook → trade → measurement)</h3>
 <ol>
 <li>A tracked wallet trades on Solana → <strong>Helius</strong> sends a webhook to
-   <code>monitoring/webhook_receiver/main.py</code>. There are <strong>three tiers</strong> of subscription, each
-   with its own webhook: <code>active</code>, <code>watch</code>, and <code>teamfollow</code>.</li>
+   <code>monitoring/webhook_receiver/main.py</code>. There are <strong>three subscription tiers</strong>, each with its
+   own webhook: <code>active</code>, <code>watch</code>, and <code>teamfollow</code>.</li>
 <li>The receiver validates the auth header, logs a row to <code>wallet_events_log</code>
    (<code>source_webhook</code> = active|watch|teamfollow), and publishes buy/sell events to Redis —
-   <code>copy:buys</code> / <code>copy:sells</code> for active wallets, and <code>copy:teamfollow_buys</code> for the
-   team-follow roster.</li>
-<li><code>bots/copy/main.py</code> subscribes and feeds events to the three strategies' detectors:
-   cluster (in-memory 15-min rolling window per token), conviction (per-wallet accumulation
-   over ≥5 min), and team-follow (≥2 same-team members co-buying).</li>
+   <code>copy:buys</code> / <code>copy:sells</code> for active wallets, <code>copy:teamfollow_buys</code> for the team-follow
+   roster, and (for watch-tier wallets that are on the RED-COHORT roster) <code>copy:cohort_buys</code>.
+   Separately, the <code>promo_shadow_collector</code> cron publishes paid-promo tokens to <code>copy:promo_signals</code>.</li>
+<li><code>bots/copy/main.py</code> subscribes to all those channels and feeds the five detectors: cluster
+   (15-min rolling co-buy window), conviction (per-wallet accumulation ≥5 min), teamfollow +
+   cohortfire (≥2 same-group co-buy), and promobuy (per promo signal).</li>
 <li>When a strategy fires, the signal is de-duped (e.g. <code>cluster_detections</code>) → a paper trade
    is opened (<code>executor.py</code> → <code>trades</code> row, stamped with the <code>strategy</code> in <code>sim_metadata</code>),
    optionally a ~10% <strong>shadow</strong> swap via Jupiter. Each strategy honors its own
@@ -777,10 +813,11 @@ justified in the paper phase.</p>
 <li><code>monitoring/dashboards/*.json</code> — Grafana, file-provisioned (~30s poll), auto-reloaded:
   <strong>Fleet Overview</strong> (strategy-aware per-strategy scorecard: state / open / trades-24h /
   net-total / net-24h / win-rate, plus open positions, last-50 closed with <code>peak_pct</code>,
-  cumulative PnL by strategy, heartbeat, halts), <strong>COPY Cluster</strong> (<code>copy-detail.json</code>),
-  <strong>COPY Conviction</strong> (<code>copy-conviction.json</code>), and <strong>COPY Team-Follow</strong>
-  (<code>copy-teamfollow.json</code>). Each has a title panel at the top. (<code>structure-detail.json</code>
-  remains in-tree but its bot is decommissioned.)</li>
+  cumulative PnL by strategy, heartbeat, halts — all <strong>five</strong> strategies), <strong>COPY Cluster</strong>
+  (<code>copy-detail.json</code>), <strong>COPY Conviction</strong> (<code>copy-conviction.json</code>), <strong>COPY Team-Follow</strong>
+  (<code>copy-teamfollow.json</code>), <strong>COPY Cohort-Fire</strong> (<code>copy-cohortfire.json</code>), and <strong>COPY Promo-Buy</strong>
+  (<code>copy-promobuy.json</code>). Closed-trade tables have clickable Birdeye token links. Each has a title
+  panel at the top. (<code>structure-detail.json</code> remains in-tree but its bot is decommissioned.)</li>
 <li><code>monitoring/prometheus/</code> — scrape config.</li>
 </ul>
 <h3 id="server-side-research-cron-scrape-runners">Server-side research cron (scrape-runners)</h3>
@@ -792,6 +829,14 @@ table <code>prerun_accumulators</code> (with a scan-once ledger <code>prerun_sca
 report of wallets appearing across ≥3 runners and <strong>stages</strong> candidates for later
 forward-validation — it does <strong>not</strong> auto-promote anyone to a roster. Logs to
 <code>~/logs/scrape_runners.log</code>.</p>
+<p>Two more <strong>shadow research crons</strong> (never trade — they log a signal + track its forward outcome,
+to decide later whether it's worth building on): <code>slow_cluster_detector.py</code> (05:30 UTC daily —
+does slow multi-wallet accumulation predict a run?) and <code>promo_shadow_collector.py</code> (every 20 min
+— logs every paid-promoted token + its liquidity/mcap/order-flow at signal time and its forward
+multiple; also feeds the live <strong>promobuy</strong> strategy). These came out of the 2026-07 "information-
+source" study (go upstream of the wallets to where memecoin picks originate). Full write-ups live
+in <code>research/*.md</code>; the reusable manipulation/quality detectors are in
+<code>scripts/manipulation_detectors.py</code>.</p>
 <h3 id="where-to-look-for-x">Where to look for X</h3>
 <table>
 <thead>
@@ -1422,12 +1467,13 @@ in <code>memory/project_decision_log.md</code> and <code>memory/project_fleet_de
   The daily digest and Grafana show net PnL per strategy; promotion_score was retired.</p>
 </li>
 <li>
-<p><strong>COPY now runs three strategies, not one.</strong> <em>Cluster</em> (co-buy), <em>conviction</em>
-  (single-wallet deliberate accumulation), and <em>teamfollow</em> (an experiment: ≥2 members of a
-  known co-buying "team"). They share the exit/paper-fill machinery but keep isolated
-  bankrolls, metrics, and halt ids so one can't mask another. Team-follow is explicitly a
-  forward test of the "many small losses, rare moonshots pay" thesis — it's allowed to run
-  net-negative on a small sample while that's measured.</p>
+<p><strong>COPY now runs five strategies, not one.</strong> <em>Cluster</em> (co-buy), <em>conviction</em> (single-wallet
+  deliberate accumulation), <em>teamfollow</em> (≥2 members of a known co-buying "team"), and — added
+  2026-07-12 — <em>cohortfire</em> (≥2 members of an academically-catalogued coordinated-sniper ring)
+  and <em>promobuy</em> (buy on paid Dexscreener promotion). They share the exit/paper-fill machinery
+  but keep isolated bankrolls, metrics, and halt ids so one can't mask another. The last three
+  are explicit paper experiments — allowed to run net-negative on a small sample while their
+  theses (and, for the new two, a MELT-style feature model) are measured.</p>
 </li>
 <li>
 <p><strong>Discovery-then-validate, staged not auto-promoted.</strong> The <code>scrape_runners</code> cron mines

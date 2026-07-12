@@ -9,7 +9,7 @@ This section is for the day-to-day "is it healthy, and what do I do if not" job.
 
 Everything runs on a **rented Linux server from Hetzner** (a company in Germany), inside
 "containers" managed by a tool called **Docker**. You normally never touch the server —
-it runs by itself. The pieces are: the COPY bot (running its three strategies), a database
+it runs by itself. The pieces are: the COPY bot (running its five strategies), a database
 (stores all the trades), a dashboard (Grafana), and an alerter (sends Discord messages). The
 wallet-discovery work is the one task done from **Roy's office Windows PC**, not the server.
 

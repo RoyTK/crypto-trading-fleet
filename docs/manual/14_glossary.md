@@ -5,7 +5,7 @@ _Last reviewed: 2026-07-02_
 Terms you'll meet in this manual, the dashboards, and Discord — in everyday language.
 
 - **Bot** — a program that trades automatically by following fixed rules. We now have one:
-  **COPY** (running three strategies). STRUCTURE was decommissioned 2026-06-25.
+  **COPY** (running five strategies). STRUCTURE was decommissioned 2026-06-25.
 - **Paper trading** — pretend trading. The bot records what it *would* have done, with no
   real money. This is the current mode.
 - **Shadow trading** — a small fraction (~10%) of paper trades are also done for real with

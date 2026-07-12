@@ -124,11 +124,24 @@ Log: `~/logs/slow_cluster_detector.log`.
 ### G. Paid-promo shadow collector — automatic, no action (research/forward test)
 
 Every 20 minutes the server runs `scripts/promo_shadow_collector.py` (added 2026-07-11, part of
-the info-source study). It's a **shadow signal that never trades**: it polls Dexscreener's
-"latest boosts" and "latest token profiles" feeds (tokens whose promoters just *paid* for
-promotion), records each newly-promoted Solana token with its price at that moment into the
-`promo_shadow_signals` table, and refreshes each token's forward price multiple hourly. Background:
-a retro study showed 65% of runners had paid promo and promo preceded run ignition by a median
-~13h — but only a forward log including the duds can tell whether *buying at promo time* is
-profitable (most promoted tokens may go nowhere). Decide after ~2–4 weeks from the
-signal-vs-outcome table. Log: `~/logs/promo_shadow.log`.
+the info-source study). It polls Dexscreener's "latest boosts" and "latest token profiles" feeds
+(tokens whose promoters just *paid* for promotion) and records each newly-promoted Solana token —
+with its price, **liquidity, marketcap, buy/sell ratio, and volume acceleration** at that moment —
+into the `promo_shadow_signals` table, then refreshes each token's forward price multiple hourly.
+Background: a retro study showed 65% of runners had paid promo, preceding ignition by a median ~13h;
+the enriched columns let us decide (~Aug 2026) not just *whether* promo predicts runs but *which*
+promo characteristics do. **This cron now also publishes each new promo to Redis `copy:promo_signals`,
+which feeds the live `promobuy` paper strategy** (see task H) — so it is both a shadow research feed
+and the promo-buy signal source. Log: `~/logs/promo_shadow.log`.
+
+### H. The two new paper strategies (cohort-fire, promo-buy) — automatic, no action
+
+Added 2026-07-12, both **paper-only experiments** running inside the COPY bot with their own
+isolated bankroll/halt/dashboard, enabled via `.env` flags (`COPY_COHORTFIRE_ENABLED`,
+`COPY_PROMOBUY_ENABLED`). **cohort-fire** buys when ≥2 wallets from the same academically-catalogued
+coordinated-sniper ring (RED-COHORT) co-buy an established (6h+/$50k) token. **promo-buy** buys on
+paid Dexscreener promotion (fed by task G). Both log a feature snapshot at each entry for later
+model-training, and both accrue trades you tune the entry gates on as data comes in. Watch them on
+the **COPY Cohort-Fire** and **COPY Promo-Buy** Grafana dashboards (and the Fleet Overview
+scorecard). No hands-on step — they trade themselves; you review the dashboards and adjust `.env`
+thresholds if the data warrants.

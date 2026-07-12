@@ -24,12 +24,13 @@ in `memory/project_decision_log.md` and `memory/project_fleet_design_state.md`.
   COPY-only, that framing is gone — each strategy is judged on **net PnL**, plain and simple.
   The daily digest and Grafana show net PnL per strategy; promotion_score was retired.
 
-- **COPY now runs three strategies, not one.** *Cluster* (co-buy), *conviction*
-  (single-wallet deliberate accumulation), and *teamfollow* (an experiment: ≥2 members of a
-  known co-buying "team"). They share the exit/paper-fill machinery but keep isolated
-  bankrolls, metrics, and halt ids so one can't mask another. Team-follow is explicitly a
-  forward test of the "many small losses, rare moonshots pay" thesis — it's allowed to run
-  net-negative on a small sample while that's measured.
+- **COPY now runs five strategies, not one.** *Cluster* (co-buy), *conviction* (single-wallet
+  deliberate accumulation), *teamfollow* (≥2 members of a known co-buying "team"), and — added
+  2026-07-12 — *cohortfire* (≥2 members of an academically-catalogued coordinated-sniper ring)
+  and *promobuy* (buy on paid Dexscreener promotion). They share the exit/paper-fill machinery
+  but keep isolated bankrolls, metrics, and halt ids so one can't mask another. The last three
+  are explicit paper experiments — allowed to run net-negative on a small sample while their
+  theses (and, for the new two, a MELT-style feature model) are measured.
 
 - **Discovery-then-validate, staged not auto-promoted.** The `scrape_runners` cron mines
   freshly-run tokens for the wallets that accumulated *before* the run, but it only **stages**

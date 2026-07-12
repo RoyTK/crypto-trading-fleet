@@ -45,8 +45,9 @@ from the original plan were never built.)
 - **Mode:** Paper + a small "shadow" sample of real trades. **No meaningful real money is
   at risk.**
 - **COPY** is the whole fleet now: it trades on a **curated, vetted** list of wallets that
-  grows as Roy runs wallet discovery, via three strategies (cluster + conviction +
-  team-follow). Buying is currently **ON**.
+  grows as Roy runs wallet discovery, via **five strategies** — cluster + conviction +
+  team-follow (wallet-copying), plus cohort-fire (coordinated-sniper rings) and promo-buy
+  (paid promotion), the last two added 2026-07-12 as paper experiments. Buying is **ON**.
 - **STRUCTURE** is **DECOMMISSIONED** (removed 2026-06-25 — it was losing paper money and the
   likely fix needs a costly ~$500/mo data upgrade not worth paying for during the paper
   phase). Its code is retained and it can be revived later.
