@@ -232,7 +232,7 @@
    "title": "Cumulative paper PnL (USD)",
    "gridPos": {
     "x": 0,
-    "y": 7,
+    "y": 13,
     "w": 12,
     "h": 8
    },
@@ -254,7 +254,7 @@
    "title": "PnL per trade (%)",
    "gridPos": {
     "x": 12,
-    "y": 7,
+    "y": 13,
     "w": 12,
     "h": 8
    },
@@ -276,7 +276,7 @@
    "title": "Net PnL by promo source (closed)",
    "gridPos": {
     "x": 0,
-    "y": 15,
+    "y": 21,
     "w": 12,
     "h": 8
    },
@@ -374,7 +374,7 @@
    "title": "Entry liquidity distribution (validates $50k floor)",
    "gridPos": {
     "x": 12,
-    "y": 15,
+    "y": 21,
     "w": 12,
     "h": 8
    },
@@ -396,7 +396,7 @@
    "title": "Open paper trades",
    "gridPos": {
     "x": 0,
-    "y": 23,
+    "y": 29,
     "w": 24,
     "h": 8
    },
@@ -441,7 +441,7 @@
    "title": "Closed paper trades (last 50)",
    "gridPos": {
     "x": 0,
-    "y": 31,
+    "y": 37,
     "w": 24,
     "h": 10
    },
@@ -486,7 +486,7 @@
    "title": "Promo-Buy halts (14d)",
    "gridPos": {
     "x": 0,
-    "y": 41,
+    "y": 47,
     "w": 24,
     "h": 6
    },
@@ -533,6 +533,49 @@
     "textMode": "value",
     "colorMode": "none",
     "graphMode": "none"
+   }
+  },
+  {
+   "id": 14,
+   "type": "table",
+   "title": "Per-track performance (closed)",
+   "gridPos": {
+    "x": 0,
+    "y": 7,
+    "w": 24,
+    "h": 6
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "SELECT CASE WHEN sim_metadata->>'entry_liquidity_usd' IS NULL THEN 'null-liq (small)' ELSE 'has-liq (full)' END AS track, COUNT(*) AS closed, COUNT(*) FILTER (WHERE pnl_usd > 0) AS wins, ROUND((COUNT(*) FILTER (WHERE pnl_usd > 0)::float / NULLIF(COUNT(*),0) * 100)::numeric, 1) AS win_rate_pct, ROUND(SUM(pnl_usd)::numeric, 2) AS net_pnl_usd, ROUND(AVG(pnl_pct)::numeric, 1) AS avg_pnl_pct, ROUND(SUM(size_usd)::numeric, 0) AS capital_usd FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy' GROUP BY 1 ORDER BY 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": [
+     {
+      "matcher": { "id": "byName", "options": "net_pnl_usd" },
+      "properties": [ { "id": "unit", "value": "currencyUSD" } ]
+     },
+     {
+      "matcher": { "id": "byName", "options": "capital_usd" },
+      "properties": [ { "id": "unit", "value": "currencyUSD" } ]
+     },
+     {
+      "matcher": { "id": "byName", "options": "win_rate_pct" },
+      "properties": [ { "id": "unit", "value": "percent" } ]
+     },
+     {
+      "matcher": { "id": "byName", "options": "avg_pnl_pct" },
+      "properties": [ { "id": "unit", "value": "percent" } ]
+     }
+    ]
    }
   }
  ]
