@@ -37,11 +37,18 @@ def halt_bot(
         )
         s.add(h)
 
+        # A sub-strategy (copy_promobuy / copy_teamfollow / copy_cohortfire) shares its
+        # parent's bot_id and may have NO BotState row of its own. is_bot_halted() reads
+        # BotState.state, so without a row the halt is invisible — the strategy keeps
+        # trading while dd_monitor re-writes a fresh halt row every cycle (the 2026-07-13
+        # "halted 87 times but still running" bug). Create the row so the halt takes hold.
         bot = s.get(BotState, bot_id)
-        if bot is not None:
-            bot.state = "halted"
-            bot.halted_until = halted_until
-            bot.halt_reason = reason
+        if bot is None:
+            bot = BotState(bot_id=bot_id, state="halted", allocation_pct=0.0)
+            s.add(bot)
+        bot.state = "halted"
+        bot.halted_until = halted_until
+        bot.halt_reason = reason
 
         s.flush()
         write_audit(
