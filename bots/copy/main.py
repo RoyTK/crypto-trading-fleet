@@ -1436,6 +1436,15 @@ class CopyBot(BotLifecycle):
                               note="null liquidity (likely pump.fun bonding curve)")
                 return
 
+        # Two-track sizing: null-liquidity (fresh bonding-curve) entries ride SMALL — they
+        # carry both the moonshots and the rug bleed, so size down instead of gating out.
+        if entry_liq is None:
+            frac = self.copy_settings.copy_promobuy_null_liq_size_frac
+            if frac and 0 < frac < 1:
+                notional_usd = notional_usd * frac
+                self.log.info("promobuy_null_liq_sized_down", asset=token,
+                              notional_usd=round(notional_usd, 2), frac=frac)
+
         # Token-age window: promos are often fresh (min 0), but don't chase stale-promo
         # revivals of old tokens (max age).
         min_age_h = self.copy_settings.copy_promobuy_min_token_age_hours
@@ -1446,6 +1455,25 @@ class CopyBot(BotLifecycle):
                 return
             if max_age_h and max_age_h > 0 and token_age_h > max_age_h:
                 self.log.info("promobuy_stale_promo_skip", asset=token, age_hours=round(token_age_h, 2))
+                return
+
+        # First-buyer bundle read — fetched BEFORE entry so the dump gate can use it, then
+        # reused for feature logging below (no extra call).
+        fb: Optional[dict] = None
+        try:
+            fb = await fetch_first_buyers(self._session, token)
+        except Exception:
+            fb = None
+        # First-buyer DUMP gate (MELT bundle tell): skip when the token's earliest buyers
+        # have already dumped their whole position past the threshold. OFF by default
+        # (threshold 0) so it runs in shadow — lets us compare it against a token-age>30m
+        # gate on live labeled data (the two-track sizing keeps everything trading).
+        max_dump = self.copy_settings.copy_promobuy_max_first_buyer_dump_frac
+        if max_dump and max_dump > 0 and fb:
+            dump = fb.get("first_buyer_sell_all_frac")
+            if dump is not None and dump > max_dump:
+                self.log.info("promobuy_first_buyer_dump_skip", asset=token,
+                              dump_frac=round(dump, 3), max_dump=max_dump)
                 return
 
         snapshot = CopyMarketSnapshot(chain="solana", session=self._session)
@@ -1461,14 +1489,12 @@ class CopyBot(BotLifecycle):
                       fill=sim_fill.fill_price)
 
         try:
-            fb = None
-            try:
-                fb = await fetch_first_buyers(self._session, token)
-            except Exception:
-                fb = None
             fid = signal_features.record(
                 "promobuy", token, entry_price=sim_fill.fill_price,
                 liquidity_usd=entry_liq, token_age_h=token_age_h,
+                # MELT's #1 feature — supply concentration from token_security (works on
+                # fresh bonding-curve tokens, unlike the live holder endpoint).
+                top_holder_pct=(token_security or {}).get("top10_holder_pct"),
                 extra={"source": source, "boost_amount": boost_amount,
                        # practitioner filter-stack (Paper 1/MELT market-activity), from
                        # the same Dexscreener call — the features to iterate the gate on.

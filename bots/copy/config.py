@@ -470,6 +470,18 @@ class CopySettings(BaseSettings):
     # TRADEOFF: also skips bonding-curve MOONSHOTS (e.g. SUNNYS +300%). Flip to False to
     # revert to fail-open if the data shows we're cutting too many runners.
     copy_promobuy_require_liquidity: bool = Field(default=True)
+    # TWO-TRACK sizing (2026-07-13). null-liquidity (fresh bonding-curve) entries were the
+    # entire -$7.4k bleed AND held 9/11 winners incl SUNNYS. Instead of gating them out,
+    # size them SMALL: has-liquidity trades keep full size, null-liquidity trades get this
+    # fraction (0.30 -> ~$150 vs $500). Keeps the moonshot lottery + full labels while
+    # bounding the bleed. Requires require_liquidity=False (else null is skipped entirely).
+    copy_promobuy_null_liq_size_frac: float = Field(default=0.30)
+    # First-buyer DUMP gate (2026-07-13). MELT bundle tell: skip when > this fraction of the
+    # token's earliest buyers already dumped their whole position (first_buyer_sell_all_frac).
+    # Winners ran 0.70 vs losers 0.81 in the n=99 sample. 0 = OFF (shadow) so we can compare
+    # it against a plain token-age>30m gate on live labeled data before committing. Raise to
+    # e.g. 0.85 to activate.
+    copy_promobuy_max_first_buyer_dump_frac: float = Field(default=0.0)
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)

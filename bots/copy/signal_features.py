@@ -112,13 +112,19 @@ def _live_top_holder_pct(token: str, top_k: int = 10):
 
 def record(strategy: str, token: str, *, entry_price=None, liquidity_usd=None,
            token_age_h=None, trigger_wallets=None, recent_trades=None,
+           top_holder_pct: float | None = None, n_holders: int | None = None,
            extra: dict | None = None) -> int | None:
     """Insert a signal_features row. `recent_trades` (list of {owner,side,usd,...})
-    powers cohort + wash features; a live holder call powers concentration. Fully
-    fail-open — returns row id or None, never raises into the caller."""
+    powers cohort + wash features. Concentration (MELT's #1 feature): pass
+    `top_holder_pct` from a source that works on fresh tokens (token_security's
+    top10_holder_pct) — only when omitted do we fall back to the live holder-endpoint
+    call, which returns null for pre-graduation bonding-curve tokens. Fully fail-open —
+    returns row id or None, never raises into the caller."""
     try:
         now = int(time.time())
-        top_pct, n_holders = _live_top_holder_pct(token)
+        top_pct = top_holder_pct
+        if top_pct is None:
+            top_pct, n_holders = _live_top_holder_pct(token)
         cohort_bf = n_coh = zr = None
         if recent_trades:
             _, cohort_bf, n_coh = cohort_bundle_fraction(recent_trades, _cohort_set())
@@ -159,6 +165,9 @@ def first_buyer_features(fb: dict | None) -> dict:
         "n_first_buyer_cohort": n_cohort,
         "first_buyer_sell_all_frac": fb.get("first_buyer_sell_all_frac"),
         "first_buyer_hold_frac": fb.get("first_buyer_hold_frac"),
+        "first_buyer_top5_vol_frac": fb.get("first_buyer_top5_vol_frac"),
+        "first_buyer_bundler_frac": fb.get("first_buyer_bundler_frac"),
+        "first_buyer_sniper_frac": fb.get("first_buyer_sniper_frac"),
     }
 
 

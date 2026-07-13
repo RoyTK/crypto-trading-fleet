@@ -509,11 +509,27 @@ async def fetch_first_buyers(
     ps = data.get("page_summary") or {}
     n = int(ps.get("total_wallets") or len(buyers) or 0)
     wallets = [b.get("wallet_address") for b in buyers if b.get("wallet_address")]
+    # Bundle features over the sampled first buyers (same call, no extra cost):
+    #   - top-5 volume concentration = buy-FLOW concentration (a few big openers). NOTE this
+    #     is the bullish-signed kind, NOT MELT's supply/holder overhang (that comes from
+    #     token_security top10_holder_pct) — logged separately so we can tell them apart.
+    #   - Birdeye per-wallet tags: "bundler" (coordinated launch bundle = MELT's core bundle
+    #     signal, LIVE) and "sniper" (fast programmatic buyer).
+    m = len(buyers)
+    vols = sorted((float(b.get("first_buy_volume_usd") or 0) for b in buyers), reverse=True)
+    tot_v = sum(vols)
+
+    def _tag_frac(tag: str):
+        return (sum(1 for b in buyers if tag in (b.get("tags") or [])) / m) if m else None
+
     return {
         "n_first_buyers": n,
         "buyer_wallets": wallets,
         "first_buyer_sell_all_frac": (int(ps.get("sell_all") or 0) / n) if n else None,
         "first_buyer_hold_frac": (int(ps.get("hold") or 0) / n) if n else None,
+        "first_buyer_top5_vol_frac": (sum(vols[:5]) / tot_v) if tot_v > 0 else None,
+        "first_buyer_bundler_frac": _tag_frac("bundler"),
+        "first_buyer_sniper_frac": _tag_frac("sniper"),
     }
 
 

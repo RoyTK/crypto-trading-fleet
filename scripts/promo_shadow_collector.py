@@ -75,6 +75,11 @@ ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS liq_mcap_ratio DOUBLE 
 ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS buy_sell_ratio_h1 DOUBLE PRECISION;
 ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS vol_accel DOUBLE PRECISION;
 ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS age_hours DOUBLE PRECISION;
+-- 2026-07-13 pump-MAGNITUDE (how big/extensive the paid promo is). boost_amount now holds
+-- the cumulative all-time boost total (merged from the latest AND top boost feeds so a
+-- profiled token that is ALSO boosted gets a size). boost_active = current active boosts.
+-- KEEP THIS COMMENT FREE OF THE SEMICOLON CHARACTER.
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS boost_active DOUBLE PRECISION;
 """
 
 
@@ -138,21 +143,40 @@ def _price_now(token: str) -> float | None:
 
 def collect_new() -> int:
     """Poll both feeds, insert first-sighting rows with current price."""
-    feeds = [
-        ("boost", "https://api.dexscreener.com/token-boosts/latest/v1"),
-        ("profile", "https://api.dexscreener.com/token-profiles/latest/v1"),
-    ]
-    candidates: dict[str, tuple[str, float | None]] = {}
-    for source, url in feeds:
-        rows = _dex(url) or []
+    # Fetch each feed once. The two boost feeds give pump MAGNITUDE (totalAmount = all-time
+    # boost $, amount = active boosts); the profile feed is the paid-listing source.
+    boost_latest = _dex("https://api.dexscreener.com/token-boosts/latest/v1") or []
+    time.sleep(0.5)
+    boost_top = _dex("https://api.dexscreener.com/token-boosts/top/v1") or []
+    time.sleep(0.5)
+    profiles = _dex("https://api.dexscreener.com/token-profiles/latest/v1") or []
+    time.sleep(0.5)
+
+    # Merge both boost feeds into a pump-size map (keep the largest cumulative total seen).
+    boost_map: dict[str, tuple[float | None, float | None]] = {}
+    for x in (boost_latest + boost_top):
+        if x.get("chainId") != "solana":
+            continue
+        tok = x.get("tokenAddress")
+        if not tok:
+            continue
+        ta, am = x.get("totalAmount"), x.get("amount")
+        prev = boost_map.get(tok)
+        if prev is None or (ta or 0) > (prev[0] or 0):
+            boost_map[tok] = (ta, am)
+
+    # source = which feed first surfaced it; magnitude comes from the boost map (so a
+    # boosted profile gets a real pump size instead of null).
+    candidates: dict[str, tuple[str, float | None, float | None]] = {}
+    for source, rows in (("boost", boost_latest), ("profile", profiles)):
         for x in rows:
             if x.get("chainId") != "solana":
                 continue
             tok = x.get("tokenAddress")
             if not tok or tok in candidates:
                 continue
-            candidates[tok] = (source, x.get("totalAmount"))
-        time.sleep(0.5)
+            bm = boost_map.get(tok, (x.get("totalAmount"), x.get("amount")))
+            candidates[tok] = (source, bm[0], bm[1])
     if not candidates:
         return 0
 
@@ -165,19 +189,19 @@ def collect_new() -> int:
     inserted = 0
     now = int(time.time())
     rpub = _redis_pub()
-    for tok, (source, amount) in fresh.items():
+    for tok, (source, amount, active) in fresh.items():
         pair = _token_pair(tok)                      # one Dexscreener call: price+liq+mcap+features
         px = (pair or {}).get("price_usd") or _price_now(tok)
         time.sleep(RATE)
         with session_scope() as s:
             s.execute(text(
                 "INSERT INTO promo_shadow_signals "
-                "(token, source, boost_amount, signal_unix, price_at_signal, "
+                "(token, source, boost_amount, boost_active, signal_unix, price_at_signal, "
                 " liquidity_usd, market_cap, liq_mcap_ratio, buy_sell_ratio_h1, "
                 " vol_accel, age_hours) "
-                "VALUES (:t, :src, :amt, :u, :px, :liq, :mc, :lmr, :bsr, :va, :age) "
+                "VALUES (:t, :src, :amt, :bact, :u, :px, :liq, :mc, :lmr, :bsr, :va, :age) "
                 "ON CONFLICT (token) DO NOTHING"
-            ), {"t": tok, "src": source, "amt": amount, "u": now, "px": px,
+            ), {"t": tok, "src": source, "amt": amount, "bact": active, "u": now, "px": px,
                 "liq": (pair or {}).get("liquidity_usd"),
                 "mc": (pair or {}).get("market_cap"),
                 "lmr": (pair or {}).get("liq_mcap_ratio"),
@@ -185,13 +209,13 @@ def collect_new() -> int:
                 "va": (pair or {}).get("vol_accel"),
                 "age": (pair or {}).get("age_hours")})
         inserted += 1
-        log.info("promo_signal", token=tok[:12], source=source, price=px)
+        log.info("promo_signal", token=tok[:12], source=source, price=px, boost=amount)
         # Feed the live promobuy strategy (fail-open; no-op if nobody subscribes).
         if rpub is not None:
             try:
                 rpub.publish("copy:promo_signals", json.dumps(
                     {"token": tok, "source": source, "boost_amount": amount,
-                     "price": px, "ts": now}))
+                     "boost_active": active, "price": px, "ts": now}))
             except Exception:
                 log.warning("promo_publish_failed", token=tok[:12])
     return inserted
