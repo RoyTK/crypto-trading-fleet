@@ -463,6 +463,13 @@ class CopySettings(BaseSettings):
     copy_promobuy_alloc_cap_pct: float = Field(default=50.0)
     copy_promobuy_sizing_pct: float = Field(default=2.0)
     copy_promobuy_source_min_boost: float = Field(default=0.0)             # 0 = accept profiles+boosts; raise to require paid boost amount
+    # Require a CONFIRMED liquidity reading to enter (2026-07-12). null liquidity =
+    # a pre-graduation pump.fun bonding-curve token (dexId 'pumpfun', no real pool) =
+    # the fresh-mint rug zone where a stop can't fill cleanly (losers filled -30%, not
+    # -8%). True → skip when liquidity can't be confirmed >= the floor (was fail-open).
+    # TRADEOFF: also skips bonding-curve MOONSHOTS (e.g. SUNNYS +300%). Flip to False to
+    # revert to fail-open if the data shows we're cutting too many runners.
+    copy_promobuy_require_liquidity: bool = Field(default=True)
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)

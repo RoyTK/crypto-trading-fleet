@@ -1424,10 +1424,17 @@ class CopyBot(BotLifecycle):
 
         # Liquidity floor (lower than cluster/teamfollow — promos hit thinner tokens).
         min_liq = self.copy_settings.copy_promobuy_min_entry_liquidity_usd
-        if min_liq and min_liq > 0 and entry_liq is not None and entry_liq < min_liq:
-            self.log.info("promobuy_thin_liquidity_skip", asset=token,
-                          liquidity_usd=entry_liq, min_liquidity_usd=min_liq)
-            return
+        if min_liq and min_liq > 0:
+            if entry_liq is not None and entry_liq < min_liq:
+                self.log.info("promobuy_thin_liquidity_skip", asset=token,
+                              liquidity_usd=entry_liq, min_liquidity_usd=min_liq)
+                return
+            # null liquidity = pre-graduation bonding-curve token (no confirmable pool →
+            # the stop can't fill). Skip unless explicitly allowed to fail-open.
+            if entry_liq is None and self.copy_settings.copy_promobuy_require_liquidity:
+                self.log.info("promobuy_unconfirmed_liquidity_skip", asset=token,
+                              note="null liquidity (likely pump.fun bonding curve)")
+                return
 
         # Token-age window: promos are often fresh (min 0), but don't chase stale-promo
         # revivals of old tokens (max age).
