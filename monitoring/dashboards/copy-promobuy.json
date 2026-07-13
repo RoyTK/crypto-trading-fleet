@@ -408,7 +408,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT id, asset, venue AS chain, sim_metadata->>'team_id' AS team, sim_metadata->>'cluster_size' AS members, entry_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='promobuy' ORDER BY entry_at DESC"
+     "rawSql": "SELECT id, asset, CASE WHEN sim_metadata->>'entry_liquidity_usd' IS NULL THEN 'null-liq (small)' ELSE 'has-liq (full)' END AS track, entry_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='promobuy' ORDER BY entry_at DESC"
     }
    ],
    "fieldConfig": {
@@ -453,7 +453,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT id, asset, sim_metadata->>'team_id' AS team, sim_metadata->>'cluster_size' AS members, entry_price, exit_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy' ORDER BY exit_at DESC NULLS LAST LIMIT 50"
+     "rawSql": "SELECT id, asset, CASE WHEN sim_metadata->>'entry_liquidity_usd' IS NULL THEN 'null-liq (small)' ELSE 'has-liq (full)' END AS track, entry_price, exit_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy' ORDER BY exit_at DESC NULLS LAST LIMIT 50"
     }
    ],
    "fieldConfig": {
