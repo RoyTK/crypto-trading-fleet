@@ -288,7 +288,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT sim_metadata->>'source' AS source, ROUND(SUM(pnl_usd)::numeric, 2) AS net_pnl, COUNT(*) AS n FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy' AND sim_metadata->>'source' IS NOT NULL GROUP BY 1 ORDER BY net_pnl DESC"
+     "rawSql": "SELECT sf.features_json->>'source' AS source, ROUND(SUM(t.pnl_usd)::numeric, 2) AS net_pnl, COUNT(*) AS n FROM trades t JOIN signal_features sf ON sf.trade_id=t.id WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed' AND t.sim_metadata->>'strategy'='promobuy' AND sf.features_json->>'source' IS NOT NULL GROUP BY 1 ORDER BY net_pnl DESC"
     }
    ],
    "options": {
@@ -520,7 +520,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT COUNT(DISTINCT sim_metadata->>'source')::text AS sources FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy'='promobuy' AND sim_metadata->>'source' IS NOT NULL"
+     "rawSql": "SELECT COUNT(DISTINCT sf.features_json->>'source')::text AS sources FROM trades t JOIN signal_features sf ON sf.trade_id=t.id WHERE t.bot_id='copy' AND t.mode='paper' AND t.sim_metadata->>'strategy'='promobuy' AND sf.features_json->>'source' IS NOT NULL"
     }
    ],
    "options": {
@@ -528,7 +528,7 @@
      "calcs": [
       "lastNotNull"
      ],
-     "fields": "/^teams$/"
+     "fields": "/^sources$/"
     },
     "textMode": "value",
     "colorMode": "none",
