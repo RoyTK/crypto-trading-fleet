@@ -89,6 +89,15 @@ ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS is_boosted BOOLEAN;
 ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS is_profiled BOOLEAN;
 UPDATE promo_shadow_signals SET is_boosted = (source = 'boost' OR boost_amount IS NOT NULL) WHERE is_boosted IS NULL;
 UPDATE promo_shadow_signals SET is_profiled = (source = 'profile') WHERE is_profiled IS NULL;
+-- 2026-07-14 FLIP TIMESTAMPS. When each promo type FIRST appeared for a token, so we can test
+-- whether a 2nd promo (token on BOTH feeds) PRECEDES its run (front-runnable) or TRAILS it (just
+-- momentum, we would be exit liquidity) = the leads-vs-lags question. Backfill uses `source`
+-- (the flag true at first sighting is accurate = signal_at) the later-flipped flag stays NULL and
+-- gets stamped forward by the re-sighting refresh. KEEP THESE COMMENTS SEMICOLON-FREE.
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS first_boosted_at TIMESTAMPTZ;
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS first_profiled_at TIMESTAMPTZ;
+UPDATE promo_shadow_signals SET first_boosted_at = signal_at WHERE source = 'boost' AND first_boosted_at IS NULL;
+UPDATE promo_shadow_signals SET first_profiled_at = signal_at WHERE source = 'profile' AND first_profiled_at IS NULL;
 """
 
 
@@ -201,6 +210,8 @@ def collect_new() -> int:
                     "UPDATE promo_shadow_signals SET "
                     "is_boosted = COALESCE(is_boosted, false) OR :ib, "
                     "is_profiled = COALESCE(is_profiled, false) OR :ip, "
+                    "first_boosted_at = CASE WHEN :ib AND first_boosted_at IS NULL THEN now() ELSE first_boosted_at END, "
+                    "first_profiled_at = CASE WHEN :ip AND first_profiled_at IS NULL THEN now() ELSE first_profiled_at END, "
                     "boost_amount = CASE WHEN :amt IS NOT NULL "
                     "  THEN GREATEST(COALESCE(boost_amount, 0), :amt) ELSE boost_amount END, "
                     "boost_active = COALESCE(:bact, boost_active), updated_at = now() "
@@ -224,10 +235,12 @@ def collect_new() -> int:
         with session_scope() as s:
             s.execute(text(
                 "INSERT INTO promo_shadow_signals "
-                "(token, source, is_boosted, is_profiled, boost_amount, boost_active, "
-                " signal_unix, price_at_signal, liquidity_usd, market_cap, liq_mcap_ratio, "
-                " buy_sell_ratio_h1, vol_accel, age_hours) "
-                "VALUES (:t, :src, :ib, :ip, :amt, :bact, :u, :px, :liq, :mc, :lmr, :bsr, :va, :age) "
+                "(token, source, is_boosted, is_profiled, first_boosted_at, first_profiled_at, "
+                " boost_amount, boost_active, signal_unix, price_at_signal, liquidity_usd, "
+                " market_cap, liq_mcap_ratio, buy_sell_ratio_h1, vol_accel, age_hours) "
+                "VALUES (:t, :src, :ib, :ip, "
+                " CASE WHEN :ib THEN now() ELSE NULL END, CASE WHEN :ip THEN now() ELSE NULL END, "
+                " :amt, :bact, :u, :px, :liq, :mc, :lmr, :bsr, :va, :age) "
                 "ON CONFLICT (token) DO NOTHING"
             ), {"t": tok, "src": source, "ib": is_b, "ip": is_p, "amt": amount,
                 "bact": active, "u": now, "px": px,
