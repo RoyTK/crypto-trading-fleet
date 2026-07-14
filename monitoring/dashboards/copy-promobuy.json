@@ -229,7 +229,7 @@
   {
    "id": 10,
    "type": "timeseries",
-   "title": "Cumulative paper PnL by track (USD)",
+   "title": "Cumulative realized PnL by track (incl. open partials)",
    "gridPos": {
     "x": 0,
     "y": 13,
@@ -244,7 +244,7 @@
     {
      "refId": "A",
      "format": "time_series",
-     "rawSql": "SELECT exit_at AS time, SUM(CASE WHEN sim_metadata->>'entry_liquidity_usd' IS NULL THEN pnl_usd ELSE 0 END) OVER (ORDER BY exit_at) AS \"null-liq (small)\", SUM(CASE WHEN sim_metadata->>'entry_liquidity_usd' IS NOT NULL THEN pnl_usd ELSE 0 END) OVER (ORDER BY exit_at) AS \"has-liq (full)\" FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='promobuy' ORDER BY exit_at"
+     "rawSql": "WITH pe AS (SELECT (CASE WHEN t.sim_metadata->>'entry_liquidity_usd' IS NULL THEN 'n' ELSE 'h' END) trk, (e->>'executed_at')::timestamptz ts, ((e->>'received_usdc')::numeric - t.size_usd*(e->>'fraction')::numeric) delta FROM trades t, json_array_elements(t.sim_metadata->'partial_exits') e WHERE t.bot_id='copy' AND t.mode='paper' AND t.sim_metadata->>'strategy'='promobuy' AND e->>'status'='filled' AND e->>'executed_at' IS NOT NULL), finals AS (SELECT (CASE WHEN t.sim_metadata->>'entry_liquidity_usd' IS NULL THEN 'n' ELSE 'h' END) trk, t.exit_at ts, (t.pnl_usd - COALESCE((SELECT SUM((e->>'received_usdc')::numeric - t.size_usd*(e->>'fraction')::numeric) FROM json_array_elements(t.sim_metadata->'partial_exits') e WHERE e->>'status'='filled'),0)) delta FROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.sim_metadata->>'strategy'='promobuy' AND t.fill_status='closed' AND t.exit_at IS NOT NULL), ev AS (SELECT * FROM pe UNION ALL SELECT * FROM finals) SELECT ts AS time, SUM(CASE WHEN trk='n' THEN delta ELSE 0 END) OVER (ORDER BY ts) AS \"null-liq (small)\", SUM(CASE WHEN trk='h' THEN delta ELSE 0 END) OVER (ORDER BY ts) AS \"has-liq (full)\" FROM ev ORDER BY ts"
     }
    ]
   },
@@ -538,7 +538,7 @@
   {
    "id": 14,
    "type": "table",
-   "title": "Per-track performance (closed)",
+   "title": "Per-track performance (realized, incl. open partials)",
    "gridPos": {
     "x": 0,
     "y": 7,
@@ -553,14 +553,14 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT CASE WHEN sim_metadata->>'entry_liquidity_usd' IS NULL THEN 'null-liq (small)' ELSE 'has-liq (full)' END AS track, COUNT(*) AS closed, COUNT(*) FILTER (WHERE pnl_usd > 0) AS wins, ROUND((COUNT(*) FILTER (WHERE pnl_usd > 0)::float / NULLIF(COUNT(*),0) * 100)::numeric, 1) AS win_rate_pct, ROUND(SUM(pnl_usd)::numeric, 2) AS net_pnl_usd, ROUND(AVG(pnl_pct)::numeric, 1) AS avg_pnl_pct, ROUND(SUM(size_usd)::numeric, 0) AS capital_usd FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy' GROUP BY 1 ORDER BY 1"
+     "rawSql": "WITH r AS (SELECT (CASE WHEN sim_metadata->>'entry_liquidity_usd' IS NULL THEN 'null-liq (small)' ELSE 'has-liq (full)' END) AS track, fill_status, pnl_usd, size_usd, (SELECT COALESCE(SUM((e->>'received_usdc')::numeric - size_usd*(e->>'fraction')::numeric),0) FROM json_array_elements(sim_metadata->'partial_exits') e WHERE e->>'status'='filled') AS open_part FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy'='promobuy') SELECT track, COUNT(*) FILTER (WHERE fill_status='closed') AS closed, COUNT(*) FILTER (WHERE fill_status='open') AS riding, COUNT(*) FILTER (WHERE fill_status='closed' AND pnl_usd>0) AS wins, ROUND((COUNT(*) FILTER (WHERE fill_status='closed' AND pnl_usd>0)::float / NULLIF(COUNT(*) FILTER (WHERE fill_status='closed'),0) * 100)::numeric,1) AS win_rate_pct, ROUND((COALESCE(SUM(pnl_usd) FILTER (WHERE fill_status='closed'),0) + COALESCE(SUM(open_part) FILTER (WHERE fill_status='open'),0))::numeric,2) AS net_realized_usd, ROUND(SUM(size_usd)::numeric,0) AS capital_usd FROM r GROUP BY 1 ORDER BY 1"
     }
    ],
    "fieldConfig": {
     "defaults": {},
     "overrides": [
      {
-      "matcher": { "id": "byName", "options": "net_pnl_usd" },
+      "matcher": { "id": "byName", "options": "net_realized_usd" },
       "properties": [ { "id": "unit", "value": "currencyUSD" } ]
      },
      {
