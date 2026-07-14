@@ -229,7 +229,7 @@
   {
    "id": 10,
    "type": "timeseries",
-   "title": "Cumulative paper PnL (USD)",
+   "title": "Cumulative paper PnL by track (USD)",
    "gridPos": {
     "x": 0,
     "y": 13,
@@ -244,7 +244,7 @@
     {
      "refId": "A",
      "format": "time_series",
-     "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='promobuy' ORDER BY exit_at"
+     "rawSql": "SELECT exit_at AS time, SUM(CASE WHEN sim_metadata->>'entry_liquidity_usd' IS NULL THEN pnl_usd ELSE 0 END) OVER (ORDER BY exit_at) AS \"null-liq (small)\", SUM(CASE WHEN sim_metadata->>'entry_liquidity_usd' IS NOT NULL THEN pnl_usd ELSE 0 END) OVER (ORDER BY exit_at) AS \"has-liq (full)\" FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='promobuy' ORDER BY exit_at"
     }
    ]
   },
