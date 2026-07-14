@@ -80,6 +80,15 @@ ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS age_hours DOUBLE PRECI
 -- profiled token that is ALSO boosted gets a size). boost_active = current active boosts.
 -- KEEP THIS COMMENT FREE OF THE SEMICOLON CHARACTER.
 ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS boost_active DOUBLE PRECISION;
+-- 2026-07-14 SOURCE-OVERLAP. source is first-sighting only (boost precedence) so it CANNOT
+-- show a token that is on BOTH feeds. These independent flags do (sticky-OR, refreshed each
+-- run) so we can finally test profile+boost vs profile-only. Backfill infers old rows from
+-- source/boost_amount (a pre-existing boost-source token that was ALSO profiled is unknowable
+-- historically -> false). KEEP THESE COMMENTS FREE OF THE SEMICOLON CHARACTER.
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS is_boosted BOOLEAN;
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS is_profiled BOOLEAN;
+UPDATE promo_shadow_signals SET is_boosted = (source = 'boost' OR boost_amount IS NOT NULL) WHERE is_boosted IS NULL;
+UPDATE promo_shadow_signals SET is_profiled = (source = 'profile') WHERE is_profiled IS NULL;
 """
 
 
@@ -142,7 +151,10 @@ def _price_now(token: str) -> float | None:
 
 
 def collect_new() -> int:
-    """Poll both feeds, insert first-sighting rows with current price."""
+    """Poll boost + profile feeds. First sighting -> full insert (price snapshot + both
+    source flags). A token seen again gets a lightweight FLAG refresh only (no price re-fetch,
+    so the at-signal snapshot is preserved) -> captures a token profiled first and boosted
+    LATER (or vice-versa), the 'both' case the old first-sighting-only recording missed."""
     # Fetch each feed once. The two boost feeds give pump MAGNITUDE (totalAmount = all-time
     # boost $, amount = active boosts); the profile feed is the paid-listing source.
     boost_latest = _dex("https://api.dexscreener.com/token-boosts/latest/v1") or []
@@ -152,7 +164,15 @@ def collect_new() -> int:
     profiles = _dex("https://api.dexscreener.com/token-profiles/latest/v1") or []
     time.sleep(0.5)
 
-    # Merge both boost feeds into a pump-size map (keep the largest cumulative total seen).
+    def _sol(rows):
+        return {x.get("tokenAddress") for x in rows
+                if x.get("chainId") == "solana" and x.get("tokenAddress")}
+    boosts, profiled = _sol(boost_latest) | _sol(boost_top), _sol(profiles)
+    all_toks = boosts | profiled
+    if not all_toks:
+        return 0
+
+    # Pump-size map (largest cumulative boost total + current active count) from both boost feeds.
     boost_map: dict[str, tuple[float | None, float | None]] = {}
     for x in (boost_latest + boost_top):
         if x.get("chainId") != "solana":
@@ -165,43 +185,52 @@ def collect_new() -> int:
         if prev is None or (ta or 0) > (prev[0] or 0):
             boost_map[tok] = (ta, am)
 
-    # source = which feed first surfaced it; magnitude comes from the boost map (so a
-    # boosted profile gets a real pump size instead of null).
-    candidates: dict[str, tuple[str, float | None, float | None]] = {}
-    for source, rows in (("boost", boost_latest), ("profile", profiles)):
-        for x in rows:
-            if x.get("chainId") != "solana":
-                continue
-            tok = x.get("tokenAddress")
-            if not tok or tok in candidates:
-                continue
-            bm = boost_map.get(tok, (x.get("totalAmount"), x.get("amount")))
-            candidates[tok] = (source, bm[0], bm[1])
-    if not candidates:
-        return 0
-
     with session_scope() as s:
         known = {r[0] for r in s.execute(text(
             "SELECT token FROM promo_shadow_signals WHERE token = ANY(:toks)"
-        ), {"toks": list(candidates)}).fetchall()}
-    fresh = {t: v for t, v in candidates.items() if t not in known}
+        ), {"toks": list(all_toks)}).fetchall()}
 
+    # KNOWN tokens seen again: sticky-OR the flags + keep the largest boost total / latest active.
+    updated = 0
+    reseen = all_toks & known
+    if reseen:
+        with session_scope() as s:
+            for tok in reseen:
+                amt, active = boost_map.get(tok, (None, None))
+                s.execute(text(
+                    "UPDATE promo_shadow_signals SET "
+                    "is_boosted = COALESCE(is_boosted, false) OR :ib, "
+                    "is_profiled = COALESCE(is_profiled, false) OR :ip, "
+                    "boost_amount = CASE WHEN :amt IS NOT NULL "
+                    "  THEN GREATEST(COALESCE(boost_amount, 0), :amt) ELSE boost_amount END, "
+                    "boost_active = COALESCE(:bact, boost_active), updated_at = now() "
+                    "WHERE token = :t"
+                ), {"ib": tok in boosts, "ip": tok in profiled,
+                    "amt": amt, "bact": active, "t": tok})
+                updated += 1
+
+    # FRESH tokens: full insert with price snapshot + both flags.
+    fresh = all_toks - known
     inserted = 0
     now = int(time.time())
     rpub = _redis_pub()
-    for tok, (source, amount, active) in fresh.items():
+    for tok in fresh:
+        is_b, is_p = tok in boosts, tok in profiled
+        source = "boost" if is_b else "profile"      # first-seen label (kept for continuity)
+        amount, active = boost_map.get(tok, (None, None))
         pair = _token_pair(tok)                      # one Dexscreener call: price+liq+mcap+features
         px = (pair or {}).get("price_usd") or _price_now(tok)
         time.sleep(RATE)
         with session_scope() as s:
             s.execute(text(
                 "INSERT INTO promo_shadow_signals "
-                "(token, source, boost_amount, boost_active, signal_unix, price_at_signal, "
-                " liquidity_usd, market_cap, liq_mcap_ratio, buy_sell_ratio_h1, "
-                " vol_accel, age_hours) "
-                "VALUES (:t, :src, :amt, :bact, :u, :px, :liq, :mc, :lmr, :bsr, :va, :age) "
+                "(token, source, is_boosted, is_profiled, boost_amount, boost_active, "
+                " signal_unix, price_at_signal, liquidity_usd, market_cap, liq_mcap_ratio, "
+                " buy_sell_ratio_h1, vol_accel, age_hours) "
+                "VALUES (:t, :src, :ib, :ip, :amt, :bact, :u, :px, :liq, :mc, :lmr, :bsr, :va, :age) "
                 "ON CONFLICT (token) DO NOTHING"
-            ), {"t": tok, "src": source, "amt": amount, "bact": active, "u": now, "px": px,
+            ), {"t": tok, "src": source, "ib": is_b, "ip": is_p, "amt": amount,
+                "bact": active, "u": now, "px": px,
                 "liq": (pair or {}).get("liquidity_usd"),
                 "mc": (pair or {}).get("market_cap"),
                 "lmr": (pair or {}).get("liq_mcap_ratio"),
@@ -209,15 +238,18 @@ def collect_new() -> int:
                 "va": (pair or {}).get("vol_accel"),
                 "age": (pair or {}).get("age_hours")})
         inserted += 1
-        log.info("promo_signal", token=tok[:12], source=source, price=px, boost=amount)
+        log.info("promo_signal", token=tok[:12], source=source,
+                 both=(is_b and is_p), price=px, boost=amount)
         # Feed the live promobuy strategy (fail-open; no-op if nobody subscribes).
         if rpub is not None:
             try:
                 rpub.publish("copy:promo_signals", json.dumps(
-                    {"token": tok, "source": source, "boost_amount": amount,
-                     "boost_active": active, "price": px, "ts": now}))
+                    {"token": tok, "source": source, "is_boosted": is_b, "is_profiled": is_p,
+                     "boost_amount": amount, "boost_active": active, "price": px, "ts": now}))
             except Exception:
                 log.warning("promo_publish_failed", token=tok[:12])
+    if updated:
+        log.info("promo_flags_refreshed", n=updated)
     return inserted
 
 
