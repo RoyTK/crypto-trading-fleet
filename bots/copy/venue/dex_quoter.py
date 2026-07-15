@@ -16,6 +16,8 @@ from typing import Optional
 
 import aiohttp
 
+from framework.api_usage import bump as _usage_bump
+
 from bots.copy.config import get_copy_settings
 from framework.logging_setup import get_logger
 
@@ -360,6 +362,7 @@ async def fetch_token_creation(
     try:
         async with session.get(url, params={"address": mint}, headers=headers,
                                 timeout=aiohttp.ClientTimeout(total=8)) as r:
+            _usage_bump("birdeye", r.status)
             if r.status != 200:
                 return None
             body = await r.json()
@@ -431,6 +434,7 @@ async def fetch_dexscreener_pair(
     url = f"https://api.dexscreener.com/tokens/v1/solana/{mint}"
     try:
         async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as r:
+            _usage_bump("dexscreener", r.status)
             if r.status != 200:
                 return None
             pairs = await r.json()
@@ -499,6 +503,7 @@ async def fetch_first_buyers(
     try:
         async with session.get(url, headers=headers,
                                 timeout=aiohttp.ClientTimeout(total=8)) as r:
+            _usage_bump("birdeye", r.status)
             if r.status != 200:
                 return None
             body = await r.json()
@@ -566,6 +571,7 @@ async def fetch_token_security(
     try:
         async with session.get(url, params={"address": mint}, headers=headers,
                                 timeout=aiohttp.ClientTimeout(total=8)) as r:
+            _usage_bump("birdeye", r.status)
             if r.status != 200:
                 return None
             body = await r.json()

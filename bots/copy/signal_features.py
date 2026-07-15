@@ -23,6 +23,7 @@ import urllib.error
 from sqlalchemy import text
 from framework.db import session_scope
 from framework.logging_setup import get_logger
+from framework.api_usage import bump as _usage_bump
 from bots.copy.config import get_copy_settings
 from scripts.manipulation_detectors import analyze, buy_concentration, cohort_bundle_fraction
 
@@ -81,8 +82,10 @@ def _be(path: str):
                 headers={"X-API-KEY": key, "x-chain": "solana",
                          "Accept": "application/json", "User-Agent": UA})
             with urllib.request.urlopen(r, timeout=15) as resp:
+                _usage_bump("birdeye", 200)
                 return json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
+            _usage_bump("birdeye", e.code)
             if e.code == 429:
                 time.sleep(3)
                 continue

@@ -1,0 +1,124 @@
+{
+ "uid": "service-usage",
+ "title": "Service Usage & Headroom",
+ "schemaVersion": 39,
+ "version": 1,
+ "refresh": "5m",
+ "time": {
+  "from": "now-30d",
+  "to": "now"
+ },
+ "tags": [
+  "ops",
+  "usage",
+  "cost"
+ ],
+ "panels": [
+  {
+   "id": 900,
+   "type": "text",
+   "title": "",
+   "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+   "transparent": true,
+   "options": {
+    "mode": "markdown",
+    "content": "# Service Usage & Headroom\nHelius = webhook deliveries vs the 10M/mo plan (+20M paid autoscale). Birdeye / Dexscreener = our outbound API calls + 429 rate-limit hits. Source: `service_usage_daily` (rolled daily from the live counters). New counters populate going forward."
+   }
+  },
+  {
+   "id": 1,
+   "type": "stat",
+   "title": "Helius — deliveries yesterday",
+   "gridPos": { "x": 0, "y": 3, "w": 6, "h": 4 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "table", "rawSql": "SELECT COALESCE(sum(calls),0) FROM service_usage_daily WHERE service='helius' AND day = (now()::date - 1)" } ],
+   "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "text" } } },
+   "options": { "colorMode": "value", "graphMode": "none" }
+  },
+  {
+   "id": 2,
+   "type": "stat",
+   "title": "Helius — projected credits / mo",
+   "gridPos": { "x": 6, "y": 3, "w": 6, "h": 4 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "table", "rawSql": "SELECT COALESCE(round(avg(d)*30),0) FROM (SELECT day, sum(calls) d FROM service_usage_daily WHERE service='helius' AND day >= (now()::date - 7) AND day < now()::date GROUP BY day) x" } ],
+   "fieldConfig": { "defaults": { "unit": "short" } },
+   "options": { "colorMode": "none", "graphMode": "none" }
+  },
+  {
+   "id": 3,
+   "type": "gauge",
+   "title": "Helius — % of 10M plan",
+   "gridPos": { "x": 12, "y": 3, "w": 6, "h": 4 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "table", "rawSql": "SELECT COALESCE(round(100.0*(avg(d)*30)/10000000,1),0) FROM (SELECT day, sum(calls) d FROM service_usage_daily WHERE service='helius' AND day >= (now()::date - 7) AND day < now()::date GROUP BY day) x" } ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent", "min": 0, "max": 200,
+     "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 85 }, { "color": "red", "value": 100 } ] }
+    }
+   },
+   "options": { "showThresholdLabels": false, "showThresholdMarkers": true }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Helius — headroom (credits/mo)",
+   "gridPos": { "x": 18, "y": 3, "w": 6, "h": 4 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "table", "rawSql": "SELECT COALESCE(round(10000000 - avg(d)*30),0) FROM (SELECT day, sum(calls) d FROM service_usage_daily WHERE service='helius' AND day >= (now()::date - 7) AND day < now()::date GROUP BY day) x" } ],
+   "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 0 } ] }, "color": { "mode": "thresholds" } } },
+   "options": { "colorMode": "value", "graphMode": "none" }
+  },
+  {
+   "id": 10,
+   "type": "timeseries",
+   "title": "Helius deliveries / day by webhook tier (red line = 10M-plan daily rate)",
+   "gridPos": { "x": 0, "y": 7, "w": 24, "h": 8 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "time_series", "rawSql": "SELECT day AS time, sum(calls) FILTER (WHERE tier='active') AS active, sum(calls) FILTER (WHERE tier='watch') AS watch, sum(calls) FILTER (WHERE tier='teamfollow') AS teamfollow FROM service_usage_daily WHERE service='helius' AND day > now()::date - 45 GROUP BY day ORDER BY day" } ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": { "drawStyle": "bars", "fillOpacity": 70, "stacking": { "mode": "normal" }, "lineWidth": 1, "thresholdsStyle": { "mode": "line" } },
+     "thresholds": { "mode": "absolute", "steps": [ { "color": "transparent", "value": null }, { "color": "red", "value": 333333 } ] }
+    }
+   },
+   "options": { "legend": { "showLegend": true, "placement": "bottom", "displayMode": "list" }, "tooltip": { "mode": "multi" } }
+  },
+  {
+   "id": 11,
+   "type": "timeseries",
+   "title": "Birdeye — API calls / day + 429 rate-limit hits",
+   "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "time_series", "rawSql": "SELECT day AS time, calls AS \"API calls\", errors AS \"429 rate-limit\" FROM service_usage_daily WHERE service='birdeye' AND day > now()::date - 45 ORDER BY day" } ],
+   "fieldConfig": {
+    "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5 } },
+    "overrides": [ { "matcher": { "id": "byName", "options": "429 rate-limit" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }, { "id": "custom.drawStyle", "value": "bars" } ] } ]
+   },
+   "options": { "legend": { "showLegend": true, "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+  },
+  {
+   "id": 12,
+   "type": "timeseries",
+   "title": "Dexscreener — API calls / day + 429 rate-limit hits",
+   "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "time_series", "rawSql": "SELECT day AS time, calls AS \"API calls\", errors AS \"429 rate-limit\" FROM service_usage_daily WHERE service='dexscreener' AND day > now()::date - 45 ORDER BY day" } ],
+   "fieldConfig": {
+    "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5 } },
+    "overrides": [ { "matcher": { "id": "byName", "options": "429 rate-limit" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }, { "id": "custom.drawStyle", "value": "bars" } ] } ]
+   },
+   "options": { "legend": { "showLegend": true, "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+  },
+  {
+   "id": 20,
+   "type": "table",
+   "title": "Per-service summary (trailing 7 full days)",
+   "gridPos": { "x": 0, "y": 23, "w": 24, "h": 7 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "table", "rawSql": "WITH d AS (SELECT service, day, sum(calls) calls, sum(errors) errors FROM service_usage_daily WHERE day >= now()::date - 7 AND day < now()::date GROUP BY service, day) SELECT service, round(avg(calls)) AS avg_per_day_7d, round(avg(calls)*30) AS projected_per_mo, sum(errors) AS rate_limit_429_7d FROM d GROUP BY service ORDER BY service" } ]
+  }
+ ]
+}

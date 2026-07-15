@@ -45,6 +45,18 @@ AUTOSCALE_CREDITS = 20_000_000   # optional PAID overage bucket above the plan
 BILLED_TIERS = ("active", "watch", "teamfollow")  # each has its own subscribed webhook
 DELIV_PREFIX = "helius:deliv:"   # receiver key: helius:deliv:{YYYY-MM-DD}:{tier}
 LOOKBACK_DAYS = 7                # trailing full days to average the daily rate over
+USAGE_BACKFILL_DAYS = 45         # how far back to (re)snapshot service_usage_daily each run
+
+SERVICE_USAGE_DDL = """
+CREATE TABLE IF NOT EXISTS service_usage_daily (
+    day     DATE NOT NULL,
+    service VARCHAR(24) NOT NULL,       -- helius | birdeye | dexscreener
+    tier    VARCHAR(24) NOT NULL DEFAULT 'all',
+    calls   BIGINT NOT NULL DEFAULT 0,  -- deliveries (helius) or API calls (birdeye/dex)
+    errors  BIGINT NOT NULL DEFAULT 0,  -- 429 rate-limit hits
+    PRIMARY KEY (day, service, tier)
+)
+"""
 
 
 def _redis_client():
@@ -81,6 +93,44 @@ def _read_deliveries(r) -> tuple[dict, dict]:
     return per_day, yesterday_by_tier
 
 
+def _snapshot_service_usage(r) -> int:
+    """Roll the Redis usage counters into service_usage_daily (the Grafana source for the
+    Service Usage dashboard): Helius deliveries per tier (helius:deliv:*) + Birdeye /
+    Dexscreener API calls & 429s (svc:*). Idempotent upsert over a trailing window, so it
+    self-backfills Helius history and keeps every service current. Fail-open."""
+    today = datetime.now(timezone.utc).date()
+    rows: list[tuple] = []
+    for i in range(0, USAGE_BACKFILL_DAYS + 1):
+        d = today - timedelta(days=i)
+        ds = d.strftime("%Y-%m-%d")
+        for tier in BILLED_TIERS:  # Helius: one row per subscribed webhook tier
+            try:
+                v = int(r.get(f"{DELIV_PREFIX}{ds}:{tier}") or 0)
+            except Exception:
+                v = 0
+            if v:
+                rows.append((d, "helius", tier, v, 0))
+        for svc in ("birdeye", "dexscreener"):  # our API calls + rate-limit hits
+            try:
+                calls = int(r.get(f"svc:{svc}:calls:{ds}") or 0)
+                e429 = int(r.get(f"svc:{svc}:e429:{ds}") or 0)
+            except Exception:
+                calls = e429 = 0
+            if calls or e429:
+                rows.append((d, svc, "all", calls, e429))
+    if not rows:
+        return 0
+    with session_scope() as s:
+        s.execute(text(SERVICE_USAGE_DDL))
+        for (d, svc, tier, calls, errors) in rows:
+            s.execute(text(
+                "INSERT INTO service_usage_daily (day, service, tier, calls, errors) "
+                "VALUES (:d,:svc,:t,:c,:e) ON CONFLICT (day, service, tier) "
+                "DO UPDATE SET calls=EXCLUDED.calls, errors=EXCLUDED.errors"
+            ), {"d": d, "svc": svc, "t": tier, "c": calls, "e": errors})
+    return len(rows)
+
+
 def main() -> int:
     configure_logging()
 
@@ -109,6 +159,10 @@ def main() -> int:
     try:
         r = _redis_client()
         per_day, yday_by_tier = _read_deliveries(r)
+        try:
+            _snapshot_service_usage(r)
+        except Exception as e:
+            log.warning("service_usage_snapshot_failed", err=str(e))
     except Exception as e:
         log.warning("delivery_counter_read_failed", err=str(e))
         per_day, yday_by_tier = {}, {}

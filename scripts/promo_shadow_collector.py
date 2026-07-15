@@ -38,6 +38,7 @@ import urllib.error
 from sqlalchemy import text
 from framework.db import session_scope
 from framework.logging_setup import get_logger
+from framework.api_usage import bump as _usage_bump
 
 from bots.copy.config import get_copy_settings
 
@@ -104,7 +105,9 @@ UPDATE promo_shadow_signals SET first_profiled_at = signal_at WHERE source = 'pr
 def _http_json(url: str):
     r = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
     with urllib.request.urlopen(r, timeout=20) as resp:
-        return json.loads(resp.read().decode())
+        out = json.loads(resp.read().decode())
+    _usage_bump("dexscreener", 200)   # all _http_json calls in this collector are Dexscreener
+    return out
 
 
 def _dex(url: str, tries: int = 3):
@@ -112,6 +115,7 @@ def _dex(url: str, tries: int = 3):
         try:
             return _http_json(url)
         except urllib.error.HTTPError as e:
+            _usage_bump("dexscreener", e.code)
             if e.code == 429:
                 time.sleep(4 * (i + 1))
                 continue
@@ -131,8 +135,11 @@ def _be(path: str, tries: int = 3):
                 headers={"X-API-KEY": _KEY, "x-chain": "solana",
                          "Accept": "application/json", "User-Agent": UA})
             with urllib.request.urlopen(r, timeout=25) as resp:
-                return json.loads(resp.read().decode())
+                out = json.loads(resp.read().decode())
+            _usage_bump("birdeye", 200)
+            return out
         except urllib.error.HTTPError as e:
+            _usage_bump("birdeye", e.code)
             if e.code == 429:
                 time.sleep(4)
                 continue
