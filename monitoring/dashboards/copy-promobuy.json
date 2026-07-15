@@ -48,7 +48,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM halts WHERE bot_id='copy_promobuy' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END AS state"
+     "rawSql": "SELECT CASE WHEN state IN ('halted','killed') AND (halted_until IS NULL OR halted_until > now()) THEN 'HALTED' ELSE 'running' END AS state FROM bot_state WHERE bot_id='copy_promobuy'"
     }
    ],
    "fieldConfig": {
