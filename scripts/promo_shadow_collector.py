@@ -239,7 +239,7 @@ def collect_new() -> int:
                         "UPDATE promo_shadow_signals SET last_signal_at = now(), "
                         "resignal_count = COALESCE(resignal_count, 0) + 1 WHERE token = :t "
                         "AND :amt > COALESCE(boost_amount, 0) "
-                        "AND (last_signal_at IS NULL OR last_signal_at < now() - make_interval(mins => :cd)) "
+                        "AND (last_signal_at IS NULL OR last_signal_at < now() - (:cd * interval '1 minute')) "
                         "AND COALESCE(resignal_count, 0) < :mx RETURNING price_at_signal"
                     ), {"t": tok, "amt": amt, "cd": re_cd, "mx": re_max}).fetchone()
                     if r_row is not None:
