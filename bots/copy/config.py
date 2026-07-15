@@ -491,6 +491,17 @@ class CopySettings(BaseSettings):
     copy_promobuy_reentry_enabled: bool = Field(default=False)
     copy_promobuy_reentry_cooldown_minutes: float = Field(default=120.0)
     copy_promobuy_reentry_max: int = Field(default=2)   # max re-entries per token
+    # LIQUIDITY-MOMENTUM STOP (2026-07-15, ported from cluster's validated stop). The flat 8%
+    # stop was shaking promobuy out of volatile-but-RECOVERING liquid promos on noise dips
+    # (1572 +32% / 1573 +119% AFTER we sold) while filling at -30% anyway (illusory). Instead
+    # pick the stop from the token's LIVE liquidity trajectory (EMA vs entry): dips with intact
+    # liquidity = NOISE (hold), a liquidity COLLAPSE = a real rug (cut fast). Direction is the
+    # INVERSE of cluster: WIDE by default, TIGHT only on collapse, DEEPER when liq is building.
+    copy_promobuy_stop_pct_base: float = Field(default=25.0)       # default (liq stable) — hold through noise dips
+    copy_promobuy_stop_pct_deep: float = Field(default=40.0)       # liq BUILDING >= grow_ratio — give a runner room
+    copy_promobuy_liq_grow_ratio: float = Field(default=1.5)       # ema_liq/entry_liq at/above this = building
+    copy_promobuy_stop_collapse_ratio: float = Field(default=0.5)  # ema_liq below this * entry_liq = rug collapse
+    copy_promobuy_stop_pct_collapse: float = Field(default=8.0)    # tight stop when liquidity has collapsed
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)

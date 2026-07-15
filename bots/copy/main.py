@@ -2079,24 +2079,40 @@ class CopyBot(BotLifecycle):
                 # keep it tight when flat/draining. Only cluster trades with a
                 # stamped entry_liquidity; everything else keeps trade.stop_pct.
                 eff_stop = trade.stop_pct
-                if (trade.venue == "solana" and trade.strategy == "cluster"
+                if (trade.venue == "solana" and trade.strategy in ("cluster", "promobuy")
                         and trade.entry_liquidity_usd):
                     cur_liq = sol_liq.get(trade.asset)
                     if cur_liq is not None and cur_liq > 0:
                         prev = self._liq_ema.get(trade.trade_id, trade.entry_liquidity_usd)
                         ema = LIQ_EMA_ALPHA * cur_liq + (1.0 - LIQ_EMA_ALPHA) * prev
                         self._liq_ema[trade.trade_id] = ema
-                        base = trade.stop_pct if trade.stop_pct is not None else EXIT_STOP_PCT
-                        eff_stop = liquidity_aware_stop_pct(
-                            trade.entry_liquidity_usd, ema,
-                            base_stop=base, grow_ratio=CLUSTER_LIQ_GROW_RATIO,
-                            deep_stop=CLUSTER_STOP_PCT_DEEP,
-                            flat_floor=CLUSTER_FLAT_LIQ_FLOOR_USD,
-                            flat_stop=CLUSTER_STOP_PCT_FLAT,
-                        )
+                        cs = self.copy_settings
+                        if trade.strategy == "promobuy":
+                            # INVERSE default: WIDE (hold through noise dips), TIGHT only on a
+                            # real liquidity COLLAPSE (ema < collapse_ratio*entry = rug), DEEPER
+                            # when liq is BUILDING (a runner gaining depth).
+                            base = cs.copy_promobuy_stop_pct_base
+                            eff_stop = liquidity_aware_stop_pct(
+                                trade.entry_liquidity_usd, ema,
+                                base_stop=base,
+                                grow_ratio=cs.copy_promobuy_liq_grow_ratio,
+                                deep_stop=cs.copy_promobuy_stop_pct_deep,
+                                flat_floor=trade.entry_liquidity_usd * cs.copy_promobuy_stop_collapse_ratio,
+                                flat_stop=cs.copy_promobuy_stop_pct_collapse,
+                            )
+                        else:
+                            base = trade.stop_pct if trade.stop_pct is not None else EXIT_STOP_PCT
+                            eff_stop = liquidity_aware_stop_pct(
+                                trade.entry_liquidity_usd, ema,
+                                base_stop=base, grow_ratio=CLUSTER_LIQ_GROW_RATIO,
+                                deep_stop=CLUSTER_STOP_PCT_DEEP,
+                                flat_floor=CLUSTER_FLAT_LIQ_FLOOR_USD,
+                                flat_stop=CLUSTER_STOP_PCT_FLAT,
+                            )
                         if eff_stop != base:
                             self.log.info(
-                                "cluster_liq_momentum_stop", trade_id=trade.trade_id,
+                                "liq_momentum_stop", strategy=trade.strategy,
+                                trade_id=trade.trade_id,
                                 asset=trade.asset, entry_liq=round(trade.entry_liquidity_usd),
                                 ema_liq=round(ema),
                                 ratio=round(ema / trade.entry_liquidity_usd, 2),
