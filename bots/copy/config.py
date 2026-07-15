@@ -482,6 +482,15 @@ class CopySettings(BaseSettings):
     # it against a plain token-age>30m gate on live labeled data before committing. Raise to
     # e.g. 0.85 to activate.
     copy_promobuy_max_first_buyer_dump_frac: float = Field(default=0.0)
+    # RE-ENTRY on a NEW promo wave (2026-07-15). A token we bought + exited (e.g. stop) that
+    # only DIPPED (not rugged) and then gets a FRESH paid boost is a legit new signal — the
+    # promo machine re-igniting. The collector re-publishes copy:promo_signals when a known
+    # token's boost total INCREASES (a new boost since we last signaled it), capped per token.
+    # OFF by default; enable via .env after verifying. The cooldown is the churn guard (cf. the
+    # conviction ACRE 3x -$165 buy/lose/re-buy case) — no re-buy of the same token within it.
+    copy_promobuy_reentry_enabled: bool = Field(default=False)
+    copy_promobuy_reentry_cooldown_minutes: float = Field(default=120.0)
+    copy_promobuy_reentry_max: int = Field(default=2)   # max re-entries per token
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)

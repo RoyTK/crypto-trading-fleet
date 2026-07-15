@@ -99,6 +99,14 @@ ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS first_boosted_at TIMES
 ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS first_profiled_at TIMESTAMPTZ;
 UPDATE promo_shadow_signals SET first_boosted_at = signal_at WHERE source = 'boost' AND first_boosted_at IS NULL;
 UPDATE promo_shadow_signals SET first_profiled_at = signal_at WHERE source = 'profile' AND first_profiled_at IS NULL;
+-- 2026-07-15 RE-ENTRY on a new promo wave. last_signal_at = when we last PUBLISHED a buy signal
+-- for this token (first insert or a re-signal) resignal_count = how many re-signals fired (capped).
+-- A known token whose boost total grows past the stored value gets ONE re-signal per cooldown up
+-- to the cap so promobuy can re-enter a dipped-not-rugged token that is being freshly promoted.
+-- KEEP THESE COMMENTS SEMICOLON-FREE.
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS last_signal_at TIMESTAMPTZ;
+ALTER TABLE promo_shadow_signals ADD COLUMN IF NOT EXISTS resignal_count INTEGER NOT NULL DEFAULT 0;
+UPDATE promo_shadow_signals SET last_signal_at = signal_at WHERE last_signal_at IS NULL;
 """
 
 
@@ -206,13 +214,46 @@ def collect_new() -> int:
             "SELECT token FROM promo_shadow_signals WHERE token = ANY(:toks)"
         ), {"toks": list(all_toks)}).fetchall()}
 
-    # KNOWN tokens seen again: sticky-OR the flags + keep the largest boost total / latest active.
-    updated = 0
+    now = int(time.time())
+    rpub = _redis_pub()
+    cs = get_copy_settings()
+    re_enabled, re_cd, re_max = (cs.copy_promobuy_reentry_enabled,
+                                 cs.copy_promobuy_reentry_cooldown_minutes,
+                                 cs.copy_promobuy_reentry_max)
+
+    # KNOWN tokens seen again: (a) RE-SIGNAL a re-entry if a NEW boost appeared since we last
+    # signaled (churn-guarded by cooldown + per-token cap), then (b) sticky-OR the flags + keep
+    # the largest boost total / latest active.
+    updated = resignaled = 0
     reseen = all_toks & known
     if reseen:
         with session_scope() as s:
             for tok in reseen:
                 amt, active = boost_map.get(tok, (None, None))
+                # (a) re-signal — atomic: only stamps + returns a row when the incoming boost
+                # exceeds the STORED total (a fresh boost) AND the cooldown has passed AND we are
+                # under the per-token cap. Runs BEFORE the boost update so :amt compares vs the OLD
+                # boost. The bot still applies liquidity + its own re-entry cooldown.
+                if re_enabled and rpub is not None and amt is not None:
+                    r_row = s.execute(text(
+                        "UPDATE promo_shadow_signals SET last_signal_at = now(), "
+                        "resignal_count = COALESCE(resignal_count, 0) + 1 WHERE token = :t "
+                        "AND :amt > COALESCE(boost_amount, 0) "
+                        "AND (last_signal_at IS NULL OR last_signal_at < now() - make_interval(mins => :cd)) "
+                        "AND COALESCE(resignal_count, 0) < :mx RETURNING price_at_signal"
+                    ), {"t": tok, "amt": amt, "cd": re_cd, "mx": re_max}).fetchone()
+                    if r_row is not None:
+                        try:
+                            rpub.publish("copy:promo_signals", json.dumps(
+                                {"token": tok, "source": ("boost" if tok in boosts else "profile"),
+                                 "is_boosted": tok in boosts, "is_profiled": tok in profiled,
+                                 "boost_amount": amt, "boost_active": active,
+                                 "price": r_row[0], "ts": now, "reentry": True}))
+                            resignaled += 1
+                            log.info("promo_resignal", token=tok[:12], boost=amt)
+                        except Exception:
+                            log.warning("promo_resignal_publish_failed", token=tok[:12])
+                # (b) flag/boost refresh
                 s.execute(text(
                     "UPDATE promo_shadow_signals SET "
                     "is_boosted = COALESCE(is_boosted, false) OR :ib, "
@@ -230,8 +271,6 @@ def collect_new() -> int:
     # FRESH tokens: full insert with price snapshot + both flags.
     fresh = all_toks - known
     inserted = 0
-    now = int(time.time())
-    rpub = _redis_pub()
     for tok in fresh:
         is_b, is_p = tok in boosts, tok in profiled
         source = "boost" if is_b else "profile"      # first-seen label (kept for continuity)
@@ -243,11 +282,11 @@ def collect_new() -> int:
             s.execute(text(
                 "INSERT INTO promo_shadow_signals "
                 "(token, source, is_boosted, is_profiled, first_boosted_at, first_profiled_at, "
-                " boost_amount, boost_active, signal_unix, price_at_signal, liquidity_usd, "
-                " market_cap, liq_mcap_ratio, buy_sell_ratio_h1, vol_accel, age_hours) "
+                " last_signal_at, boost_amount, boost_active, signal_unix, price_at_signal, "
+                " liquidity_usd, market_cap, liq_mcap_ratio, buy_sell_ratio_h1, vol_accel, age_hours) "
                 "VALUES (:t, :src, :ib, :ip, "
                 " CASE WHEN :ib THEN now() ELSE NULL END, CASE WHEN :ip THEN now() ELSE NULL END, "
-                " :amt, :bact, :u, :px, :liq, :mc, :lmr, :bsr, :va, :age) "
+                " now(), :amt, :bact, :u, :px, :liq, :mc, :lmr, :bsr, :va, :age) "
                 "ON CONFLICT (token) DO NOTHING"
             ), {"t": tok, "src": source, "ib": is_b, "ip": is_p, "amt": amount,
                 "bact": active, "u": now, "px": px,

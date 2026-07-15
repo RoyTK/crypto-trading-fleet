@@ -727,6 +727,27 @@ def has_recent_conviction_trade(asset: str, venue: str, within_minutes: float) -
         return s.execute(q).first() is not None
 
 
+def has_recent_strategy_trade(asset: str, venue: str, strategy: str,
+                              within_minutes: float) -> bool:
+    """Re-entry cooldown for any strategy tag: true if a paper trade tagged `strategy`
+    in this token was ENTERED within the last `within_minutes` (open OR closed).
+    has_open_position only blocks a simultaneously-open position; this suppresses
+    buy/lose/re-buy churn on a dip-and-recover (cf. conviction's ACRE 3x -$165). <=0
+    disables. Exact strategy match (NOT _strategy_clause, which has no promobuy case)."""
+    if within_minutes <= 0:
+        return False
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=within_minutes)
+    with session_scope() as s:
+        q = select(Trade).where(
+            Trade.bot_id == BOT_ID,
+            Trade.mode == "paper",
+            Trade.asset == asset,
+            Trade.venue == venue,
+            Trade.entry_at >= cutoff,
+        ).where(text("(sim_metadata->>'strategy') = :st").bindparams(st=strategy))
+        return s.execute(q).first() is not None
+
+
 @dataclass(frozen=True)
 class DedupResult:
     """Outcome of write_cluster_detection.

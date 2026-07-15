@@ -37,6 +37,7 @@ from bots.copy.loop_helpers import (
     close_paper_trade,
     execute_paper_partial_close,
     has_open_position,
+    has_recent_strategy_trade,
     has_recent_conviction_trade,
     list_open_paper_trades,
     list_open_real_trades,
@@ -1375,6 +1376,13 @@ class CopyBot(BotLifecycle):
         if self._session is None:
             return
         if has_open_position(token, "solana", strategy="promobuy"):
+            return
+        # Re-entry cooldown (churn guard): don't re-buy a token promobuy traded within the
+        # window, open OR closed — so a dip-out + fresh promo wave can't spin a buy/lose/re-buy
+        # loop (cf. conviction ACRE 3x -$165). No-op for a first entry (no recent prior).
+        cooldown = self.copy_settings.copy_promobuy_reentry_cooldown_minutes
+        if cooldown and cooldown > 0 and has_recent_strategy_trade(token, "solana", "promobuy", cooldown):
+            self.log.info("promobuy_reentry_cooldown_skip", asset=token, cooldown_min=cooldown)
             return
         # Optional min paid-boost gate (0 accepts profiles + boosts).
         min_boost = self.copy_settings.copy_promobuy_source_min_boost
