@@ -183,22 +183,34 @@ def persist_paper_trade(
 
 
 def _strategy_clause(strategy: Optional[str]):
-    """SQLAlchemy text() WHERE fragment scoping COPY paper trades by strategy.
+    """SQLAlchemy text() WHERE fragment scoping COPY paper trades by strategy FAMILY.
 
-    - 'conviction' → only conviction trades
-    - 'cluster'    → everything that is NOT conviction (NULL/absent or 'cluster';
-                     keeps legacy untagged rows in the cluster bucket)
+    Each strategy runs on its OWN isolated bankroll, so its allocation cap and
+    per-token dedup must count ONLY its own open positions — never a sibling's.
+
+    - 'conviction' → conviction only (exact active tag; retired _pre_reset excluded)
+    - 'cluster'    → cluster + legacy NULL/untagged rows, EXCLUDING every other family
+    - 'teamfollow'/'cohortfire'/'promobuy' → that family's own prefix (incl _pre_reset,
+                     harmless for open-position/recent queries)
     - None         → no filter (all strategies)
 
-    Postgres JSON operators, consistent with kill_criteria_monitor.
+    Postgres JSON operators, consistent with kill_criteria_monitor. 2026-07-16 fix:
+    cluster used to be 'NOT conviction%' (from the 2-strategy era), which leaked every
+    teamfollow/cohortfire/promobuy OPEN position into cluster's allocation and starved
+    cluster (sized to $0) once promobuy's open book grew past cluster's 50%×$10k cap.
     """
     if strategy == "conviction":
         return text("(sim_metadata->>'strategy') = 'conviction'")
     if strategy == "cluster":
-        # Family prefix exclude (not exact) so a reset/re-tag like
-        # 'conviction_pre_reset' stays out of the cluster bucket. NULL/absent and
-        # 'cluster' are kept (legacy untagged rows count as cluster).
-        return text("coalesce(sim_metadata->>'strategy','') NOT LIKE 'conviction%'")
+        # Keep NULL/absent + 'cluster%' in the cluster bucket; exclude the other four
+        # families so a sibling's open positions don't consume cluster's cap.
+        return text("coalesce(sim_metadata->>'strategy','') NOT LIKE 'conviction%' "
+                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'teamfollow%' "
+                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'cohortfire%' "
+                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'promobuy%'")
+    if strategy in ("teamfollow", "cohortfire", "promobuy"):
+        # Whitelisted literal (guarded by the `in` check) → own-family prefix only.
+        return text(f"coalesce(sim_metadata->>'strategy','') LIKE '{strategy}%'")
     return None
 
 
