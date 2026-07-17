@@ -19,12 +19,35 @@ IMPORTANT — this is a LOCAL tool. It must run on the machine that has BOTH fil
 pre-commit step: run it locally, review, commit + push the repo file. It does
 NOT git-commit for you.
 
-Reconcile policy (append-only — never rewrites or reorders existing rows):
+Reconcile policy (append-only — never rewrites or reorders existing rows, with
+one exception: repairing corruption, below):
   - address in ONEDRIVE but not REPO  -> append to REPO
   - address in REPO but not ONEDRIVE  -> append to ONEDRIVE
   - address in BOTH with DIFFERENT verdict -> CONFLICT: reported, NOT touched.
     (These are deliberate human/Claude overrides, e.g. a REJECT later flipped to
     KEEP on attribution evidence. Resolve conflicts by hand.)
+
+Malformed-row hardening (2026-07-17 — a single fused line silently blocked ALL
+syncs for 3 days; the 31-batch verdicts sat in OneDrive while the task ran red):
+  - FUSED LINES (two rows glued by a lost trailing newline, the observed
+    corruption) are auto-repaired: the lost newline is re-inserted at the
+    date/address boundary. A repair is accepted ONLY if every resulting piece
+    independently validates as a full 9-column row with a valid verdict; repair
+    is only ever attempted on rows that already FAIL validation, so clean rows
+    can never be altered. Under --apply the repaired lines are written back to
+    the source file (healing it for future runs).
+  - Rows that are still malformed after the repair attempt are QUARANTINED:
+    excluded from the sync, reported loudly, and (under --apply) appended to
+    vetted_watch_results.quarantine.txt next to the OneDrive file. Clean rows
+    keep flowing — one bad row no longer stops the pipeline.
+  - Duplicate addresses within one file are a WARNING, not a blocker: the LAST
+    occurrence wins (append-only ledger semantics — later verdicts supersede).
+  - The hard refuse (exit 3) remains ONLY for structural corruption: a broken
+    header, or >25% of rows malformed (that's a wrong/mangled file, not a bad
+    row — do not sync anything from it).
+
+Exit codes: 0 = synced (possibly with quarantined rows — check the output),
+2 = a file is missing, 3 = structural corruption, nothing synced.
 
 Default is a DRY RUN (report only). Pass --apply to write.
 
@@ -37,14 +60,21 @@ from __future__ import annotations
 
 import argparse
 import csv
-import io
 import os
+import re
 import sys
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 EXPECTED_COLS = 9  # address,verdict,realized,unrealized,avg_hold,rug_pct,multi_x,reason,date
 VALID_VERDICTS = {"KEEP", "REJECT", "TOO_FAST"}
+
+# Fused line = row N's trailing date runs straight into row N+1's base58 address
+# (lost newline on append). Re-insert the newline at that boundary. base58
+# alphabet excludes 0, O, I, l; Solana addresses are 32-44 chars.
+_FUSE_RE = re.compile(r"(20\d{2}-\d{2}-\d{2})(?=[1-9A-HJ-NP-Za-km-z]{32,44},)")
+_STRUCTURAL_BAD_FRAC = 0.25  # more than this fraction malformed -> refuse whole file
 
 _REPO_DEFAULT = Path(__file__).resolve().parent.parent / "bots" / "copy" / "vetted_watch_results.txt"
 _ONEDRIVE_DEFAULT = os.environ.get(
@@ -76,29 +106,97 @@ def read_rows(path: Path) -> tuple[str, list[str]]:
     return header, body
 
 
-def validate(name: str, header: str, body: list[str]) -> list[str]:
-    """Return a list of human-readable problems (empty = clean)."""
-    problems: list[str] = []
-    if len(next(csv.reader([header]))) != EXPECTED_COLS:
-        problems.append(f"{name}: header does not have {EXPECTED_COLS} columns")
-    seen: dict[str, int] = {}
-    for i, ln in enumerate(body, start=2):  # +2: 1-based, after header
-        try:
-            fields = next(csv.reader([ln]))
-        except Exception as e:  # pragma: no cover - defensive
-            problems.append(f"{name} line {i}: unparseable ({e})")
-            continue
-        if len(fields) != EXPECTED_COLS:
-            problems.append(f"{name} line {i}: {len(fields)} cols (expected {EXPECTED_COLS}): {ln[:60]}")
-        v = fields[1].strip() if len(fields) > 1 else "?"
-        if v not in VALID_VERDICTS:
-            problems.append(f"{name} line {i}: bad verdict {v!r}")
-        a = fields[0].strip()
+def _parse(line: str) -> list[str] | None:
+    try:
+        return next(csv.reader([line]))
+    except Exception:
+        return None
+
+
+def _row_ok(fields: list[str] | None) -> bool:
+    return (fields is not None and len(fields) == EXPECTED_COLS
+            and fields[1].strip() in VALID_VERDICTS)
+
+
+def try_repair_fused(line: str) -> list[str] | None:
+    """Split a fused line back into its rows; None unless EVERY piece validates."""
+    pieces = _FUSE_RE.sub(lambda m: m.group(1) + "\n", line).split("\n")
+    if len(pieces) < 2:
+        return None
+    if all(_row_ok(_parse(p)) for p in pieces):
+        return pieces
+    return None
+
+
+def partition(name: str, header: str, body: list[str]) -> dict:
+    """Classify rows: clean (sync these), repairs (fused->pieces, pieces are clean),
+    quarantine ((reason, raw line) — excluded), warnings, structural (refuse-all)."""
+    out: dict = {"clean": [], "repairs": {}, "quarantine": [], "warnings": [], "structural": []}
+    hdr = _parse(header)
+    if hdr is None or len(hdr) != EXPECTED_COLS:
+        out["structural"].append(f"{name}: header does not have {EXPECTED_COLS} columns")
+        return out
+
+    seen: dict[str, str] = {}  # addr -> line (last occurrence wins)
+
+    def _accept(ln: str) -> None:
+        a = addr_of(ln)
         if a in seen:
-            problems.append(f"{name} line {i}: duplicate address {a[:12]}… (also line {seen[a]})")
+            if seen[a] == ln:
+                out["warnings"].append(f"{name}: exact duplicate line for {a[:12]}… (kept once)")
+            else:
+                old_v, new_v = verdict_of(seen[a]), verdict_of(ln)
+                tag = "CONFLICTING duplicate" if old_v != new_v else "duplicate"
+                out["warnings"].append(
+                    f"{name}: {tag} for {a[:12]}… ({old_v} -> {new_v}); LAST occurrence wins")
+        seen[a] = ln
+
+    for i, ln in enumerate(body, start=2):  # +2: 1-based, after header
+        fields = _parse(ln)
+        if _row_ok(fields):
+            _accept(ln)
+            continue
+        pieces = try_repair_fused(ln)
+        if pieces is not None:
+            out["repairs"][ln] = pieces
+            for p in pieces:
+                _accept(p)
+            continue
+        if fields is None:
+            reason = "unparseable CSV"
+        elif len(fields) != EXPECTED_COLS:
+            reason = f"{len(fields)} cols (expected {EXPECTED_COLS})"
         else:
-            seen[a] = i
-    return problems
+            reason = f"bad verdict {fields[1].strip()!r}"
+        out["quarantine"].append((f"{name} line {i}: {reason}", ln))
+
+    out["clean"] = list(seen.values())
+    n_bad = len(out["quarantine"])
+    if body and n_bad / len(body) > _STRUCTURAL_BAD_FRAC and n_bad >= 8:
+        out["structural"].append(
+            f"{name}: {n_bad}/{len(body)} rows malformed (> {int(_STRUCTURAL_BAD_FRAC*100)}%)"
+            " — file looks corrupt/wrong, refusing to sync ANY of it")
+    return out
+
+
+def _write_back_repairs(path: Path, repairs: dict[str, list[str]]) -> None:
+    """Replace each fused line with its split rows, in place (heals the source)."""
+    text = path.read_text(encoding="utf-8")
+    for orig, pieces in repairs.items():
+        text = text.replace(orig, "\n".join(pieces), 1)
+    path.write_text(text, encoding="utf-8")
+
+
+def _quarantine_write(qpath: Path, items: list[tuple[str, str]]) -> int:
+    """Append quarantined rows not already recorded; return how many were new."""
+    existing = qpath.read_text(encoding="utf-8") if qpath.exists() else ""
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    new = [(reason, ln) for reason, ln in items if ln not in existing]
+    if new:
+        with qpath.open("a", encoding="utf-8") as f:
+            for reason, ln in new:
+                f.write(f"# {stamp}  {reason}\n{ln}\n")
+    return len(new)
 
 
 def _money(s: str) -> float | None:
@@ -122,11 +220,8 @@ def _money(s: str) -> float | None:
 def conviction_candidates(new_keep_lines: list[str], top: int) -> list[tuple]:
     rows = []
     for ln in new_keep_lines:
-        try:
-            r = next(csv.reader([ln]))
-        except Exception:
-            continue
-        if len(r) < EXPECTED_COLS or r[1].strip() != "KEEP":
+        r = _parse(ln)
+        if r is None or len(r) < EXPECTED_COLS or r[1].strip() != "KEEP":
             continue
         realized = _money(r[2])
         if realized is None:
@@ -155,18 +250,35 @@ def main() -> int:
     repo_hdr, repo_body = read_rows(args.repo)
     od_hdr, od_body = read_rows(args.onedrive)
 
-    problems = validate("REPO", repo_hdr, repo_body) + validate("ONEDRIVE", od_hdr, od_body)
-    if problems:
-        print("REFUSING TO SYNC — malformed rows found:", file=sys.stderr)
-        for pr in problems:
+    parts = {"REPO": partition("REPO", repo_hdr, repo_body),
+             "ONEDRIVE": partition("ONEDRIVE", od_hdr, od_body)}
+
+    structural = parts["REPO"]["structural"] + parts["ONEDRIVE"]["structural"]
+    if structural:
+        print("REFUSING TO SYNC — structural corruption:", file=sys.stderr)
+        for pr in structural:
             print("  -", pr, file=sys.stderr)
         return 3
 
-    repo_v = {addr_of(l): verdict_of(l) for l in repo_body}
-    od_v = {addr_of(l): verdict_of(l) for l in od_body}
+    # Loud, non-blocking report of anything unusual.
+    all_repairs = {name: pt["repairs"] for name, pt in parts.items() if pt["repairs"]}
+    all_quar = [(name, reason, ln) for name, pt in parts.items() for reason, ln in pt["quarantine"]]
+    for name, repairs in all_repairs.items():
+        for orig, pieces in repairs.items():
+            print(f"REPAIRED {name}: fused line split into {len(pieces)} rows "
+                  f"({', '.join(addr_of(p)[:10] + '…' for p in pieces)})")
+    for name, reason, ln in all_quar:
+        print(f"QUARANTINED {reason}: {ln[:70]}", file=sys.stderr)
+    for name, pt in parts.items():
+        for w in pt["warnings"]:
+            print(f"WARNING {w}")
 
-    only_od = [l for l in od_body if addr_of(l) not in repo_v]   # -> append to repo
-    only_repo = [l for l in repo_body if addr_of(l) not in od_v]  # -> append to onedrive
+    repo_clean, od_clean = parts["REPO"]["clean"], parts["ONEDRIVE"]["clean"]
+    repo_v = {addr_of(l): verdict_of(l) for l in repo_clean}
+    od_v = {addr_of(l): verdict_of(l) for l in od_clean}
+
+    only_od = [l for l in od_clean if addr_of(l) not in repo_v]   # -> append to repo
+    only_repo = [l for l in repo_clean if addr_of(l) not in od_v]  # -> append to onedrive
     conflicts = [(a, repo_v[a], od_v[a]) for a in repo_v.keys() & od_v.keys() if repo_v[a] != od_v[a]]
 
     print(f"REPO:     {len(repo_body)} rows  ({args.repo})")
@@ -185,14 +297,33 @@ def main() -> int:
                 print(f"    {a[:12]}… realized=${realized:,.0f} unreal=${unreal:,.0f} hold={hold} mx={mx}")
             print("    (roster is curated via scripts/set_conviction_wallets.py — this is informational)")
 
-    if not only_od and not only_repo:
+    nothing_to_sync = not only_od and not only_repo and not all_repairs
+    if nothing_to_sync and not all_quar:
         print("\nIn sync. Nothing to do.")
         return 0
 
     if not args.apply:
-        print("\nDRY RUN — no files written. Re-run with --apply to sync.")
+        print("\nDRY RUN — no files written. Re-run with --apply to sync"
+              + (" + write back repairs" if all_repairs else "")
+              + (" + record quarantine" if all_quar else "") + ".")
         return 0
 
+    # 1. Heal repaired (fused) lines in their source files BEFORE appending.
+    if parts["REPO"]["repairs"]:
+        _write_back_repairs(args.repo, parts["REPO"]["repairs"])
+        print(f"HEALED {len(parts['REPO']['repairs'])} fused line(s) in repo file")
+    if parts["ONEDRIVE"]["repairs"]:
+        _write_back_repairs(args.onedrive, parts["ONEDRIVE"]["repairs"])
+        print(f"HEALED {len(parts['ONEDRIVE']['repairs'])} fused line(s) in OneDrive file")
+
+    # 2. Record quarantined rows next to the OneDrive file (visible to Roy + browser-Opus).
+    if all_quar:
+        qpath = args.onedrive.parent / "vetted_watch_results.quarantine.txt"
+        n_new = _quarantine_write(qpath, [(f"{name}: {reason}", ln) for name, reason, ln in all_quar])
+        print(f"QUARANTINE: {len(all_quar)} malformed row(s) excluded from sync"
+              f" ({n_new} newly recorded in {qpath})")
+
+    # 3. Append the missing clean rows.
     if only_od:
         with args.repo.open("a", encoding="utf-8") as f:
             for l in only_od:

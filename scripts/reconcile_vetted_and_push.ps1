@@ -44,7 +44,10 @@ if ((Run 'pull' { git pull --ff-only origin main }) -ne 0) {
   Log "git pull --ff-only failed (diverged / network?) -> aborting before any commit"; exit 1
 }
 
-# 2. Reconcile + apply. Non-zero = malformed rows (3) or OneDrive missing (2) -> abort.
+# 2. Reconcile + apply. Non-zero = STRUCTURAL corruption (3: broken header / >25% rows bad)
+#    or a file missing (2) -> abort. Individually malformed rows no longer block: fused
+#    lines are auto-repaired, the rest are quarantined to vetted_watch_results.quarantine.txt
+#    (OneDrive dir) and reported in this log while clean rows keep syncing.
 $rc = Run 'reconcile' { python scripts/reconcile_vetted_results.py --apply }
 if ($rc -ne 0) { Log "reconcile exited $rc -> aborting (no commit)"; exit $rc }
 
