@@ -370,7 +370,7 @@ def execute_paper_partial_close(
 
     Returns True on recorded fill, False on bad state.
     """
-    from bots.copy.fill_simulator import DEX_FEE_PCT, liquidity_aware_exit_price
+    from bots.copy.fill_simulator import dex_fee_pct, liquidity_aware_exit_price
     with session_scope() as s:
         t = s.get(Trade, trade_id)
         if t is None or t.fill_status != "open":
@@ -389,7 +389,8 @@ def execute_paper_partial_close(
         gross_at_mid = tokens_in_slice * current_price
         eff_price, slip_frac = liquidity_aware_exit_price(current_price, gross_at_mid, liquidity_usd)
         gross_received = tokens_in_slice * eff_price
-        fees_usd = gross_received * (DEX_FEE_PCT / 100.0)
+        # RA2 (2026-07-18): mcap/liquidity-aware fee (was flat 0.30%).
+        fees_usd = gross_received * (dex_fee_pct(liquidity_usd=liquidity_usd) / 100.0)
         received_usdc = gross_received - fees_usd
         md = dict(t.sim_metadata or {})
         partials = list(md.get("partial_exits") or [])
@@ -501,7 +502,7 @@ def close_paper_trade(
     - For 'tier_complete' (all 4 partials fired): no remainder swap,
       pnl_usd derived purely from partial_exits sums.
     """
-    from bots.copy.fill_simulator import DEX_FEE_PCT
+    from bots.copy.fill_simulator import dex_fee_pct
     with session_scope() as s:
         t = s.get(Trade, trade_id)
         if t is None or t.fill_status != "open":
@@ -532,22 +533,31 @@ def close_paper_trade(
             remaining_received = 0.0
         total_received_usdc = partial_received_usdc + remaining_received
 
+        # RA2 (2026-07-18): model the ROUND-TRIP fee in PnL. Before this, the entry
+        # fee was never subtracted from PnL, and no-partial closes (≈97% of trades)
+        # subtracted no exit fee at all — so almost all PnL ignored fees entirely.
+        # Charge a mcap/liquidity-aware entry fee here (exit-side fees are already in
+        # received_usdc for partials, and in exit_fill.fees_usd for the full close).
+        close_liq = (exit_fill.metadata or {}).get("liquidity_usd")
+        entry_fee = size_usd * (dex_fee_pct(liquidity_usd=close_liq) / 100.0)
+
         t.exit_price = exit_price
         t.exit_at = datetime.now(timezone.utc)
         t.exit_reason = exit_reason
         t.fill_status = "closed"
-        t.fees_usd = float(t.fees_usd or 0.0) + exit_fill.fees_usd
+        t.fees_usd = float(t.fees_usd or 0.0) + exit_fill.fees_usd + entry_fee
 
         if entry_price > 0 and size_usd > 0:
             if partial_exits:
-                pnl_usd = total_received_usdc - size_usd
-                pnl_pct = pnl_usd / size_usd * 100.0
+                # received_usdc already net of per-leg + remainder exit fees.
+                pnl_usd = total_received_usdc - size_usd - entry_fee
             else:
                 raw_pct = (exit_price - entry_price) / entry_price * 100.0
                 if t.direction == "short":
                     raw_pct = -raw_pct
-                pnl_pct = raw_pct * leverage
-                pnl_usd = size_usd * (pnl_pct / 100.0)
+                gross_pnl = size_usd * (raw_pct * leverage / 100.0)
+                pnl_usd = gross_pnl - exit_fill.fees_usd - entry_fee
+            pnl_pct = pnl_usd / size_usd * 100.0
             t.pnl_pct = pnl_pct
             t.pnl_usd = pnl_usd
         md["exit_slippage_bps"] = exit_fill.slippage_bps

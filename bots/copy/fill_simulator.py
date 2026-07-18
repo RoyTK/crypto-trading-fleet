@@ -15,6 +15,7 @@ detection bursts.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Optional
 
@@ -26,7 +27,33 @@ from bots.copy.venue.dex_quoter import DexQuote, quote
 
 # Approximate per-side fee on DEX swaps (LP fees). Real fees depend on the
 # pool tier; this is a median-realistic flat estimate for sim purposes.
-DEX_FEE_PCT = 0.30  # 30 bps — typical 0.05% LP + 0.05% aggregator + ~20 bps gas as % of small swap
+DEX_FEE_PCT = 0.30  # 30 bps — LEGACY flat fee (kept for callers not yet migrated). Prefer dex_fee_pct().
+
+# Real Pump.fun/PumpSwap swap fee is ~1.25% on the bonding curve / small caps,
+# tapering to 0.30% only above ~$20M mcap (verified 2026-07-18, pump.fun/docs/fees).
+# The old flat 0.30% understated fees on the fresh/thin tokens we mostly trade
+# (promobuy enters <1h-old tokens 86% of the time).
+_FEE_BONDING_PCT = 1.25     # <= ~$85k mcap (bonding curve / brand-new)
+_FEE_GRADUATED_PCT = 0.30   # >= ~$20M mcap (large, low-fee tier)
+_FEE_MCAP_LO = 85_000.0
+_FEE_MCAP_HI = 20_000_000.0
+_LIQ_TO_MCAP = 8.0          # rough: AMM pool TVL ~ mcap/8 (proxy when mcap unknown)
+
+
+def dex_fee_pct(mcap_usd: Optional[float] = None, liquidity_usd: Optional[float] = None) -> float:
+    """Approximate per-side swap fee (%) for a token, by market cap. Prefers mcap;
+    falls back to liquidity as a proxy (pool TVL ~ mcap/8); unknown -> bonding-curve
+    (high) fee. Log-linear taper 1.25% (<= $85k) -> 0.30% (>= $20M). Replaces the flat
+    DEX_FEE_PCT for fee accounting."""
+    m = mcap_usd
+    if (m is None or m <= 0) and liquidity_usd is not None and liquidity_usd > 0:
+        m = liquidity_usd * _LIQ_TO_MCAP
+    if m is None or m <= 0 or m <= _FEE_MCAP_LO:
+        return _FEE_BONDING_PCT
+    if m >= _FEE_MCAP_HI:
+        return _FEE_GRADUATED_PCT
+    t = (math.log(m) - math.log(_FEE_MCAP_LO)) / (math.log(_FEE_MCAP_HI) - math.log(_FEE_MCAP_LO))
+    return _FEE_BONDING_PCT + t * (_FEE_GRADUATED_PCT - _FEE_BONDING_PCT)
 
 # Base paper-exit slippage for a liquid token (bps); depth impact is modelled on
 # top of this per fill.

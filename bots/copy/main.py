@@ -36,6 +36,7 @@ from bots.copy.fill_simulator import (
     DEX_FEE_PCT,
     CopyFillSimulator,
     CopyMarketSnapshot,
+    dex_fee_pct,
     liquidity_aware_exit_price as _liquidity_aware_exit_price,
 )
 from bots.copy.loop_helpers import (
@@ -1949,7 +1950,7 @@ class CopyBot(BotLifecycle):
             )
         close_price, frac = _liquidity_aware_exit_price(
             mid, size_usd, liq, EXIT_SLIPPAGE_BPS_DEFAULT)
-        fees = size_usd * (DEX_FEE_PCT / 100.0)
+        fees = size_usd * (dex_fee_pct(liquidity_usd=liq) / 100.0)
         return (
             close_price,
             SimulatedFill(fill_price=close_price, fees_usd=fees,
