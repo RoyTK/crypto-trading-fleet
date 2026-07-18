@@ -560,6 +560,13 @@ def close_paper_trade(
             pnl_pct = pnl_usd / size_usd * 100.0
             t.pnl_pct = pnl_pct
             t.pnl_usd = pnl_usd
+        # RA3 (2026-07-18): a "trailing_stop" closing at a NET LOSS peaked below the
+        # ~82% giveback-breakeven (20% activation × 45% trail) — it's NOT tail-capture.
+        # Relabel so dashboards/scorecards stop counting it as a trailing WIN
+        # (conviction's trailing_stop exits were 70.6% actual losers).
+        if exit_reason == "trailing_stop" and t.pnl_usd is not None and t.pnl_usd < 0:
+            exit_reason = "trailing_stop_loss"
+            t.exit_reason = exit_reason
         md["exit_slippage_bps"] = exit_fill.slippage_bps
         if partial_exits:
             md["partial_received_usdc"] = partial_received_usdc
