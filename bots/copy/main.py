@@ -2182,19 +2182,27 @@ class CopyBot(BotLifecycle):
             # at mid minus depth slippage (a $400 sell into a $300 pool isn't a
             # clean exit, but it isn't a fictitious -100% either); a liquid token
             # books at mid minus base slippage. (`mid` already fetched above.)
-            close_price, exit_fill, exit_reason = await self._build_paper_exit(
-                asset=trade.asset, venue=trade.venue, mid=mid,
-                entry_price=trade.entry_price, size_usd=trade.size_usd,
-                base_exit_reason=exit_reason,
-            )
-
-            close_paper_trade(
-                trade_id=trade.trade_id,
-                exit_price=close_price,
-                exit_fill=exit_fill,
-                exit_reason=exit_reason,
-            )
-            self._liq_ema.pop(trade.trade_id, None)
+            # RB6 (2026-07-18): guard the exit-resolution + DB write per-trade so one
+            # poison position (corrupt sim_metadata, an unexpected None, a DB constraint)
+            # can't abort the loop and starve exit management for every trade after it
+            # this cycle — those would then ride unmanaged to -100%.
+            try:
+                close_price, exit_fill, exit_reason = await self._build_paper_exit(
+                    asset=trade.asset, venue=trade.venue, mid=mid,
+                    entry_price=trade.entry_price, size_usd=trade.size_usd,
+                    base_exit_reason=exit_reason,
+                )
+                close_paper_trade(
+                    trade_id=trade.trade_id,
+                    exit_price=close_price,
+                    exit_fill=exit_fill,
+                    exit_reason=exit_reason,
+                )
+                self._liq_ema.pop(trade.trade_id, None)
+            except Exception:
+                self.log.exception("manage_position_close_failed",
+                                   trade_id=trade.trade_id, asset=trade.asset)
+                continue
 
     # ---- Sell-cluster evaluation + position close --------------------------
 
