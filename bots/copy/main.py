@@ -50,6 +50,7 @@ from bots.copy.loop_helpers import (
     list_open_real_trades,
     open_allocation_pct,
     panic_close_all_open,
+    pre_entry_roster_buyers,
     persist_paper_trade,
     persist_signal,
     update_trade_peak_pct,
@@ -1372,10 +1373,21 @@ class CopyBot(BotLifecycle):
         if cooldown and cooldown > 0 and has_recent_strategy_trade(token, "solana", "promobuy", cooldown):
             self.log.info("promobuy_reentry_cooldown_skip", asset=token, cooldown_min=cooldown)
             return
-        # Optional min paid-boost gate (0 accepts profiles + boosts).
+        # Optional min paid-boost gate (0 accepts profiles + boosts). Boost MAGNITUDE
+        # predicts the run (boost>=100 -> 46% reach 2x vs 10% no-boost, 2026-07-18).
         min_boost = self.copy_settings.copy_promobuy_source_min_boost
         if min_boost and min_boost > 0 and (boost_amount or 0) < min_boost:
+            self.log.info("promobuy_low_boost_skip", asset=token, boost=boost_amount, min=min_boost)
             return
+        # Liveness filter: require recent smart-wallet interest in the token — dead promo
+        # tokens (no roster activity) are the fast-rugs (-$94 avg vs +$14 with >=3 buyers).
+        min_pre = self.copy_settings.copy_promobuy_min_pre_entry_wallets
+        if min_pre > 0:
+            n_pre = pre_entry_roster_buyers(
+                token, "solana", self.copy_settings.copy_promobuy_pre_entry_window_minutes)
+            if n_pre < min_pre:
+                self.log.info("promobuy_liveness_skip", asset=token, pre_wallets=n_pre, min=min_pre)
+                return
 
         candidate = SignalCandidate(
             signal_type="promobuy_buy", asset=token, chain="solana", direction="long",

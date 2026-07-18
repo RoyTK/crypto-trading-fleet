@@ -476,6 +476,17 @@ class CopySettings(BaseSettings):
     copy_promobuy_alloc_cap_pct: float = Field(default=50.0)
     copy_promobuy_sizing_pct: float = Field(default=2.0)
     copy_promobuy_source_min_boost: float = Field(default=0.0)             # 0 = accept profiles+boosts; raise to require paid boost amount
+    # Boost-MAGNITUDE re-gate (2026-07-18): the shadow feed shows run-rate climbs hard
+    # with paid-boost size — no-boost 1.43x fwd-max / 10% reach 2x; boost>=100 -> 6.73x /
+    # 46%; RE-promoted -> 13.48x / 68%. Set source_min_boost to ~50-100 to require a
+    # solidly-paid boost (server .env runs 50). Re-promotion is captured by the re-entry
+    # mechanic (collector re-signals on boost growth).
+    # Liveness filter (2026-07-18): require >= this many DISTINCT roster/watch wallets to
+    # have BOUGHT the token in the pre-entry window. Promo tokens our smart wallets already
+    # trade win far more than dead ones (>=3 pre-entry buyers -> +$14 avg vs -$94 for none;
+    # the 'none' bucket is the fast-rugs). 0 = off. Forward-usable (pre-entry data only).
+    copy_promobuy_min_pre_entry_wallets: int = Field(default=3)
+    copy_promobuy_pre_entry_window_minutes: float = Field(default=30.0)
     # Require a CONFIRMED liquidity reading to enter (2026-07-12). null liquidity =
     # a pre-graduation pump.fun bonding-curve token (dexId 'pumpfun', no real pool) =
     # the fresh-mint rug zone where a stop can't fill cleanly (losers filled -30%, not

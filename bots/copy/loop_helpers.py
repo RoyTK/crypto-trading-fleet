@@ -952,6 +952,27 @@ def cohort_net_flow(
         return (0.0, 0, 0)
 
 
+def pre_entry_roster_buyers(token: str, venue: str, within_minutes: float) -> int:
+    """Distinct roster/watch wallets that BOUGHT `token` in the last `within_minutes`
+    (delivered-swap log). Promobuy liveness filter: promo tokens our smart wallets are
+    already trading win far more than dead ones nobody touches (2026-07-18: >=3 pre-entry
+    buyers -> +$14 avg vs -$94 for none). Fail-safe -> 0 (with a >0 minimum that SKIPS the
+    entry, the conservative default for a filter)."""
+    if within_minutes <= 0:
+        return 0
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=within_minutes)
+    try:
+        with session_scope() as s:
+            n = s.execute(text(
+                "SELECT count(DISTINCT wallet_address) FROM wallet_swaps_log "
+                "WHERE token_mint = :tok AND chain = :ch AND side = 'buy' AND event_at >= :cut"
+            ), {"tok": token, "ch": venue, "cut": cutoff}).scalar()
+        return int(n or 0)
+    except Exception:
+        _log.exception("pre_entry_roster_buyers_failed", token=token)
+        return 0
+
+
 def open_allocation_pct(paper_capital_usd: float, strategy: Optional[str] = None) -> float:
     """Sum of size_usd of currently open paper trades, as % of paper capital.
 
