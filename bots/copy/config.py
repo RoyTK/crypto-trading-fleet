@@ -359,6 +359,19 @@ class CopySettings(BaseSettings):
     # (we already ingest sell events). The standard exit stack
     # (stop/TP/timeout/partials/trailing/sell-cluster) still applies on top.
     copy_conviction_follow_wallet_exit: bool = Field(default=True)
+    # Cohort-aware exit refinement (2026-07-18, Roy / the Ge87Ets case): when the
+    # trigger wallet sells, HOLD instead of closing IF the rest of the cohort is still
+    # net-accumulating the token over the last `cohort_hold_window_minutes`. Measured:
+    # 45% of trigger_wallet_exits had other wallets still buying, and those ran >=2x
+    # AFTER we exited 35% of the time vs 9% when nobody else was buying — the single-
+    # wallet exit was firing too eagerly into live accumulation. The position still
+    # exits on the cohort-sell (sell_cluster), the stop, trailing, or timeout. Set
+    # enabled=False to revert to the pure single-wallet follow-out.
+    copy_conviction_cohort_exit_enabled: bool = Field(default=True)
+    copy_conviction_cohort_hold_window_minutes: float = Field(default=20.0)
+    # Hold if OTHER wallets' NET flow (buy notional − sell notional) over the window
+    # exceeds this USD. 0 = hold whenever the crowd is net-buying.
+    copy_conviction_cohort_hold_min_net_usd: float = Field(default=0.0)
     # Entry liquidity guard (2026-06-25). Don't open a conviction position in a
     # token too thin to exit our ~$400 size without catastrophic slippage. Skip
     # the entry if the token's current Birdeye liquidity is below this USD floor.

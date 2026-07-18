@@ -916,6 +916,35 @@ def write_cluster_detection(
     )
 
 
+def cohort_net_flow(
+    token: str, venue: str, *, exclude_wallet: Optional[str], within_minutes: float,
+) -> tuple[float, int, int]:
+    """(net_usd, n_buyers, n_sellers) for `token` over the last `within_minutes`, from
+    the raw delivered-swap log, EXCLUDING `exclude_wallet`. net_usd = buy notional −
+    sell notional by everyone else. Used by conviction's cohort-aware exit: if the crowd
+    is still net-accumulating when the trigger wallet sells, HOLD rather than close on
+    that single sell (2026-07-18). Fail-safe: any error returns (0,0,0) so the caller
+    falls through to its default (close)."""
+    if within_minutes <= 0:
+        return (0.0, 0, 0)
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=within_minutes)
+    try:
+        with session_scope() as s:
+            row = s.execute(text(
+                "SELECT "
+                "COALESCE(SUM(CASE WHEN side='buy' THEN notional_usd ELSE -notional_usd END),0) AS net_usd, "
+                "COUNT(DISTINCT CASE WHEN side='buy' THEN wallet_address END) AS n_buyers, "
+                "COUNT(DISTINCT CASE WHEN side='sell' THEN wallet_address END) AS n_sellers "
+                "FROM wallet_swaps_log "
+                "WHERE token_mint = :tok AND chain = :ch AND event_at >= :cut "
+                "AND (:excl IS NULL OR wallet_address <> :excl)"
+            ), {"tok": token, "ch": venue, "cut": cutoff, "excl": exclude_wallet}).one()
+        return (float(row[0] or 0.0), int(row[1] or 0), int(row[2] or 0))
+    except Exception:
+        _log.exception("cohort_net_flow_failed", token=token)
+        return (0.0, 0, 0)
+
+
 def open_allocation_pct(paper_capital_usd: float, strategy: Optional[str] = None) -> float:
     """Sum of size_usd of currently open paper trades, as % of paper capital.
 

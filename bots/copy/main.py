@@ -41,6 +41,7 @@ from bots.copy.fill_simulator import (
 )
 from bots.copy.loop_helpers import (
     close_paper_trade,
+    cohort_net_flow,
     execute_paper_partial_close,
     has_open_position,
     has_recent_strategy_trade,
@@ -1786,7 +1787,23 @@ class CopyBot(BotLifecycle):
                 mid = prices.get(ev.token_mint)
             except Exception:
                 self.log.warning("conviction_exit_price_fetch_failed", asset=ev.token_mint)
+        cs = self.copy_settings
         for t in matches:
+            # Cohort-aware hold (2026-07-18): if the rest of the crowd is still
+            # net-accumulating this token, DON'T exit on the single trigger wallet's
+            # sell — those tokens keep running (35% hit 2x after our exit vs 9%). Let
+            # the cohort-sell / stop / trailing / timeout close it instead.
+            if cs.copy_conviction_cohort_exit_enabled:
+                net_usd, n_buyers, n_sellers = cohort_net_flow(
+                    ev.token_mint, ev.chain, exclude_wallet=ev.wallet_address,
+                    within_minutes=cs.copy_conviction_cohort_hold_window_minutes,
+                )
+                if net_usd > cs.copy_conviction_cohort_hold_min_net_usd:
+                    self.log.info(
+                        "conviction_hold_cohort_accumulating",
+                        asset=ev.token_mint, trade_id=t.trade_id,
+                        cohort_net_usd=round(net_usd), buyers=n_buyers, sellers=n_sellers)
+                    continue  # hold — the crowd is still buying
             close_price, exit_fill, exit_reason = await self._build_paper_exit(
                 asset=ev.token_mint, venue=ev.chain, mid=mid,
                 entry_price=t.entry_price, size_usd=t.size_usd,
