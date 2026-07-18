@@ -355,19 +355,22 @@ def execute_paper_partial_close(
     fraction: float,
     tier_index: int,
     current_price: float,
+    liquidity_usd: Optional[float] = None,
 ) -> bool:
     """Synthetic partial close for paper trades. Mirrors
     executor.execute_partial_close shape but no Jupiter swap — we just
-    record the implied USDC received at current_price.
+    record the implied USDC received selling the slice at current_price.
 
-    Paper trades use simulated fills, so the per-tier "received_usdc"
-    is computed from entry_price/current_price ratio applied to the
-    appropriate fraction of size_usd. Fees use the DEX_FEE_PCT constant
-    (matches the entry-side simulator math).
+    RA1 (2026-07-18): the partial fill now goes through the SAME depth-aware
+    slippage as a full close (`liquidity_aware_exit_price`), on the slice's
+    CURRENT market value. Before this it filled at raw mid + flat fee, so every
+    ladder-tier win was booked with zero depth impact — the entire positive side
+    of the paper ledger (+$25k across 24 trades) rode that unmodeled path. Pass
+    `liquidity_usd` (the pool depth at close); None → base slippage only.
 
     Returns True on recorded fill, False on bad state.
     """
-    from bots.copy.fill_simulator import DEX_FEE_PCT
+    from bots.copy.fill_simulator import DEX_FEE_PCT, liquidity_aware_exit_price
     with session_scope() as s:
         t = s.get(Trade, trade_id)
         if t is None or t.fill_status != "open":
@@ -378,12 +381,14 @@ def execute_paper_partial_close(
         entry_price = float(t.entry_price or 0.0)
         if size_usd <= 0 or entry_price <= 0:
             return False
-        # Slice math: fraction of original notional sized in tokens at
-        # entry_price; sold at current_price.
+        # Slice math: fraction of original notional sized in tokens at entry_price.
         slice_usd = size_usd * fraction
-        # tokens_in_slice = slice_usd / entry_price; received_usdc =
-        # tokens_in_slice × current_price - fees
-        gross_received = (slice_usd / entry_price) * current_price
+        tokens_in_slice = slice_usd / entry_price
+        # Depth impact is on the slice's CURRENT $ value (tokens × mid), not the
+        # original notional — selling a run-up slice moves the pool by its live size.
+        gross_at_mid = tokens_in_slice * current_price
+        eff_price, slip_frac = liquidity_aware_exit_price(current_price, gross_at_mid, liquidity_usd)
+        gross_received = tokens_in_slice * eff_price
         fees_usd = gross_received * (DEX_FEE_PCT / 100.0)
         received_usdc = gross_received - fees_usd
         md = dict(t.sim_metadata or {})
@@ -395,10 +400,11 @@ def execute_paper_partial_close(
             "status": "filled",
             "tokens_sold_atomic": None,  # paper: no atomic tracking
             "received_usdc": received_usdc,
-            "exit_price_usd": current_price,
+            "exit_price_usd": eff_price,      # depth-adjusted fill (was raw mid)
+            "mid_price_usd": current_price,   # unadjusted mid, for reference
             "tx_signature": None,
             "executed_at": datetime.now(timezone.utc).isoformat(),
-            "realized_slippage_bps": None,
+            "realized_slippage_bps": round(slip_frac * 10000.0, 1),
         })
         md["partial_exits"] = partials
         # remaining_atomic doesn't apply to paper; track remaining_size_usd
@@ -416,7 +422,8 @@ def execute_paper_partial_close(
             "tier_pct": tier_pct,
             "fraction": fraction,
             "received_usdc": received_usdc,
-            "exit_price_usd": current_price,
+            "exit_price_usd": eff_price,
+            "slippage_bps": round(slip_frac * 10000.0, 1),
         },
     )
     return True

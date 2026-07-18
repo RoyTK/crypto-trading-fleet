@@ -28,6 +28,34 @@ from bots.copy.venue.dex_quoter import DexQuote, quote
 # pool tier; this is a median-realistic flat estimate for sim purposes.
 DEX_FEE_PCT = 0.30  # 30 bps — typical 0.05% LP + 0.05% aggregator + ~20 bps gas as % of small swap
 
+# Base paper-exit slippage for a liquid token (bps); depth impact is modelled on
+# top of this per fill.
+EXIT_SLIPPAGE_BPS_DEFAULT = 100.0
+
+
+def liquidity_aware_exit_price(
+    mid: float, size_usd: float, liquidity_usd: Optional[float],
+    base_slip_bps: float = EXIT_SLIPPAGE_BPS_DEFAULT,
+) -> tuple[float, float]:
+    """Effective paper-exit price selling `size_usd` at `mid` into a pool of
+    `liquidity_usd`. Depth impact ≈ size/(liquidity+size), floored at the base
+    slippage and capped near-total. `liquidity_usd is None` (unknown) → base
+    slippage only; `<= 0` → total loss. Returns (effective_price, slip_fraction).
+
+    SINGLE SOURCE for BOTH full-close (main._build_paper_exit) and partial-tier
+    fills (loop_helpers.execute_paper_partial_close). Before 2026-07-18 the partial
+    path skipped this entirely (raw mid + flat fee), so every ladder-tier win was
+    booked with zero depth impact — the whole +$25k positive side rode the unmodeled
+    path. Keep the two fill paths on this one function."""
+    base = max(0.0, base_slip_bps) / 10000.0
+    if liquidity_usd is None:
+        frac = base
+    elif liquidity_usd <= 0:
+        frac = 1.0
+    else:
+        frac = min(0.97, max(base, size_usd / (liquidity_usd + size_usd)))
+    return mid * (1.0 - frac), frac
+
 
 @dataclass
 class CopyMarketSnapshot:

@@ -32,7 +32,12 @@ import redis.asyncio as redis_async
 from bots.base.bot_lifecycle import BotLifecycle
 from bots.base.fill_simulator_base import SimulatedFill
 from bots.copy.config import get_copy_settings
-from bots.copy.fill_simulator import DEX_FEE_PCT, CopyFillSimulator, CopyMarketSnapshot
+from bots.copy.fill_simulator import (
+    DEX_FEE_PCT,
+    CopyFillSimulator,
+    CopyMarketSnapshot,
+    liquidity_aware_exit_price as _liquidity_aware_exit_price,
+)
 from bots.copy.loop_helpers import (
     close_paper_trade,
     execute_paper_partial_close,
@@ -210,25 +215,6 @@ def _cluster_wallet_tier(c: SignalCandidate) -> str:
 
 RUG_PRICE_FACTOR = 1e-6      # near-total-loss mark for a genuinely rugged (no-LP) token
 EXIT_SLIPPAGE_BPS_DEFAULT = 100.0  # base paper-exit slippage for liquid tokens
-
-
-def _liquidity_aware_exit_price(
-    mid: float, size_usd: float, liquidity_usd: Optional[float],
-    base_slip_bps: float = EXIT_SLIPPAGE_BPS_DEFAULT,
-) -> tuple[float, float]:
-    """Effective paper-exit price selling `size_usd` of a position at `mid` into a
-    pool of `liquidity_usd`. Models depth impact: slippage fraction ≈
-    size/(liquidity+size), floored at the base slippage and capped near-total.
-    `liquidity_usd is None` (unknown depth) → base slippage only. Returns
-    (effective_price, slip_fraction)."""
-    base = max(0.0, base_slip_bps) / 10000.0
-    if liquidity_usd is None:
-        frac = base
-    elif liquidity_usd <= 0:
-        frac = 1.0
-    else:
-        frac = min(0.97, max(base, size_usd / (liquidity_usd + size_usd)))
-    return mid * (1.0 - frac), frac
 
 
 class CopyBot(BotLifecycle):
@@ -2143,6 +2129,7 @@ class CopyBot(BotLifecycle):
                             fraction=action.fraction,
                             tier_index=action.tier_index,
                             current_price=mid,
+                            liquidity_usd=sol_liq.get(trade.asset) if trade.venue == "solana" else None,
                         )
                     except Exception:
                         self.log.exception("paper_partial_close_failed",
