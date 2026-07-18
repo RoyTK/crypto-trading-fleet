@@ -112,6 +112,30 @@ def resume_halt(halt_id: int, resumed_by: str = "manual:roy") -> None:
         )
 
 
+def resume_bot(bot_id: str, resumed_by: str = "manual:roy") -> int:
+    """Resume ALL active (unresumed) halts for one bot/sub-strategy and clear its
+    BotState back to 'paper'. Returns the number of halt rows resumed. For a manual
+    per-strategy resume (e.g. the Discord /resume command) where the operator knows the
+    bot_id but not the halt_id — avoids the dangling-halt-row + false-HALTED-panel bug
+    from resuming via a raw BotState UPDATE."""
+    now = datetime.now(timezone.utc)
+    with session_scope() as s:
+        halts = list(s.execute(
+            select(Halt).where(Halt.scope == "bot", Halt.bot_id == bot_id, Halt.resumed_at.is_(None))
+        ).scalars().all())
+        for h in halts:
+            h.resumed_at = now
+            h.resumed_by = resumed_by
+        bot = s.get(BotState, bot_id)
+        if bot is not None and bot.state == "halted":
+            bot.state = "paper"
+            bot.halted_until = None
+            bot.halt_reason = None
+        write_audit("halt_resumed_bot", bot_id=bot_id, actor=resumed_by,
+                    payload={"halts_resumed": len(halts)})
+        return len(halts)
+
+
 def is_bot_halted(bot_id: str) -> bool:
     with session_scope() as s:
         bot = s.get(BotState, bot_id)

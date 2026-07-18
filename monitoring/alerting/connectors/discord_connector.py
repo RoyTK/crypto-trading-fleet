@@ -94,6 +94,53 @@ class DiscordConnector:
             summary = trigger_panic(actor=f"discord:{interaction.user.id}")
             await interaction.followup.send(f"```\n{format_summary(summary)}\n```")
 
+        # Per-strategy halt/resume (2026-07-18). /panic is all-or-nothing; these give
+        # granular control. Halt blocks a strategy's ENTRIES; its exits keep running
+        # (iterate_halted). Owner-gated like /panic.
+        _HALTABLE = {
+            "cluster": "copy_cluster", "conviction": "copy_conviction",
+            "teamfollow": "copy_teamfollow", "cohortfire": "copy_cohortfire",
+            "promobuy": "copy_promobuy",
+        }
+
+        @self.tree.command(name="halt", description="Halt one strategy (blocks entries; exits keep running)")
+        @app_commands.describe(strategy="cluster | conviction | teamfollow | cohortfire | promobuy")
+        async def halt_cmd(interaction: discord.Interaction, strategy: str) -> None:
+            if str(interaction.user.id) != owner_id:
+                await interaction.response.send_message("Not authorized.", ephemeral=True)
+                write_audit("halt_cmd_denied", actor=f"discord:{interaction.user.id}",
+                            note=f"unauthorized /halt {strategy} from {interaction.user}")
+                return
+            bot_id = _HALTABLE.get(strategy.strip().lower())
+            if bot_id is None:
+                await interaction.response.send_message(
+                    f"Unknown strategy '{strategy}'. Options: {', '.join(_HALTABLE)}", ephemeral=True)
+                return
+            from framework.halt_state import halt_bot
+            hid = halt_bot(bot_id, "manual", f"discord /halt by {interaction.user}", severity="p1")
+            await interaction.response.send_message(
+                f"\U0001F6D1 Halted **{strategy}** ({bot_id}) — entries blocked, exits keep running. halt_id={hid}",
+                ephemeral=False)
+
+        @self.tree.command(name="resume", description="Resume one strategy after a halt")
+        @app_commands.describe(strategy="cluster | conviction | teamfollow | cohortfire | promobuy")
+        async def resume_cmd(interaction: discord.Interaction, strategy: str) -> None:
+            if str(interaction.user.id) != owner_id:
+                await interaction.response.send_message("Not authorized.", ephemeral=True)
+                write_audit("resume_cmd_denied", actor=f"discord:{interaction.user.id}",
+                            note=f"unauthorized /resume {strategy} from {interaction.user}")
+                return
+            bot_id = _HALTABLE.get(strategy.strip().lower())
+            if bot_id is None:
+                await interaction.response.send_message(
+                    f"Unknown strategy '{strategy}'. Options: {', '.join(_HALTABLE)}", ephemeral=True)
+                return
+            from framework.halt_state import resume_bot
+            n = resume_bot(bot_id, resumed_by=f"discord:{interaction.user}")
+            await interaction.response.send_message(
+                f"▶️ Resumed **{strategy}** ({bot_id}) — {n} halt(s) cleared, back to paper.",
+                ephemeral=False)
+
         @self.tree.command(name="status", description="Show fleet status")
         async def status_cmd(interaction: discord.Interaction) -> None:
             from framework.reporting.daily_report import build_summary, render_text
