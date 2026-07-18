@@ -1,0 +1,76 @@
+PROMO-BUY SNIPER / EXIT-SIGNAL ANALYSIS — Browser-Opus (Claude-in-Chrome) prompt
+================================================================================
+Created 2026-07-18. Attended run (needs Claude-in-Chrome browser tools — headless
+`claude -p` has none). Uses Birdeye WITHOUT login (no API budget, no CAPTCHA). Do NOT
+use GMGN (Cloudflare-WAF'd). Be rigorous — this feeds a live paper-trading strategy;
+never invent a number, and label anything you couldn't verify.
+
+WHY THIS EXISTS
+---------------
+We run a paper strategy "promo-buy": it buys Solana memecoins that just got a PAID
+Dexscreener promotion (a boost). Most rug within ~1-2h; a minority run 2x-35x. Our own
+database only sees the wallets WE subscribe to — it CANNOT see the actual early snipers
+that pile into these tokens at launch. Roy's thesis: **we can't follow snipers IN (too
+fast, adverse selection), but their EXIT behavior may tell us WHEN TO GET OUT, and
+certain snipers may recur across promoted tokens and mark quality / trajectory.**
+
+Three questions to answer with data:
+1. RECURRING SNIPERS — do specific wallet addresses show up as early buyers across
+   MANY promoted tokens? (Systematic promo-snipers.)
+2. EXIT-AS-SIGNAL — when a recurring sniper SELLS, does the token dump shortly after?
+   i.e. is a specific sniper's exit a leading indicator we could "follow out" on?
+3. FAST-RUG vs RUN PROFILE — is there an early tell (in the first ~5-15 min after
+   launch/promo) that separates the tokens that RAN from the ones that fast-rugged?
+   Candidates: fraction of early buyers who dump in the first minutes; top-holder /
+   bundler concentration; holder-count trajectory; dev/creator behavior.
+
+INPUT
+-----
+Read the token list from OneDrive:
+  C:\Users\Roy\OneDrive\Documents\Claude\promobuy_sniper_tokens_2026-07-18.csv
+Columns: asset (Solana mint), label (RUNNER | FAST_RUG), peak_pct (our observed peak %),
+our_pnl, entry_date. ~20 RUNNERs + ~20 FAST_RUGs — the labels are ground truth from our
+paper trades; use them to contrast the two groups.
+
+PER-TOKEN METHOD (Birdeye, no login)
+------------------------------------
+For each mint, open the Birdeye token / wallet data. Useful surfaces (any that load):
+ - Token page: https://birdeye.so/token/<MINT>?chain=solana  (Trades / Traders / Holders
+   / Top Traders tabs). Look at the EARLIEST trades and the top early buyers.
+ - Per-wallet: https://birdeye.so/solana/wallet-analyzer/<WALLET>  (that wallet's win
+   rate, avg holding duration, instant-sell %, scam/rug %, tokens traded) — use to
+   profile a recurring sniper.
+ - Internal forge endpoints (no login/key, faster; re-derive from the Network tab if a
+   path 404s): token-traded, holding-duration, wallet-pnl/periodic (see the team's
+   reference_birdeye_endpoints notes if available).
+Capture, per token:
+ - The 10-30 EARLIEST buyer wallets + their buy time (seconds/minutes after the token
+   first traded).
+ - For each early buyer: did they SELL, and roughly WHEN relative to the token's peak
+   (before the top? at the top? never / still holding?).
+ - How many of the early buyers dumped within the first ~5, ~10, ~15 minutes.
+ - Top-holder concentration and holder count early on, if visible.
+
+AGGREGATE / OUTPUT
+------------------
+Write findings to:
+  C:\Users\Roy\OneDrive\Documents\Claude\promobuy_sniper_findings_2026-07-18.txt
+
+Include:
+ A. RECURRING SNIPERS — a table: wallet | # of these tokens it early-bought | in RUNNERs
+    vs FAST_RUGs | its Birdeye profile (win%, avg hold, instant-sell%, rug%). Flag any
+    wallet appearing in >=3 tokens. Are recurring snipers concentrated in RUNNERs, in
+    FAST_RUGs, or indifferent?
+ B. EXIT-AS-SIGNAL — for the top recurring snipers, when they sold, what did the price
+    do next (kept running / dumped within X min / no effect)? State plainly whether any
+    single sniper's SELL is a usable "get out now" signal, with the evidence. If none is,
+    say so.
+ C. FAST-RUG TELL — does early-buyer dump-fraction (or concentration, or holder
+    trajectory) separate RUNNER from FAST_RUG? Give the numbers per group (e.g. "median
+    % of first-15 early buyers who dumped in <10 min: FAST_RUG = X%, RUNNER = Y%"). If
+    there's a clean cutoff we could use at entry or as an early exit, name it.
+ D. HONEST LIMITS — tokens you couldn't pull, sample sizes, and anything ambiguous.
+
+Keep it evidence-first and quantified. A null result ("no recurring sniper's exit
+reliably leads the dump") is a valid, useful answer — say it clearly if that's what the
+data shows. When done, tell Roy the file is written and give the 3-4 headline findings.
