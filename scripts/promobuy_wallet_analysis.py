@@ -135,6 +135,27 @@ def main():
         for x in rows:
             print(f"  {x['grp']:<28} n={x['n']:>4}  avg_pnl=${x['avg_pnl']}  win={x['win_pct']}%  avg_roster_buys_during={x['avg_buys_during']}")
 
+        # ---- 5. PRE-ENTRY roster liveness — usable as an ENTRY filter? (before-entry only) ----
+        section("5. PRE-ENTRY roster liveness — distinct roster wallets that bought in the 30min BEFORE our entry")
+        rows = q(s, """
+          WITH tr AS (SELECT id, asset, entry_at, pnl_usd, size_usd,
+              COALESCE((sim_metadata->>'peak_pct_since_entry')::float,0) peak
+            FROM trades WHERE bot_id='copy' AND sim_metadata->>'strategy' LIKE 'promobuy%'
+              AND fill_status='closed' AND entry_at IS NOT NULL),
+          e AS (SELECT tr.*,
+            (SELECT count(DISTINCT w.wallet_address) FROM wallet_swaps_log w
+             WHERE w.token_mint=tr.asset AND w.side='buy'
+               AND w.event_at BETWEEN tr.entry_at - interval '30 minutes' AND tr.entry_at) AS pre_wallets
+            FROM tr)
+          SELECT CASE WHEN pre_wallets=0 THEN 'a. none' WHEN pre_wallets<=2 THEN 'b. 1-2 wallets' ELSE 'c. 3+ wallets' END AS grp,
+            count(*) n, round(avg(pnl_usd)::numeric,0) avg_pnl,
+            round((100.0*count(*) FILTER (WHERE pnl_usd>0)/count(*))::numeric,0) win_pct,
+            round((100.0*count(*) FILTER (WHERE peak>=100)/count(*))::numeric,0) pct_run
+          FROM e GROUP BY 1 ORDER BY 1
+        """)
+        for x in rows:
+            print(f"  {x['grp']:<16} n={x['n']:>4}  avg_pnl=${x['avg_pnl']}  win={x['win_pct']}%  run(2x+)={x['pct_run']}%")
+
 
 if __name__ == "__main__":
     main()
