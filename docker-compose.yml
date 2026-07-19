@@ -165,6 +165,17 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:8090:8090"
+    # RB4: /health returns 503 when Redis is unreachable or ingestion has stalled
+    # (no Helius delivery for receiver_delivery_stale_seconds). Marks the container
+    # `unhealthy` in `docker ps` and gates any future depends_on: service_healthy.
+    # NB: plain compose does NOT auto-restart on unhealthy — the real alert/restart
+    # path is the framework watchdog reading this receiver's heartbeat.
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8090/health',timeout=5).getcode()==200 else 1)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     command: ["python", "-m", "monitoring.webhook_receiver.main"]
 
   migrate:

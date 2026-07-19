@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     heartbeat_interval_seconds: int = Field(default=30)
     heartbeat_alert_after_seconds: int = Field(default=120)
     heartbeat_restart_after_seconds: int = Field(default=300)
+    # RB4: the webhook receiver's loop-alive heartbeat is monitored at the 120/300s
+    # thresholds above (catches process/event-loop death). Delivery starvation is a
+    # SLOWER signal — Helius can legitimately go a few minutes between deliveries at
+    # quiet hours — so it gets its own, generous threshold. If the receiver ingests
+    # NO Helius deliveries for this long (default 30 min) it is treated as a stalled
+    # ingestion (webhook removed / auth-secret rotated / Helius outage).
+    receiver_delivery_stale_seconds: int = Field(default=1800)
     reconciliation_interval_seconds: int = Field(default=300)
     reconciliation_drift_threshold_pct: float = Field(default=0.5)
     consecutive_loss_halt_count: int = Field(default=8)

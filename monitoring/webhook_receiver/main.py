@@ -41,7 +41,9 @@ from aiohttp import web
 
 from sqlalchemy import select, text
 
+from framework.config import get_settings
 from framework.db import session_scope
+from framework.heartbeat import ping as hb_ping
 from framework.logging_setup import configure_logging, get_logger
 from framework.models import WalletEventLog, WalletPool, WalletSwapLog
 
@@ -49,6 +51,13 @@ from framework.models import WalletEventLog, WalletPool, WalletSwapLog
 log = get_logger(__name__)
 
 POOL_REFRESH_SECONDS = 60
+
+# RB4 — the receiver joins the framework heartbeat table so the existing watchdog can
+# see it die. Loop-alive staleness (process/event-loop wedged) is caught by the generic
+# 120/300s watchdog thresholds; delivery starvation + a broken Redis publish (buys never
+# reaching the bot) are caught by watchdog.receiver_ingestion_pass reading this process's
+# heartbeat metadata (redis_ok + last_delivery_at + uptime). Keep the name in sync there.
+RECEIVER_PROCESS_NAME = "receiver:webhook"
 
 # ---- Constants ------------------------------------------------------------
 
@@ -607,15 +616,97 @@ async def _sol_price_refresher(app: web.Application) -> None:
         await asyncio.sleep(SOL_PRICE_REFRESH_SECONDS)
 
 
+# ---- RB4: heartbeat so the framework watchdog can see the receiver ---------
+
+async def _heartbeat_loop(app: web.Application) -> None:
+    """Ping the framework heartbeat every heartbeat_interval_seconds.
+
+    Proves the event loop is alive (generic watchdog catches a wedged/dead loop at
+    120/300s). The metadata carries delivery freshness + Redis reachability so
+    watchdog.receiver_ingestion_pass can catch the two failure modes a loop-alive
+    ping cannot: a broken Redis publish (buys silently dropped) and Helius delivery
+    starvation (receiver healthy but receiving nothing).
+    """
+    interval = get_settings().heartbeat_interval_seconds
+    redis_client: redis_async.Redis = app["redis"]
+    while True:
+        try:
+            try:
+                await redis_client.ping()
+                redis_ok = True
+            except Exception:
+                redis_ok = False
+            now = datetime_now_utc()
+            last = app.get("last_delivery_at")
+            meta = {
+                "role": "webhook_receiver",
+                "redis_ok": redis_ok,
+                "last_delivery_at": last.isoformat() if last else None,
+                "deliveries_total": app.get("deliveries_total", 0),
+                "uptime_seconds": (now - app["started_at"]).total_seconds(),
+                "active_pool": len(app.get("active_pool", set())),
+                "watch_pool": len(app.get("watch_pool", set())),
+                "teamfollow_pool": len(app.get("teamfollow_pool", set())),
+            }
+            # ping() is sync (DB write) — keep it off the event loop.
+            await asyncio.to_thread(hb_ping, RECEIVER_PROCESS_NAME, meta)
+        except Exception:
+            log.exception("receiver_heartbeat_failed")
+        await asyncio.sleep(interval)
+
+
 # ---- HTTP handlers --------------------------------------------------------
 
+def health_verdict(
+    redis_ok: bool,
+    seconds_since_delivery: Optional[float],
+    uptime_seconds: float,
+    stale_after_seconds: float,
+) -> tuple[bool, str]:
+    """Decide whether the receiver is healthy. Pure so it can be unit-tested.
+
+    Returns (healthy, reason). Unhealthy → /health serves HTTP 503.
+    - Redis unreachable → unhealthy: matched buys can't be published to the bot
+      (the insidious "up but not ingesting" case a plain liveness check misses).
+    - No Helius delivery for longer than stale_after → unhealthy, BUT only once the
+      process has been up at least that long (so a fresh start isn't flagged before
+      its first delivery arrives). `None` = no delivery seen yet this process life.
+    """
+    if not redis_ok:
+        return False, "redis_unreachable"
+    if uptime_seconds >= stale_after_seconds:
+        if seconds_since_delivery is None or seconds_since_delivery > stale_after_seconds:
+            return False, "ingestion_stalled"
+    return True, "ok"
+
+
 async def health_handler(request: web.Request) -> web.Response:
+    app = request.app
+    redis_client: redis_async.Redis = app["redis"]
+    try:
+        await redis_client.ping()
+        redis_ok = True
+    except Exception:
+        redis_ok = False
+
+    now = datetime_now_utc()
+    last = app.get("last_delivery_at")
+    since = (now - last).total_seconds() if last else None
+    uptime = (now - app["started_at"]).total_seconds()
+    stale_after = float(get_settings().receiver_delivery_stale_seconds)
+    healthy, reason = health_verdict(redis_ok, since, uptime, stale_after)
+
     return web.json_response({
-        "status": "ok",
-        "active_pool_size": len(request.app["active_pool"]),
-        "watch_pool_size": len(request.app["watch_pool"]),
-        "teamfollow_pool_size": len(request.app.get("teamfollow_pool", set())),
-    })
+        "status": "ok" if healthy else "unhealthy",
+        "reason": reason,
+        "redis_ok": redis_ok,
+        "seconds_since_delivery": since,
+        "deliveries_total": app.get("deliveries_total", 0),
+        "uptime_seconds": uptime,
+        "active_pool_size": len(app["active_pool"]),
+        "watch_pool_size": len(app["watch_pool"]),
+        "teamfollow_pool_size": len(app.get("teamfollow_pool", set())),
+    }, status=200 if healthy else 503)
 
 
 async def _process_webhook(
@@ -641,6 +732,13 @@ async def _process_webhook(
         return web.Response(status=400, text="bad json")
     if not isinstance(events, list):
         events = [events]
+
+    # RB4: record that Helius just delivered to us (matched or not). Drives the
+    # ingestion-stall detector — freshness here is what separates "receiver alive but
+    # Helius stopped sending" from a healthy quiet period.
+    if events:
+        request.app["last_delivery_at"] = datetime_now_utc()
+        request.app["deliveries_total"] = request.app.get("deliveries_total", 0) + len(events)
 
     redis_client: redis_async.Redis = request.app["redis"]
     pool: set[str] = request.app[f"{tier}_pool"]
@@ -827,6 +925,10 @@ async def init_app() -> web.Application:
     app["watch_pool"] = watch
     app["teamfollow_pool"] = teamfollow
     app["sol_price_usd"] = SOL_PRICE_FALLBACK_USD
+    # RB4 ingestion-health state
+    app["started_at"] = datetime_now_utc()
+    app["last_delivery_at"] = None
+    app["deliveries_total"] = 0
 
     log.info("webhook_receiver_starting",
              active_pool=len(active),
@@ -841,9 +943,10 @@ async def init_app() -> web.Application:
     async def _start_bg(_app: web.Application) -> None:
         _app["sol_price_task"] = asyncio.create_task(_sol_price_refresher(_app))
         _app["pool_refresh_task"] = asyncio.create_task(_pool_refresher(_app))
+        _app["heartbeat_task"] = asyncio.create_task(_heartbeat_loop(_app))
 
     async def _cleanup(_app: web.Application) -> None:
-        for k in ("sol_price_task", "pool_refresh_task"):
+        for k in ("sol_price_task", "pool_refresh_task", "heartbeat_task"):
             task = _app.get(k)
             if task:
                 task.cancel()
