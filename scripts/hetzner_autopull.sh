@@ -67,6 +67,7 @@ restart_structure=false
 restart_copy=false
 restart_alerting=false
 restart_report_cron=false
+restart_framework=false
 need_migrate=false
 need_manual=false
 shared_framework_touched=false
@@ -81,7 +82,15 @@ while IFS= read -r f; do
         framework/scoring/*|framework/dd_monitor.py|framework/kill_criteria_monitor.py|framework/heartbeat.py)
             restart_scoring=true
             ;;
-        framework/audit.py|framework/db.py|framework/models.py|framework/alerts.py|framework/config.py|framework/logging_setup.py|framework/halt_state.py|framework/reconciliation.py|framework/__init__.py)
+        framework/main.py|framework/watchdog.py)
+            # Supervisor process — runs in the `framework` container (heartbeat watchdog,
+            # reconciliation loop, RB3/RB4 alert paths). Autopull historically never
+            # restarted `framework` under ANY condition, so watchdog/supervisor changes
+            # silently did NOT deploy (had to manually `docker compose restart framework`).
+            # Fixed 2026-07-18.
+            restart_framework=true
+            ;;
+        framework/audit.py|framework/db.py|framework/models.py|framework/alerts.py|framework/alert_emit.py|framework/config.py|framework/logging_setup.py|framework/halt_state.py|framework/reconciliation.py|framework/__init__.py)
             shared_framework_touched=true
             ;;
         bots/structure/*)
@@ -116,6 +125,7 @@ done <<< "$changed_files"
 
 if [ "$shared_framework_touched" = "true" ]; then
     # Shared framework code touched → restart everything that imports framework.
+    restart_framework=true
     restart_scoring=true
     restart_structure=true
     restart_copy=true
@@ -141,6 +151,7 @@ _restart() {
     docker compose restart "$svc" 2>&1 | sed "s/^/  [$svc] /"
 }
 
+[ "$restart_framework" = "true" ]   && _restart framework
 [ "$restart_scoring" = "true" ]     && _restart scoring
 [ "$restart_structure" = "true" ]   && _restart bot_structure
 [ "$restart_copy" = "true" ]        && { _restart bot_copy; _restart bot_copy_webhook_receiver; }
