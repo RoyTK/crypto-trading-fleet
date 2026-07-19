@@ -23,6 +23,7 @@ from framework.config import get_settings
 from framework.heartbeat import stale_processes
 from framework.audit import write_audit
 from framework.halt_state import halt_bot
+from framework.alert_emit import emit_alert
 from framework.logging_setup import get_logger
 
 log = get_logger(__name__)
@@ -62,17 +63,10 @@ def _claim_debounce_slot(r: "redis.Redis", key: str, ttl_seconds: int) -> bool:
 
 def _emit_alert(r: "redis.Redis", severity: str, title: str, body: str,
                 event_type: str, metadata: dict) -> None:
-    """Publish a general-purpose alert to the dispatcher's alerts:emit channel."""
-    try:
-        r.publish(ALERT_EMIT_CHANNEL, json.dumps({
-            "severity": severity,
-            "title": title,
-            "body": body,
-            "event_type": event_type,
-            "metadata": metadata,
-        }))
-    except Exception as e:
-        log.warning("alert_emit_publish_failed", event_type=event_type, error=str(e))
+    """Emit a general-purpose alert. Delegates to the shared emit_alert so P0/P1
+    alerts get the RB3 direct-Discord fallback when the dispatcher is unreachable."""
+    emit_alert(severity, title, body, event_type=event_type,
+               metadata=metadata, redis_client=r)
 
 
 def receiver_alert_reason(meta: dict, stale_after: float, now: datetime) -> Optional[str]:
@@ -179,15 +173,24 @@ def watchdog_pass() -> None:
         if not _claim_debounce_slot(r, alert_key, ALERT_DEBOUNCE_SECONDS):
             continue  # already alerted in the last ALERT_DEBOUNCE_SECONDS
 
-        payload = {
-            "process": name,
-            "last_ping_at": last_ping_at.isoformat(),
-            "silent_seconds": silent,
-            "severity": severity,
-            "ts": datetime.now(timezone.utc).isoformat(),
-        }
+        # RB3: route through emit_alert so a P0/P1 staleness alert reaches Discord even
+        # when the DISPATCHER is the dead process (the self-referential SPOF: the
+        # watchdog would otherwise be reporting the dispatcher's death through the dead
+        # dispatcher). emit_alert falls back to a direct bot-token POST on 0 subscribers.
         try:
-            r.publish(ALERT_CHANNEL, json.dumps(payload))
+            emit_alert(
+                severity,
+                f"heartbeat silent: {name}",
+                f"{name} has been silent for {silent:.0f}s "
+                f"(last ping {last_ping_at.isoformat()}).",
+                event_type="heartbeat",
+                metadata={
+                    "process": name,
+                    "silent_seconds": silent,
+                    "last_ping_at": last_ping_at.isoformat(),
+                },
+                redis_client=r,
+            )
         except Exception as e:
             log.warning("alert_publish_failed", error=str(e))
 
