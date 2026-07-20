@@ -1,0 +1,7 @@
+{
+  "wallets": [
+    "7Tq4tSb7SnrdHVu7jvj5cbkXzzuMaym2v26613ZjYouk",
+    "4nBNtRX6Q3NAhtcaXfV5R2okHr2Cd6iur7EDQvNedujV"
+  ],
+  "note": "Ge87E held-accumulators (find_held_accumulators.py, 2026-07-19): bought tiny at launch (~$76-92), HELD the runner to $60k / $39k, clean smart_trader tag (no bundler), not in pool. Observe-only conviction candidates. Vet realized-PnL / repeatability (browser-Opus) before any promote. See project_cluster_database_build."
+}

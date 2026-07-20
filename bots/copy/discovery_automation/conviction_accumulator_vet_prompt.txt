@@ -1,0 +1,44 @@
+BROWSER-OPUS PROMPT — VET "HELD-ACCUMULATOR" WALLETS FOR CONVICTION
+(attended; run with Claude-in-Chrome. Birdeye Wallet Analyzer, NO login required.)
+
+WHY: These wallets were surfaced by find_held_accumulators.py — they bought a runner
+(Ge87E) tiny at launch and are STILL holding a large bag (clean "smart_trader" tag, not
+in our pool). That is the conviction profile we want (buys early + HOLDS), the opposite
+of the in-and-out traders that trigger conviction today. But holding ONE winner can be
+luck. This vet decides: is each wallet a REPEAT accumulator of runners (KEEP), or a
+one-hit / sprayer / insider (REJECT)?
+
+PRIMARY WALLETS (the two clean smart_trader finds):
+  7Tq4tSb7SnrdHVu7jvj5cbkXzzuMaym2v26613ZjYouk   (Ge87 bag ~$60k, launch buy ~$92)
+  4nBNtRX6Q3NAhtcaXfV5R2okHr2Cd6iur7EDQvNedujV   (Ge87 bag ~$39k, launch buy ~$76;
+       NOTE: its current portfolio is one-Ge87-bag-dominated + dust — extra scrutiny on repeatability)
+
+SECONDARY (only if time — these carried a "bundler" tag = possible insider ring; judge
+whether they trade skillfully across tokens or just hold one team allocation):
+  AfJupWzEVdfUiA4Zio7VNFvxTgCXFcbFkV3qVDjYQ1i5   (no tag, ~$36k)
+  9vdwML1RzB3ZY9JxnNohiYqy2nMh7N7H61mM4daDV5Rm   (bundler+smart, ~$28k)
+  52YXFG9ksGps7P9ZSDLK79f9Hpa5ihR24w6dkikW5aEB   (bundler+smart, ~$26k)
+
+FOR EACH WALLET, open Birdeye Wallet Analyzer (https://www.birdeye.so/profile/<address>
+on Solana) and record:
+  1. REALIZED PnL (all-time + last 30d) and total unrealized. We qualify on REALIZED
+     skill, not a single held bag (a big unrealized on one token can be luck or a bag).
+  2. Win rate, total trades, avg holding duration, "Instant Sell %".
+  3. Scam/Rug token %  (high = sniper/spray behavior, not a curator).
+  4. THE KEY QUESTION — repeatability: scan their traded-token history. How many DISTINCT
+     tokens did they buy EARLY (small) and HOLD/exit into a large gain (a real runner)?
+     - >=3 such runners  -> genuine repeat accumulator = KEEP.
+     - Only Ge87 + a spray of dust/losers -> one-hit / lottery = REJECT.
+  5. Accumulator vs sniper vs insider: do they ACCUMULATE (multiple buys building a
+     position over time) then hold, or snipe-and-flip? Any sign of coordinated/bundle
+     behavior (same tokens as known rings, funded from the same source) = insider, REJECT.
+
+VERDICT per wallet: KEEP (repeat accumulator — promote from watch toward conviction) /
+WATCH (promising, not proven — leave observing) / REJECT (one-hit, sniper, or insider),
+with a one-line reason + the realized-PnL and #runners-held numbers that decided it.
+
+WRITE RESULTS to OneDrive (via the OneDrive WEB app where you are signed in as Roy Kelly,
+NOT a local file:// path):  Claude\conviction_accumulator_vet_2026-07-19.txt
+Caveats to note: Birdeye Wallet Analyzer may cap trade history; realized-PnL family can
+be tier-gated on the website differently than the API — record what IS visible and flag
+what is not. Do NOT log into GMGN or pay for anything.
