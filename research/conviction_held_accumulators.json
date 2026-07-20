@@ -1,7 +1,8 @@
 {
   "wallets": [
     "7Tq4tSb7SnrdHVu7jvj5cbkXzzuMaym2v26613ZjYouk",
-    "4nBNtRX6Q3NAhtcaXfV5R2okHr2Cd6iur7EDQvNedujV"
+    "4nBNtRX6Q3NAhtcaXfV5R2okHr2Cd6iur7EDQvNedujV",
+    "CdoQKournsTERPHJwJowB7DrS2o4tvBywASHPuuumaow"
   ],
-  "note": "Ge87E held-accumulators (find_held_accumulators.py, 2026-07-19): bought tiny at launch (~$76-92), HELD the runner to $60k / $39k, clean smart_trader tag (no bundler), not in pool. Observe-only conviction candidates. Vet realized-PnL / repeatability (browser-Opus) before any promote. See project_cluster_database_build."
+  "note": "Held-accumulator conviction candidates (find_held_accumulators + build_accumulator_roster, 2026-07-19/20). 7Tq/4nB = Ge87E launch-and-hold; CdoQKour = corpus scan (holds KINS+RISE+HBULL = 3 diverse runners, $59k, clean smart_trader). Observe-only; vet realized-PnL before any promote. See project_cluster_database_build."
 }

@@ -8,7 +8,10 @@ of the in-and-out traders that trigger conviction today. But holding ONE winner 
 luck. This vet decides: is each wallet a REPEAT accumulator of runners (KEEP), or a
 one-hit / sprayer / insider (REJECT)?
 
-PRIMARY WALLETS (the two clean smart_trader finds):
+PRIMARY WALLETS (clean smart_trader held-accumulators):
+  CdoQKournsTERPHJwJowB7DrS2o4tvBywASHPuuumaow   (STRONGEST — holds 3 DIVERSE runners:
+       HBULL ~$24.8k + KINS ~$21k + RISE ~$13.2k = ~$59k; from the corpus scan, clean smart_trader
+       early-buyer of KINS(400x)+RISE(29x). This diverse-winner profile is exactly the target.)
   7Tq4tSb7SnrdHVu7jvj5cbkXzzuMaym2v26613ZjYouk   (Ge87 bag ~$60k, launch buy ~$92)
   4nBNtRX6Q3NAhtcaXfV5R2okHr2Cd6iur7EDQvNedujV   (Ge87 bag ~$39k, launch buy ~$76;
        NOTE: its current portfolio is one-Ge87-bag-dominated + dust — extra scrutiny on repeatability)
