@@ -1,47 +1,96 @@
-BROWSER-OPUS PROMPT — VET "HELD-ACCUMULATOR" WALLETS FOR CONVICTION
-(attended; run with Claude-in-Chrome. Birdeye Wallet Analyzer, NO login required.)
+Hi — I need your help vetting some Solana wallets. You don't need any prior context; everything
+you need is below. Please work through it with Claude-in-Chrome using Birdeye (a free Solana
+analytics site — no login or payment required).
 
-WHY: These wallets were surfaced by find_held_accumulators.py — they bought a runner
-(Ge87E) tiny at launch and are STILL holding a large bag (clean "smart_trader" tag, not
-in our pool). That is the conviction profile we want (buys early + HOLDS), the opposite
-of the in-and-out traders that trigger conviction today. But holding ONE winner can be
-luck. This vet decides: is each wallet a REPEAT accumulator of runners (KEEP), or a
-one-hit / sprayer / insider (REJECT)?
+============================================================
+WHAT I NEED (short version)
+============================================================
+I'll give you 6 Solana wallet addresses. For each one, look it up on Birdeye and answer a single
+question: is this a skilled wallet that REPEATEDLY buys memecoins early and HOLDS them through big
+gains — or did it just get lucky on one coin (or is it an insider)? Give me a KEEP / WATCH / REJECT
+verdict for each wallet, with the numbers that led you there.
 
-PRIMARY WALLETS (clean smart_trader held-accumulators):
-  CdoQKournsTERPHJwJowB7DrS2o4tvBywASHPuuumaow   (STRONGEST — holds 3 DIVERSE runners:
-       HBULL ~$24.8k + KINS ~$21k + RISE ~$13.2k = ~$59k; from the corpus scan, clean smart_trader
-       early-buyer of KINS(400x)+RISE(29x). This diverse-winner profile is exactly the target.)
-  7Tq4tSb7SnrdHVu7jvj5cbkXzzuMaym2v26613ZjYouk   (Ge87 bag ~$60k, launch buy ~$92)
-  4nBNtRX6Q3NAhtcaXfV5R2okHr2Cd6iur7EDQvNedujV   (Ge87 bag ~$39k, launch buy ~$76;
-       NOTE: its current portfolio is one-Ge87-bag-dominated + dust — extra scrutiny on repeatability)
+============================================================
+WHY I'M ASKING (the point of the task)
+============================================================
+I run a paper-trading bot that copies the buys of good Solana wallets. One of its strategies is
+supposed to follow "accumulators" — wallets that quietly buy a coin early and hold it while it runs
+up. The problem is it's currently following fast in-and-out traders instead, which loses money.
 
-SECONDARY (only if time — these carried a "bundler" tag = possible insider ring; judge
-whether they trade skillfully across tokens or just hold one team allocation):
-  AfJupWzEVdfUiA4Zio7VNFvxTgCXFcbFkV3qVDjYQ1i5   (no tag, ~$36k)
-  9vdwML1RzB3ZY9JxnNohiYqy2nMh7N7H61mM4daDV5Rm   (bundler+smart, ~$28k)
-  52YXFG9ksGps7P9ZSDLK79f9Hpa5ihR24w6dkikW5aEB   (bundler+smart, ~$26k)
+I found these 6 wallets by scanning Solana tokens that already ran 20x–400x. Each of them bought one
+of those winners very early (some for as little as ~$76) and is STILL holding a large position today.
+That "buy tiny early, hold the winner" profile is exactly what I want the bot to copy.
 
-FOR EACH WALLET, open Birdeye Wallet Analyzer (https://www.birdeye.so/profile/<address>
-on Solana) and record:
-  1. REALIZED PnL (all-time + last 30d) and total unrealized. We qualify on REALIZED
-     skill, not a single held bag (a big unrealized on one token can be luck or a bag).
-  2. Win rate, total trades, avg holding duration, "Instant Sell %".
-  3. Scam/Rug token %  (high = sniper/spray behavior, not a curator).
-  4. THE KEY QUESTION — repeatability: scan their traded-token history. How many DISTINCT
-     tokens did they buy EARLY (small) and HOLD/exit into a large gain (a real runner)?
-     - >=3 such runners  -> genuine repeat accumulator = KEEP.
-     - Only Ge87 + a spray of dust/losers -> one-hit / lottery = REJECT.
-  5. Accumulator vs sniper vs insider: do they ACCUMULATE (multiple buys building a
-     position over time) then hold, or snipe-and-flip? Any sign of coordinated/bundle
-     behavior (same tokens as known rings, funded from the same source) = insider, REJECT.
+BUT holding one winner could just be luck. Before I let the bot follow any of these wallets, I need
+you to tell me which ones do this REPEATEDLY (real skill) versus which just hit once or are insiders.
+That separation is the entire purpose of this task.
 
-VERDICT per wallet: KEEP (repeat accumulator — promote from watch toward conviction) /
-WATCH (promising, not proven — leave observing) / REJECT (one-hit, sniper, or insider),
-with a one-line reason + the realized-PnL and #runners-held numbers that decided it.
+============================================================
+THE WALLETS
+============================================================
+PRIMARY — these three look clean; please vet all three carefully:
 
-WRITE RESULTS to OneDrive (via the OneDrive WEB app where you are signed in as Roy Kelly,
-NOT a local file:// path):  Claude\conviction_accumulator_vet_2026-07-19.txt
-Caveats to note: Birdeye Wallet Analyzer may cap trade history; realized-PnL family can
-be tier-gated on the website differently than the API — record what IS visible and flag
-what is not. Do NOT log into GMGN or pay for anything.
+1) CdoQKournsTERPHJwJowB7DrS2o4tvBywASHPuuumaow
+   (Strongest lead. Already appears to hold THREE different winners — roughly $24.8k, $21k, and
+   $13.2k in three separate coins. Confirm whether that's genuine repeat skill.)
+
+2) 7Tq4tSb7SnrdHVu7jvj5cbkXzzuMaym2v26613ZjYouk
+   (Holds ~$60k of one winner; bought in for ~$92 near launch.)
+
+3) 4nBNtRX6Q3NAhtcaXfV5R2okHr2Cd6iur7EDQvNedujV
+   (Holds ~$39k of that same winner; bought in for ~$76. But its portfolio is mostly that one bag
+   plus dust — so scrutinize hard whether it can repeat, or just got one right.)
+
+SECONDARY — only if you have time. These were flagged as possibly part of a coordinated launch
+"bundle," so they may be insiders holding a team allocation rather than skilled buyers. The question
+for them is whether they actually trade well across many coins, or just sit on one insider bag:
+
+4) AfJupWzEVdfUiA4Zio7VNFvxTgCXFcbFkV3qVDjYQ1i5
+5) 9vdwML1RzB3ZY9JxnNohiYqy2nMh7N7H61mM4daDV5Rm
+6) 52YXFG9ksGps7P9ZSDLK79f9Hpa5ihR24w6dkikW5aEB
+
+============================================================
+HOW TO CHECK EACH WALLET
+============================================================
+1) Open its Birdeye profile:  https://www.birdeye.so/profile/<ADDRESS>?chain=solana  (no login).
+
+2) Record these numbers:
+   - Realized PnL (all-time, and last 30 days if shown) and total unrealized PnL.
+   - Win rate, total number of trades, average holding duration, and "instant sell %".
+   - "Scam / rug token %" (a high value means it sprays into junk — a bot/sniper, not a curator).
+
+3) THE KEY QUESTION — look through the wallet's traded-token history and count: how many DIFFERENT
+   coins did it buy EARLY (a small position, near the coin's launch) and then either still hold, or
+   sell into a large gain — i.e. an actual runner (roughly 5x or more)?
+     • 3 or more such runners  = a genuine repeat accumulator (what I want).
+     • Only one runner, with the rest dust/losers = a one-time lucky hit.
+
+4) Judge the wallet's style. Does it ACCUMULATE (build a position with several buys over time, then
+   hold) — or snipe-and-dump within minutes? A very high "instant sell %" or high "scam/rug %" points
+   to an automated sniper, not a skilled holder. Signs it's funded from the same source as a group of
+   other wallets, or repeatedly holds the exact coins of a known launch team, point to an insider.
+
+============================================================
+THE VERDICT I WANT (per wallet)
+============================================================
+   KEEP    — genuine repeat accumulator (held ~3+ real runners); worth copying.
+   WATCH   — promising but only 1–2 runners, or the picture is unclear; leave it observing.
+   REJECT  — one-hit wonder, a sniper/flipper, or an insider.
+For each wallet give one line of reasoning plus the two numbers that decided it: its realized PnL,
+and how many real runners it bought early and held.
+
+============================================================
+WHERE TO PUT YOUR ANSWER
+============================================================
+Save your write-up to my OneDrive via the OneDrive web app (I'm signed in there as Roy Kelly), as:
+   Claude\conviction_accumulator_vet_2026-07-21.txt
+Please DON'T save it to a local file.
+
+============================================================
+LIMITS & GROUND RULES
+============================================================
+- Birdeye may cap how far back a wallet's trade history goes, and its realized-PnL view is sometimes
+  restricted — just record what IS visible and clearly flag anything you couldn't see.
+- Do NOT log into GMGN or any site that asks you to sign in, and do not pay for anything.
+- If a wallet's page won't load or the data is too thin to judge, say so and mark it WATCH rather than
+  guessing.
