@@ -46,6 +46,7 @@ from bots.copy.loop_helpers import (
     has_open_position,
     has_recent_strategy_trade,
     has_recent_conviction_trade,
+    is_stagnant_illiquid_reap,
     list_open_paper_trades,
     list_open_real_trades,
     open_allocation_pct,
@@ -2173,6 +2174,30 @@ class CopyBot(BotLifecycle):
                     exit_reason = "timeout"
             elif timed_out:
                 exit_reason = "timeout_no_quote"
+
+            # Stagnant-illiquid reaper (data-validated 2026-07-21, promobuy_stagnant_liq_study
+            # over 459 tokens): an old promobuy position that NEVER ran and sits in a thin pool
+            # has ~0 late-run chance (0 of 339 flat sub-$10k tokens ran >=2x after 72h). Reap it
+            # so it stops cluttering the book / (pre-clause-fix) eating the cap. Liquid ones are
+            # spared — the ONLY late-runner (trade 1322) had $28.8k liq, above the gate; a
+            # time-only cut would have killed it (flat 3d then +313% on day 6).
+            if exit_reason is None and mid is not None and trade.entry_at is not None:
+                cs = self.copy_settings
+                if cs.copy_promobuy_reaper_enabled and is_stagnant_illiquid_reap(
+                    trade.strategy,
+                    (now - trade.entry_at).total_seconds() / 3600.0,
+                    trade.peak_pct_since_entry,
+                    sol_liq.get(trade.asset) if trade.venue == "solana" else None,
+                    min_age_hours=cs.copy_promobuy_reaper_hours,
+                    max_flat_peak_pct=cs.copy_promobuy_reaper_max_flat_peak_pct,
+                    min_liq_usd=cs.copy_promobuy_reaper_min_liq_usd,
+                ):
+                    exit_reason = "stagnant_illiquid_reap"
+                    self.log.info(
+                        "promobuy_stagnant_reap", trade_id=trade.trade_id, asset=trade.asset,
+                        age_h=round((now - trade.entry_at).total_seconds() / 3600.0),
+                        peak_pct=round(trade.peak_pct_since_entry or 0.0),
+                        liq=round(sol_liq.get(trade.asset) or 0.0))
 
             if exit_reason is None:
                 continue

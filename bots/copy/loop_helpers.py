@@ -223,6 +223,31 @@ def _strategy_clause(strategy: Optional[str]):
     return None
 
 
+def is_stagnant_illiquid_reap(
+    strategy: Optional[str],
+    age_hours: float,
+    peak_pct: Optional[float],
+    liq_usd: Optional[float],
+    *,
+    min_age_hours: float,
+    max_flat_peak_pct: float,
+    min_liq_usd: float,
+) -> bool:
+    """Reaper predicate (data-validated 2026-07-21, promobuy_stagnant_liq_study): a promobuy
+    position that has aged past `min_age_hours`, NEVER ran (peak_pct < max_flat_peak_pct), and
+    sits below `min_liq_usd` liquidity has ~0 late-run chance (0 of 339 such tokens ran >=2x
+    after 72h). Pure so the loop's close-decision is unit-testable. Matches ONLY the active
+    promobuy tag family; requires a real liquidity reading (None → don't reap this cycle, so a
+    momentary oracle gap can't force a close)."""
+    if not (strategy and strategy.startswith("promobuy")):
+        return False
+    if liq_usd is None:
+        return False
+    return (age_hours >= min_age_hours
+            and (peak_pct or 0.0) < max_flat_peak_pct
+            and liq_usd < min_liq_usd)
+
+
 def list_open_paper_trades(strategy: Optional[str] = None) -> list[OpenPaperTrade]:
     out: list[OpenPaperTrade] = []
     with session_scope() as s:

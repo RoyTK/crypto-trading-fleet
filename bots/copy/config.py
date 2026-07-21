@@ -515,6 +515,17 @@ class CopySettings(BaseSettings):
     copy_promobuy_reentry_enabled: bool = Field(default=False)
     copy_promobuy_reentry_cooldown_minutes: float = Field(default=120.0)
     copy_promobuy_reentry_max: int = Field(default=2)   # max re-entries per token
+    # STAGNANT-ILLIQUID REAPER (2026-07-21, promobuy_stagnant_liq_study over 459 tokens):
+    # force-close a promobuy position that has aged past reaper_hours, NEVER ran (peak <
+    # max_flat_peak_pct = still < 1.5x), and sits below min_liq_usd. Data: of 356 tokens
+    # flat at 72h, only 1 ran >=2x afterward (0.3%) — and that one (trade 1322) had $28.8k
+    # liquidity; 0 of 339 flat sub-$10k tokens ran late. So the liq gate forfeits ~zero
+    # optionality while reaping dead money + preventing an unbounded stuck-open pile. A
+    # TIME-only cut would kill 1322 (flat 3d then +313% on day 6); the liquidity gate spares it.
+    copy_promobuy_reaper_enabled: bool = Field(default=True)
+    copy_promobuy_reaper_hours: float = Field(default=72.0)
+    copy_promobuy_reaper_max_flat_peak_pct: float = Field(default=50.0)   # < 1.5x = "never ran"
+    copy_promobuy_reaper_min_liq_usd: float = Field(default=10000.0)
     # LIQUIDITY-MOMENTUM STOP (2026-07-15, ported from cluster's validated stop). The flat 8%
     # stop was shaking promobuy out of volatile-but-RECOVERING liquid promos on noise dips
     # (1572 +32% / 1573 +119% AFTER we sold) while filling at -30% anyway (illusory). Instead
