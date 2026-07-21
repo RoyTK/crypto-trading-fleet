@@ -19,11 +19,17 @@ def test_cluster_clause_excludes_every_other_family():
         assert f"NOT LIKE '{fam}%'" in sql, f"cluster allocation must exclude {fam} (the leak bug)"
 
 
-def test_sibling_clauses_are_own_prefix_only():
+def test_sibling_clauses_are_own_active_prefix():
+    # own-family prefix, but EXCLUDING the retired '_pre_reset' era (2026-07-21 fix: retired
+    # zombies must not consume the live strategy's allocation cap) — and NOT excluding any
+    # OTHER family (that would re-introduce the cross-strategy leak).
     for fam in ("teamfollow", "cohortfire", "promobuy"):
         sql = str(_strategy_clause(fam))
         assert f"LIKE '{fam}%'" in sql
-        assert "NOT LIKE" not in sql  # a positive own-family match, not a broad exclusion
+        assert f"NOT LIKE '{fam}_pre_reset%'" in sql   # excludes its own retired era
+        for other in ("conviction", "cluster", "teamfollow", "cohortfire", "promobuy"):
+            if other != fam:
+                assert f"NOT LIKE '{other}%'" not in sql  # never excludes a sibling family
 
 
 def test_conviction_is_exact_active_tag():

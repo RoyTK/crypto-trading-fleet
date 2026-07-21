@@ -190,14 +190,21 @@ def _strategy_clause(strategy: Optional[str]):
 
     - 'conviction' → conviction only (exact active tag; retired _pre_reset excluded)
     - 'cluster'    → cluster + legacy NULL/untagged rows, EXCLUDING every other family
-    - 'teamfollow'/'cohortfire'/'promobuy' → that family's own prefix (incl _pre_reset,
-                     harmless for open-position/recent queries)
+    - 'teamfollow'/'cohortfire'/'promobuy' → that family's ACTIVE tag only (own prefix
+                     EXCLUDING retired '_pre_reset%' — those are a closed era and must not
+                     consume the current strategy's allocation cap or dedup scope)
     - None         → no filter (all strategies)
 
     Postgres JSON operators, consistent with kill_criteria_monitor. 2026-07-16 fix:
     cluster used to be 'NOT conviction%' (from the 2-strategy era), which leaked every
     teamfollow/cohortfire/promobuy OPEN position into cluster's allocation and starved
     cluster (sized to $0) once promobuy's open book grew past cluster's 50%×$10k cap.
+    2026-07-21 fix: sibling clauses were 'LIKE promobuy%' INCLUDING '_pre_reset' — assumed
+    harmless because re-tagged opens would close, but the null-timeout bug left 21 retired
+    promobuy zombies open, eating ~45% of the current promobuy cap. Now exclude '_pre_reset%'
+    so a retired era can never consume the live strategy's allocation (dd already uses the
+    exact active tag). The general exit loop (list_open_paper_trades() with no filter) still
+    manages the retired opens, so they keep running/exiting normally.
     """
     if strategy == "conviction":
         return text("(sim_metadata->>'strategy') = 'conviction'")
@@ -209,8 +216,10 @@ def _strategy_clause(strategy: Optional[str]):
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'cohortfire%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'promobuy%'")
     if strategy in ("teamfollow", "cohortfire", "promobuy"):
-        # Whitelisted literal (guarded by the `in` check) → own-family prefix only.
-        return text(f"coalesce(sim_metadata->>'strategy','') LIKE '{strategy}%'")
+        # Whitelisted literal (guarded by the `in` check) → own-family ACTIVE prefix,
+        # EXCLUDING retired '_pre_reset%' eras (they must not consume the live cap).
+        return text(f"coalesce(sim_metadata->>'strategy','') LIKE '{strategy}%' "
+                    f"AND coalesce(sim_metadata->>'strategy','') NOT LIKE '{strategy}_pre_reset%'")
     return None
 
 
