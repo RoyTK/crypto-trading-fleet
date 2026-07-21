@@ -169,6 +169,71 @@ def vet(wallet):
                 tpd=tpd, rug_pct=rug_pct, ntok=ntok, ntrades=len(trades))
 
 
+# ---- ACCUMULATOR screen (2026-07-21) — distinct from the COPY-cluster screen above. -------
+# Calibrated on the 6 held-accumulator candidates vetted by browser-Opus: the CdoQKour cluster
+# taught us that "positive realized + multi-x + hold>15m" (the KEEP screen) passes profitable
+# FLIPPERS/SNIPERS. The clean separator is FOCUS: real accumulators trade FEW tokens SLOWLY
+# (7Tq 323 tok / 6 tpd, 4nB 91 / 3) while flippers/snipers spray (547-736 tok / 9-19 tpd) even
+# when profitable. So gate on token-count + trades/day + real (>=5x) runners. n=6 calibration —
+# widen/tighten as more browser-vetted wallets accrue.
+ACCUM_MAX_NTOK = 400
+ACCUM_MAX_TPD = 8.0
+ACCUM_MIN_MULTIX500 = 3     # real 5x+ runners (not just 2x flips)
+ACCUM_MIN_HOLD_MIN = 15.0
+
+
+def screen_accumulator(m: dict) -> tuple[str, str]:
+    """ACCUMULATOR verdict from vet() metrics. Returns (KEEP|REJECT, reason). A wallet is an
+    accumulator only if it is FOCUSED (few tokens, slow) and has real held runners — not a
+    profitable high-churn flipper/sniper. Coordination (shared-basket clusters) is handled
+    separately by the caller."""
+    if m["realized"] <= SIGNIF_USD:
+        return "REJECT", f"realized ${m['realized']:,.0f} <= ${SIGNIF_USD:,.0f}"
+    if m["unrealized"] < 0 and (-m["unrealized"]) > m["realized"]:
+        return "REJECT", "bag-holder (unrealized loss > realized)"
+    if m["ntok"] >= ACCUM_MAX_NTOK:
+        return "REJECT", f"sprays {m['ntok']} tokens (>= {ACCUM_MAX_NTOK}) = flipper/sniper"
+    if m["tpd"] >= ACCUM_MAX_TPD:
+        return "REJECT", f"trades {m['tpd']:.0f}/day (>= {ACCUM_MAX_TPD}) = churn"
+    if m["med_hold_min"] < ACCUM_MIN_HOLD_MIN:
+        return "REJECT", f"median hold {m['med_hold_min']:.0f}m < {ACCUM_MIN_HOLD_MIN:.0f}m"
+    if m["multix500"] < ACCUM_MIN_MULTIX500:
+        return "REJECT", f"only {m['multix500']} real (>=5x) runners"
+    return "KEEP", (f"+${m['realized']:,.0f}, {m['multix500']} runners, {m['ntok']} tok, "
+                    f"{m['tpd']:.0f}/day, hold {m['med_hold_min']:.0f}m")
+
+
+def portfolio_tokens(wallet: str, min_value_usd: float = 200.0) -> set:
+    """The wallet's current holdings above a dust floor — for coordination/shared-basket
+    detection. Uses /v1/wallet/token_list (works on our tier)."""
+    return {tok for tok, v in _portfolio(wallet).items() if v >= min_value_usd}
+
+
+def coordination_clusters(wallet_holdings: dict, min_shared: int = 3) -> list:
+    """Group wallets that co-hold the same basket (a co-funded/coordinated cluster, e.g. the
+    CdoQKour set that all held Jimothy + Tilly/Meowpin/Potato). `wallet_holdings` = {wallet:
+    set(token_mints)}. Two wallets are linked if they share >= min_shared holdings; returns a
+    list of clusters (each a list of wallets) via union-find. Independent skill = a singleton
+    cluster; a multi-wallet cluster is coordination, keep at most one representative."""
+    ws = list(wallet_holdings)
+    parent = {w: w for w in ws}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for i in range(len(ws)):
+        for j in range(i + 1, len(ws)):
+            if len(wallet_holdings[ws[i]] & wallet_holdings[ws[j]]) >= min_shared:
+                parent[find(ws[i])] = find(ws[j])
+    groups = defaultdict(list)
+    for w in ws:
+        groups[find(w)].append(w)
+    return list(groups.values())
+
+
 def main():
     print(f"headless vet of {len(BATCH)} wallets (Lite raw-trade compute, {MAX_PAGES}-page cap) vs browser-Opus\n")
     hdr = f"{'#':>2} {'wallet':>10} {'MINE':>8} {'BO':>8} {'agree':>5} {'realized':>11} {'unrl':>9} {'mx':>3} {'holdMin':>7} {'tpd':>6} {'ntr':>5}"
