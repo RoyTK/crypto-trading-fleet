@@ -2,9 +2,9 @@
   "_meta": {
     "source": "co_buyer_teams.py (Dune 90d corpus, overlap>=0.35 tight co-buy)",
     "generated": "2026-07-01",
-    "n_teams": 128,
-    "n_wallets": 336,
-    "note": "team-follow experiment roster; fire on >=2 same-team members co-buy",
+    "n_teams": 129,
+    "n_wallets": 340,
+    "note": "team-follow experiment roster; fire on >=2 same-team members co-buy. team_900 added 2026-07-21 = the browser-vetted same-minute co-buy ring (co-hold study), SHADOW.",
     "pruned_2026_07_04": {
       "reason": "team 96 = pure fresh-mint sniper-bot pair (both wallets ~500-2000 trades/day, 100% of buys into <1min mints); produced teamfollow rug trades 1033/1034 (-$1000). Not a deliberate co-buyer team. trades/day filter abandoned (it selects against the profitable high-freq teams); the real fix is the 6h token-age entry gate.",
       "teams_removed": [
@@ -17,6 +17,18 @@
     }
   },
   "teams": [
+    {
+      "team_id": 900,
+      "members": [
+        "7Tq4tSb7SnrdHVu7jvj5cbkXzzuMaym2v26613ZjYouk",
+        "4nBNtRX6Q3NAhtcaXfV5R2okHr2Cd6iur7EDQvNedujV",
+        "9vdwML1RzB3ZY9JxnNohiYqy2nMh7N7H61mM4daDV5Rm",
+        "52YXFG9ksGps7P9ZSDLK79f9Hpa5ihR24w6dkikW5aEB"
+      ],
+      "size": 4,
+      "co_runners": 349,
+      "note": "2026-07-21 SHADOW: same-minute co-buy ring (349 shared tokens over 5mo; ~38% of co-buys on tokens >6h old = the gated teamfollow signal). Browser-vetted coordinated sniper op (7Tq/4nB=hold, 9vdw/52YX=flip); rejected for conviction, added here to test the gated established-token re-engagements. See project_cluster_database_build."
+    },
     {
       "team_id": 0,
       "members": [
