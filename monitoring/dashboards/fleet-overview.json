@@ -68,7 +68,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at >= NOW() - INTERVAL '24 hours'"
+     "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND created_at >= NOW() - INTERVAL '24 hours'"
     }
    ]
   },
