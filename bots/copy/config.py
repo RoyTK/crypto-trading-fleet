@@ -432,7 +432,31 @@ class CopySettings(BaseSettings):
     # -$1000) while keeping the profitable established-token entries. Fetched via
     # Birdeye token_creation_info pre-placement; fail-open (only a KNOWN-fresh
     # reading blocks). Same adverse-selection theme as the liquidity floor.
-    copy_teamfollow_min_token_age_hours: float = Field(default=6.0)
+    # RAISED 6h -> 24h (2026-07-24, teamfollow-profitability workflow): the deep 63-agent
+    # study found this the ONLY robust, OOS-replicated, OUTLIER-INDEPENDENT lever. <24h =
+    # -$859/45 (76% stop-out, we follow the roster's SNIPERS into fresh mints AFTER their
+    # entry pump, then stop out avg -14% on draining liq); >=24h = -$62/69 (breakeven).
+    # Mann-Whitney fresh-vs-aged p=0.0003; OOS-replicated on the archived set (-$2168 ->
+    # +$1174, p<0.0001); Bonferroni-surviving; STRENGTHENS when the team_66 jackpot is
+    # deleted (the floor discards the +$936 outlier and still gains $859). Takes teamfollow
+    # from -$920 to ~breakeven. NOTE: not a profit edge, loss-avoidance to breakeven.
+    copy_teamfollow_min_token_age_hours: float = Field(default=24.0)
+    # PRICE-CONDITIONAL RE-ENTRY BLOCK (2026-07-24, same workflow). teamfollow has NO
+    # re-entry cooldown, so it re-buys the same token every time the team co-fires again;
+    # re-entries (2nd+ trade on a token) are the entire loss (-$793 of -$859). A plain time
+    # cooldown is redundant/overfit; the clean form is PRICE-conditional: block a same-token
+    # re-entry when the fill price <= the last EXECUTED teamfollow exit price on that token
+    # (don't re-buy the same token below where the team's own last exit landed). +$462
+    # incremental over the 24h floor; the only positive subgroup that does NOT ride team_66.
+    copy_teamfollow_reentry_price_block: bool = Field(default=True)
+    # TEAM WATCH / promote-demote lifecycle (2026-07-24). Teams can be demoted to 'watch'
+    # (status in DB table teamfollow_team_status; absent = active): a watch team still fires
+    # + runs the full gated entry, but its trades are tagged strategy='teamfollow_watch'
+    # (mode=paper, fully managed + measured, but ISOLATED from the live teamfollow bankroll,
+    # metrics + dashboards via _strategy_clause excluding _watch). A watch team re-proves via
+    # forward PnL: scripts/teamfollow_team_tiers.py promotes any watch team net-positive over
+    # >= promote_min_trades back to active. Roy 2026-07-24: demoted 44/20/84/112.
+    copy_teamfollow_watch_promote_min_trades: int = Field(default=10)
     copy_teamfollow_paper_capital_usd: float = Field(default=25000.0)  # isolated bankroll
     copy_teamfollow_alloc_cap_pct: float = Field(default=50.0)
     # FLAT per-trade size (% of the teamfollow bankroll). Team-follow's cluster_size

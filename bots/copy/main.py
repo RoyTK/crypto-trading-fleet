@@ -48,6 +48,9 @@ from bots.copy.loop_helpers import (
     has_recent_conviction_trade,
     is_flatline_exit,
     is_stagnant_illiquid_reap,
+    last_teamfollow_exit_price,
+    get_teamfollow_team_status,
+    ensure_team_status_table,
     list_open_paper_trades,
     list_open_real_trades,
     open_allocation_pct,
@@ -289,6 +292,11 @@ class CopyBot(BotLifecycle):
             position_liq_log.ensure_table()
         except Exception:
             self.log.exception("position_liq_log_ensure_failed")
+        # Ensure the teamfollow team watch/promote-demote status table exists (fail-open).
+        try:
+            ensure_team_status_table()
+        except Exception:
+            self.log.exception("teamfollow_team_status_ensure_failed")
         register_venue_fetcher("solana", make_fetcher_solana())
         register_venue_fetcher("base", make_fetcher_evm("base"))
         register_venue_fetcher("arbitrum", make_fetcher_evm("arbitrum"))
@@ -1070,14 +1078,23 @@ class CopyBot(BotLifecycle):
         except Exception:
             self.log.exception("teamfollow_halt_check_failed")
 
-        # Per-strategy dedup: only an OPEN teamfollow position in this token blocks.
-        if has_open_position(candidate.asset, candidate.venue, strategy="teamfollow"):
-            self.log.info("teamfollow_dedup_skip", asset=candidate.asset, chain=candidate.chain)
+        team_id = (candidate.payload or {}).get("team_id")
+        # Team watch/promote-demote (2026-07-24): a 'watch' team still fires + runs the FULL
+        # gated entry, but its trade is tagged 'teamfollow_watch' (isolated bankroll / metrics /
+        # dashboards via _strategy_clause) so it can re-prove itself on FORWARD PnL without
+        # touching the live book. Status is DB-backed (survives autopull; applies live).
+        team_status = get_teamfollow_team_status(team_id)
+        strat_tag = "teamfollow_watch" if team_status == "watch" else "teamfollow"
+
+        # Per-strategy dedup: only an OPEN position in this token FOR THIS TIER blocks
+        # (active teamfollow and its watch sub-track dedup independently).
+        if has_open_position(candidate.asset, candidate.venue, strategy=strat_tag):
+            self.log.info("teamfollow_dedup_skip", asset=candidate.asset,
+                          chain=candidate.chain, strategy=strat_tag)
             return
 
-        team_id = (candidate.payload or {}).get("team_id")
         capital = self.copy_settings.copy_teamfollow_paper_capital_usd
-        current_alloc = open_allocation_pct(capital, strategy="teamfollow")
+        current_alloc = open_allocation_pct(capital, strategy=strat_tag)
         notional_usd = size_teamfollow_position(
             paper_capital_usd=capital,
             current_open_alloc_pct=current_alloc,
@@ -1153,21 +1170,34 @@ class CopyBot(BotLifecycle):
             market_snapshot=snapshot,
         )
 
+        # Price-conditional re-entry block (2026-07-24): don't re-buy the same token at/below
+        # where the team's own last teamfollow exit landed — the churn that has no cooldown
+        # (re-entries = the entire loss). Only bites re-entries: a first entry has no prior
+        # exit (None -> allowed). Fail-open (a None fill / DB blip never blocks).
+        if (self.copy_settings.copy_teamfollow_reentry_price_block
+                and sim_fill.fill_price is not None):
+            prior_exit = last_teamfollow_exit_price(candidate.asset, candidate.venue)
+            if prior_exit is not None and sim_fill.fill_price <= prior_exit:
+                self.log.info("teamfollow_reentry_price_block",
+                              asset=candidate.asset, team_id=team_id,
+                              entry_price=sim_fill.fill_price, last_exit_price=prior_exit)
+                return
+
         signal_id = persist_signal(candidate)
-        # Paper-only by construction (experiment) — write the paper trade directly,
-        # tagged strategy='teamfollow'.
+        # Paper-only by construction (experiment) — write the paper trade directly, tagged
+        # strategy='teamfollow' (active) or 'teamfollow_watch' (demoted team, isolated).
         paper_trade_id = persist_paper_trade(
             signal_id=signal_id,
             candidate=candidate,
             sim_fill=sim_fill,
             notional_usd=notional_usd,
             leverage=1.0,
-            strategy="teamfollow",
+            strategy=strat_tag,
         )
         self.log.info(
             "teamfollow_paper_opened",
-            asset=candidate.asset, team_id=team_id,
-            cluster_size=candidate.cluster_size,
+            asset=candidate.asset, team_id=team_id, team_status=team_status,
+            strategy=strat_tag, cluster_size=candidate.cluster_size,
             notional_usd=round(notional_usd, 2),
             trade_id=paper_trade_id, fill=sim_fill.fill_price,
         )

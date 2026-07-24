@@ -119,10 +119,10 @@ def persist_paper_trade(
     # if its trigger wallet happens to be active-tier.
     if strategy == "conviction":
         wallet_tier = "conviction"
-    elif strategy == "teamfollow":
-        # Same isolation as conviction: never tag teamfollow 'active' (that's the
-        # cluster kill-criteria filter) — keep the experiment's trades out of the
-        # cluster validation set regardless of the co-buyers' pool tiers.
+    elif strategy.startswith("teamfollow"):
+        # Same isolation as conviction: never tag teamfollow (or its _watch sub-track)
+        # 'active' (that's the cluster kill-criteria filter) — keep the experiment's
+        # trades out of the cluster validation set regardless of the co-buyers' pool tiers.
         wallet_tier = "teamfollow"
     else:
         wallet_tier = _classify_cluster_wallet_tier(cluster_wallets)
@@ -215,11 +215,17 @@ def _strategy_clause(strategy: Optional[str]):
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'teamfollow%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'cohortfire%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'promobuy%'")
+    if strategy in ("teamfollow_watch", "cohortfire_watch", "promobuy_watch"):
+        # Demoted-team WATCH sub-track (2026-07-24): its OWN isolated bucket, so it
+        # neither consumes the live family's alloc cap nor pollutes its metrics/dd.
+        return text(f"coalesce(sim_metadata->>'strategy','') = '{strategy}'")
     if strategy in ("teamfollow", "cohortfire", "promobuy"):
         # Whitelisted literal (guarded by the `in` check) → own-family ACTIVE prefix,
-        # EXCLUDING retired '_pre_reset%' eras (they must not consume the live cap).
+        # EXCLUDING retired '_pre_reset%' eras AND the '_watch%' sub-track (both must
+        # not consume the live cap or leak into the live family's PnL/dd).
         return text(f"coalesce(sim_metadata->>'strategy','') LIKE '{strategy}%' "
-                    f"AND coalesce(sim_metadata->>'strategy','') NOT LIKE '{strategy}_pre_reset%'")
+                    f"AND coalesce(sim_metadata->>'strategy','') NOT LIKE '{strategy}_pre_reset%' "
+                    f"AND coalesce(sim_metadata->>'strategy','') NOT LIKE '{strategy}_watch%'")
     return None
 
 
@@ -1033,6 +1039,80 @@ def pre_entry_roster_buyers(token: str, venue: str, within_minutes: float) -> in
     except Exception:
         _log.exception("pre_entry_roster_buyers_failed", token=token)
         return 0
+
+
+# ---- Team-follow: re-entry price block + team watch/promote-demote (2026-07-24) --------
+
+def last_teamfollow_exit_price(asset: str, venue: str) -> Optional[float]:
+    """Most recent CLOSED teamfollow-family (active OR watch) exit price for `asset`.
+    Reference for the price-conditional re-entry block: don't re-buy the same token at/below
+    where the team's own last exit landed. None => no prior exit (a first entry). Read-only."""
+    try:
+        with session_scope() as s:
+            row = s.execute(text(
+                "SELECT exit_price FROM trades "
+                "WHERE bot_id=:b AND venue=:v AND asset=:a AND exit_price IS NOT NULL "
+                "AND (sim_metadata->>'strategy') IN ('teamfollow','teamfollow_watch') "
+                "ORDER BY exit_at DESC LIMIT 1"
+            ), {"b": BOT_ID, "v": venue, "a": asset}).scalar()
+        return float(row) if row is not None else None
+    except Exception:
+        _log.exception("last_teamfollow_exit_price_failed", asset=asset)
+        return None
+
+
+_TEAM_STATUS_DDL = """
+CREATE TABLE IF NOT EXISTS teamfollow_team_status (
+    team_id    INTEGER PRIMARY KEY,
+    status     VARCHAR(16) NOT NULL DEFAULT 'active',
+    reason     TEXT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+"""
+
+
+def ensure_team_status_table() -> None:
+    with session_scope() as s:
+        s.execute(text(_TEAM_STATUS_DDL))
+
+
+def get_teamfollow_team_status(team_id) -> str:
+    """'watch' or 'active'. Absent team / DB blip -> 'active' (fail-SAFE: never silently mute a
+    team; the worst case is a demoted team logs one paper trade instead of a watch trade)."""
+    if team_id is None:
+        return "active"
+    try:
+        with session_scope() as s:
+            row = s.execute(text(
+                "SELECT status FROM teamfollow_team_status WHERE team_id=:t"
+            ), {"t": int(team_id)}).scalar()
+        return row or "active"
+    except Exception:
+        _log.exception("teamfollow_team_status_read_failed", team_id=team_id)
+        return "active"
+
+
+def set_teamfollow_team_status(team_id, status: str, reason: str = "") -> None:
+    """Upsert a team's status ('active'|'watch'). Persisted in the DB so it survives autopull's
+    git reset (a roster-JSON edit would be wiped) and applies live (no bot restart needed)."""
+    with session_scope() as s:
+        s.execute(text(
+            "INSERT INTO teamfollow_team_status (team_id, status, reason, updated_at) "
+            "VALUES (:t, :s, :r, now()) "
+            "ON CONFLICT (team_id) DO UPDATE SET status=:s, reason=:r, updated_at=now()"
+        ), {"t": int(team_id), "s": status, "r": reason})
+
+
+def list_teamfollow_team_status() -> dict:
+    try:
+        with session_scope() as s:
+            rows = s.execute(text(
+                "SELECT team_id, status, reason, updated_at FROM teamfollow_team_status ORDER BY team_id"
+            )).all()
+        return {int(r[0]): {"status": r[1], "reason": r[2], "updated_at": str(r[3])} for r in rows}
+    except Exception:
+        _log.exception("list_teamfollow_team_status_failed")
+        return {}
 
 
 def open_allocation_pct(paper_capital_usd: float, strategy: Optional[str] = None) -> float:
