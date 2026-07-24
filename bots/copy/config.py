@@ -550,8 +550,14 @@ class CopySettings(BaseSettings):
     # tail), but that tail IS forfeited. FUTURE: once position_liq_log accrues liquidity trajectories,
     # add a "liq stable/rising -> spare" gate to keep the 1322-types. Not green-gated: exit even at a
     # small loss ("recover what we can"). Exact promobuy-family match; needs a real liq reading.
+    # NOTE (2026-07-23): set to 7 DAYS (was 48h) after finding the present ENTRY re-gate already
+    # kills the flatline population at the door — 0 of 22 flatlined-past-2d tokens would be bought
+    # today (boost gate alone rejects all 22: none had a paid boost >=50, they were free profiles;
+    # even the +$369 late-runner 1322 = SKIP, no boost + 0 pre-entry buyers). So this exit is a
+    # far-backstop for the rare token that clears the re-gate yet still flatlines; 7d avoids cutting
+    # anything the re-gate wouldn't already have prevented. "We probably do not need it at all" — Roy.
     copy_promobuy_flatline_exit_enabled: bool = Field(default=True)
-    copy_promobuy_flatline_exit_min_age_hours: float = Field(default=48.0)   # 2 days
+    copy_promobuy_flatline_exit_min_age_hours: float = Field(default=168.0)  # 7 days (far backstop)
     copy_promobuy_flatline_exit_max_peak_pct: float = Field(default=50.0)    # never ran >= 1.5x
     copy_promobuy_flatline_exit_min_liq_usd: float = Field(default=10000.0)  # still sellable; below -> reaper's job
     # POSITION LIQUIDITY-TRAJECTORY LOGGING (2026-07-23). Passive/fleet-wide observability: snapshot
