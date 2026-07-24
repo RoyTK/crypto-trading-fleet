@@ -537,6 +537,30 @@ class CopySettings(BaseSettings):
     copy_promobuy_liq_grow_ratio: float = Field(default=1.5)       # ema_liq/entry_liq at/above this = building
     copy_promobuy_stop_collapse_ratio: float = Field(default=0.5)  # ema_liq below this * entry_liq = rug collapse
     copy_promobuy_stop_pct_collapse: float = Field(default=8.0)    # tight stop when liquidity has collapsed
+    # FLATLINE EXIT (2026-07-23, promobuy_flatline_study over 467 trades). PROMOBUY-ONLY: it is the
+    # only strategy that does NOT follow wallets, so nothing signals it when to leave — it buys a
+    # paid promo then just sits. Data: of the 26 promobuy trades that survived >=2 days, 22 flatlined
+    # (never ran +50%), and 88-95% of THOSE rugged to a ~-83% avg — while sitting at ~breakeven (-2.6%)
+    # at the 2-day mark. So a flatlined-past-2d promo token is a rug-in-waiting; recover ~breakeven
+    # while liquidity is still there beats riding to -100%. This is the LIQUID complement to the reaper
+    # (which handles the sub-$10k dead tokens): fire on age>=min_age + never-ran + liq>=min_liq (still
+    # sellable). ⚠ TRADEOFF: unlike the reaper this cuts LIQUID flatlines, so it CAN kill a 1322-type
+    # late-runner (flat 3d then +313% day 6, $28.8k liq) that the reaper deliberately spares. Backtest
+    # says net-positive anyway (+$3.2k at these defaults; the ~88% rug avoidance dominates the rare
+    # tail), but that tail IS forfeited. FUTURE: once position_liq_log accrues liquidity trajectories,
+    # add a "liq stable/rising -> spare" gate to keep the 1322-types. Not green-gated: exit even at a
+    # small loss ("recover what we can"). Exact promobuy-family match; needs a real liq reading.
+    copy_promobuy_flatline_exit_enabled: bool = Field(default=True)
+    copy_promobuy_flatline_exit_min_age_hours: float = Field(default=48.0)   # 2 days
+    copy_promobuy_flatline_exit_max_peak_pct: float = Field(default=50.0)    # never ran >= 1.5x
+    copy_promobuy_flatline_exit_min_liq_usd: float = Field(default=10000.0)  # still sellable; below -> reaper's job
+    # POSITION LIQUIDITY-TRAJECTORY LOGGING (2026-07-23). Passive/fleet-wide observability: snapshot
+    # each open position's (price, liquidity, peak_pct, age) once per interval so we can later answer
+    # "does live liquidity at day-2 separate the rugs from the survivors" — which we currently CANNOT,
+    # having only entry-liq + now-liq. No behavior change; fail-open. Enables the flatline-exit
+    # trajectory refinement above.
+    copy_position_liq_log_enabled: bool = Field(default=True)
+    copy_position_liq_log_interval_minutes: float = Field(default=60.0)
 
     # ------------------------------------------------------------------
     # Live + shadow execution (2026-06-06 — executor build)

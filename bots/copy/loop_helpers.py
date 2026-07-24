@@ -248,6 +248,34 @@ def is_stagnant_illiquid_reap(
             and liq_usd < min_liq_usd)
 
 
+def is_flatline_exit(
+    strategy: Optional[str],
+    age_hours: float,
+    peak_pct: Optional[float],
+    liq_usd: Optional[float],
+    *,
+    min_age_hours: float,
+    max_peak_pct: float,
+    min_liq_usd: float,
+) -> bool:
+    """Flatline-exit predicate (data-validated 2026-07-23, promobuy_flatline_study): a PROMOBUY
+    position that has aged past `min_age_hours`, NEVER ran (peak_pct < max_peak_pct), and is STILL
+    LIQUID (liq_usd >= min_liq_usd) is a rug-in-waiting (88-95% of flatlined-past-2d promos rugged
+    to ~-83%, while sitting ~breakeven at 2d) — exit while we can still sell to recover ~breakeven,
+    rather than ride to -100%. The LIQUID complement to is_stagnant_illiquid_reap (which cuts the
+    already-dead sub-`min_liq_usd` tokens). ⚠ Unlike the reaper this CAN cut a liquid late-runner
+    (1322-type); net-positive in backtest but the tail is forfeited (see config comment). Pure so
+    the close-decision is unit-testable. Promobuy-family only; requires a real liq reading (None ->
+    don't act this cycle, so an oracle gap can't force a close)."""
+    if not (strategy and strategy.startswith("promobuy")):
+        return False
+    if liq_usd is None:
+        return False
+    return (age_hours >= min_age_hours
+            and (peak_pct or 0.0) < max_peak_pct
+            and liq_usd >= min_liq_usd)
+
+
 def list_open_paper_trades(strategy: Optional[str] = None) -> list[OpenPaperTrade]:
     out: list[OpenPaperTrade] = []
     with session_scope() as s:

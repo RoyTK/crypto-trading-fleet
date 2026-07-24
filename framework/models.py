@@ -477,6 +477,32 @@ class WalletSwapLog(Base):
     )
 
 
+class PositionLiquidityLog(Base):
+    """Per-position liquidity trajectory (2026-07-23). Passive/fleet-wide: the exit loop
+    snapshots each open paper position's (price, liquidity, peak_pct, age) once per interval.
+    We only ever stored liquidity at ENTRY + can fetch it NOW — nothing in between — so we
+    could not answer "does live liquidity at the 2-day mark separate the promobuy rugs from
+    the survivors" (the flatline-exit / 1322 question). This builds that trajectory dataset.
+    Written by bots.copy.position_liq_log.record(); no strategy trades on it yet."""
+    __tablename__ = "position_liquidity_log"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    trade_id = Column(Integer, nullable=False)
+    bot_id = Column(String(32), nullable=False)
+    strategy = Column(String(32), nullable=True)
+    asset = Column(String(128), nullable=False)
+    price = Column(Float, nullable=True)
+    liquidity_usd = Column(Float, nullable=True)
+    peak_pct = Column(Float, nullable=True)
+    age_hours = Column(Float, nullable=True)
+    logged_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        Index("ix_posliq_trade_time", "trade_id", "logged_at"),
+        Index("ix_posliq_strategy_time", "strategy", "logged_at"),
+    )
+
+
 class WalletAttribution(Base):
     """Per-wallet PnL attribution for cluster-buy paper trades (COPY bot).
 

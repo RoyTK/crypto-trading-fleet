@@ -46,6 +46,7 @@ from bots.copy.loop_helpers import (
     has_open_position,
     has_recent_strategy_trade,
     has_recent_conviction_trade,
+    is_flatline_exit,
     is_stagnant_illiquid_reap,
     list_open_paper_trades,
     list_open_real_trades,
@@ -82,6 +83,7 @@ from bots.copy.signals.conviction import ConvictionDetector
 from bots.copy.signals.sell_cluster import SellClusterDetector
 from bots.copy.signals.teamfollow import TeamFollowDetector
 from bots.copy import signal_features
+from bots.copy import position_liq_log
 from bots.copy import shadow_log
 from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import (
@@ -275,10 +277,18 @@ class CopyBot(BotLifecycle):
         # liquidity (smooths tick-to-tick thrash). trade_id -> ema_liq. In-memory
         # (re-seeds from entry_liquidity on restart; positions are short-lived).
         self._liq_ema: dict[int, float] = {}
+        # Position liquidity-trajectory logging (2026-07-23): throttle map
+        # trade_id -> last snapshot time (in-memory; re-seeds on restart).
+        self._liq_log_last: dict[int, datetime] = {}
 
     # ---- Lifecycle hooks ---------------------------------------------------
 
     async def on_start(self) -> None:
+        # Ensure the passive position-liquidity-trajectory table exists (fail-open).
+        try:
+            position_liq_log.ensure_table()
+        except Exception:
+            self.log.exception("position_liq_log_ensure_failed")
         register_venue_fetcher("solana", make_fetcher_solana())
         register_venue_fetcher("base", make_fetcher_evm("base"))
         register_venue_fetcher("arbitrum", make_fetcher_evm("arbitrum"))
@@ -2015,6 +2025,11 @@ class CopyBot(BotLifecycle):
         # liquidity-aware impact data; matches the entry-side Birdeye estimate).
         EXIT_SLIPPAGE_BPS = 100.0
 
+        # Passive position liquidity-trajectory snapshots (2026-07-23), throttled per trade.
+        liq_log_rows: list[dict] = []
+        _liq_log_on = self.copy_settings.copy_position_liq_log_enabled
+        _liq_log_iv = timedelta(minutes=self.copy_settings.copy_position_liq_log_interval_minutes)
+
         evm_call_count = 0
         for trade in opens:
             # Resolve current mid price.
@@ -2034,6 +2049,24 @@ class CopyBot(BotLifecycle):
                         mid = q.expected_price_per_token_usd
                 except Exception:
                     self.log.warning("manage_quote_failed", asset=trade.asset)
+
+            # Passive liquidity-trajectory snapshot (throttled; fail-open, no behavior change).
+            if _liq_log_on:
+                _last = self._liq_log_last.get(trade.trade_id)
+                if _last is None or (now - _last) >= _liq_log_iv:
+                    self._liq_log_last[trade.trade_id] = now
+                    liq_log_rows.append({
+                        "trade_id": trade.trade_id,
+                        "bot_id": self.bot_id,
+                        "strategy": trade.strategy,
+                        "asset": trade.asset,
+                        "price": mid,
+                        "liquidity_usd": (sol_liq.get(trade.asset)
+                                          if trade.venue == "solana" else None),
+                        "peak_pct": trade.peak_pct_since_entry,
+                        "age_hours": ((now - trade.entry_at).total_seconds() / 3600.0
+                                      if trade.entry_at else None),
+                    })
 
             # Timeout is age-based — must fire even when pricing is unavailable
             # (rugged token, oracle gap, quota exhausted). Without this,
@@ -2068,6 +2101,7 @@ class CopyBot(BotLifecycle):
                         close_paper_trade(trade_id=trade.trade_id, exit_price=close_price,
                                           exit_fill=exit_fill, exit_reason=reason)
                         self._liq_ema.pop(trade.trade_id, None)
+                        self._liq_log_last.pop(trade.trade_id, None)
                         self.log.warning(
                             "price_scale_anomaly_rug_close", trade_id=trade.trade_id,
                             asset=trade.asset, entry_price=trade.entry_price,
@@ -2199,6 +2233,32 @@ class CopyBot(BotLifecycle):
                         peak_pct=round(trade.peak_pct_since_entry or 0.0),
                         liq=round(sol_liq.get(trade.asset) or 0.0))
 
+            # Flatline exit (data-validated 2026-07-23, promobuy_flatline_study over 467 trades).
+            # PROMOBUY-ONLY — it's the only strategy that doesn't follow wallets, so nothing signals
+            # it when to leave. Of 26 promobuy trades that survived >=2d, 22 flatlined and 88-95% of
+            # those rugged to ~-83% (while sitting ~breakeven at 2d). The LIQUID complement to the
+            # reaper above: a flatlined-past-2d promo that's STILL sellable (liq >= floor) is a
+            # rug-in-waiting — exit to recover ~breakeven before the pull. ⚠ Cuts liquid flatlines,
+            # so it CAN forfeit a 1322-type late-runner the reaper spares (net-positive anyway per
+            # backtest; trajectory-gate refinement pending position_liq_log data).
+            if exit_reason is None and mid is not None and trade.entry_at is not None:
+                cs = self.copy_settings
+                if cs.copy_promobuy_flatline_exit_enabled and is_flatline_exit(
+                    trade.strategy,
+                    (now - trade.entry_at).total_seconds() / 3600.0,
+                    trade.peak_pct_since_entry,
+                    sol_liq.get(trade.asset) if trade.venue == "solana" else None,
+                    min_age_hours=cs.copy_promobuy_flatline_exit_min_age_hours,
+                    max_peak_pct=cs.copy_promobuy_flatline_exit_max_peak_pct,
+                    min_liq_usd=cs.copy_promobuy_flatline_exit_min_liq_usd,
+                ):
+                    exit_reason = "promobuy_flatline_exit"
+                    self.log.info(
+                        "promobuy_flatline_exit", trade_id=trade.trade_id, asset=trade.asset,
+                        age_h=round((now - trade.entry_at).total_seconds() / 3600.0),
+                        peak_pct=round(trade.peak_pct_since_entry or 0.0),
+                        liq=round(sol_liq.get(trade.asset) or 0.0))
+
             if exit_reason is None:
                 continue
 
@@ -2224,10 +2284,15 @@ class CopyBot(BotLifecycle):
                     exit_reason=exit_reason,
                 )
                 self._liq_ema.pop(trade.trade_id, None)
+                self._liq_log_last.pop(trade.trade_id, None)
             except Exception:
                 self.log.exception("manage_position_close_failed",
                                    trade_id=trade.trade_id, asset=trade.asset)
                 continue
+
+        # Flush the passive liquidity-trajectory snapshots collected this cycle.
+        if liq_log_rows:
+            position_liq_log.record(liq_log_rows)
 
     # ---- Sell-cluster evaluation + position close --------------------------
 
