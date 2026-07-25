@@ -432,15 +432,26 @@ class CopySettings(BaseSettings):
     # -$1000) while keeping the profitable established-token entries. Fetched via
     # Birdeye token_creation_info pre-placement; fail-open (only a KNOWN-fresh
     # reading blocks). Same adverse-selection theme as the liquidity floor.
-    # RAISED 6h -> 24h (2026-07-24, teamfollow-profitability workflow): the deep 63-agent
-    # study found this the ONLY robust, OOS-replicated, OUTLIER-INDEPENDENT lever. <24h =
-    # -$859/45 (76% stop-out, we follow the roster's SNIPERS into fresh mints AFTER their
-    # entry pump, then stop out avg -14% on draining liq); >=24h = -$62/69 (breakeven).
-    # Mann-Whitney fresh-vs-aged p=0.0003; OOS-replicated on the archived set (-$2168 ->
-    # +$1174, p<0.0001); Bonferroni-surviving; STRENGTHENS when the team_66 jackpot is
-    # deleted (the floor discards the +$936 outlier and still gains $859). Takes teamfollow
-    # from -$920 to ~breakeven. NOTE: not a profit edge, loss-avoidance to breakeven.
-    copy_teamfollow_min_token_age_hours: float = Field(default=24.0)
+    # 6h -> 24h -> 12h. The 63-agent workflow (2026-07-24) picked 24h as the robust/outlier-
+    # INDEPENDENT floor (loss-avoidance to breakeven), but Roy 2026-07-25 corrected the OBJECTIVE:
+    # teamfollow is a MOONSHOT strategy — flat most of the time + the occasional fat tail (team_66
+    # +$936) IS the strategy working. On the active-only trades (demoted teams excluded), 12h is
+    # the ONLY net-positive floor and it's positive EVEN ex-team_66: 6h +$427 (ex-66 -$510), 12h
+    # +$1,052 (ex-66 +$116), 24h -$178. The 6-12h band is a clean chronic loser (-$626/21, no
+    # outlier) so 12h cuts it; the 12-24h band (+$1,230, incl team_66's age-19.9h moonshot) is
+    # KEPT. Chronic bleed is handled at the TEAM level (auto-demote below), not by over-raising
+    # the age floor and discarding the fat tail. (24h threw away the moonshot band.)
+    copy_teamfollow_min_token_age_hours: float = Field(default=12.0)
+    # CHRONIC-LOSS AUTO-DEMOTE (2026-07-25, Roy). A team whose ACTIVE teamfollow record is
+    # chronically negative is auto-moved to 'watch' (shadow) so it stops bleeding the live book;
+    # it re-proves on forward watch PnL (promote back if net-positive over promote_min_trades).
+    # Two tiers: a slow chronic bleed (>= _demote_min_trades_slow trades AND net <= _demote_net_slow)
+    # and a fast bleeder (>= _demote_min_trades_fast AND net <= _demote_net_fast, demoted sooner).
+    # Run daily via scripts.teamfollow_team_tiers cycle (DB-backed status -> applies live, no restart).
+    copy_teamfollow_demote_min_trades_slow: int = Field(default=10)
+    copy_teamfollow_demote_net_slow: float = Field(default=-250.0)
+    copy_teamfollow_demote_min_trades_fast: int = Field(default=5)
+    copy_teamfollow_demote_net_fast: float = Field(default=-500.0)
     # PRICE-CONDITIONAL RE-ENTRY BLOCK (2026-07-24, same workflow). teamfollow has NO
     # re-entry cooldown, so it re-buys the same token every time the team co-fires again;
     # re-entries (2nd+ trade on a token) are the entire loss (-$793 of -$859). A plain time
