@@ -20,7 +20,7 @@ from sqlalchemy import select, func, text
 from framework.alerts import emit_alert
 from framework.audit import write_audit
 from framework.db import session_scope
-from framework.halt_state import halt_bot, is_bot_halted
+from framework.halt_state import halt_bot, is_bot_halted, resume_expired_halts
 from framework.logging_setup import get_logger
 from framework.models import Trade
 from monitoring.alerting.taxonomy import Severity
@@ -269,6 +269,18 @@ def check_all_bots_dd() -> None:
     `<strategy>_pre_reset` fall out of every exact-tag scope automatically (also
     how the 2026-06-30 cluster reset zeroes cluster's metrics).
     """
+    # First reconcile halts whose window expired (dd_daily +24h / dd_weekly +7d):
+    # is_bot_halted() already lets the strategy trade again once halted_until passes, but
+    # the halt row (resumed_at) + BotState.state were left showing 'halted' — the
+    # "says halted but still trading" desync. Resume them so state matches reality; any
+    # still-breaching strategy is re-halted by the checks below on this same cycle.
+    try:
+        n_resumed = resume_expired_halts()
+        if n_resumed:
+            log.info("resumed_expired_halts", count=n_resumed)
+    except Exception:
+        log.exception("resume_expired_halts_failed")
+
     # (logical_id, trades_bot_id, thresholds, strategy, exclude_strategy)
     # Add a new COPY sub-strategy here as ("copy_<name>", "copy", th, "<tag>", None).
     jobs: list[tuple[str, str, dict[str, float], Optional[str], Optional[str]]] = []

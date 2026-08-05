@@ -136,6 +136,32 @@ def resume_bot(bot_id: str, resumed_by: str = "manual:roy") -> int:
         return len(halts)
 
 
+def resume_expired_halts(resumed_by: str = "auto:window_expired") -> int:
+    """Reconcile halts whose halted_until window has already passed.
+
+    dd_daily (+24h) and dd_weekly (+7d) halts carry a halted_until. is_bot_halted()
+    already treats the bot as un-halted once that passes (returns False -> the strategy
+    resumes trading), but nothing ever cleaned up the halt ROW (resumed_at still NULL)
+    or the BotState.state ('halted') -> dashboards/reports showed 'halted' indefinitely
+    while the strategy was actually trading (the "says halted but still trading" desync;
+    the 'bot loop should handle resume' TODO in is_bot_halted). This sweep, run each dd
+    cron cycle, resumes those expired halts properly (row + state). If a strategy is still
+    in breach, dd_monitor re-halts it on the same cycle. Returns rows resumed."""
+    now = datetime.now(timezone.utc)
+    with session_scope() as s:
+        stale = [b.bot_id for b in s.execute(
+            select(BotState).where(
+                BotState.state == "halted",
+                BotState.halted_until.isnot(None),
+                BotState.halted_until <= now,
+            )
+        ).scalars().all()]
+    total = 0
+    for bot_id in stale:
+        total += resume_bot(bot_id, resumed_by=resumed_by)
+    return total
+
+
 def is_bot_halted(bot_id: str) -> bool:
     with session_scope() as s:
         bot = s.get(BotState, bot_id)
