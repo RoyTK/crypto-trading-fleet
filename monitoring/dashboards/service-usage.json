@@ -89,7 +89,7 @@
   {
    "id": 11,
    "type": "timeseries",
-   "title": "Birdeye — API calls / day + 429 rate-limit hits",
+   "title": "Birdeye — API call VOLUME / day + 429s (NOT compute units — see CU panels below)",
    "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
    "datasource": { "type": "postgres", "uid": "fleet-postgres" },
    "targets": [ { "refId": "A", "format": "time_series", "rawSql": "SELECT day AS time, calls AS \"API calls\", errors AS \"429 rate-limit\" FROM service_usage_daily WHERE service='birdeye' AND day > now()::date - 45 ORDER BY day" } ],
@@ -119,6 +119,52 @@
    "gridPos": { "x": 0, "y": 23, "w": 24, "h": 7 },
    "datasource": { "type": "postgres", "uid": "fleet-postgres" },
    "targets": [ { "refId": "A", "format": "table", "rawSql": "WITH d AS (SELECT service, day, sum(calls) calls, sum(errors) errors FROM service_usage_daily WHERE day >= now()::date - 7 AND day < now()::date GROUP BY service, day) SELECT service, round(avg(calls)) AS avg_per_day_7d, round(avg(calls)*30) AS projected_per_mo, sum(errors) AS rate_limit_429_7d FROM d GROUP BY service ORDER BY service" } ]
+  },
+  {
+   "id": 30,
+   "type": "stat",
+   "title": "Birdeye CU — used this cycle (REAL, /utils/v1/credits)",
+   "gridPos": { "x": 0, "y": 30, "w": 6, "h": 4 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "table", "rawSql": "SELECT cu_used FROM birdeye_credits ORDER BY snapshot_at DESC LIMIT 1" } ],
+   "fieldConfig": { "defaults": { "unit": "short" } }
+  },
+  {
+   "id": 31,
+   "type": "gauge",
+   "title": "Birdeye CU — % of cap",
+   "gridPos": { "x": 6, "y": 30, "w": 6, "h": 4 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "table", "rawSql": "SELECT round(100.0*cu_used/NULLIF(cu_limit,0),1) FROM birdeye_credits ORDER BY snapshot_at DESC LIMIT 1" } ],
+   "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 120, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 85 }, { "color": "orange", "value": 100 }, { "color": "red", "value": 110 } ] } } }
+  },
+  {
+   "id": 32,
+   "type": "stat",
+   "title": "Birdeye CU — projected end-of-cycle",
+   "gridPos": { "x": 12, "y": 30, "w": 6, "h": 4 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "table", "rawSql": "SELECT round(cu_used / GREATEST(1e-9, LEAST(1.0, extract(epoch from now()-cycle_start)/NULLIF(extract(epoch from cycle_end-cycle_start),0)))) FROM birdeye_credits ORDER BY snapshot_at DESC LIMIT 1" } ],
+   "fieldConfig": { "defaults": { "unit": "short" } }
+  },
+  {
+   "id": 33,
+   "type": "stat",
+   "title": "Birdeye CU — remaining / overage $",
+   "gridPos": { "x": 18, "y": 30, "w": 6, "h": 4 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "table", "rawSql": "SELECT cu_remaining AS \"remaining\", overage_cost AS \"overage $\" FROM birdeye_credits ORDER BY snapshot_at DESC LIMIT 1" } ],
+   "fieldConfig": { "defaults": { "unit": "short" } }
+  },
+  {
+   "id": 34,
+   "type": "timeseries",
+   "title": "Birdeye CU burn — cumulative this cycle (red = 8M cap)",
+   "gridPos": { "x": 0, "y": 34, "w": 24, "h": 8 },
+   "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+   "targets": [ { "refId": "A", "format": "time_series", "rawSql": "SELECT snapshot_at AS time, cu_used AS \"CU used (cumulative)\", cu_limit AS \"cap (8M)\" FROM birdeye_credits WHERE snapshot_at > now() - interval '40 days' ORDER BY snapshot_at" } ],
+   "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5 } }, "overrides": [ { "matcher": { "id": "byName", "options": "cap (8M)" }, "properties": [ { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }, { "id": "custom.fillOpacity", "value": 0 } ] } ] },
+   "options": { "legend": { "showLegend": true, "placement": "bottom" }, "tooltip": { "mode": "multi" } }
   }
  ]
 }

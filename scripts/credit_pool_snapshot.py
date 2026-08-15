@@ -58,6 +58,26 @@ CREATE TABLE IF NOT EXISTS service_usage_daily (
 )
 """
 
+# Birdeye bills COMPUTE UNITS (CU), not calls. Our svc:birdeye:calls counter is a poor CU
+# proxy for two reasons: (1) scrape_runners + slow_cluster hit history_price via their own
+# un-instrumented helpers (invisible to the counter), and (2) history_price is Birdeye
+# "Dynamic CU" — its cost varies by the time range requested, so calls×weight can't be right.
+# So we DON'T estimate: we poll Birdeye's own usage endpoint (/utils/v1/credits — the exact
+# source the Birdeye portal shows) and snapshot the real number.
+BIRDEYE_CREDITS_DDL = """
+CREATE TABLE IF NOT EXISTS birdeye_credits (
+    snapshot_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    cycle_start   TIMESTAMPTZ,
+    cycle_end     TIMESTAMPTZ,
+    cu_used       BIGINT NOT NULL,
+    cu_remaining  BIGINT NOT NULL,
+    cu_limit      BIGINT NOT NULL,
+    overage_cu    BIGINT NOT NULL DEFAULT 0,
+    overage_cost  DOUBLE PRECISION NOT NULL DEFAULT 0,
+    PRIMARY KEY (snapshot_at)
+)
+"""
+
 
 def _redis_client():
     import redis  # sync client (framework container)
@@ -131,6 +151,53 @@ def _snapshot_service_usage(r) -> int:
     return len(rows)
 
 
+def _snapshot_birdeye_credits() -> dict | None:
+    """Poll Birdeye's own /utils/v1/credits (the exact source the portal shows) and record a
+    snapshot of REAL compute-unit usage into birdeye_credits. Returns the parsed summary (with
+    a linear end-of-cycle projection) or None. Fail-open — never raises."""
+    import json
+    import urllib.request
+    try:
+        from bots.copy.config import get_copy_settings
+        key = get_copy_settings().birdeye_api_key
+        if not key:
+            return None
+        req = urllib.request.Request(
+            "https://public-api.birdeye.so/utils/v1/credits",
+            headers={"X-API-KEY": key, "x-chain": "solana", "Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            d = (json.loads(resp.read().decode()) or {}).get("data") or {}
+        used = int((d.get("usage") or {}).get("total") or 0)
+        remaining = int((d.get("remaining") or {}).get("total") or 0)
+        over_cu = int((d.get("overage_usage") or {}).get("total") or 0)
+        over_cost = float((d.get("overage_cost") or {}).get("total") or 0.0)
+        limit = used + remaining
+        cs, ce = d.get("start_time"), d.get("end_time")
+        cstart = datetime.fromtimestamp(cs, tz=timezone.utc) if cs else None
+        cend = datetime.fromtimestamp(ce, tz=timezone.utc) if ce else None
+        with session_scope() as s:
+            s.execute(text(BIRDEYE_CREDITS_DDL))
+            s.execute(text(
+                "INSERT INTO birdeye_credits (snapshot_at, cycle_start, cycle_end, cu_used, "
+                "cu_remaining, cu_limit, overage_cu, overage_cost) "
+                "VALUES (now(), :cs, :ce, :used, :rem, :lim, :ocu, :ocost)"
+            ), {"cs": cstart, "ce": cend, "used": used, "rem": remaining,
+                "lim": limit, "ocu": over_cu, "ocost": over_cost})
+        # linear projection to cycle end
+        projected = used
+        if cs and ce and ce > cs:
+            elapsed = max(1e-9, (datetime.now(timezone.utc).timestamp() - cs) / (ce - cs))
+            projected = int(used / min(1.0, elapsed))
+        return {"cu_used": used, "cu_remaining": remaining, "cu_limit": limit,
+                "pct_of_limit": round(100 * used / limit, 1) if limit else 0.0,
+                "overage_cu": over_cu, "overage_cost": over_cost,
+                "projected_cycle_cu": projected, "cycle_end": ce}
+    except Exception as e:
+        log.warning("birdeye_credits_snapshot_failed", err=str(e))
+        return None
+
+
 def main() -> int:
     configure_logging()
 
@@ -167,6 +234,9 @@ def main() -> int:
         log.warning("delivery_counter_read_failed", err=str(e))
         per_day, yday_by_tier = {}, {}
 
+    # ---- Real Birdeye compute-unit burn (polled from Birdeye, not estimated) ----
+    be_cu = _snapshot_birdeye_credits()
+
     if per_day:
         daily_avg = int(round(sum(per_day.values()) / len(per_day)))
         yesterday_total = sum(yday_by_tier.values())
@@ -195,8 +265,10 @@ def main() -> int:
         "pct_of_20M_autoscale": pct_of_autoscale,
         "matched_buys_24h_signal_volume": matched_buys_24h,
         "warming_up": warming_up,
+        "birdeye_cu": be_cu,
         "note": ("real burn = per-tier delivery counters (helius:deliv:*); "
-                 "~1 credit/delivery; matched_buys is signal volume only"),
+                 "~1 credit/delivery; matched_buys is signal volume only; "
+                 "birdeye_cu = REAL compute units from /utils/v1/credits (not call-count)"),
     }
     write_audit("credit_pool_snapshot", bot_id="copy", actor="cron", payload=payload)
 
@@ -215,6 +287,14 @@ def main() -> int:
               + (f"  → +{over_plan:,} into paid autoscale ({pct_of_autoscale}% of 20M)"
                  if over_plan else "  (no autoscale spend)"))
     print(f"  [signal volume] matched buys 24h: {matched_buys_24h:,}")
+    if be_cu:
+        print(f"  [birdeye CU] {be_cu['cu_used']:,}/{be_cu['cu_limit']:,} used "
+              f"({be_cu['pct_of_limit']}%), {be_cu['cu_remaining']:,} left; "
+              f"projected end-of-cycle {be_cu['projected_cycle_cu']:,}"
+              + (f"  ⚠ overage +{be_cu['overage_cu']:,} (${be_cu['overage_cost']:.2f})"
+                 if be_cu['overage_cu'] else ""))
+    else:
+        print("  [birdeye CU] poll unavailable (see logs)")
 
     if _ALERTS:
         try:
@@ -228,6 +308,11 @@ def main() -> int:
                         f"real deliveries yesterday: {yesterday_total:,}\n"
                         f"projected: {projected_monthly:,}/mo = {pct_of_plan}% of the 10M plan"
                         + (f" (+{over_plan:,} paid autoscale)" if over_plan else ""))
+            if be_cu:
+                body += (f"\nBirdeye CU: {be_cu['cu_used']:,}/{be_cu['cu_limit']:,} "
+                         f"({be_cu['pct_of_limit']}%), proj end-of-cycle {be_cu['projected_cycle_cu']:,}"
+                         + (f" — overage +{be_cu['overage_cu']:,} (${be_cu['overage_cost']:.2f})"
+                            if be_cu['overage_cu'] else ""))
             emit_alert(
                 severity=Severity.P2,
                 title="[copy] credit/pool snapshot",
