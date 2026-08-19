@@ -1,96 +1,111 @@
-Hi — I need your help vetting some Solana wallets. You don't need any prior context; everything
-you need is below. Please work through it with Claude-in-Chrome using Birdeye (a free Solana
-analytics site — no login or payment required).
+Hi — I need your help vetting some Solana wallets. You don't need any prior context; everything you
+need is below. Please work through it with Claude-in-Chrome using Birdeye (a free Solana analytics
+site — no login or payment required).
 
 ============================================================
 WHAT I NEED (short version)
 ============================================================
-I'll give you 6 Solana wallet addresses. For each one, look it up on Birdeye and answer a single
-question: is this a skilled wallet that REPEATEDLY buys memecoins early and HOLDS them through big
-gains — or did it just get lucky on one coin (or is it an insider)? Give me a KEEP / WATCH / REJECT
-verdict for each wallet, with the numbers that led you there.
+I'll give you 16 Solana wallet addresses (below). For each one, look it up on Birdeye and answer ONE
+question: does this wallet REPEATEDLY get into memecoins early, ride them up, and then SELL NEAR THE
+TOP — cleanly enough, and with enough of a delay, that a copy-bot could follow its SELL and capture
+most of the move? Give me a KEEP / WATCH / REJECT verdict per wallet with the numbers that decided it.
+
+★ IMPORTANT — this is the OPPOSITE of what an older version of this task asked for. I do NOT want
+"buy-and-hold forever" wallets, and I do NOT want 5-second snipers. Read the profile below carefully.
 
 ============================================================
-WHY I'M ASKING (the point of the task)
+WHY I'M ASKING (the exact profile that matters)
 ============================================================
-I run a paper-trading bot that copies the buys of good Solana wallets. One of its strategies is
-supposed to follow "accumulators" — wallets that quietly buy a coin early and hold it while it runs
-up. The problem is it's currently following fast in-and-out traders instead, which loses money.
+I run a paper-trading bot with a "conviction" strategy that MIRRORS a single wallet: it buys when the
+wallet buys and, crucially, SELLS WHEN THE WALLET SELLS. So the wallet's EXIT skill is what makes or
+breaks it. We measured the current roster and it fails for two reasons we need you to screen out:
 
-I found these 6 wallets by scanning Solana tokens that already ran 20x–400x. Each of them bought one
-of those winners very early (some for as little as ~$76) and is STILL holding a large position today.
-That "buy tiny early, hold the winner" profile is exactly what I want the bot to copy.
+  (a) The wallets sell in tiny buy/sell/buy chops or dump within seconds — our bot (which lags by a
+      few seconds to a couple of minutes) can't follow that; it just gets chopped into paper-cuts.
+  (b) OR the wallet holds to zero — there's no clean exit to mirror, and we ride it back down.
 
-BUT holding one winner could just be luck. Before I let the bot follow any of these wallets, I need
-you to tell me which ones do this REPEATEDLY (real skill) versus which just hit once or are insiders.
-That separation is the entire purpose of this task.
-
-============================================================
-THE WALLETS
-============================================================
-PRIMARY — these three look clean; please vet all three carefully:
-
-1) CdoQKournsTERPHJwJowB7DrS2o4tvBywASHPuuumaow
-   (Strongest lead. Already appears to hold THREE different winners — roughly $24.8k, $21k, and
-   $13.2k in three separate coins. Confirm whether that's genuine repeat skill.)
-
-2) 7Tq4tSb7SnrdHVu7jvj5cbkXzzuMaym2v26613ZjYouk
-   (Holds ~$60k of one winner; bought in for ~$92 near launch.)
-
-3) 4nBNtRX6Q3NAhtcaXfV5R2okHr2Cd6iur7EDQvNedujV
-   (Holds ~$39k of that same winner; bought in for ~$76. But its portfolio is mostly that one bag
-   plus dust — so scrutinize hard whether it can repeat, or just got one right.)
-
-SECONDARY — only if you have time. These were flagged as possibly part of a coordinated launch
-"bundle," so they may be insiders holding a team allocation rather than skilled buyers. The question
-for them is whether they actually trade well across many coins, or just sit on one insider bag:
-
-4) AfJupWzEVdfUiA4Zio7VNFvxTgCXFcbFkV3qVDjYQ1i5
-5) 9vdwML1RzB3ZY9JxnNohiYqy2nMh7N7H61mM4daDV5Rm
-6) 52YXFG9ksGps7P9ZSDLK79f9Hpa5ihR24w6dkikW5aEB
+The wallet I WANT sits between those: it ACCUMULATES a coin early (several buys building a real
+position), RIDES the run, and then SELLS THE BULK OF ITS POSITION NEAR THE PEAK — over minutes-to-hours,
+not in a single same-block dump. That "sold near the top, with a followable lag" behavior is the entire
+point. If a wallet does that REPEATEDLY across different coins, it's copy-able gold. If it only did it
+once, or dumps too fast, or never sells, it's not.
 
 ============================================================
-HOW TO CHECK EACH WALLET
+HOW TO CHECK EACH WALLET (the deep check — this is why I need you, not a script)
 ============================================================
-1) Open its Birdeye profile:  https://www.birdeye.so/profile/<ADDRESS>?chain=solana  (no login).
+1) Open its Birdeye wallet analyzer:  https://birdeye.so/solana/wallet-analyzer/<ADDRESS>  (no login).
+   (Its plain profile is https://birdeye.so/profile/<ADDRESS>?chain=solana — either is fine.)
 
-2) Record these numbers:
-   - Realized PnL (all-time, and last 30 days if shown) and total unrealized PnL.
-   - Win rate, total number of trades, average holding duration, and "instant sell %".
-   - "Scam / rug token %" (a high value means it sprays into junk — a bot/sniper, not a curator).
+2) Record the summary numbers: Realized PnL (all-time), Unrealized PnL, Win rate, total trades,
+   average holding duration, "Instant Sell %", and "Scam/Rug tokens %".
 
-3) THE KEY QUESTION — look through the wallet's traded-token history and count: how many DIFFERENT
-   coins did it buy EARLY (a small position, near the coin's launch) and then either still hold, or
-   sell into a large gain — i.e. an actual runner (roughly 5x or more)?
-     • 3 or more such runners  = a genuine repeat accumulator (what I want).
-     • Only one runner, with the rest dust/losers = a one-time lucky hit.
+3) ★ THE KEY CHECK — open the wallet's TRADED-TOKENS history and, for its 3–6 biggest winners,
+   look at the actual buy/sell timeline of EACH coin (Birdeye shows per-token trades / the price chart
+   with the wallet's fills). For each winner, judge:
+     • ENTRY: did it buy EARLY (before/at the start of the run), building the position over several
+       buys — an accumulation — rather than aping one lump at the top?
+     • EXIT: WHERE on the run did it sell the bulk of its position? Near the PEAK (top ~third of the
+       move) = what I want. Dumped early (before the real run) or bag-held to near-zero = not what I want.
+     • LAG / FOLLOWABILITY: over what span did it exit? Selling down over MINUTES-TO-HOURS = followable.
+       A single same-second/same-block dump of the whole bag = UNFOLLOWABLE (our bot can't react that
+       fast) → that's a REJECT even if the wallet is personally rich.
+     • LIQUIDITY: were these coins liquid enough (roughly $30k+ at the time) that a ~$400 buy AND sell
+       could actually fill? Wins made only on ultra-thin micro-pools aren't copy-able.
 
-4) Judge the wallet's style. Does it ACCUMULATE (build a position with several buys over time, then
-   hold) — or snipe-and-dump within minutes? A very high "instant sell %" or high "scam/rug %" points
-   to an automated sniper, not a skilled holder. Signs it's funded from the same source as a group of
-   other wallets, or repeatedly holds the exact coins of a known launch team, point to an insider.
+4) Count the REPEATS: how many DIFFERENT coins show the full pattern — early accumulation → ride →
+   sold near the top over a followable span? 3 or more = genuine repeatable exit skill. One = luck.
 
 ============================================================
 THE VERDICT I WANT (per wallet)
 ============================================================
-   KEEP    — genuine repeat accumulator (held ~3+ real runners); worth copying.
-   WATCH   — promising but only 1–2 runners, or the picture is unclear; leave it observing.
-   REJECT  — one-hit wonder, a sniper/flipper, or an insider.
-For each wallet give one line of reasoning plus the two numbers that decided it: its realized PnL,
-and how many real runners it bought early and held.
+   KEEP    — repeatedly (3+ coins) accumulates early and SELLS NEAR THE TOP over a followable span.
+             This is the copy-able exit skill I'm after.
+   WATCH   — promising but only 1–2 clean examples, thin data, or the exit timing is borderline.
+   REJECT  — dumps too fast to follow (near-instant full-bag sells / very high Instant-Sell %),
+             OR never really sells (bag-holder to zero / huge unrealized vs realized),
+             OR a one-hit wonder, OR an obvious market-maker/HFT bot (thousands of trades, ~0 hold),
+             OR an insider sitting on one launch-team allocation.
+Give me, per wallet: the verdict, its Realized PnL, and — most important — for 2–3 of its winners, a
+one-line note on WHERE it sold relative to the peak and over what span (e.g. "SOL coin: bought early,
+sold ~80% of bag over ~40 min near the top" vs "dumped whole bag in one tx at +15%").
+
+============================================================
+THE WALLETS (16 — pre-screened by me as profitable, non-MM, non-instant-flip; they each got into
+several big runners EARLY. Your job is purely to judge their EXIT timing per the checks above.)
+Columns: address | # runners bought early | avg buys/coin | biggest runner | avg days-early | my-tier
+============================================================
+1)  1eveYYxZ2mDiAnmCh3fnAbJwjgErzokRA1b6UrRybSM | 36 runners | 11.7 buys | 1591x | 5.1d early | active
+2)  popo3Rj6arKNttyUFpWfbkv2gG8uS13TGtmH6JPMuHz | 29 | 3.6 | 1498x | 5.0d | watch
+3)  iK7BmyUoFm2GDXfXSi61u94kJXSFyknFnGFQukbF2bb | 24 | 12.5 | 1498x | 3.4d | active
+4)  BGzLYcFcUZkW5GPZZAYK4Jxyf1W7aigyHQbvmKsQeeuq | 24 | 8.7 | 970x | 3.4d | watch
+5)  gtagyESa99t49VmUqnnfsuowYnigSNKuYXdXWyXWNdd | 20 | 9.2 | 400x | 4.3d | active
+6)  E45YLW6LV2GdvPu4HgpBMZF4veGmUqbK6hs2W3ykx2s1 | 19 | 3.1 | 1498x | 4.0d | active
+7)  C86oRMyUqzsXKXEAsCUbrhJuYuMbqXxE886s9MpUFF88 | 18 | 3.5 | 970x | 4.9d | active
+8)  CAP9q6SmwGufYWTKupGA5uGzkjqirkRRuz6YEGhumjyi | 16 | 7.9 | 860x | 4.5d | watch
+9)  NULLioEUhd89Jo5Acm9sX88bwjNjrsAVy6KWkXD7qZh | 15 | 3.3 | 970x | 2.3d | active
+10) FdHEV7sRsHJch6LmnEBtzLtU28zK3Dogb9tbhXLNyyGT | 14 | 4.2 | 1498x | 2.8d | active
+11) 3fZftz6m8d37X5pBhnF4rHhgrG5hW8rsCKgdhtuPBf6u | 13 | 6.0 | 1472x | 4.3d | active
+12) DY5qAVztKXXPMY9enjbgvJxn6wPPZ1Ek34Jp3xJm4Lct | 13 | 8.3 | 860x | 4.0d | active
+13) 3XSYLa8VqkTV4RxKGG92nQb3gPziFFFEVLCYkEaEtZ5k | 12 | 6.0 | 970x | 4.6d | active
+14) BLUEZYapTJn89Rq5Mb48gD6XdT2ZJtDMw9iXBeNq8ntx | 12 | 3.8 | 860x | 4.5d | active
+15) 6AGp6zbGNuyZpmzeswv9KCNU15Rf37UQDqDqFAeHmS8d | 12 | 5.5 | 387x | 2.9d | active
+16) 4BQ6ATUt26GFdiYQfht23iwfKyYD9D7XbL5ATqNGk3xK | 11 | 4.5 | 400x | 2.7d | active
 
 ============================================================
 WHERE TO PUT YOUR ANSWER
 ============================================================
 Save your write-up to my OneDrive via the OneDrive web app (I'm signed in there as Roy Kelly), as:
-   Claude\conviction_accumulator_vet_2026-07-21.txt
-Please DON'T save it to a local file.
+   Claude\conviction_tailrider_vet_2026-08-11.txt
+One block per wallet (address, verdict, the numbers, and the per-winner exit-timing notes), then a
+short summary of which few you'd actually copy. Please DON'T save it to a local file.
 
 ============================================================
 LIMITS & GROUND RULES
 ============================================================
 - Birdeye may cap how far back a wallet's trade history goes, and its realized-PnL view is sometimes
-  restricted — just record what IS visible and clearly flag anything you couldn't see.
+  restricted — record what IS visible and clearly flag anything you couldn't see.
+- If the forge/wallet-analyzer data is thin for a wallet, fall back to reading the per-token price
+  chart + the wallet's fills on it; judge the exit visually. If you truly can't tell, mark WATCH.
 - Do NOT log into GMGN or any site that asks you to sign in, and do not pay for anything.
-- If a wallet's page won't load or the data is too thin to judge, say so and mark it WATCH rather than
-  guessing.
+- The single most valuable output is the EXIT-timing read (where on the run it sold, and how fast).
+  Two clean examples of "sold near the top over a followable span" are worth more than any PnL number.
