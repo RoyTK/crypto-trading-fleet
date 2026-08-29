@@ -211,6 +211,7 @@ def main():
                     wl["beat_rug"] += 1 if beat_rug else 0
                     wl["rug_n"] += 1
                     detail.append(dict(w=w[:8], tok=tok[:8], span_h=round(span_h, 1),
+                                       open_t=int(p["open_t"]), exit_t=int(p["exit_t"]),
                                        follow=round(follow_ret, 4), mech=round(mech_ret, 4),
                                        rug=round(rug_ret, 4), peak=round(p["peak"], 2)))
             if pcount >= MAX_POS:
