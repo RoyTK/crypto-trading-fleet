@@ -41,6 +41,7 @@ TRAIL_FRAC       = 0.30          # mechanical counterfactual: 30% trailing stop
 FEE_RT           = float(os.getenv("FEE_RT", "0.025"))   # round-trip cost (~1.25%/side, audit)
 MAX_POS          = int(os.getenv("MAX_POS", "700"))
 TOP_WALLETS      = int(os.getenv("TOP_WALLETS", "30"))
+PXCACHE_PATH     = os.getenv("PXCACHE_PATH", "/tmp/swing_pxcache.json")   # disk cache -> resumable
 
 # swing wallets: strong crude-realized, exclude hyperactive MM-like (>130 swing tokens)
 WALLET_SQL = """
@@ -158,7 +159,14 @@ def main():
         pcount = 0
         per_wallet = {}
         detail = []
-        pxcache = {}
+        # disk price cache -> a long broadened run is resumable + cheap to re-run
+        try:
+            pxcache = {k: [(int(a), float(b)) for a, b in v]
+                       for k, v in json.load(open(PXCACHE_PATH)).items()}
+            print(f"loaded {len(pxcache)} cached token price-series from {PXCACHE_PATH}")
+        except Exception:
+            pxcache = {}
+        _new = 0
         for w, sp, cr in wallets:
             toks = [r[0] for r in s.execute(text(TOKENS_SQL), {"w": w}).all()]
             wl = per_wallet.setdefault(w, dict(n=0, wins=0, sum_ret=0.0, follow=[], mech=[],
@@ -175,6 +183,10 @@ def main():
                 if tok not in pxcache:
                     pxcache[tok] = hist_1h(tok, t0, t1)
                     time.sleep(0.15)
+                    _new += 1
+                    if _new % 150 == 0:
+                        json.dump({k: v for k, v in pxcache.items()}, open(PXCACHE_PATH, "w"))
+                        print(f"  ...{_new} new fetches, {pcount} positions, cache flushed")
                 series = pxcache[tok]
                 if len(series) < 5:
                     continue
@@ -216,6 +228,9 @@ def main():
                                        rug=round(rug_ret, 4), peak=round(p["peak"], 2)))
             if pcount >= MAX_POS:
                 break
+
+    json.dump({k: v for k, v in pxcache.items()}, open(PXCACHE_PATH, "w"))
+    print(f"final cache: {len(pxcache)} token series saved to {PXCACHE_PATH}")
 
     # ---- aggregate ----
     allf = [d["follow"] for d in detail]
