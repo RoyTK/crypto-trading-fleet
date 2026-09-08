@@ -441,10 +441,15 @@ class CopySettings(BaseSettings):
     # majority = genuinely leaving). Below this, small sells are suppression → HOLD.
     copy_swing_follow_wallet_exit: bool = Field(default=True)
     copy_swing_exit_distribution_frac: float = Field(default=0.50)
-    # Lookback for the net-flow measure, anchored at (entry_at − lookback) so it
-    # captures the wallet's pre-entry accumulation of the current build. Matches the
-    # 10-day hold cap; excludes ancient round-trips of the same token.
-    copy_swing_flow_lookback_hours: float = Field(default=240.0)
+    # Lookback for the net-flow measure, anchored at (entry_at − lookback). MUST be
+    # short — it should capture only the CURRENT build (the ~60min net-accumulation
+    # that triggered us), NOT the wallet's lifetime history. BUGFIX 2026-09-08: was
+    # 240h, which dragged in the wallet's ancient round-trips of the same token —
+    # these active wallets had already sold ~100% of their lifetime buys (pre-entry
+    # sold ≈ pre-entry bought), so `sold >= 50% of bought` was ALREADY TRUE at entry
+    # and the follow-out fired on the FIRST post-entry sell → median hold 5 min (not
+    # multi-day). 2h captures the build + margin and lets genuine holds run.
+    copy_swing_flow_lookback_hours: float = Field(default=2.0)
     # Entry liquidity guard — need to be able to exit our size. Swing tokens are
     # more liquid than fresh-mint snipes, but keep the floor. Fail-open.
     copy_swing_min_entry_liquidity_usd: float = Field(default=5000.0)
