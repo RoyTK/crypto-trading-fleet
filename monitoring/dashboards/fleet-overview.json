@@ -135,7 +135,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy' IN ('cluster','conviction','teamfollow','cohortfire','promobuy')"
+     "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy' IN ('cluster','conviction','teamfollow','cohortfire','promobuy','swing')"
     }
    ],
    "fieldConfig": {
@@ -171,7 +171,7 @@
     "x": 0,
     "y": 7,
     "w": 24,
-    "h": 9
+    "h": 11
    },
    "datasource": {
     "type": "postgres",
@@ -181,7 +181,7 @@
     {
      "refId": "A",
      "format": "table",
-     "rawSql": "SELECT 'cluster' AS strategy, (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END) AS state, (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='cluster') AS open_pos, (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cluster') AS trades_24h, (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster') AS net_total_usd, (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cluster') AS net_24h_usd, (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster') AS win_rate, (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster') AS closed_n UNION ALL SELECT 'conviction', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_conviction' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='conviction'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='conviction'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='conviction'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction') UNION ALL SELECT 'teamfollow', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_teamfollow' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='teamfollow'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow') UNION ALL SELECT 'cohortfire', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_cohortfire' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='cohortfire'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cohortfire'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cohortfire'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cohortfire'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cohortfire'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cohortfire') UNION ALL SELECT 'promobuy', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_promobuy' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='promobuy'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='promobuy'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='promobuy'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy')"
+     "rawSql": "SELECT 'cluster' AS strategy, (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END) AS state, (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='cluster') AS open_pos, (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cluster') AS trades_24h, (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster') AS net_total_usd, (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cluster') AS net_24h_usd, (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster') AS win_rate, (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cluster') AS closed_n UNION ALL SELECT 'conviction', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_conviction' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='conviction'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='conviction'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='conviction'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='conviction') UNION ALL SELECT 'teamfollow', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_teamfollow' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='teamfollow'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow') UNION ALL SELECT 'cohortfire', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_cohortfire' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='cohortfire'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cohortfire'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cohortfire'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='cohortfire'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cohortfire'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='cohortfire') UNION ALL SELECT 'promobuy', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_promobuy' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='promobuy'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='promobuy'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='promobuy'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='promobuy') UNION ALL SELECT 'swing', (SELECT CASE WHEN EXISTS(SELECT 1 FROM halts WHERE bot_id='copy_swing' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='swing'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND created_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='swing'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='swing'), (SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric,2),0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at>=NOW()-INTERVAL '24 hours' AND sim_metadata->>'strategy'='swing'), (SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='swing'), (SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='swing')"
     }
    ],
    "fieldConfig": {
@@ -306,7 +306,7 @@
    "title": "Cumulative paper PnL by strategy (USD)",
    "gridPos": {
     "x": 0,
-    "y": 16,
+    "y": 18,
     "w": 24,
     "h": 8
    },
@@ -318,7 +318,7 @@
     {
      "refId": "A",
      "format": "time_series",
-     "rawSql": "SELECT exit_at AS time, sim_metadata->>'strategy' AS metric, SUM(pnl_usd) OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at) AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy' IN ('cluster','conviction','teamfollow','cohortfire','promobuy') ORDER BY exit_at"
+     "rawSql": "SELECT exit_at AS time, sim_metadata->>'strategy' AS metric, SUM(pnl_usd) OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at) AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy' IN ('cluster','conviction','teamfollow','cohortfire','promobuy','swing') ORDER BY exit_at"
     }
    ],
    "fieldConfig": {
@@ -337,7 +337,7 @@
    "title": "Open paper positions (all strategies)",
    "gridPos": {
     "x": 0,
-    "y": 24,
+    "y": 26,
     "w": 24,
     "h": 8
    },
@@ -382,7 +382,7 @@
    "title": "Last 50 closed paper trades (all strategies)",
    "gridPos": {
     "x": 0,
-    "y": 32,
+    "y": 34,
     "w": 24,
     "h": 10
    },
@@ -493,7 +493,7 @@
    "title": "Heartbeat status (live = ≤2 min ago)",
    "gridPos": {
     "x": 0,
-    "y": 42,
+    "y": 44,
     "w": 12,
     "h": 7
    },
@@ -552,7 +552,7 @@
    "title": "Recent halts (7d)",
    "gridPos": {
     "x": 12,
-    "y": 42,
+    "y": 44,
     "w": 12,
     "h": 7
    },
