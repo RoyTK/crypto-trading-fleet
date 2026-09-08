@@ -61,6 +61,7 @@ from bots.copy.loop_helpers import (
     update_trade_peak_pct,
     update_trade_token_age,
     update_trade_token_meta,
+    wallet_flow_since,
     write_cluster_detection,
 )
 from bots.copy.executor import CopyExecutor
@@ -84,6 +85,7 @@ from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
 from bots.copy.signals.conviction import ConvictionDetector
 from bots.copy.signals.sell_cluster import SellClusterDetector
+from bots.copy.signals.swing import SwingDetector
 from bots.copy.signals.teamfollow import TeamFollowDetector
 from bots.copy import signal_features
 from bots.copy import position_liq_log
@@ -92,6 +94,7 @@ from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import (
     size_conviction_position,
     size_position,
+    size_swing_position,
     size_teamfollow_position,
 )
 from bots.copy.venue.dex_quoter import (
@@ -255,6 +258,10 @@ class CopyBot(BotLifecycle):
             dust_floor_usd=self.copy_settings.copy_cohortfire_dust_floor_usd,
             strategy_name="cohortfire",
         )
+        # Swing-copy (2026-09-07): multi-day single-wallet follow-in + NET-FLOW
+        # follow-out. Conviction sibling off the SAME buy+sell streams; roster =
+        # wallet_pool.swing=true, loaded in on_start. Own bankroll/halt ('copy_swing').
+        self.swing = SwingDetector()
         self.executor = CopyExecutor()
         self._last_reconcile_ts: float = 0.0
         self._last_position_check_ts: float = 0.0
@@ -305,6 +312,10 @@ class CopyBot(BotLifecycle):
         # loaded here: webhook_receiver matches incoming events against the live
         # DB active set, so bot_copy keeps no wallet list of its own.
         self._load_conviction_wallets()
+        # Swing roster (multi-day follow-in strategy) — DB (wallet_pool.swing=true).
+        # Only loaded when enabled; otherwise the detector stays empty (no triggers).
+        if self.copy_settings.copy_swing_enabled:
+            self._load_swing_wallets()
         # Team-follow roster (JSON in the repo; experiment strategy). Only loaded
         # when enabled — otherwise the detector stays empty (no triggers).
         if self.copy_settings.copy_teamfollow_enabled:
@@ -338,7 +349,7 @@ class CopyBot(BotLifecycle):
         # sell-hold-off (observe_sell) as well as the follow-the-wallet-out exit.
         need_sells = self.copy_settings.copy_sell_cluster_enabled or (
             self.copy_settings.copy_conviction_enabled
-        )
+        ) or self.copy_settings.copy_swing_enabled
         if need_sells:
             self._sells_subscriber_task = asyncio.create_task(self._sells_subscriber())
         # Visibility on executor configuration at startup. Paper-only is the
@@ -399,6 +410,12 @@ class CopyBot(BotLifecycle):
         # Gated by copy_conviction_enabled (ships dark).
         if self.copy_settings.copy_conviction_enabled:
             self._evaluate_conviction()
+
+        # Swing-copy (2026-09-07) — multi-day follow-in, own bankroll/metrics.
+        # Gated by copy_swing_enabled (ships dark). Enters immediately (no
+        # persistence gate — latency is noise on a multi-day build).
+        if self.copy_settings.copy_swing_enabled:
+            self._evaluate_swing()
 
         # Team-follow experiment (2026-07-01) — isolated strategy, own bankroll +
         # channel. Fires on >=2 same-team co-buys; gated by copy_teamfollow_enabled.
@@ -490,6 +507,8 @@ class CopyBot(BotLifecycle):
                         # Conviction strategy observes the SAME stream. Cheap
                         # set-membership filter; firing is gated in iterate().
                         self.conviction.observe_buy(ev)
+                        # Swing-copy observes the same stream (own roster filter).
+                        self.swing.observe_buy(ev)
                     except Exception:
                         self.log.exception("buys_message_parse_failed")
             except asyncio.CancelledError:
@@ -648,6 +667,11 @@ class CopyBot(BotLifecycle):
                             self.conviction.observe_sell(ev)
                             if self.copy_settings.copy_conviction_follow_wallet_exit:
                                 asyncio.create_task(self._follow_trigger_wallet_out(ev))
+                        # Swing observes sells for its NET trigger + NET-FLOW follow-out.
+                        if self.copy_settings.copy_swing_enabled:
+                            self.swing.observe_sell(ev)
+                            if self.copy_settings.copy_swing_follow_wallet_exit:
+                                asyncio.create_task(self._follow_swing_out(ev))
                     except Exception:
                         self.log.exception("sells_message_parse_failed")
             except asyncio.CancelledError:
@@ -1877,6 +1901,190 @@ class CopyBot(BotLifecycle):
                 self.log.exception("conviction_trigger_wallet_close_failed",
                                    trade_id=t.trade_id, asset=ev.token_mint)
 
+    def _evaluate_swing(self) -> None:
+        """Drain swing follow-in triggers and act on each immediately.
+
+        Unlike conviction there is NO persistence gate — on a multi-day build our
+        latency is noise, so waiting buys nothing and only risks missing the entry.
+        Each fired candidate becomes its own paper trade (strategy='swing').
+        """
+        for candidate in self.swing.evaluate():
+            asyncio.create_task(self._consume_swing_candidate(candidate))
+
+    async def _consume_swing_candidate(self, candidate: SignalCandidate) -> None:
+        cs = self.copy_settings
+        # Independent DD halt for the swing sub-strategy (its own halt_id).
+        try:
+            if is_bot_halted("copy_swing"):
+                self.log.info("swing_halted_skip", asset=candidate.asset)
+                return
+        except Exception:
+            self.log.exception("swing_halt_check_failed")
+
+        # Re-entry cooldown (optional; 0 = off): don't re-buy a token swing recently
+        # traded (open OR closed) — same whipsaw guard as conviction.
+        cooldown = cs.copy_swing_reentry_cooldown_minutes
+        if cooldown and cooldown > 0 and has_recent_strategy_trade(
+            candidate.asset, candidate.venue, "swing", within_minutes=cooldown
+        ):
+            self.log.info("swing_reentry_cooldown_skip", asset=candidate.asset)
+            return
+
+        # Per-strategy dedup: only an existing OPEN swing position in this token blocks.
+        if has_open_position(candidate.asset, candidate.venue, strategy="swing"):
+            self.log.info("swing_dedup_skip", asset=candidate.asset, chain=candidate.chain)
+            return
+
+        trigger_wallet = (candidate.payload or {}).get("trigger_wallet")
+        capital = cs.copy_swing_paper_capital_usd
+        current_alloc = open_allocation_pct(capital, strategy="swing")
+        notional_usd = size_swing_position(
+            paper_capital_usd=capital,
+            current_open_alloc_pct=current_alloc,
+            current_dd_today_pct=0.0,
+        )
+        if notional_usd <= 0:
+            self.log.info("swing_size_zero_skip", current_alloc=current_alloc)
+            return
+        if self._session is None:
+            return
+
+        # Serial-deployer blocklist (fail-open, same as cluster/conviction).
+        token_security: Optional[dict] = None
+        if candidate.venue == "solana":
+            try:
+                token_security = await fetch_token_security(self._session, candidate.asset)
+            except Exception:
+                self.log.exception("swing_token_security_fetch_failed", asset=candidate.asset)
+            if token_security:
+                creator = token_security.get("creator")
+                if creator and creator in cs.get_blocked_creators():
+                    self.log.info("swing_blocked_creator_skip",
+                                  asset=candidate.asset, creator=creator)
+                    return
+
+        # Entry liquidity guard — need to be able to exit our size. Fail-open.
+        entry_liq: Optional[float] = None
+        if candidate.venue == "solana":
+            min_liq = cs.copy_swing_min_entry_liquidity_usd
+            if min_liq and min_liq > 0:
+                try:
+                    entry_liq = await fetch_token_liquidity(self._session, candidate.asset)
+                except Exception:
+                    entry_liq = None
+                if entry_liq is not None and entry_liq < min_liq:
+                    self.log.info("swing_thin_liquidity_skip", asset=candidate.asset,
+                                  liquidity_usd=entry_liq, min_liquidity_usd=min_liq,
+                                  trigger_wallet=trigger_wallet)
+                    return
+
+        snapshot = CopyMarketSnapshot(chain=candidate.chain, session=self._session)
+        sim_fill = await self.simulator.simulate_entry_async(
+            asset=candidate.asset,
+            notional_usd=notional_usd,
+            leverage=1.0,
+            direction=candidate.direction,
+            market_snapshot=snapshot,
+        )
+        signal_id = persist_signal(candidate)
+        # Paper-only by construction, tagged strategy='swing'.
+        paper_trade_id = persist_paper_trade(
+            signal_id=signal_id,
+            candidate=candidate,
+            sim_fill=sim_fill,
+            notional_usd=notional_usd,
+            leverage=1.0,
+            strategy="swing",
+            trigger_wallet=trigger_wallet,
+        )
+        self.log.info(
+            "swing_paper_opened", asset=candidate.asset, trigger_wallet=trigger_wallet,
+            notional_usd=round(notional_usd, 2), trade_id=paper_trade_id,
+            fill=sim_fill.fill_price,
+        )
+        # Best-effort enrichment (concentration + entry liquidity + token age).
+        if candidate.venue == "solana" and paper_trade_id is not None:
+            if token_security is not None or entry_liq is not None:
+                try:
+                    update_trade_token_meta(
+                        paper_trade_id,
+                        creator=(token_security or {}).get("creator"),
+                        top10_holder_pct=(token_security or {}).get("top10_holder_pct"),
+                        owner_pct=(token_security or {}).get("owner_pct"),
+                        entry_liquidity_usd=entry_liq,
+                    )
+                except Exception:
+                    self.log.exception("swing_token_meta_capture_failed", asset=candidate.asset)
+            try:
+                import time as _time
+                info = await fetch_token_creation(self._session, candidate.asset)
+                if info and info.get("created_unix"):
+                    age_hours = max(0.0, (_time.time() - info["created_unix"]) / 3600.0)
+                    update_trade_token_age(
+                        paper_trade_id, created_unix=info["created_unix"],
+                        age_hours=age_hours, tx=info.get("tx"),
+                    )
+            except Exception:
+                self.log.exception("swing_token_age_capture_failed", asset=candidate.asset)
+
+    async def _follow_swing_out(self, ev: WalletSellEvent) -> None:
+        """NET-FLOW follow-out: close an open swing position when its trigger wallet
+        has net-distributed >= copy_swing_exit_distribution_frac of the build it made
+        on the token (bought vs sold over the lookback). HOLDS through smaller
+        suppression sells — the fix for conviction's exit-on-ANY-sell bleed.
+        Best-effort; failures are logged.
+        """
+        matches = [
+            t for t in list_open_paper_trades(strategy="swing")
+            if t.trigger_wallet == ev.wallet_address
+            and t.asset == ev.token_mint
+            and t.venue == ev.chain
+        ]
+        if not matches:
+            return
+        cs = self.copy_settings
+        frac = cs.copy_swing_exit_distribution_frac
+        lookback = timedelta(hours=cs.copy_swing_flow_lookback_hours)
+        to_close = []
+        for t in matches:
+            since = (t.entry_at - lookback) if t.entry_at else (
+                datetime.now(timezone.utc) - lookback)
+            bought, sold = wallet_flow_since(
+                ev.token_mint, ev.chain, ev.wallet_address, since)
+            if bought <= 0 or sold < frac * bought:
+                self.log.info("swing_hold_suppression_sell", asset=ev.token_mint,
+                              trade_id=t.trade_id, bought=round(bought), sold=round(sold),
+                              frac=frac)
+                continue
+            to_close.append(t)
+        if not to_close:
+            return
+        self.log.warning("swing_trigger_wallet_exit", asset=ev.token_mint,
+                         wallet=ev.wallet_address, count=len(to_close))
+        mid: Optional[float] = None
+        if self._session is not None and ev.chain == "solana":
+            try:
+                prices = await multi_price_solana(self._session, [ev.token_mint])
+                mid = prices.get(ev.token_mint)
+            except Exception:
+                self.log.warning("swing_exit_price_fetch_failed", asset=ev.token_mint)
+        for t in to_close:
+            close_price, exit_fill, exit_reason = await self._build_paper_exit(
+                asset=ev.token_mint, venue=ev.chain, mid=mid,
+                entry_price=t.entry_price, size_usd=t.size_usd,
+                base_exit_reason="swing_follow_out",
+            )
+            try:
+                close_paper_trade(
+                    trade_id=t.trade_id, exit_price=close_price, exit_fill=exit_fill,
+                    exit_reason=exit_reason,
+                    exit_meta={"exit_signal": "swing_follow_out",
+                               "exit_trigger_wallets": [ev.wallet_address]},
+                )
+            except Exception:
+                self.log.exception("swing_trigger_wallet_close_failed",
+                                   trade_id=t.trade_id, asset=ev.token_mint)
+
     async def _follow_team_out(self, ev: WalletSellEvent) -> None:
         """Close any open team-follow position when one of the team members that
         BOUGHT into it sells that token — hold while the smart money holds, exit
@@ -2607,6 +2815,26 @@ class CopyBot(BotLifecycle):
             return
         self.conviction.set_wallets(addrs)
         self.log.info("conviction_wallets_loaded", count=len(addrs))
+
+    def _load_swing_wallets(self) -> None:
+        """Load the swing roster from the DB (wallet_pool.swing=true) and push it
+        into the detector. Non-fatal on error — swing stays empty (no triggers).
+        Like conviction, a swing wallet only produces triggers if it is ACTIVE tier
+        (only active-tier webhook events reach the copy:buys/sells channels)."""
+        try:
+            from framework.db import session_scope
+            from sqlalchemy import text
+            with session_scope() as s:
+                rows = s.execute(text(
+                    "SELECT address FROM wallet_pool "
+                    "WHERE swing = true AND tier <> 'pruned'"
+                )).all()
+            addrs = [r.address for r in rows]
+        except Exception:
+            self.log.exception("swing_wallets_load_failed")
+            return
+        self.swing.set_wallets(addrs)
+        self.log.info("swing_wallets_loaded", count=len(addrs))
 
     def _load_teamfollow_roster(self) -> None:
         """Load the team-follow roster from bots/copy/teamfollow_roster.json and

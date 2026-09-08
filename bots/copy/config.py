@@ -409,6 +409,56 @@ class CopySettings(BaseSettings):
     copy_conviction_stop_pct: float = Field(default=0.0)
 
     # ------------------------------------------------------------------
+    # SWING-COPY (2026-09-07) — multi-day follow-in / net-flow follow-out
+    # ------------------------------------------------------------------
+    # Conviction sibling, but for MULTI-DAY holders (validated by the 2026-08
+    # follow-in/follow-out backtest: on a multi-day horizon our latency is noise,
+    # so mirroring the wallet's exit BEATS a mechanical stop — the inverse of
+    # conviction on fast spikes). Three inversions vs conviction: (1) NET-FLOW
+    # follow-out — exit only when the trigger wallet has net-distributed >= a
+    # fraction of its build (holds THROUGH suppression sells, fixing conviction's
+    # exit-on-ANY-sell); (2) NO tight stop (a 30% trail HURT in-sample) — wide
+    # catastrophe + rug + long timeout only; (3) many-small sizing (the edge is a
+    # ~2%-of-trades tail → deploy broadly to catch it). Own $10k paper bankroll +
+    # isolated metrics/dd/halt ('copy_swing'). Roster = wallet_pool.swing=true
+    # (scripts/set_swing_wallets.py). Ships DARK — enable via .env after review.
+    copy_swing_enabled: bool = Field(default=False)
+    copy_swing_paper_capital_usd: float = Field(default=10_000.0)
+    # Entry: fire when a roster wallet's NET buys (buys − sells) of a token cross
+    # this threshold in the window. Low floor + min_buys=1 → enter EARLY (no
+    # lateness penalty on a multi-day build). dust drops routing/fee junk.
+    copy_swing_dust_floor_usd: float = Field(default=10.0)
+    copy_swing_accumulation_threshold_usd: float = Field(default=500.0)
+    copy_swing_accumulation_window_minutes: int = Field(default=60)
+    copy_swing_min_buys: int = Field(default=1)
+    copy_swing_min_accumulation_span_seconds: int = Field(default=0)
+    # Sizing: flat % of the swing bankroll per position. 2.5% of $10k = $250; with
+    # the 60% alloc cap that's ~24 concurrent positions — broad, for tail capture.
+    copy_swing_sizing_pct: float = Field(default=2.5)
+    copy_swing_alloc_cap_pct: float = Field(default=60.0)
+    # NET-FLOW follow-out: exit when the trigger wallet's sold_usd >= this fraction
+    # of its bought_usd on the token over the lookback (it has distributed the
+    # majority = genuinely leaving). Below this, small sells are suppression → HOLD.
+    copy_swing_follow_wallet_exit: bool = Field(default=True)
+    copy_swing_exit_distribution_frac: float = Field(default=0.50)
+    # Lookback for the net-flow measure, anchored at (entry_at − lookback) so it
+    # captures the wallet's pre-entry accumulation of the current build. Matches the
+    # 10-day hold cap; excludes ancient round-trips of the same token.
+    copy_swing_flow_lookback_hours: float = Field(default=240.0)
+    # Entry liquidity guard — need to be able to exit our size. Swing tokens are
+    # more liquid than fresh-mint snipes, but keep the floor. Fail-open.
+    copy_swing_min_entry_liquidity_usd: float = Field(default=5000.0)
+    # NO tight stop (backtest: a 30% trail gave back the tails). Wide catastrophe
+    # only (caps true collapse without shaking out); rug backstop + follow-out +
+    # timeout do the real work. 0 = none. Set e.g. 80 for an -80% catastrophe stop.
+    copy_swing_stop_pct: float = Field(default=80.0)
+    # Long hold cap (multi-day strategy). 240h = 10 days, matching the backtest.
+    copy_swing_timeout_hours: int = Field(default=240)
+    # Re-entry cooldown after a swing trade in a token (open or closed). 0 = off;
+    # net-flow follow-out + one-open-per-token already limit churn.
+    copy_swing_reentry_cooldown_minutes: int = Field(default=0)
+
+    # ------------------------------------------------------------------
     # TEAM-FOLLOW experiment (2026-07-01) — isolated strategy 'teamfollow'.
     # Fires when >= min_members of a known co-buy TEAM (bots/copy/teamfollow_roster.json,
     # from the Dune 90d corpus team-finder) buy the same token within the window. Runs
@@ -766,6 +816,14 @@ SIGNAL_SPECS: dict[str, SignalSpec] = {
     # cluster strategy — only entry differs.
     "conviction_buy": SignalSpec(
         name="conviction_buy",
+        stop_pct=EXIT_STOP_PCT,
+        take_profit_pct=EXIT_TAKE_PROFIT_PCT,
+        timeout_hours=EXIT_TIMEOUT_HOURS,
+    ),
+    # Swing-copy sets its own wide stop / long timeout on the candidate directly
+    # (from copy_swing_* config); this spec is just the registry placeholder.
+    "swing_buy": SignalSpec(
+        name="swing_buy",
         stop_pct=EXIT_STOP_PCT,
         take_profit_pct=EXIT_TAKE_PROFIT_PCT,
         timeout_hours=EXIT_TIMEOUT_HOURS,

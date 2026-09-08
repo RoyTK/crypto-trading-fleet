@@ -214,12 +214,13 @@ def _strategy_clause(strategy: Optional[str]):
         return text("coalesce(sim_metadata->>'strategy','') NOT LIKE 'conviction%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'teamfollow%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'cohortfire%' "
-                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'promobuy%'")
+                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'promobuy%' "
+                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'swing%'")
     if strategy in ("teamfollow_watch", "cohortfire_watch", "promobuy_watch"):
         # Demoted-team WATCH sub-track (2026-07-24): its OWN isolated bucket, so it
         # neither consumes the live family's alloc cap nor pollutes its metrics/dd.
         return text(f"coalesce(sim_metadata->>'strategy','') = '{strategy}'")
-    if strategy in ("teamfollow", "cohortfire", "promobuy"):
+    if strategy in ("teamfollow", "cohortfire", "promobuy", "swing"):
         # Whitelisted literal (guarded by the `in` check) → own-family ACTIVE prefix,
         # EXCLUDING retired '_pre_reset%' eras AND the '_watch%' sub-track (both must
         # not consume the live cap or leak into the live family's PnL/dd).
@@ -1018,6 +1019,31 @@ def cohort_net_flow(
     except Exception:
         _log.exception("cohort_net_flow_failed", token=token)
         return (0.0, 0, 0)
+
+
+def wallet_flow_since(
+    token: str, venue: str, wallet: str, since: datetime,
+) -> tuple[float, float]:
+    """(bought_usd, sold_usd) for a SINGLE `wallet` on `token` at/after `since`, from
+    the raw delivered-swap log. Used by swing-copy's NET-FLOW follow-out: exit when
+    sold_usd >= frac * bought_usd (the wallet has net-distributed the majority of the
+    build we followed into), holding THROUGH smaller suppression sells. `since` is
+    anchored at (position.entry_at − lookback) so pre-entry accumulation counts.
+    Fail-safe → (0.0, 0.0): with bought_usd=0 the caller HOLDS (never a spurious exit)."""
+    try:
+        with session_scope() as s:
+            row = s.execute(text(
+                "SELECT "
+                "COALESCE(SUM(CASE WHEN side='buy'  THEN notional_usd ELSE 0 END),0) AS bought, "
+                "COALESCE(SUM(CASE WHEN side='sell' THEN notional_usd ELSE 0 END),0) AS sold "
+                "FROM wallet_swaps_log "
+                "WHERE token_mint = :tok AND chain = :ch AND wallet_address = :w "
+                "AND event_at >= :since"
+            ), {"tok": token, "ch": venue, "w": wallet, "since": since}).one()
+        return (float(row[0] or 0.0), float(row[1] or 0.0))
+    except Exception:
+        _log.exception("wallet_flow_since_failed", token=token, wallet=wallet)
+        return (0.0, 0.0)
 
 
 def pre_entry_roster_buyers(token: str, venue: str, within_minutes: float) -> int:
