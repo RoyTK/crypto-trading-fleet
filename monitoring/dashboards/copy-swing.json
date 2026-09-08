@@ -1,0 +1,285 @@
+{
+  "uid": "copy-swing",
+  "title": "COPY Swing (multi-day follow-in / net-flow follow-out)",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "tags": [
+    "bot",
+    "copy",
+    "swing"
+  ],
+  "panels": [
+    {
+      "id": 900,
+      "type": "text",
+      "title": "",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+      "transparent": true,
+      "options": {
+        "mode": "markdown",
+        "content": "# COPY · Swing (multi-day follow-in → net-flow follow-out)\nThesis: follow a wallet IN, exit only when it net-distributes ≥50% of its build (holds through suppression sells). Edge is tail-dependent — watch **hold time** (design = multi-day) and **net PnL by wallet** (demote losers)."
+      }
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "State",
+      "gridPos": { "x": 0, "y": 3, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM halts WHERE bot_id='copy_swing' AND resumed_at IS NULL) THEN 'halted' ELSE 'paper' END AS state"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "paper": { "text": "paper", "color": "green" } } },
+            { "type": "value", "options": { "halted": { "text": "halted", "color": "red" } } }
+          ]
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "/^state$/" },
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Roster (active)",
+      "gridPos": { "x": 4, "y": 3, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) FROM wallet_pool WHERE swing = true AND tier = 'active'"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Open positions",
+      "gridPos": { "x": 8, "y": 3, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='swing'"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Net PnL (closed, USD)",
+      "gridPos": { "x": 12, "y": 3, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='swing'"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 0 } ] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "colorMode": "value", "graphMode": "none" }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Win rate (closed)",
+      "gridPos": { "x": 16, "y": 3, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd > 0)::float / NULLIF(COUNT(*),0) * 100)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='swing'"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Median hold (closed, h)",
+      "gridPos": { "x": 20, "y": 3, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (exit_at-entry_at))/3600.0)::numeric, 2) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='swing' AND exit_at IS NOT NULL"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 6 }, { "color": "green", "value": 24 } ] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "colorMode": "value", "graphMode": "none" }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Cumulative paper PnL (USD)",
+      "gridPos": { "x": 0, "y": 7, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='swing' ORDER BY exit_at"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "PnL per trade (%)",
+      "gridPos": { "x": 12, "y": 7, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT exit_at AS time, pnl_pct AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='swing' ORDER BY exit_at"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "barchart",
+      "title": "Net PnL by trigger wallet (roster performance — demote losers)",
+      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT LEFT(sim_metadata->>'trigger_wallet', 6) AS wallet, ROUND(SUM(pnl_usd)::numeric, 2) AS net_pnl, COUNT(*) AS n FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='swing' AND sim_metadata->>'trigger_wallet' IS NOT NULL GROUP BY 1 ORDER BY net_pnl DESC"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "Exit-reason × hold-time (design = multi-day; follow-out should NOT fire in minutes)",
+      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT exit_reason, COUNT(*) AS n, ROUND(SUM(pnl_usd)::numeric,2) AS net_pnl, ROUND(AVG(EXTRACT(EPOCH FROM (exit_at-entry_at))/3600.0)::numeric,2) AS avg_hold_h, ROUND((COUNT(*) FILTER (WHERE pnl_usd>0)::float/NULLIF(COUNT(*),0)*100)::numeric,0) AS win_pct FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='swing' AND exit_at IS NOT NULL GROUP BY exit_reason ORDER BY n DESC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "net_pnl" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "thresholds", "value": { "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 0 } ] } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "type": "table",
+      "title": "Open paper trades (age_h = how long we've held)",
+      "gridPos": { "x": 0, "y": 23, "w": 24, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT id, asset, venue AS chain, LEFT(sim_metadata->>'trigger_wallet', 8) AS trigger, ROUND((sim_metadata->>'conviction_accumulated_usd')::numeric, 0) AS net_accum_usd, sim_metadata->>'conviction_n_buys' AS n_buys, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND((EXTRACT(EPOCH FROM (now()-entry_at))/3600.0)::numeric,1) AS age_h, entry_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='swing' ORDER BY entry_at DESC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "asset" },
+            "properties": [
+              { "id": "links", "value": [ { "title": "Open ${__value.raw} on Birdeye", "targetBlank": true, "url": "https://birdeye.so/solana/token/${__value.raw}?tab=trades&trades_layout=table" } ] }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "type": "table",
+      "title": "Closed paper trades (last 50 — hold_h surfaces early follow-outs)",
+      "gridPos": { "x": 0, "y": 31, "w": 24, "h": 10 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT id, asset, LEFT(sim_metadata->>'trigger_wallet', 8) AS trigger, ROUND((sim_metadata->>'conviction_accumulated_usd')::numeric, 0) AS net_accum_usd, size_usd, ROUND((EXTRACT(EPOCH FROM (exit_at-entry_at))/3600.0)::numeric,2) AS hold_h, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='swing' ORDER BY exit_at DESC NULLS LAST LIMIT 50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "asset" },
+            "properties": [
+              { "id": "links", "value": [ { "title": "Open ${__value.raw} on Birdeye", "targetBlank": true, "url": "https://birdeye.so/solana/token/${__value.raw}?tab=trades&trades_layout=table" } ] }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "pnl_usd" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "thresholds", "value": { "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 0 } ] } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "type": "table",
+      "title": "Swing halts (14d)",
+      "gridPos": { "x": 0, "y": 41, "w": 24, "h": 6 },
+      "datasource": { "type": "postgres", "uid": "fleet-postgres" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT halted_at, halt_type, severity, LEFT(reason, 100) AS reason, resumed_at, resumed_by FROM halts WHERE bot_id='copy_swing' AND halted_at >= NOW() - INTERVAL '14 days' ORDER BY halted_at DESC"
+        }
+      ]
+    }
+  ]
+}
