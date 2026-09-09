@@ -28,18 +28,24 @@ CACHE = os.getenv("CREATION_CACHE", "/tmp/creation_cache.json")
 
 ROSTER_SQL = "SELECT address, tier, swing, conviction FROM wallet_pool WHERE tier IN ('active','teamfollow') OR swing=true OR conviction=true"
 
-# top-N tokens per roster wallet by bought_usd + first-buy time
+# top-N WINNERS per roster wallet by realized (sold-bought) + first-buy time.
+# By REALIZED (not bought): a wallet's edge/style lives in its WINNERS, not its
+# biggest capital deployments (77n6X7Lt deploys big on established tokens but makes
+# its money on hours-old runners — bought-sampling misclassified it as MM).
 SAMPLE_SQL = """
 WITH r AS (SELECT address FROM wallet_pool WHERE tier IN ('active','teamfollow') OR swing=true OR conviction=true),
 t AS (
   SELECT wallet_address, token_mint,
-    SUM(notional_usd) FILTER (WHERE side='buy') AS bought,
+    COALESCE(SUM(notional_usd) FILTER (WHERE side='sell'),0)
+      - COALESCE(SUM(notional_usd) FILTER (WHERE side='buy'),0) AS realized,
     EXTRACT(EPOCH FROM MIN(event_at) FILTER (WHERE side='buy'))::bigint AS first_buy_u,
     row_number() OVER (PARTITION BY wallet_address
-      ORDER BY SUM(notional_usd) FILTER (WHERE side='buy') DESC NULLS LAST) AS rn
+      ORDER BY (COALESCE(SUM(notional_usd) FILTER (WHERE side='sell'),0)
+              - COALESCE(SUM(notional_usd) FILTER (WHERE side='buy'),0)) DESC) AS rn
   FROM wallet_swaps_log WHERE wallet_address IN (SELECT address FROM r)
   GROUP BY wallet_address, token_mint)
-SELECT wallet_address, token_mint, first_buy_u FROM t WHERE rn <= :n AND first_buy_u IS NOT NULL
+SELECT wallet_address, token_mint, first_buy_u FROM t
+WHERE rn <= :n AND first_buy_u IS NOT NULL AND realized > 0
 """
 
 # cheap per-wallet activity signature
