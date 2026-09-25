@@ -151,7 +151,7 @@
      "calcs": [
       "lastNotNull"
      ],
-     "fields": "",
+     "fields": "/.*/",
      "values": false
     },
     "colorMode": "value",
@@ -188,7 +188,12 @@
     }
    ],
    "fieldConfig": {
-    "defaults": {},
+    "defaults": {
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
+    },
     "overrides": []
    },
    "options": {
@@ -196,7 +201,7 @@
      "calcs": [
       "lastNotNull"
      ],
-     "fields": "",
+     "fields": "/.*/",
      "values": false
     },
     "colorMode": "value",
@@ -215,7 +220,7 @@
   {
    "id": 7,
    "type": "stat",
-   "title": "N closed (era)",
+   "title": "N closed",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -234,7 +239,12 @@
     }
    ],
    "fieldConfig": {
-    "defaults": {},
+    "defaults": {
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
+    },
     "overrides": []
    },
    "options": {
@@ -242,7 +252,7 @@
      "calcs": [
       "lastNotNull"
      ],
-     "fields": "",
+     "fields": "/.*/",
      "values": false
     },
     "colorMode": "value",
@@ -260,7 +270,7 @@
   {
    "id": 8,
    "type": "stat",
-   "title": "Expectancy / trade (era)",
+   "title": "Exp / trade",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -305,7 +315,7 @@
      "calcs": [
       "lastNotNull"
      ],
-     "fields": "",
+     "fields": "/.*/",
      "values": false
     },
     "colorMode": "value",
@@ -323,7 +333,7 @@
   {
    "id": 9,
    "type": "stat",
-   "title": "Win rate (era)",
+   "title": "Win rate",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -343,7 +353,11 @@
    ],
    "fieldConfig": {
     "defaults": {
-     "unit": "percent"
+     "unit": "percent",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
     },
     "overrides": []
    },
@@ -352,7 +366,7 @@
      "calcs": [
       "lastNotNull"
      ],
-     "fields": "",
+     "fields": "/.*/",
      "values": false
     },
     "colorMode": "value",
@@ -370,7 +384,7 @@
   {
    "id": 10,
    "type": "stat",
-   "title": "Net realized (era)",
+   "title": "Net realized",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -415,7 +429,7 @@
      "calcs": [
       "lastNotNull"
      ],
-     "fields": "",
+     "fields": "/.*/",
      "values": false
     },
     "colorMode": "value",
@@ -433,7 +447,7 @@
   {
    "id": 11,
    "type": "stat",
-   "title": "Open, rug-marked",
+   "title": "Open (rug-marked)",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -478,7 +492,7 @@
      "calcs": [
       "lastNotNull"
      ],
-     "fields": "",
+     "fields": "/.*/",
      "values": false
     },
     "colorMode": "value",
@@ -497,7 +511,7 @@
   {
    "id": 12,
    "type": "stat",
-   "title": "Last entry (h ago)",
+   "title": "Last entry",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -542,7 +556,7 @@
      "calcs": [
       "lastNotNull"
      ],
-     "fields": "",
+     "fields": "/.*/",
      "values": false
     },
     "colorMode": "value",
@@ -621,7 +635,7 @@
     "x": 0,
     "y": 7,
     "w": 12,
-    "h": 8
+    "h": 9
    }
   },
   {
@@ -649,7 +663,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -880,7 +895,7 @@
     "x": 12,
     "y": 7,
     "w": 12,
-    "h": 8
+    "h": 9
    }
   },
   {
@@ -908,7 +923,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -1136,9 +1152,9 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 15,
+    "y": 16,
     "w": 12,
-    "h": 9
+    "h": 12
    }
   },
   {
@@ -1166,7 +1182,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -1394,9 +1411,9 @@
    },
    "gridPos": {
     "x": 12,
-    "y": 15,
+    "y": 16,
     "w": 12,
-    "h": 9
+    "h": 12
    }
   },
   {
@@ -1424,7 +1441,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -1653,7 +1671,7 @@
    "description": "Expectancy per trade for trades ENTERED in the 14 days before each logged change vs after it. Log changes with scripts/log_change.py.",
    "gridPos": {
     "x": 0,
-    "y": 24,
+    "y": 28,
     "w": 24,
     "h": 6
    }
@@ -1727,7 +1745,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 30,
+    "y": 34,
     "w": 24,
     "h": 9
    }
@@ -1757,7 +1775,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -1985,7 +2004,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 39,
+    "y": 43,
     "w": 12,
     "h": 9
    }
@@ -2015,7 +2034,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -2244,7 +2264,7 @@
    "description": "Watch teams trade on paper but are excluded from the scorecard until promoted.",
    "gridPos": {
     "x": 12,
-    "y": 39,
+    "y": 43,
     "w": 12,
     "h": 9
    }
@@ -2274,7 +2294,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -2503,7 +2524,7 @@
    "description": "Each trade's P&L split across its participating wallets, grouped by the wallet's style class (scripts/wallet_style_classify.py). Snipers/MMs are structurally unfollowable.",
    "gridPos": {
     "x": 0,
-    "y": 48,
+    "y": 52,
     "w": 24,
     "h": 9
    }
@@ -2533,7 +2554,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -2761,9 +2783,9 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 57,
+    "y": 61,
     "w": 24,
-    "h": 8
+    "h": 11
    }
   },
   {
@@ -2791,7 +2813,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -3019,7 +3042,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 65,
+    "y": 72,
     "w": 24,
     "h": 10
    }
@@ -3049,7 +3072,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -3277,7 +3301,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 75,
+    "y": 82,
     "w": 24,
     "h": 6
    }

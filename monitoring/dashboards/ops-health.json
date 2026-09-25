@@ -120,7 +120,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -478,7 +479,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -736,7 +738,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [

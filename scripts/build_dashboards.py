@@ -150,7 +150,7 @@ TABLE_OVERRIDES = [
 
 def table(title, sql, desc=None):
     p = {"id": pid(), "type": "table", "title": title, "datasource": DS, "targets": tgt(sql),
-         "fieldConfig": {"defaults": {"custom": {"align": "auto", "filterable": True}},
+         "fieldConfig": {"defaults": {"custom": {"align": "auto", "filterable": False, "minWidth": 50}},
                          "overrides": TABLE_OVERRIDES},
          "options": {"showHeader": True, "cellHeight": "sm"}}
     if desc:
@@ -168,9 +168,11 @@ def stat(title, sql, unit=None, thresholds=None, mappings=None, desc=None):
     if mappings:
         d["mappings"] = mappings
         d.setdefault("color", {"mode": "thresholds"})
+    if not thresholds and not mappings:
+        d["color"] = {"mode": "fixed", "fixedColor": "text"}
     p = {"id": pid(), "type": "stat", "title": title, "datasource": DS, "targets": tgt(sql),
          "fieldConfig": {"defaults": d, "overrides": []},
-         "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
+         "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "/.*/", "values": False},
                      "colorMode": "value", "graphMode": "none", "textMode": "value",
                      "justifyMode": "center"}}
     if desc:
@@ -272,17 +274,17 @@ def stat_strip(s):
         (stat("Era start", f"SELECT to_char(min(entry_at) AT TIME ZONE '{TZ}', 'YYYY-MM-DD') AS era "
                            f"FROM trades WHERE {cur}",
               desc="First trade under the strategy's current tag (resets re-tag older trades)."), 3, 4),
-        (stat("N closed (era)", f"SELECT count(*) FROM trades WHERE {closed(s)}"), 3, 4),
-        (stat("Expectancy / trade (era)", f"SELECT ROUND(avg(pnl_usd)::numeric, 2) FROM trades WHERE {closed(s)}",
+        (stat("N closed", f"SELECT count(*) FROM trades WHERE {closed(s)}"), 3, 4),
+        (stat("Exp / trade", f"SELECT ROUND(avg(pnl_usd)::numeric, 2) FROM trades WHERE {closed(s)}",
               unit="currencyUSD", thresholds=USD_TH), 3, 4),
-        (stat("Win rate (era)", f"SELECT ROUND(avg((pnl_usd > 0)::int) * 100, 1) FROM trades WHERE {closed(s)}",
+        (stat("Win rate", f"SELECT ROUND(avg((pnl_usd > 0)::int) * 100, 1) FROM trades WHERE {closed(s)}",
               unit="percent"), 3, 4),
-        (stat("Net realized (era)", f"SELECT ROUND(COALESCE(sum(pnl_usd), 0)::numeric, 0) FROM trades WHERE {closed(s)}",
+        (stat("Net realized", f"SELECT ROUND(COALESCE(sum(pnl_usd), 0)::numeric, 0) FROM trades WHERE {closed(s)}",
               unit="currencyUSD", thresholds=USD_TH), 3, 4),
-        (stat("Open, rug-marked", f"WITH {open_cte([s])} SELECT ROUND(COALESCE(sum(unreal), 0), 0) FROM ou",
+        (stat("Open (rug-marked)", f"WITH {open_cte([s])} SELECT ROUND(COALESCE(sum(unreal), 0), 0) FROM ou",
               unit="currencyUSD", thresholds=USD_TH,
               desc="Unrealized P&L of open positions; liquidity < $100 counts as a rug at -100%."), 3, 4),
-        (stat("Last entry (h ago)", f"SELECT ROUND((EXTRACT(EPOCH FROM now() - max(entry_at)) / 3600)::numeric, 1) "
+        (stat("Last entry", f"SELECT ROUND((EXTRACT(EPOCH FROM now() - max(entry_at)) / 3600)::numeric, 1) "
                                     f"FROM trades WHERE {cur}", unit="h",
               thresholds={"mode": "absolute", "steps": [{"color": "green", "value": None},
                                                         {"color": "yellow", "value": 24}]}), 3, 4),
@@ -575,12 +577,12 @@ def strategy_page(s):
     rows = [
         [(text_panel(f"## {title}\n{blurb}  \n{LEGEND}"), 24, 3)],
         stat_strip(s),
-        [(rolling_expectancy([s]), 12, 8), (pnl_distribution(s), 12, 8)],
-        [(exit_reasons(s), 12, 9), (entry_conditions(s), 12, 9)],
+        [(rolling_expectancy([s]), 12, 9), (pnl_distribution(s), 12, 9)],
+        [(exit_reasons(s), 12, 12), (entry_conditions(s), 12, 12)],
         [(changes_before_after(s), 24, 6)],
         *([[(BARS[s](), 24, 9)]] if s in BARS else []),
         *mod_rows,
-        [(table("Open positions — current liquidity, rug-marked", open_positions_sql(open_strats)), 24, 8)],
+        [(table("Open positions — current liquidity, rug-marked", open_positions_sql(open_strats)), 24, 11)],
         [(closed_trades(open_strats), 24, 10)],
         [(halt_history([halt_id(s)]), 24, 6)],
     ]
@@ -680,7 +682,7 @@ def fleet_command():
                      "design.  \n" + LEGEND), 24, 3)],
         [(table("Needs your attention", attention_sql(),
                 desc="P0 = act now, P1 = look today, P2 = when convenient, INFO = deliberate state. "
-                     "Empty of problems = 'all clear'."), 24, 6)],
+                     "Empty of problems = 'all clear'."), 24, 7)],
         [(table("Scorecard — per strategy, current era", scorecard_sql(),
                 desc="exp = average per closed trade. payoff = avg win / avg loss. net_ex_top5 = net without the best "
                      "5% of trades (tail dependence). open_unreal and all_in mark rugs (liq < $100) at -100%. "

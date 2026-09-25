@@ -120,7 +120,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -351,7 +352,7 @@
     "x": 0,
     "y": 3,
     "w": 24,
-    "h": 6
+    "h": 7
    }
   },
   {
@@ -379,7 +380,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -608,7 +610,7 @@
    "description": "exp = average per closed trade. payoff = avg win / avg loss. net_ex_top5 = net without the best 5% of trades (tail dependence). open_unreal and all_in mark rugs (liq < $100) at -100%. Flags are advisory.",
    "gridPos": {
     "x": 0,
-    "y": 9,
+    "y": 10,
     "w": 24,
     "h": 9
    }
@@ -675,7 +677,7 @@
    "description": "Above the grey line = making money per trade right now. Blue markers = changes, red = halts.",
    "gridPos": {
     "x": 0,
-    "y": 18,
+    "y": 19,
     "w": 24,
     "h": 9
    }
@@ -705,7 +707,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -933,7 +936,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 27,
+    "y": 28,
     "w": 24,
     "h": 9
    }
@@ -963,7 +966,8 @@
     "defaults": {
      "custom": {
       "align": "auto",
-      "filterable": true
+      "filterable": false,
+      "minWidth": 50
      }
     },
     "overrides": [
@@ -1191,7 +1195,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 36,
+    "y": 37,
     "w": 24,
     "h": 10
    }
