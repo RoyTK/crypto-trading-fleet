@@ -284,7 +284,7 @@ def stat_strip(s):
               unit="percent"), 3, 4),
         (stat("Net realized", f"SELECT ROUND(COALESCE(sum(pnl_usd), 0)::numeric, 0) FROM trades WHERE {closed(s)}",
               unit="currencyUSD", thresholds=USD_TH), 3, 4),
-        (stat("Open (rug-marked)", f"WITH {open_cte([s])} SELECT ROUND(COALESCE(sum(unreal), 0), 0) FROM ou",
+        (stat("Open P&L", f"WITH {open_cte([s])} SELECT ROUND(COALESCE(sum(unreal), 0), 0) FROM ou",
               unit="currencyUSD", thresholds=USD_TH,
               desc="Unrealized P&L of open positions; liquidity < $100 counts as a rug at -100%."), 3, 4),
         (stat("Last entry", f"SELECT ROUND((EXTRACT(EPOCH FROM now() - max(entry_at)) / 3600)::numeric, 1) "
@@ -692,7 +692,7 @@ def fleet_command():
                      "ex_top5 = net without the best 5% of trades (tail dependence). open = unrealized on open positions; "
                      "open and all_in mark rugs (liq < $100) at -100%. "
                      "Flags are advisory.",
-                widths={"strategy": 100, "state": 150, "era_start": 100, "flags": 330}), 24, SCORECARD_H)],
+                widths={"strategy": 100, "state": 150, "era_start": 100, "flags": 270}), 24, SCORECARD_H)],
         [(rolling_expectancy(STRATS), 24, 9)],
         [(table("Open positions — all strategies, current liquidity, rug-marked", open_positions_sql(all_open)), 24, 9)],
         [(closed_trades(all_open), 24, 10)],
