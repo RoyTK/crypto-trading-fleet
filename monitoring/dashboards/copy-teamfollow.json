@@ -1,539 +1,3212 @@
 {
-  "uid": "copy-teamfollow",
-  "title": "COPY Team-Follow (experiment)",
-  "schemaVersion": 39,
-  "version": 1,
-  "refresh": "1m",
-  "time": {
-    "from": "now-7d",
-    "to": "now"
-  },
-  "tags": [
-    "bot",
-    "copy",
-    "teamfollow"
-  ],
-  "panels": [
-    {
-      "id": 900,
-      "type": "text",
-      "title": "",
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 24,
-        "h": 3
-      },
-      "transparent": true,
-      "options": {
-        "mode": "markdown",
-        "content": "# COPY · Team-Follow (experiment)"
-      }
+ "uid": "copy-teamfollow",
+ "title": "COPY · Team-follow",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": true,
+ "refresh": "1m",
+ "timezone": "America/Chicago",
+ "time": {
+  "from": "now-30d",
+  "to": "now"
+ },
+ "tags": [
+  "fleet-v2",
+  "copy",
+  "teamfollow"
+ ],
+ "annotations": {
+  "list": [
+   {
+    "builtIn": 1,
+    "datasource": {
+     "type": "grafana",
+     "uid": "-- Grafana --"
     },
-    {
-      "id": 1,
-      "type": "stat",
-      "title": "State",
-      "gridPos": {
-        "x": 0,
-        "y": 3,
-        "w": 4,
-        "h": 4
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM halts WHERE bot_id='copy_teamfollow' AND resumed_at IS NULL) THEN 'HALTED' ELSE 'running' END AS state"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "running": {
-                  "text": "running",
-                  "color": "green"
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "HALTED": {
-                  "text": "HALTED",
-                  "color": "red"
-                }
-              }
-            }
-          ]
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^state$/"
-        },
-        "textMode": "value",
-        "colorMode": "value",
-        "graphMode": "none"
-      }
+    "enable": true,
+    "hide": true,
+    "iconColor": "rgba(0, 211, 255, 1)",
+    "name": "Annotations & Alerts",
+    "type": "dashboard"
+   },
+   {
+    "datasource": {
+     "type": "postgres",
+     "uid": "fleet-postgres"
     },
-    {
-      "id": 2,
-      "type": "stat",
-      "title": "Open positions",
-      "gridPos": {
-        "x": 7,
-        "y": 3,
-        "w": 3,
-        "h": 4
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='teamfollow'"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "Closed (paper)",
-      "gridPos": {
-        "x": 10,
-        "y": 3,
-        "w": 3,
-        "h": 4
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COUNT(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "Net PnL (closed, USD)",
-      "gridPos": {
-        "x": 13,
-        "y": 3,
-        "w": 4,
-        "h": 4
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COALESCE(ROUND(SUM(pnl_usd)::numeric, 2), 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
-          "thresholds": {
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        }
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none"
-      }
-    },
-    {
-      "id": 5,
-      "type": "stat",
-      "title": "Win rate (closed)",
-      "gridPos": {
-        "x": 17,
-        "y": 3,
-        "w": 3,
-        "h": 4
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE pnl_usd > 0)::float / NULLIF(COUNT(*),0) * 100)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent"
-        }
-      }
-    },
-    {
-      "id": 6,
-      "type": "stat",
-      "title": "Halts 24h",
-      "gridPos": {
-        "x": 20,
-        "y": 3,
-        "w": 4,
-        "h": 4
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COUNT(*) FROM halts WHERE bot_id='copy_teamfollow' AND halted_at >= NOW() - INTERVAL '24 hours'"
-        }
-      ]
-    },
-    {
-      "id": 10,
-      "type": "timeseries",
-      "title": "Cumulative paper PnL (USD)",
-      "gridPos": {
-        "x": 0,
-        "y": 7,
-        "w": 12,
-        "h": 8
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "time_series",
-          "rawSql": "SELECT exit_at AS time, SUM(pnl_usd) OVER (ORDER BY exit_at) AS pnl_cum FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='teamfollow' ORDER BY exit_at"
-        }
-      ]
-    },
-    {
-      "id": 11,
-      "type": "timeseries",
-      "title": "PnL per trade (%)",
-      "gridPos": {
-        "x": 12,
-        "y": 7,
-        "w": 12,
-        "h": 8
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "time_series",
-          "rawSql": "SELECT exit_at AS time, pnl_pct AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL AND sim_metadata->>'strategy'='teamfollow' ORDER BY exit_at"
-        }
-      ]
-    },
-    {
-      "id": 12,
-      "type": "barchart",
-      "title": "Net PnL by team (closed)",
-      "gridPos": {
-        "x": 0,
-        "y": 15,
-        "w": 12,
-        "h": 8
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT sim_metadata->>'team_id' AS team, ROUND(SUM(pnl_usd)::numeric, 2) AS net_pnl, COUNT(*) AS n FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow' AND sim_metadata->>'team_id' IS NOT NULL GROUP BY 1 ORDER BY net_pnl DESC"
-        }
-      ],
-      "options": {
-        "showValue": "always",
-        "stacking": "none",
-        "orientation": "vertical",
-        "groupWidth": 0.7,
-        "barWidth": 0.9,
-        "legend": {
-          "showLegend": true,
-          "placement": "bottom",
-          "displayMode": "list"
-        },
-        "xTickLabelRotation": -45
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "net_pnl"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyUSD"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "left"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "net PnL (USD)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "green"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "n"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "trades (N)"
-              },
-              {
-                "id": "custom.axisSoftMin",
-                "value": 0
-              },
-              {
-                "id": "decimals",
-                "value": 0
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "orange"
-                }
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": 13,
-      "type": "barchart",
-      "title": "Entry liquidity distribution (validates $50k floor)",
-      "gridPos": {
-        "x": 12,
-        "y": 15,
-        "w": 12,
-        "h": 8
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "WITH liq AS (SELECT (sim_metadata->>'entry_liquidity_usd')::float AS l FROM trades WHERE bot_id='copy' AND sim_metadata->>'strategy'='teamfollow' AND sim_metadata->>'entry_liquidity_usd' IS NOT NULL) SELECT CASE WHEN l < 50000 THEN '<50k' WHEN l < 100000 THEN '50-100k' WHEN l < 250000 THEN '100-250k' WHEN l < 1000000 THEN '250k-1M' ELSE '1M+' END AS bucket, MIN(l) AS sort_key, COUNT(*) AS count FROM liq GROUP BY 1 ORDER BY sort_key"
-        }
-      ]
-    },
-    {
-      "id": 20,
-      "type": "table",
-      "title": "Open paper trades",
-      "gridPos": {
-        "x": 0,
-        "y": 23,
-        "w": 24,
-        "h": 8
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT id, asset, venue AS chain, sim_metadata->>'team_id' AS team, sim_metadata->>'cluster_size' AS members, entry_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='open' AND sim_metadata->>'strategy'='teamfollow' ORDER BY entry_at DESC"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "asset"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Open ${__value.raw} on Birdeye",
-                    "targetBlank": true,
-                    "url": "https://birdeye.so/solana/token/${__value.raw}?tab=trades&trades_layout=table"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": 21,
-      "type": "table",
-      "title": "Closed paper trades (last 50)",
-      "gridPos": {
-        "x": 0,
-        "y": 31,
-        "w": 24,
-        "h": 10
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT id, asset, sim_metadata->>'team_id' AS team, sim_metadata->>'cluster_size' AS members, entry_price, exit_price, size_usd, ROUND((sim_metadata->>'peak_pct_since_entry')::numeric, 1) AS peak_pct, ROUND(pnl_pct::numeric, 2) AS pnl_pct, ROUND(pnl_usd::numeric, 2) AS pnl_usd, exit_reason, ROUND((sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq, entry_at, exit_at FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow' ORDER BY exit_at DESC NULLS LAST LIMIT 50"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "asset"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Open ${__value.raw} on Birdeye",
-                    "targetBlank": true,
-                    "url": "https://birdeye.so/solana/token/${__value.raw}?tab=trades&trades_layout=table"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": 22,
-      "type": "table",
-      "title": "Team-follow halts (14d)",
-      "gridPos": {
-        "x": 0,
-        "y": 41,
-        "w": 24,
-        "h": 6
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT halted_at, halt_type, severity, LEFT(reason, 100) AS reason, resumed_at, resumed_by FROM halts WHERE bot_id='copy_teamfollow' AND halted_at >= NOW() - INTERVAL '14 days' ORDER BY halted_at DESC"
-        }
-      ]
-    },
-    {
-      "id": 30,
-      "type": "stat",
-      "title": "Teams (traded / total)",
-      "gridPos": {
-        "x": 4,
-        "y": 3,
-        "w": 3,
-        "h": 4
-      },
-      "datasource": {
-        "type": "postgres",
-        "uid": "fleet-postgres"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "SELECT COUNT(DISTINCT sim_metadata->>'team_id')::text || ' / 129' AS teams FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy'='teamfollow' AND sim_metadata->>'team_id' IS NOT NULL"
-        }
-      ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^teams$/"
-        },
-        "textMode": "value",
-        "colorMode": "none",
-        "graphMode": "none"
-      }
+    "enable": true,
+    "iconColor": "#5794F2",
+    "name": "Changes",
+    "target": {
+     "refId": "Anno",
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT changed_at AS time, strategy || ': ' || description AS text, kind AS tags FROM strategy_changes WHERE $__timeFilter(changed_at) AND strategy IN ('teamfollow','fleet') ORDER BY changed_at"
     }
+   },
+   {
+    "datasource": {
+     "type": "postgres",
+     "uid": "fleet-postgres"
+    },
+    "enable": true,
+    "iconColor": "#F2495C",
+    "name": "Halts",
+    "target": {
+     "refId": "Halt",
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT halted_at AS time, resumed_at AS timeend, bot_id || ' halted: ' || halt_type AS text, 'halt' AS tags FROM halts WHERE $__timeFilter(halted_at) AND bot_id IN ('copy_teamfollow') ORDER BY halted_at"
+    }
+   }
   ]
+ },
+ "links": [
+  {
+   "type": "dashboards",
+   "tags": [
+    "fleet-v2"
+   ],
+   "asDropdown": false,
+   "title": "Pages",
+   "includeVars": false,
+   "keepTime": true,
+   "icon": "external link"
+  }
+ ],
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "id": 4,
+   "type": "text",
+   "title": "",
+   "transparent": true,
+   "options": {
+    "mode": "markdown",
+    "content": "## COPY · Team-follow\n≥2 members of a known team co-buy → enter. Watch-track teams trade on paper until promoted.  \n*Stat strip = current era (since the strategy's last reset). Charts and tables follow the time picker. Blue markers = logged changes, red = halts. Open positions with current liquidity < $100 are marked **RUG at −100%**.*"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 3
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "State",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT COALESCE((SELECT 'HALTED · ' || halt_type FROM halts WHERE bot_id='copy_teamfollow' AND resumed_at IS NULL ORDER BY halted_at DESC LIMIT 1), 'running') AS state"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "regex",
+       "options": {
+        "pattern": "^HALTED.*",
+        "result": {
+         "color": "red",
+         "index": 0
+        }
+       }
+      },
+      {
+       "type": "value",
+       "options": {
+        "running": {
+         "color": "green",
+         "index": 1
+        }
+       }
+      }
+     ],
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 3,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Era start",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT to_char(min(entry_at) AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS era FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy'='teamfollow'"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "description": "First trade under the strategy's current tag (resets re-tag older trades).",
+   "gridPos": {
+    "x": 3,
+    "y": 3,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "N closed (era)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT count(*) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "gridPos": {
+    "x": 6,
+    "y": 3,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "id": 8,
+   "type": "stat",
+   "title": "Expectancy / trade (era)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT ROUND(avg(pnl_usd)::numeric, 2) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyUSD",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 0
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "gridPos": {
+    "x": 9,
+    "y": 3,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "id": 9,
+   "type": "stat",
+   "title": "Win rate (era)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT ROUND(avg((pnl_usd > 0)::int) * 100, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 3,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "id": 10,
+   "type": "stat",
+   "title": "Net realized (era)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT ROUND(COALESCE(sum(pnl_usd), 0)::numeric, 0) FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow'"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyUSD",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 0
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "gridPos": {
+    "x": 15,
+    "y": 3,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "id": 11,
+   "type": "stat",
+   "title": "Open, rug-marked",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "WITH o AS (\n  SELECT t.id, t.asset, t.entry_at, t.sim_metadata->>'strategy' AS strategy,\n    COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', '') AS who,\n    (t.sim_metadata->>'peak_pct_since_entry')::numeric AS peak_pct,\n    (t.sim_metadata->>'entry_liquidity_usd')::numeric AS el,\n    COALESCE((t.sim_metadata->>'remaining_size_usd')::numeric, t.size_usd::numeric) AS rem,\n    t.entry_price::numeric AS ep, l.liquidity_usd::numeric AS liq, l.price::numeric AS px, l.logged_at,\n    CASE WHEN l.logged_at IS NULL THEN 'NO DATA'\n         WHEN l.liquidity_usd < 100 THEN 'RUG'\n         WHEN l.logged_at < now() - interval '2 hours' THEN 'STALE'\n         WHEN (t.sim_metadata->>'entry_liquidity_usd')::numeric > 0\n              AND l.liquidity_usd < 0.2 * (t.sim_metadata->>'entry_liquidity_usd')::numeric\n              THEN 'LIQ COLLAPSED'\n         ELSE 'ok' END AS status\n  FROM trades t\n  LEFT JOIN LATERAL (SELECT liquidity_usd, price, logged_at FROM position_liquidity_log p\n                     WHERE p.trade_id = t.id ORDER BY logged_at DESC LIMIT 1) l ON true\n  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='open' AND t.sim_metadata->>'strategy' IN ('teamfollow')\n), ou AS (\n  SELECT o.*, CASE WHEN status='RUG' THEN -rem\n                   WHEN px IS NOT NULL AND ep > 0 THEN rem * (px / ep - 1) END AS unreal\n  FROM o) SELECT ROUND(COALESCE(sum(unreal), 0), 0) FROM ou"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyUSD",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 0
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "description": "Unrealized P&L of open positions; liquidity < $100 counts as a rug at -100%.",
+   "gridPos": {
+    "x": 18,
+    "y": 3,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "id": 12,
+   "type": "stat",
+   "title": "Last entry (h ago)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT ROUND((EXTRACT(EPOCH FROM now() - max(entry_at)) / 3600)::numeric, 1) FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy'='teamfollow'"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "h",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 24
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "gridPos": {
+    "x": 21,
+    "y": 3,
+    "w": 3,
+    "h": 4
+   }
+  },
+  {
+   "id": 13,
+   "type": "timeseries",
+   "title": "Rolling expectancy — avg $ per trade over last 30 trades",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "time_series",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT time, metric, value FROM (\n  SELECT exit_at AS time, sim_metadata->>'strategy' AS metric,\n    AVG(pnl_usd) OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at\n                       ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) AS value\n  FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL\n    AND sim_metadata->>'strategy' IN ('teamfollow')) x\nWHERE $__timeFilter(time) ORDER BY 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyUSD",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true,
+      "thresholdsStyle": {
+       "mode": "line"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       },
+       {
+        "color": "#888888",
+        "value": 0
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   },
+   "description": "Above the grey line = making money per trade right now. Blue markers = changes, red = halts.",
+   "gridPos": {
+    "x": 0,
+    "y": 7,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "id": 14,
+   "type": "table",
+   "title": "P&L per trade — distribution & tail (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "WITH c AS (\n  SELECT pnl_usd, pnl_pct FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow' AND $__timeFilter(exit_at)),\ntot AS (SELECT count(*) n FROM c)\nSELECT substr(b, 3) AS bucket, count(*) AS n, ROUND(100.0 * count(*) / NULLIF(max(tot.n), 0), 0) AS share_pct,\n  ROUND(sum(pnl_usd)::numeric, 0) AS net_usd\nFROM (SELECT CASE WHEN pnl_pct <= -90 THEN '1 <= -90% (rug-like)' WHEN pnl_pct <= -50 THEN '2 -90..-50%'\n                  WHEN pnl_pct <= -20 THEN '3 -50..-20%' WHEN pnl_pct < 0 THEN '4 -20..0%'\n                  WHEN pnl_pct < 20 THEN '5 0..+20%' WHEN pnl_pct < 100 THEN '6 +20..+100%'\n                  WHEN pnl_pct < 400 THEN '7 +100..+400%' ELSE '8 >= +400%' END AS b, pnl_usd FROM c) x, tot\nGROUP BY b ORDER BY b"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "description": "Where the money is made and lost. If net_usd is carried by the top buckets, the strategy is tail-dependent.",
+   "gridPos": {
+    "x": 12,
+    "y": 7,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "id": 15,
+   "type": "table",
+   "title": "Why trades close — exit reason × hold × P&L (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT COALESCE(exit_reason, '?') AS exit_reason, count(*) AS n,\n  ROUND(avg((pnl_usd > 0)::int) * 100) AS win_pct, ROUND(avg(pnl_usd)::numeric, 1) AS exp_usd,\n  ROUND(sum(pnl_usd)::numeric, 0) AS net_usd,\n  ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM exit_at - entry_at) / 3600)::numeric, 2) AS med_hold_h\nFROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow' AND $__timeFilter(exit_at)\nGROUP BY 1 ORDER BY n DESC"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 15,
+    "w": 12,
+    "h": 9
+   }
+  },
+  {
+   "id": 16,
+   "type": "table",
+   "title": "Entry conditions vs outcome — are we entering late? (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "WITH c AS (\n  SELECT pnl_usd, (sim_metadata->>'token_age_at_entry_hours')::float AS age,\n         (sim_metadata->>'entry_liquidity_usd')::float AS liq\n  FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND sim_metadata->>'strategy'='teamfollow' AND $__timeFilter(exit_at)),\nb AS (\n  SELECT 'A token age' AS factor, CASE WHEN age IS NULL THEN '9 unknown' WHEN age < 0.25 THEN '1 <15m'\n      WHEN age < 1 THEN '2 15m-1h' WHEN age < 6 THEN '3 1-6h' WHEN age < 24 THEN '4 6-24h'\n      WHEN age < 168 THEN '5 1-7d' ELSE '6 >7d' END AS bk, pnl_usd FROM c\n  UNION ALL\n  SELECT 'B entry liquidity', CASE WHEN liq IS NULL THEN '9 unknown' WHEN liq < 10000 THEN '1 <$10k'\n      WHEN liq < 50000 THEN '2 $10-50k' WHEN liq < 250000 THEN '3 $50-250k'\n      WHEN liq < 1000000 THEN '4 $250k-1M' ELSE '5 >$1M' END, pnl_usd FROM c)\nSELECT substr(factor, 3) AS factor, substr(bk, 3) AS bucket, count(*) AS n,\n  ROUND(avg((pnl_usd > 0)::int) * 100) AS win_pct, ROUND(avg(pnl_usd)::numeric, 1) AS exp_usd,\n  ROUND(sum(pnl_usd)::numeric, 0) AS net_usd\nFROM b GROUP BY factor, bk ORDER BY factor, bk"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 15,
+    "w": 12,
+    "h": 9
+   }
+  },
+  {
+   "id": 17,
+   "type": "table",
+   "title": "Did each change help? — 14 days before vs since (until next change)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT to_char(c.changed_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD HH24:MI') AS changed, c.kind, c.description,\n  b.n AS n_before, b.e AS exp_before_usd, a.n AS n_after, a.e AS exp_after_usd,\n  ROUND(a.e - b.e, 1) AS delta_exp_usd\nFROM strategy_changes c\nLEFT JOIN LATERAL (SELECT count(*) n, ROUND(avg(t.pnl_usd)::numeric, 1) e FROM trades t\n  WHERE t.bot_id='copy' AND t.fill_status='closed' AND t.mode IN ('paper','archived') AND (t.sim_metadata->>'strategy'='teamfollow' OR t.sim_metadata->>'strategy' LIKE 'teamfollow\\_pre\\_reset%') AND t.entry_at >= c.changed_at - interval '14 days' AND t.entry_at < c.changed_at) b ON true\nLEFT JOIN LATERAL (SELECT count(*) n, ROUND(avg(t.pnl_usd)::numeric, 1) e FROM trades t\n  WHERE t.bot_id='copy' AND t.fill_status='closed' AND t.mode IN ('paper','archived') AND (t.sim_metadata->>'strategy'='teamfollow' OR t.sim_metadata->>'strategy' LIKE 'teamfollow\\_pre\\_reset%') AND t.entry_at >= c.changed_at\n    AND t.entry_at < COALESCE((SELECT min(c2.changed_at) FROM strategy_changes c2\n                               WHERE c2.strategy IN ('teamfollow','fleet') AND c2.changed_at > c.changed_at), now())) a ON true\nWHERE c.strategy IN ('teamfollow','fleet') ORDER BY c.changed_at DESC"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "description": "Expectancy per trade for trades ENTERED in the 14 days before each logged change vs after it. Log changes with scripts/log_change.py.",
+   "gridPos": {
+    "x": 0,
+    "y": 24,
+    "w": 24,
+    "h": 6
+   }
+  },
+  {
+   "id": 1,
+   "type": "table",
+   "title": "P&L by team (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT t.sim_metadata->>'team_id' AS team, COALESCE(ts.status, 'active') AS team_status, t.sim_metadata->>'strategy' AS track,\n  count(*) AS n, ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd, ROUND(avg(t.pnl_usd)::numeric, 1) AS exp_usd,\n  ROUND(avg((t.pnl_usd > 0)::int) * 100) AS win_pct\nFROM trades t LEFT JOIN teamfollow_team_status ts ON ts.team_id::text = t.sim_metadata->>'team_id'\nWHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed' AND t.sim_metadata->>'strategy' IN ('teamfollow','teamfollow_watch')\n  AND t.sim_metadata->>'team_id' IS NOT NULL AND $__timeFilter(t.exit_at)\nGROUP BY 1, 2, 3 ORDER BY net_usd DESC"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 30,
+    "w": 12,
+    "h": 9
+   }
+  },
+  {
+   "id": 2,
+   "type": "table",
+   "title": "Team lifecycle — promoted (active) vs watch track (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT t.sim_metadata->>'strategy' AS track, count(DISTINCT t.sim_metadata->>'team_id') AS teams, count(*) AS n,\n  ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd, ROUND(avg(t.pnl_usd)::numeric, 1) AS exp_usd,\n  ROUND(avg((t.pnl_usd > 0)::int) * 100) AS win_pct\nFROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'\n  AND t.sim_metadata->>'strategy' IN ('teamfollow','teamfollow_watch') AND $__timeFilter(t.exit_at)\nGROUP BY 1 ORDER BY 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "description": "Watch teams trade on paper but are excluded from the scorecard until promoted.",
+   "gridPos": {
+    "x": 12,
+    "y": 30,
+    "w": 12,
+    "h": 9
+   }
+  },
+  {
+   "id": 3,
+   "type": "table",
+   "title": "P&L by wallet style — sniper / MM / selector (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT COALESCE(ws.cls, 'UNCLASSIFIED') AS style, count(DISTINCT t.id) AS trades,\n  ROUND(sum(t.pnl_usd / json_array_length(t.sim_metadata->'cluster_wallets'))::numeric, 0) AS attributed_net_usd,\n  ROUND((sum(t.pnl_usd / json_array_length(t.sim_metadata->'cluster_wallets')) / NULLIF(count(DISTINCT t.id), 0))::numeric, 1) AS exp_usd\nFROM trades t CROSS JOIN LATERAL json_array_elements_text(t.sim_metadata->'cluster_wallets') w(addr)\nLEFT JOIN wallet_style ws ON ws.address = w.addr\nWHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed' AND t.sim_metadata->>'strategy'='teamfollow' AND json_typeof(t.sim_metadata->'cluster_wallets') = 'array'\n  AND json_array_length(t.sim_metadata->'cluster_wallets') > 0 AND $__timeFilter(t.exit_at)\nGROUP BY 1 ORDER BY attributed_net_usd"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "description": "Each trade's P&L split across its participating wallets, grouped by the wallet's style class (scripts/wallet_style_classify.py). Snipers/MMs are structurally unfollowable.",
+   "gridPos": {
+    "x": 0,
+    "y": 39,
+    "w": 24,
+    "h": 9
+   }
+  },
+  {
+   "id": 18,
+   "type": "table",
+   "title": "Open positions — current liquidity, rug-marked",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "WITH o AS (\n  SELECT t.id, t.asset, t.entry_at, t.sim_metadata->>'strategy' AS strategy,\n    COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', '') AS who,\n    (t.sim_metadata->>'peak_pct_since_entry')::numeric AS peak_pct,\n    (t.sim_metadata->>'entry_liquidity_usd')::numeric AS el,\n    COALESCE((t.sim_metadata->>'remaining_size_usd')::numeric, t.size_usd::numeric) AS rem,\n    t.entry_price::numeric AS ep, l.liquidity_usd::numeric AS liq, l.price::numeric AS px, l.logged_at,\n    CASE WHEN l.logged_at IS NULL THEN 'NO DATA'\n         WHEN l.liquidity_usd < 100 THEN 'RUG'\n         WHEN l.logged_at < now() - interval '2 hours' THEN 'STALE'\n         WHEN (t.sim_metadata->>'entry_liquidity_usd')::numeric > 0\n              AND l.liquidity_usd < 0.2 * (t.sim_metadata->>'entry_liquidity_usd')::numeric\n              THEN 'LIQ COLLAPSED'\n         ELSE 'ok' END AS status\n  FROM trades t\n  LEFT JOIN LATERAL (SELECT liquidity_usd, price, logged_at FROM position_liquidity_log p\n                     WHERE p.trade_id = t.id ORDER BY logged_at DESC LIMIT 1) l ON true\n  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='open' AND t.sim_metadata->>'strategy' IN ('teamfollow','teamfollow_watch')\n), ou AS (\n  SELECT o.*, CASE WHEN status='RUG' THEN -rem\n                   WHEN px IS NOT NULL AND ep > 0 THEN rem * (px / ep - 1) END AS unreal\n  FROM o)\nSELECT id, strategy, asset, status, ROUND(rem,0) AS size_usd, ROUND(unreal,0) AS unreal_usd,\n  ROUND((EXTRACT(EPOCH FROM now()-entry_at)/3600)::numeric,1) AS held_h,\n  ROUND(el,0) AS entry_liq_usd, ROUND(liq,0) AS liq_now_usd,\n  ROUND((liq / NULLIF(el,0) - 1) * 100, 0) AS liq_chg_pct,\n  ROUND((EXTRACT(EPOCH FROM now()-logged_at)/60)::numeric,0) AS liq_age_min,\n  ROUND(peak_pct,1) AS peak_pct, LEFT(who,10) AS trigger, entry_at\nFROM ou\nORDER BY CASE status WHEN 'RUG' THEN 0 WHEN 'LIQ COLLAPSED' THEN 1 WHEN 'STALE' THEN 2\n         WHEN 'NO DATA' THEN 3 ELSE 4 END, unreal NULLS FIRST"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 48,
+    "w": 24,
+    "h": 8
+   }
+  },
+  {
+   "id": 19,
+   "type": "table",
+   "title": "Closed trades (time range, latest 100)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT t.id, t.sim_metadata->>'strategy' AS strategy, t.asset,\n  LEFT(COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', ''), 10) AS trigger,\n  ROUND(t.size_usd::numeric, 0) AS size_usd, ROUND(t.pnl_usd::numeric, 2) AS pnl_usd, ROUND(t.pnl_pct::numeric, 1) AS pnl_pct,\n  t.exit_reason, ROUND((EXTRACT(EPOCH FROM t.exit_at - t.entry_at) / 3600)::numeric, 2) AS hold_h,\n  ROUND((t.sim_metadata->>'token_age_at_entry_hours')::numeric, 2) AS token_age_h,\n  ROUND((t.sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq_usd, t.entry_at, t.exit_at\nFROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'\n  AND t.sim_metadata->>'strategy' IN ('teamfollow','teamfollow_watch') AND $__timeFilter(t.exit_at)\nORDER BY t.exit_at DESC LIMIT 100"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 56,
+    "w": 24,
+    "h": 10
+   }
+  },
+  {
+   "id": 20,
+   "type": "table",
+   "title": "Halt history (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT bot_id, halt_type, severity, halted_at, resumed_at, resumed_by, LEFT(reason, 120) AS reason\nFROM halts WHERE bot_id IN ('copy_teamfollow') AND $__timeFilter(halted_at) ORDER BY halted_at DESC"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 66,
+    "w": 24,
+    "h": 6
+   }
+  }
+ ]
 }

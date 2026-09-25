@@ -1,6 +1,6 @@
 {
- "uid": "fleet-overview",
- "title": "Fleet Command",
+ "uid": "wallet-pool",
+ "title": "Wallet Pool",
  "schemaVersion": 39,
  "version": 1,
  "editable": true,
@@ -12,7 +12,7 @@
  },
  "tags": [
   "fleet-v2",
-  "fleet"
+  "pool"
  ],
  "annotations": {
   "list": [
@@ -86,7 +86,7 @@
    "transparent": true,
    "options": {
     "mode": "markdown",
-    "content": "## Fleet Command\nWhat needs you first, then how each strategy is doing *per trade* in its current era. Watch-track teams and retired (_pre_reset) eras are excluded from the scorecard by design.  \n*Stat strip = current era (since the strategy's last reset). Charts and tables follow the time picker. Blue markers = logged changes, red = halts. Open positions with current liquidity < $100 are marked **RUG at −100%**.*"
+    "content": "## Wallet Pool\nWho we follow. Style = median token age at the wallet's entry on its winners: SNIPER (launch, unfollowable) · MM (market-maker, unfollowable) · SELECTOR (hours-old, the copyable edge). Re-tier 2026-09-25 pruned 174 snipers/MMs from active."
    },
    "gridPos": {
     "x": 0,
@@ -98,7 +98,7 @@
   {
    "id": 2,
    "type": "table",
-   "title": "Needs your attention",
+   "title": "Pool by tier × wallet style",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -113,7 +113,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "WITH strat(strategy, halt_id, expect_active) AS (VALUES ('cluster','copy',true),('conviction','copy_conviction',true),('swing','copy_swing',true),('teamfollow','copy_teamfollow',true),('cohortfire','copy_cohortfire',false),('promobuy','copy_promobuy',true)),\no AS (\n  SELECT t.id, t.asset, t.entry_at, t.sim_metadata->>'strategy' AS strategy,\n    COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', '') AS who,\n    (t.sim_metadata->>'peak_pct_since_entry')::numeric AS peak_pct,\n    (t.sim_metadata->>'entry_liquidity_usd')::numeric AS el,\n    COALESCE((t.sim_metadata->>'remaining_size_usd')::numeric, t.size_usd::numeric) AS rem,\n    t.entry_price::numeric AS ep, l.liquidity_usd::numeric AS liq, l.price::numeric AS px, l.logged_at,\n    CASE WHEN l.logged_at IS NULL THEN 'NO DATA'\n         WHEN l.liquidity_usd < 100 THEN 'RUG'\n         WHEN l.logged_at < now() - interval '2 hours' THEN 'STALE'\n         WHEN (t.sim_metadata->>'entry_liquidity_usd')::numeric > 0\n              AND l.liquidity_usd < 0.2 * (t.sim_metadata->>'entry_liquidity_usd')::numeric\n              THEN 'LIQ COLLAPSED'\n         ELSE 'ok' END AS status\n  FROM trades t\n  LEFT JOIN LATERAL (SELECT liquidity_usd, price, logged_at FROM position_liquidity_log p\n                     WHERE p.trade_id = t.id ORDER BY logged_at DESC LIMIT 1) l ON true\n  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='open' \n), ou AS (\n  SELECT o.*, CASE WHEN status='RUG' THEN -rem\n                   WHEN px IS NOT NULL AND ep > 0 THEN rem * (px / ep - 1) END AS unreal\n  FROM o),\nitems AS (\n  SELECT CASE WHEN h.halt_type = 'manual' THEN 'INFO' WHEN h.severity = 'p0' OR h.halt_type = 'dd_total' THEN 'P0' ELSE 'P1' END AS sev,\n    'halt' AS kind, h.bot_id AS subject,\n    h.halt_type || ' — halted ' || ROUND((EXTRACT(EPOCH FROM now() - h.halted_at) / 86400)::numeric, 1) || 'd ago'\n      || CASE WHEN h.halt_type = 'dd_total' THEN ' (does not auto-resume: needs your decision)' ELSE '' END AS detail\n  FROM halts h WHERE h.resumed_at IS NULL\n  UNION ALL\n  SELECT 'P2', 'idle', s.strategy, 'running but no entry for '\n         || ROUND((EXTRACT(EPOCH FROM now() - max(t.entry_at)) / 3600)::numeric, 0) || 'h'\n  FROM strat s JOIN trades t ON t.bot_id = 'copy' AND t.mode = 'paper' AND t.sim_metadata->>'strategy' = s.strategy\n  WHERE s.expect_active AND NOT EXISTS (SELECT 1 FROM halts h WHERE h.bot_id = s.halt_id AND h.resumed_at IS NULL)\n  GROUP BY s.strategy HAVING max(t.entry_at) < now() - interval '24 hours'\n  UNION ALL\n  SELECT 'P0', 'heartbeat', process_name, 'no heartbeat for ' || EXTRACT(EPOCH FROM now() - last_ping_at)::int || 's'\n  FROM heartbeats WHERE last_ping_at < now() - interval '5 minutes'\n  UNION ALL\n  SELECT 'P1', 'rug / liquidity', strategy, count(*) || ' open position(s) ' || string_agg(DISTINCT status, '/')\n         || ' — $' || ROUND(sum(rem)) || ' exposed'\n  FROM o WHERE status IN ('RUG', 'LIQ COLLAPSED') GROUP BY strategy\n  UNION ALL\n  SELECT 'P2', 'liquidity data', strategy, count(*) || ' open position(s) with no liquidity reading in 2h'\n  FROM o WHERE status IN ('STALE', 'NO DATA') GROUP BY strategy\n  UNION ALL\n  SELECT 'P1', 'webhooks', 'wallet swaps', 'last hour ' || n1 || ' swaps vs ' || ROUND(avg7) || '/h (7d avg)'\n  FROM (SELECT (SELECT count(*) FROM wallet_swaps_log WHERE event_at > now() - interval '1 hour') AS n1,\n               (SELECT count(*) / 168.0 FROM wallet_swaps_log WHERE event_at > now() - interval '7 days') AS avg7) w\n  WHERE w.n1 < 0.3 * w.avg7)\nSELECT sev, kind, subject, detail FROM (\n  SELECT * FROM items\n  UNION ALL SELECT 'OK', 'all clear', 'fleet', 'nothing needs attention' WHERE NOT EXISTS (SELECT 1 FROM items)) x\nORDER BY CASE sev WHEN 'P0' THEN 0 WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 WHEN 'INFO' THEN 3 ELSE 4 END, subject"
+     "rawSql": "SELECT wp.tier, count(*) AS wallets, count(*) FILTER (WHERE ws.cls = 'SELECTOR') AS \"SELECTOR\", count(*) FILTER (WHERE ws.cls = 'SNIPER') AS \"SNIPER\", count(*) FILTER (WHERE ws.cls = 'MM_HFT') AS \"MM_HFT\", count(*) FILTER (WHERE ws.cls = 'MM_ESTABLISHED') AS \"MM_ESTABLISHED\", count(*) FILTER (WHERE ws.cls = 'OTHER') AS \"OTHER\",\n  count(*) FILTER (WHERE ws.cls IS NULL) AS unclassified,\n  count(*) FILTER (WHERE wp.swing) AS swing_roster, count(*) FILTER (WHERE wp.conviction) AS conviction_roster,\n  count(*) FILTER (WHERE wp.pinned) AS pinned\nFROM wallet_pool wp LEFT JOIN wallet_style ws ON ws.address = wp.address\nGROUP BY wp.tier ORDER BY CASE wp.tier WHEN 'active' THEN 1 WHEN 'teamfollow' THEN 2 WHEN 'watch' THEN 3 ELSE 4 END"
     }
    ],
    "fieldConfig": {
@@ -346,7 +346,6 @@
     "showHeader": true,
     "cellHeight": "sm"
    },
-   "description": "P0 = act now, P1 = look today, P2 = when convenient, INFO = deliberate state. Empty of problems = 'all clear'.",
    "gridPos": {
     "x": 0,
     "y": 3,
@@ -356,267 +355,8 @@
   },
   {
    "id": 3,
-   "type": "table",
-   "title": "Scorecard — per strategy, current era",
-   "datasource": {
-    "type": "postgres",
-    "uid": "fleet-postgres"
-   },
-   "targets": [
-    {
-     "refId": "A",
-     "datasource": {
-      "type": "postgres",
-      "uid": "fleet-postgres"
-     },
-     "format": "table",
-     "rawQuery": true,
-     "editorMode": "code",
-     "rawSql": "WITH strat(strategy, halt_id) AS (VALUES ('cluster','copy'),('conviction','copy_conviction'),('swing','copy_swing'),('teamfollow','copy_teamfollow'),('cohortfire','copy_cohortfire'),('promobuy','copy_promobuy')),\nc AS (SELECT sim_metadata->>'strategy' AS st, pnl_usd, pnl_pct, exit_at,\n        row_number() OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY pnl_usd DESC) AS rk,\n        count(*) OVER (PARTITION BY sim_metadata->>'strategy') AS cnt,\n        row_number() OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at DESC) AS recent\n      FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed'\n        AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy')),\nagg AS (SELECT st, count(*) AS n, avg(pnl_usd) AS exp_usd, avg(pnl_pct) AS exp_pct, avg((pnl_usd > 0)::int) * 100 AS win,\n          avg(pnl_usd) FILTER (WHERE pnl_usd > 0) AS aw, avg(pnl_usd) FILTER (WHERE pnl_usd <= 0) AS al,\n          sum(pnl_usd) AS net, sum(pnl_usd) FILTER (WHERE rk > ceil(cnt * 0.05)) AS net_ex5,\n          sum(pnl_usd) FILTER (WHERE exit_at > now() - interval '7 days') AS net7,\n          avg(pnl_usd) FILTER (WHERE recent <= 50) AS exp50\n        FROM c GROUP BY st),\no AS (\n  SELECT t.id, t.asset, t.entry_at, t.sim_metadata->>'strategy' AS strategy,\n    COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', '') AS who,\n    (t.sim_metadata->>'peak_pct_since_entry')::numeric AS peak_pct,\n    (t.sim_metadata->>'entry_liquidity_usd')::numeric AS el,\n    COALESCE((t.sim_metadata->>'remaining_size_usd')::numeric, t.size_usd::numeric) AS rem,\n    t.entry_price::numeric AS ep, l.liquidity_usd::numeric AS liq, l.price::numeric AS px, l.logged_at,\n    CASE WHEN l.logged_at IS NULL THEN 'NO DATA'\n         WHEN l.liquidity_usd < 100 THEN 'RUG'\n         WHEN l.logged_at < now() - interval '2 hours' THEN 'STALE'\n         WHEN (t.sim_metadata->>'entry_liquidity_usd')::numeric > 0\n              AND l.liquidity_usd < 0.2 * (t.sim_metadata->>'entry_liquidity_usd')::numeric\n              THEN 'LIQ COLLAPSED'\n         ELSE 'ok' END AS status\n  FROM trades t\n  LEFT JOIN LATERAL (SELECT liquidity_usd, price, logged_at FROM position_liquidity_log p\n                     WHERE p.trade_id = t.id ORDER BY logged_at DESC LIMIT 1) l ON true\n  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='open' AND t.sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy')\n), ou AS (\n  SELECT o.*, CASE WHEN status='RUG' THEN -rem\n                   WHEN px IS NOT NULL AND ep > 0 THEN rem * (px / ep - 1) END AS unreal\n  FROM o),\noa AS (SELECT strategy AS st, count(*) AS n_open, sum(unreal) AS unreal, count(*) FILTER (WHERE status = 'RUG') AS rugs\n       FROM ou GROUP BY strategy),\ne AS (SELECT sim_metadata->>'strategy' AS st, min(entry_at) AS era_start, max(entry_at) AS last_entry\n      FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy') GROUP BY 1)\nSELECT s.strategy,\n  COALESCE('HALTED · ' || h.halt_type, 'running') AS state,\n  to_char(e.era_start AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS era_start,\n  COALESCE(a.n, 0) AS n_closed,\n  ROUND(a.exp_usd::numeric, 1) AS exp_usd, ROUND(a.exp_pct::numeric, 1) AS exp_pct, ROUND(a.win::numeric, 0) AS win_pct,\n  ROUND((a.aw / NULLIF(abs(a.al), 0))::numeric, 2) AS payoff,\n  ROUND(a.net::numeric, 0) AS net_era_usd, ROUND(a.net_ex5::numeric, 0) AS net_ex_top5_usd,\n  ROUND(COALESCE(a.net7, 0)::numeric, 0) AS net_7d_usd,\n  COALESCE(oa.n_open, 0) AS open_n, ROUND(COALESCE(oa.unreal, 0), 0) AS open_unreal_usd,\n  ROUND((COALESCE(a.net, 0) + COALESCE(oa.unreal, 0))::numeric, 0) AS all_in_usd,\n  ROUND((EXTRACT(EPOCH FROM now() - e.last_entry) / 3600)::numeric, 0) AS last_entry_h,\n  concat_ws(' · ',\n    CASE WHEN a.exp50 < 0 THEN 'exp<0 last 50' END,\n    CASE WHEN h.halt_type IS NULL AND e.last_entry < now() - interval '24 hours' THEN 'no entry 24h' END,\n    CASE WHEN oa.rugs > 0 THEN oa.rugs || ' rug open' END,\n    CASE WHEN COALESCE(a.n, 0) < 30 THEN 'low N' END,\n    CASE WHEN a.net > 0 AND a.net_ex5 < 0 THEN 'tail-dependent' END) AS flags\nFROM strat s\nLEFT JOIN agg a ON a.st = s.strategy\nLEFT JOIN oa ON oa.st = s.strategy\nLEFT JOIN e ON e.st = s.strategy\nLEFT JOIN LATERAL (SELECT halt_type FROM halts WHERE bot_id = s.halt_id AND resumed_at IS NULL\n                   ORDER BY halted_at DESC LIMIT 1) h ON true\nORDER BY CASE s.strategy WHEN 'cluster' THEN 0 WHEN 'conviction' THEN 1 WHEN 'swing' THEN 2 WHEN 'teamfollow' THEN 3 WHEN 'cohortfire' THEN 4 WHEN 'promobuy' THEN 5 END"
-    }
-   ],
-   "fieldConfig": {
-    "defaults": {
-     "custom": {
-      "align": "auto",
-      "filterable": true
-     }
-    },
-    "overrides": [
-     {
-      "matcher": {
-       "id": "byRegexp",
-       "options": ".*_usd$"
-      },
-      "properties": [
-       {
-        "id": "unit",
-        "value": "currencyUSD"
-       },
-       {
-        "id": "decimals",
-        "value": 0
-       },
-       {
-        "id": "custom.cellOptions",
-        "value": {
-         "type": "color-text"
-        }
-       },
-       {
-        "id": "thresholds",
-        "value": {
-         "mode": "absolute",
-         "steps": [
-          {
-           "color": "red",
-           "value": null
-          },
-          {
-           "color": "green",
-           "value": 0
-          }
-         ]
-        }
-       }
-      ]
-     },
-     {
-      "matcher": {
-       "id": "byRegexp",
-       "options": ".*_pct$"
-      },
-      "properties": [
-       {
-        "id": "unit",
-        "value": "percent"
-       }
-      ]
-     },
-     {
-      "matcher": {
-       "id": "byName",
-       "options": "asset"
-      },
-      "properties": [
-       {
-        "id": "links",
-        "value": [
-         {
-          "title": "Birdeye",
-          "targetBlank": true,
-          "url": "https://birdeye.so/solana/token/${__value.raw}"
-         }
-        ]
-       }
-      ]
-     },
-     {
-      "matcher": {
-       "id": "byName",
-       "options": "wallet"
-      },
-      "properties": [
-       {
-        "id": "links",
-        "value": [
-         {
-          "title": "Birdeye wallet",
-          "targetBlank": true,
-          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
-         }
-        ]
-       }
-      ]
-     },
-     {
-      "matcher": {
-       "id": "byName",
-       "options": "status"
-      },
-      "properties": [
-       {
-        "id": "custom.cellOptions",
-        "value": {
-         "type": "color-background"
-        }
-       },
-       {
-        "id": "mappings",
-        "value": [
-         {
-          "type": "value",
-          "options": {
-           "RUG": {
-            "color": "red",
-            "index": 0
-           },
-           "LIQ COLLAPSED": {
-            "color": "orange",
-            "index": 1
-           },
-           "STALE": {
-            "color": "#6e6e6e",
-            "index": 2
-           },
-           "NO DATA": {
-            "color": "#6e6e6e",
-            "index": 3
-           },
-           "ok": {
-            "color": "green",
-            "index": 4
-           }
-          }
-         }
-        ]
-       }
-      ]
-     },
-     {
-      "matcher": {
-       "id": "byName",
-       "options": "sev"
-      },
-      "properties": [
-       {
-        "id": "custom.cellOptions",
-        "value": {
-         "type": "color-background"
-        }
-       },
-       {
-        "id": "custom.width",
-        "value": 60
-       },
-       {
-        "id": "mappings",
-        "value": [
-         {
-          "type": "value",
-          "options": {
-           "P0": {
-            "color": "red",
-            "index": 0
-           },
-           "P1": {
-            "color": "orange",
-            "index": 1
-           },
-           "P2": {
-            "color": "yellow",
-            "index": 2
-           },
-           "INFO": {
-            "color": "blue",
-            "index": 3
-           },
-           "OK": {
-            "color": "green",
-            "index": 4
-           }
-          }
-         }
-        ]
-       }
-      ]
-     },
-     {
-      "matcher": {
-       "id": "byName",
-       "options": "state"
-      },
-      "properties": [
-       {
-        "id": "custom.cellOptions",
-        "value": {
-         "type": "color-text"
-        }
-       },
-       {
-        "id": "mappings",
-        "value": [
-         {
-          "type": "regex",
-          "options": {
-           "pattern": "^HALTED.*",
-           "result": {
-            "color": "red",
-            "index": 0
-           }
-          }
-         },
-         {
-          "type": "value",
-          "options": {
-           "running": {
-            "color": "green",
-            "index": 1
-           }
-          }
-         }
-        ]
-       }
-      ]
-     }
-    ]
-   },
-   "options": {
-    "showHeader": true,
-    "cellHeight": "sm"
-   },
-   "description": "exp = average per closed trade. payoff = avg win / avg loss. net_ex_top5 = net without the best 5% of trades (tail dependence). open_unreal and all_in mark rugs (liq < $100) at -100%. Flags are advisory.",
-   "gridPos": {
-    "x": 0,
-    "y": 9,
-    "w": 24,
-    "h": 8
-   }
-  },
-  {
-   "id": 4,
    "type": "timeseries",
-   "title": "Rolling expectancy — avg $ per trade over last 30 trades",
+   "title": "Daily wallet pool transitions",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -631,34 +371,18 @@
      "format": "time_series",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "SELECT time, metric, value FROM (\n  SELECT exit_at AS time, sim_metadata->>'strategy' AS metric,\n    AVG(pnl_usd) OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at\n                       ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) AS value\n  FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed' AND exit_at IS NOT NULL\n    AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy')) x\nWHERE $__timeFilter(time) ORDER BY 1"
+     "rawSql": "SELECT date_trunc('day', created_at) AS time, COALESCE(jsonb_array_length((payload->>'promoted')::jsonb), 0) AS promoted, COALESCE(jsonb_array_length((payload->>'demoted')::jsonb), 0) AS demoted, COALESCE(jsonb_array_length((payload->>'dropped')::jsonb), 0) AS dropped, COALESCE(jsonb_array_length((payload->>'swapped')::jsonb), 0) AS swapped FROM audit_log WHERE event_type = 'wallet_pool_daily_transitions' AND $__timeFilter(created_at) ORDER BY 1"
     }
    ],
    "fieldConfig": {
     "defaults": {
-     "unit": "currencyUSD",
+     "unit": "short",
      "custom": {
       "drawStyle": "line",
       "lineWidth": 2,
       "fillOpacity": 0,
       "showPoints": "never",
-      "spanNulls": true,
-      "thresholdsStyle": {
-       "mode": "line"
-      }
-     },
-     "thresholds": {
-      "mode": "absolute",
-      "steps": [
-       {
-        "color": "transparent",
-        "value": null
-       },
-       {
-        "color": "#888888",
-        "value": 0
-       }
-      ]
+      "spanNulls": true
      }
     },
     "overrides": []
@@ -672,18 +396,276 @@
      "mode": "multi"
     }
    },
-   "description": "Above the grey line = making money per trade right now. Blue markers = changes, red = halts.",
    "gridPos": {
     "x": 0,
-    "y": 17,
-    "w": 24,
-    "h": 9
+    "y": 9,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "id": 4,
+   "type": "table",
+   "title": "Unfollowable wallets still active (protected: pinned / swing / conviction)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT wp.address AS wallet, ws.cls AS style, ROUND(ws.median_age_h::numeric, 2) AS median_age_h,\n  wp.pinned, wp.swing, wp.conviction, wp.source\nFROM wallet_pool wp JOIN wallet_style ws ON ws.address = wp.address\nWHERE wp.tier = 'active' AND ws.cls IN ('SNIPER', 'MM_HFT', 'MM_ESTABLISHED') ORDER BY ws.cls, wp.address"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "description": "The re-tier skipped these on purpose. Review whether swing/conviction should keep them.",
+   "gridPos": {
+    "x": 12,
+    "y": 9,
+    "w": 12,
+    "h": 8
    }
   },
   {
    "id": 5,
    "type": "table",
-   "title": "Open positions — all strategies, current liquidity, rug-marked",
+   "title": "Active SELECTOR wallets — the copyable cohort",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -698,7 +680,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "WITH o AS (\n  SELECT t.id, t.asset, t.entry_at, t.sim_metadata->>'strategy' AS strategy,\n    COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', '') AS who,\n    (t.sim_metadata->>'peak_pct_since_entry')::numeric AS peak_pct,\n    (t.sim_metadata->>'entry_liquidity_usd')::numeric AS el,\n    COALESCE((t.sim_metadata->>'remaining_size_usd')::numeric, t.size_usd::numeric) AS rem,\n    t.entry_price::numeric AS ep, l.liquidity_usd::numeric AS liq, l.price::numeric AS px, l.logged_at,\n    CASE WHEN l.logged_at IS NULL THEN 'NO DATA'\n         WHEN l.liquidity_usd < 100 THEN 'RUG'\n         WHEN l.logged_at < now() - interval '2 hours' THEN 'STALE'\n         WHEN (t.sim_metadata->>'entry_liquidity_usd')::numeric > 0\n              AND l.liquidity_usd < 0.2 * (t.sim_metadata->>'entry_liquidity_usd')::numeric\n              THEN 'LIQ COLLAPSED'\n         ELSE 'ok' END AS status\n  FROM trades t\n  LEFT JOIN LATERAL (SELECT liquidity_usd, price, logged_at FROM position_liquidity_log p\n                     WHERE p.trade_id = t.id ORDER BY logged_at DESC LIMIT 1) l ON true\n  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='open' AND t.sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy','teamfollow_watch')\n), ou AS (\n  SELECT o.*, CASE WHEN status='RUG' THEN -rem\n                   WHEN px IS NOT NULL AND ep > 0 THEN rem * (px / ep - 1) END AS unreal\n  FROM o)\nSELECT id, strategy, asset, status, ROUND(rem,0) AS size_usd, ROUND(unreal,0) AS unreal_usd,\n  ROUND((EXTRACT(EPOCH FROM now()-entry_at)/3600)::numeric,1) AS held_h,\n  ROUND(el,0) AS entry_liq_usd, ROUND(liq,0) AS liq_now_usd,\n  ROUND((liq / NULLIF(el,0) - 1) * 100, 0) AS liq_chg_pct,\n  ROUND((EXTRACT(EPOCH FROM now()-logged_at)/60)::numeric,0) AS liq_age_min,\n  ROUND(peak_pct,1) AS peak_pct, LEFT(who,10) AS trigger, entry_at\nFROM ou\nORDER BY CASE status WHEN 'RUG' THEN 0 WHEN 'LIQ COLLAPSED' THEN 1 WHEN 'STALE' THEN 2\n         WHEN 'NO DATA' THEN 3 ELSE 4 END, unreal NULLS FIRST"
+     "rawSql": "SELECT wp.address AS wallet, ROUND(ws.median_age_h::numeric, 2) AS median_age_h, ws.swaps, ws.tokens,\n  wp.swing, wp.conviction, wp.pinned, wp.events_30d, wp.source\nFROM wallet_pool wp JOIN wallet_style ws ON ws.address = wp.address\nWHERE wp.tier = 'active' AND ws.cls = 'SELECTOR' ORDER BY ws.median_age_h"
     }
    ],
    "fieldConfig": {
@@ -933,15 +915,15 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 26,
-    "w": 24,
-    "h": 9
+    "y": 17,
+    "w": 12,
+    "h": 10
    }
   },
   {
    "id": 6,
    "type": "table",
-   "title": "Closed trades (time range, latest 100)",
+   "title": "Watch-tier promotion candidates",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -956,7 +938,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "SELECT t.id, t.sim_metadata->>'strategy' AS strategy, t.asset,\n  LEFT(COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', ''), 10) AS trigger,\n  ROUND(t.size_usd::numeric, 0) AS size_usd, ROUND(t.pnl_usd::numeric, 2) AS pnl_usd, ROUND(t.pnl_pct::numeric, 1) AS pnl_pct,\n  t.exit_reason, ROUND((EXTRACT(EPOCH FROM t.exit_at - t.entry_at) / 3600)::numeric, 2) AS hold_h,\n  ROUND((t.sim_metadata->>'token_age_at_entry_hours')::numeric, 2) AS token_age_h,\n  ROUND((t.sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq_usd, t.entry_at, t.exit_at\nFROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'\n  AND t.sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy','teamfollow_watch') AND $__timeFilter(t.exit_at)\nORDER BY t.exit_at DESC LIMIT 100"
+     "rawSql": "WITH ev AS (SELECT wallet_address, COUNT(*) FILTER (WHERE event_at >= now() - interval '7 days') AS n7d,\n  COUNT(*) AS n30d FROM wallet_events_log WHERE event_at >= now() - interval '30 days' GROUP BY 1)\nSELECT wp.address AS wallet, COALESCE(ws.cls, '?') AS style, COALESCE(e.n7d, 0) AS events_7d, COALESCE(e.n30d, 0) AS events_30d,\n  wp.last_event_at, wp.source\nFROM wallet_pool wp LEFT JOIN ev e ON e.wallet_address = wp.address LEFT JOIN wallet_style ws ON ws.address = wp.address\nWHERE wp.tier = 'watch' ORDER BY COALESCE(e.n7d, 0) DESC, COALESCE(e.n30d, 0) DESC LIMIT 25"
     }
    ],
    "fieldConfig": {
@@ -1190,9 +1172,9 @@
     "cellHeight": "sm"
    },
    "gridPos": {
-    "x": 0,
-    "y": 35,
-    "w": 24,
+    "x": 12,
+    "y": 17,
+    "w": 12,
     "h": 10
    }
   }

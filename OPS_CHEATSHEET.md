@@ -130,7 +130,8 @@ you see one, force-recreate is the fix.
 | `memory/project_decision_log.md` | Signed design decisions (incl. kill criteria). |
 | `bots/structure/config.py` + `bots/copy/config.py` | Window-locked constants live here. Window-reset rules in the file header. |
 | `framework/kill_criteria_monitor.py` | Where the alert thresholds + window dates live (hardcoded constants at top). |
-| `monitoring/dashboards/structure-detail.json` + `copy-detail.json` | Grafana panel definitions. |
+| `scripts/build_dashboards.py` → `monitoring/dashboards/*.json` | Grafana pages are GENERATED — edit the generator, rerun, validate with `scripts/validate_dashboards.py`. |
+| `scripts/log_change.py` | Log every strategy change (chart markers + "did it help" tables). |
 
 ---
 

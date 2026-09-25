@@ -1,0 +1,1538 @@
+{
+ "uid": "ops-health",
+ "title": "Ops & Health",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": true,
+ "refresh": "1m",
+ "timezone": "America/Chicago",
+ "time": {
+  "from": "now-7d",
+  "to": "now"
+ },
+ "tags": [
+  "fleet-v2",
+  "ops"
+ ],
+ "annotations": {
+  "list": [
+   {
+    "builtIn": 1,
+    "datasource": {
+     "type": "grafana",
+     "uid": "-- Grafana --"
+    },
+    "enable": true,
+    "hide": true,
+    "iconColor": "rgba(0, 211, 255, 1)",
+    "name": "Annotations & Alerts",
+    "type": "dashboard"
+   },
+   {
+    "datasource": {
+     "type": "postgres",
+     "uid": "fleet-postgres"
+    },
+    "enable": true,
+    "iconColor": "#5794F2",
+    "name": "Changes",
+    "target": {
+     "refId": "Anno",
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT changed_at AS time, strategy || ': ' || description AS text, kind AS tags FROM strategy_changes WHERE $__timeFilter(changed_at)  ORDER BY changed_at"
+    }
+   },
+   {
+    "datasource": {
+     "type": "postgres",
+     "uid": "fleet-postgres"
+    },
+    "enable": true,
+    "iconColor": "#F2495C",
+    "name": "Halts",
+    "target": {
+     "refId": "Halt",
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT halted_at AS time, resumed_at AS timeend, bot_id || ' halted: ' || halt_type AS text, 'halt' AS tags FROM halts WHERE $__timeFilter(halted_at)  ORDER BY halted_at"
+    }
+   }
+  ]
+ },
+ "links": [
+  {
+   "type": "dashboards",
+   "tags": [
+    "fleet-v2"
+   ],
+   "asDropdown": false,
+   "title": "Pages",
+   "includeVars": false,
+   "keepTime": true,
+   "icon": "external link"
+  }
+ ],
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "id": 1,
+   "type": "text",
+   "title": "",
+   "transparent": true,
+   "options": {
+    "mode": "markdown",
+    "content": "## Ops & Health\nPlumbing, fills, and API budgets. (Helius/Birdeye panels at the bottom.)"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 2
+   }
+  },
+  {
+   "id": 2,
+   "type": "table",
+   "title": "Heartbeats",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT process_name, last_ping_at, EXTRACT(EPOCH FROM now() - last_ping_at)::int AS secs_ago, CASE WHEN last_ping_at >= now() - interval '2 minutes' THEN 'ok' ELSE 'STALE' END AS status FROM heartbeats ORDER BY process_name"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 2,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "id": 3,
+   "type": "timeseries",
+   "title": "Wallet swaps delivered per hour (webhooks)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "time_series",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT date_trunc('hour', event_at) AS time, source_webhook AS metric, count(*) AS value FROM wallet_swaps_log WHERE $__timeFilter(event_at) GROUP BY 1, 2 ORDER BY 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   },
+   "gridPos": {
+    "x": 8,
+    "y": 2,
+    "w": 16,
+    "h": 7
+   }
+  },
+  {
+   "id": 4,
+   "type": "timeseries",
+   "title": "No-fill rate per day by strategy (%)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "time_series",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT date_trunc('day', created_at) AS time, sim_metadata->>'strategy' AS metric, ROUND(100.0 * count(*) FILTER (WHERE fill_status = 'no_fill') / count(*), 1) AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND $__timeFilter(created_at) AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy') GROUP BY 1, 2 ORDER BY 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "showPoints": "never",
+      "spanNulls": true
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 9,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "id": 5,
+   "type": "table",
+   "title": "Slippage by strategy (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT sim_metadata->>'strategy' AS strategy, count(*) AS n,\n  ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY (sim_metadata->>'slippage_bps')::float)::numeric, 0) AS entry_med_bps,\n  ROUND(percentile_cont(0.9) WITHIN GROUP (ORDER BY (sim_metadata->>'slippage_bps')::float)::numeric, 0) AS entry_p90_bps,\n  ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY (sim_metadata->>'exit_slippage_bps')::float)::numeric, 0) AS exit_med_bps\nFROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'slippage_bps' IS NOT NULL\n  AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy') AND $__timeFilter(created_at)\nGROUP BY 1 ORDER BY 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 9,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "id": 6,
+   "type": "table",
+   "title": "Halt history (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT bot_id, halt_type, severity, halted_at, resumed_at, resumed_by, LEFT(reason, 120) AS reason\nFROM halts WHERE bot_id IN ('copy','copy_conviction','copy_swing','copy_teamfollow','copy_cohortfire','copy_promobuy') AND $__timeFilter(halted_at) ORDER BY halted_at DESC"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 17,
+    "w": 24,
+    "h": 6
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "Helius — deliveries yesterday",
+   "gridPos": {
+    "x": 0,
+    "y": 26,
+    "w": 6,
+    "h": 4
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "SELECT COALESCE(sum(calls),0) FROM service_usage_daily WHERE service='helius' AND day = (now()::date - 1)"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
+    }
+   },
+   "options": {
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 8,
+   "type": "stat",
+   "title": "Helius — projected credits / mo",
+   "gridPos": {
+    "x": 6,
+    "y": 26,
+    "w": 6,
+    "h": 4
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "SELECT COALESCE(round(avg(d)*30),0) FROM (SELECT day, sum(calls) d FROM service_usage_daily WHERE service='helius' AND day >= (now()::date - 7) AND day < now()::date GROUP BY day) x"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    }
+   },
+   "options": {
+    "colorMode": "none",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 9,
+   "type": "gauge",
+   "title": "Helius — % of 10M plan",
+   "gridPos": {
+    "x": 12,
+    "y": 26,
+    "w": 6,
+    "h": 4
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "SELECT COALESCE(round(100.0*(avg(d)*30)/10000000,1),0) FROM (SELECT day, sum(calls) d FROM service_usage_daily WHERE service='helius' AND day >= (now()::date - 7) AND day < now()::date GROUP BY day) x"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "min": 0,
+     "max": 200,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 85
+       },
+       {
+        "color": "red",
+        "value": 100
+       }
+      ]
+     }
+    }
+   },
+   "options": {
+    "showThresholdLabels": false,
+    "showThresholdMarkers": true
+   }
+  },
+  {
+   "id": 10,
+   "type": "stat",
+   "title": "Helius — headroom (credits/mo)",
+   "gridPos": {
+    "x": 18,
+    "y": 26,
+    "w": 6,
+    "h": 4
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "SELECT COALESCE(round(10000000 - avg(d)*30),0) FROM (SELECT day, sum(calls) d FROM service_usage_daily WHERE service='helius' AND day >= (now()::date - 7) AND day < now()::date GROUP BY day) x"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 0
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    }
+   },
+   "options": {
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 11,
+   "type": "timeseries",
+   "title": "Helius deliveries / day by webhook tier (red line = 10M-plan daily rate)",
+   "gridPos": {
+    "x": 0,
+    "y": 30,
+    "w": 24,
+    "h": 8
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "time_series",
+     "rawSql": "SELECT day AS time, sum(calls) FILTER (WHERE tier='active') AS active, sum(calls) FILTER (WHERE tier='watch') AS watch, sum(calls) FILTER (WHERE tier='teamfollow') AS teamfollow FROM service_usage_daily WHERE service='helius' AND day > now()::date - 45 GROUP BY day ORDER BY day"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "bars",
+      "fillOpacity": 70,
+      "stacking": {
+       "mode": "normal"
+      },
+      "lineWidth": 1,
+      "thresholdsStyle": {
+       "mode": "line"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 333333
+       }
+      ]
+     }
+    }
+   },
+   "options": {
+    "legend": {
+     "showLegend": true,
+     "placement": "bottom",
+     "displayMode": "list"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  },
+  {
+   "id": 12,
+   "type": "timeseries",
+   "title": "Birdeye — API call VOLUME / day + 429s (NOT compute units — see CU panels below)",
+   "gridPos": {
+    "x": 0,
+    "y": 38,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "time_series",
+     "rawSql": "SELECT day AS time, calls AS \"API calls\", errors AS \"429 rate-limit\" FROM service_usage_daily WHERE service='birdeye' AND day > now()::date - 45 ORDER BY day"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "line",
+      "fillOpacity": 10,
+      "lineWidth": 2,
+      "pointSize": 5
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "429 rate-limit"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "red"
+        }
+       },
+       {
+        "id": "custom.drawStyle",
+        "value": "bars"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "showLegend": true,
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  },
+  {
+   "id": 13,
+   "type": "timeseries",
+   "title": "Dexscreener — API calls / day + 429 rate-limit hits",
+   "gridPos": {
+    "x": 12,
+    "y": 38,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "time_series",
+     "rawSql": "SELECT day AS time, calls AS \"API calls\", errors AS \"429 rate-limit\" FROM service_usage_daily WHERE service='dexscreener' AND day > now()::date - 45 ORDER BY day"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "line",
+      "fillOpacity": 10,
+      "lineWidth": 2,
+      "pointSize": 5
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "429 rate-limit"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "red"
+        }
+       },
+       {
+        "id": "custom.drawStyle",
+        "value": "bars"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "showLegend": true,
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  },
+  {
+   "id": 14,
+   "type": "table",
+   "title": "Per-service summary (trailing 7 full days)",
+   "gridPos": {
+    "x": 0,
+    "y": 46,
+    "w": 24,
+    "h": 7
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "WITH d AS (SELECT service, day, sum(calls) calls, sum(errors) errors FROM service_usage_daily WHERE day >= now()::date - 7 AND day < now()::date GROUP BY service, day) SELECT service, round(avg(calls)) AS avg_per_day_7d, round(avg(calls)*30) AS projected_per_mo, sum(errors) AS rate_limit_429_7d FROM d GROUP BY service ORDER BY service"
+    }
+   ]
+  },
+  {
+   "id": 15,
+   "type": "stat",
+   "title": "Birdeye CU — used this cycle (REAL, /utils/v1/credits)",
+   "gridPos": {
+    "x": 0,
+    "y": 53,
+    "w": 6,
+    "h": 4
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "SELECT cu_used FROM birdeye_credits ORDER BY snapshot_at DESC LIMIT 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    }
+   }
+  },
+  {
+   "id": 16,
+   "type": "gauge",
+   "title": "Birdeye CU — % of cap",
+   "gridPos": {
+    "x": 6,
+    "y": 53,
+    "w": 6,
+    "h": 4
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "SELECT round(100.0*cu_used/NULLIF(cu_limit,0),1) FROM birdeye_credits ORDER BY snapshot_at DESC LIMIT 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "min": 0,
+     "max": 120,
+     "thresholds": {
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 85
+       },
+       {
+        "color": "orange",
+        "value": 100
+       },
+       {
+        "color": "red",
+        "value": 110
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 17,
+   "type": "stat",
+   "title": "Birdeye CU — projected end-of-cycle",
+   "gridPos": {
+    "x": 12,
+    "y": 53,
+    "w": 6,
+    "h": 4
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "SELECT round(cu_used / GREATEST(1e-9, LEAST(1.0, extract(epoch from now()-cycle_start)/NULLIF(extract(epoch from cycle_end-cycle_start),0)))) FROM birdeye_credits ORDER BY snapshot_at DESC LIMIT 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    }
+   }
+  },
+  {
+   "id": 18,
+   "type": "stat",
+   "title": "Birdeye CU — remaining / overage $",
+   "gridPos": {
+    "x": 18,
+    "y": 53,
+    "w": 6,
+    "h": 4
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "table",
+     "rawSql": "SELECT cu_remaining AS \"remaining\", overage_cost AS \"overage $\" FROM birdeye_credits ORDER BY snapshot_at DESC LIMIT 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    }
+   }
+  },
+  {
+   "id": 19,
+   "type": "timeseries",
+   "title": "Birdeye CU burn — cumulative this cycle (red = 8M cap)",
+   "gridPos": {
+    "x": 0,
+    "y": 57,
+    "w": 24,
+    "h": 8
+   },
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "format": "time_series",
+     "rawSql": "SELECT snapshot_at AS time, cu_used AS \"CU used (cumulative)\", cu_limit AS \"cap (8M)\" FROM birdeye_credits WHERE snapshot_at > now() - interval '40 days' ORDER BY snapshot_at"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "line",
+      "fillOpacity": 10,
+      "lineWidth": 2,
+      "pointSize": 5
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "cap (8M)"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "red"
+        }
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 0
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "showLegend": true,
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   }
+  }
+ ]
+}

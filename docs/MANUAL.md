@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-07-12 22:28 UTC.*
+*Last built: 2026-09-25 21:54 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -791,14 +791,22 @@ justified in the paper phase.
 - `monitoring/webhook_receiver/` — the public HTTPS endpoint Helius calls (active / watch /
   teamfollow tiers).
 - `monitoring/alerting/` — taxonomy (P0–P3), dispatcher, connectors.
-- `monitoring/dashboards/*.json` — Grafana, file-provisioned (~30s poll), auto-reloaded:
-  **Fleet Overview** (strategy-aware per-strategy scorecard: state / open / trades-24h /
-  net-total / net-24h / win-rate, plus open positions, last-50 closed with `peak_pct`,
-  cumulative PnL by strategy, heartbeat, halts — all **five** strategies), **COPY Cluster**
-  (`copy-detail.json`), **COPY Conviction** (`copy-conviction.json`), **COPY Team-Follow**
-  (`copy-teamfollow.json`), **COPY Cohort-Fire** (`copy-cohortfire.json`), and **COPY Promo-Buy**
-  (`copy-promobuy.json`). Closed-trade tables have clickable Birdeye token links. Each has a title
-  panel at the top. (`structure-detail.json` remains in-tree but its bot is decommissioned.)
+- `monitoring/dashboards/*.json` — Grafana, file-provisioned (~30s poll). **GENERATED — do not
+  hand-edit:** `python scripts/build_dashboards.py` writes every page from one template, then
+  `python scripts/validate_dashboards.py <files>` (inside `bot_copy`) runs every panel query against
+  the live DB before commit. Pages (nav bar across all, timezone America/Chicago):
+  **Fleet Command** (`fleet-overview`: "Needs your attention" strip — halts, rugs, idle strategies,
+  stale heartbeats, webhook drop — then a per-strategy scorecard on the current era: N, expectancy
+  per trade, win %, payoff, net without the top 5%, rug-marked open P&L, flags; rolling expectancy;
+  open/closed trades), one page per strategy (**Cluster** `copy-detail`, **Conviction**, **Swing**,
+  **Team-follow**, **Cohort-fire**, **Promo-buy**: shared core — stat strip, rolling expectancy, P&L
+  distribution, exit reasons, entry conditions vs outcome, "did each change help", open positions with
+  CURRENT liquidity, closed trades, halts — plus per-strategy modules such as P&L by wallet / team /
+  promo source / wallet style), **Ops & Health** (`ops-health`: heartbeats, webhook flow, no-fill,
+  slippage, Helius + Birdeye budgets) and **Wallet Pool** (`wallet-pool`: tier × style, transitions,
+  selector cohort). Stat strips = current era; charts/tables follow the time picker. Open positions
+  with current liquidity < $100 show as **RUG at −100%**. Chart markers come from `strategy_changes`
+  (log every strategy change with `python -m scripts.log_change`) and `halts`.
 - `monitoring/prometheus/` — scrape config.
 
 ### Server-side research cron (scrape-runners)
