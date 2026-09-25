@@ -666,8 +666,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -927,8 +926,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -1157,7 +1155,7 @@
     "x": 0,
     "y": 16,
     "w": 12,
-    "h": 12
+    "h": 13
    }
   },
   {
@@ -1187,8 +1185,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -1417,7 +1414,7 @@
     "x": 12,
     "y": 16,
     "w": 12,
-    "h": 12
+    "h": 13
    }
   },
   {
@@ -1675,7 +1672,7 @@
    "description": "Expectancy per trade for trades ENTERED in the 14 days before each logged change vs after it. Log changes with scripts/log_change.py.",
    "gridPos": {
     "x": 0,
-    "y": 28,
+    "y": 29,
     "w": 24,
     "h": 6
    }
@@ -1750,7 +1747,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 34,
+    "y": 35,
     "w": 24,
     "h": 9
    }
@@ -1782,8 +1779,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -2011,7 +2007,7 @@
    "description": "'demote?' = at least 5 trades and net negative. Advisory — you decide.",
    "gridPos": {
     "x": 0,
-    "y": 43,
+    "y": 44,
     "w": 12,
     "h": 9
    }
@@ -2043,8 +2039,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -2272,7 +2267,7 @@
    "description": "Each trade's P&L split across its participating wallets, grouped by the wallet's style class (scripts/wallet_style_classify.py). Snipers/MMs are structurally unfollowable.",
    "gridPos": {
     "x": 12,
-    "y": 43,
+    "y": 44,
     "w": 12,
     "h": 9
    }
@@ -2304,8 +2299,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -2532,7 +2526,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 52,
+    "y": 53,
     "w": 24,
     "h": 9
    }
@@ -2791,7 +2785,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 61,
+    "y": 62,
     "w": 24,
     "h": 11
    }
@@ -2823,8 +2817,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -3051,7 +3044,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 72,
+    "y": 73,
     "w": 24,
     "h": 10
    }
@@ -3083,8 +3076,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -3311,7 +3303,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 82,
+    "y": 83,
     "w": 24,
     "h": 6
    }

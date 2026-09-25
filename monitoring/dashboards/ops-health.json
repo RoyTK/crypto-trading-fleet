@@ -483,8 +483,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -743,8 +742,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {

@@ -666,8 +666,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -927,8 +926,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -1157,7 +1155,7 @@
     "x": 0,
     "y": 16,
     "w": 12,
-    "h": 12
+    "h": 13
    }
   },
   {
@@ -1187,8 +1185,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -1417,7 +1414,7 @@
     "x": 12,
     "y": 16,
     "w": 12,
-    "h": 12
+    "h": 13
    }
   },
   {
@@ -1675,7 +1672,7 @@
    "description": "Expectancy per trade for trades ENTERED in the 14 days before each logged change vs after it. Log changes with scripts/log_change.py.",
    "gridPos": {
     "x": 0,
-    "y": 28,
+    "y": 29,
     "w": 24,
     "h": 6
    }
@@ -1707,8 +1704,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -1935,7 +1931,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 34,
+    "y": 35,
     "w": 12,
     "h": 9
    }
@@ -2194,7 +2190,7 @@
    },
    "gridPos": {
     "x": 12,
-    "y": 34,
+    "y": 35,
     "w": 12,
     "h": 9
    }
@@ -2453,7 +2449,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 43,
+    "y": 44,
     "w": 24,
     "h": 11
    }
@@ -2485,8 +2481,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -2713,7 +2708,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 54,
+    "y": 55,
     "w": 24,
     "h": 10
    }
@@ -2745,8 +2740,7 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     },
-     "noValue": "No trades in the selected time range (check the time picker, top right)"
+     }
     },
     "overrides": [
      {
@@ -2973,7 +2967,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 64,
+    "y": 65,
     "w": 24,
     "h": 6
    }

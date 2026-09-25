@@ -160,8 +160,6 @@ def table(title, sql, desc=None, widths=None):
          "fieldConfig": {"defaults": {"custom": {"align": "auto", "filterable": False, "minWidth": 50}},
                          "overrides": ov},
          "options": {"showHeader": True, "cellHeight": "sm"}}
-    if "time range" in title:
-        p["fieldConfig"]["defaults"]["noValue"] = EMPTY_TIME
     if desc:
         p["description"] = desc
     return p
@@ -587,7 +585,7 @@ def strategy_page(s):
         [(text_panel(f"## {title}\n{blurb}  \n{LEGEND}"), 24, 3)],
         stat_strip(s),
         [(rolling_expectancy([s]), 12, 9), (pnl_distribution(s), 12, 9)],
-        [(exit_reasons(s), 12, 12), (entry_conditions(s), 12, 12)],
+        [(exit_reasons(s), 12, 13), (entry_conditions(s), 12, 13)],
         [(changes_before_after(s), 24, 6)],
         *([[(BARS[s](), 24, 9)]] if s in BARS else []),
         *mod_rows,
@@ -701,7 +699,7 @@ def fleet_command():
                      "Flags are advisory.",
                 widths={"strategy": 100, "state": 150, "era_start": 100, "flags": 270}), 24, SCORECARD_H)],
         [(rolling_expectancy(STRATS), 24, 9)],
-        [(table("Open positions — all strategies, current liquidity, rug-marked", open_positions_sql(all_open)), 24, 9)],
+        [(table("Open positions — all strategies, current liquidity, rug-marked", open_positions_sql(all_open)), 24, 12)],
         [(closed_trades(all_open), 24, 10)],
     ]
     return dashboard("fleet-overview", "Fleet Command", layout(rows), ["fleet"])
