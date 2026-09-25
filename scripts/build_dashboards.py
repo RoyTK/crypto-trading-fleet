@@ -148,10 +148,13 @@ TABLE_OVERRIDES = [
 
 
 
-def table(title, sql, desc=None):
+def table(title, sql, desc=None, widths=None):
+    ov = list(TABLE_OVERRIDES) + [
+        {"matcher": {"id": "byName", "options": col}, "properties": [{"id": "custom.width", "value": w}]}
+        for col, w in (widths or {}).items()]
     p = {"id": pid(), "type": "table", "title": title, "datasource": DS, "targets": tgt(sql),
          "fieldConfig": {"defaults": {"custom": {"align": "auto", "filterable": False, "minWidth": 50}},
-                         "overrides": TABLE_OVERRIDES},
+                         "overrides": ov},
          "options": {"showHeader": True, "cellHeight": "sm"}}
     if desc:
         p["description"] = desc
@@ -651,11 +654,11 @@ SELECT s.strategy,
   COALESCE('HALTED · ' || h.halt_type, 'running') AS state,
   to_char(e.era_start AT TIME ZONE '{TZ}', 'YYYY-MM-DD') AS era_start,
   COALESCE(a.n, 0) AS n_closed,
-  ROUND(a.exp_usd::numeric, 1) AS exp_usd, ROUND(a.exp_pct::numeric, 1) AS exp_pct, ROUND(a.win::numeric, 0) AS win_pct,
+  ROUND(a.exp_usd::numeric, 1) AS exp_usd, ROUND(a.win::numeric, 0) AS win_pct,
   ROUND((a.aw / NULLIF(abs(a.al), 0))::numeric, 2) AS payoff,
-  ROUND(a.net::numeric, 0) AS net_era_usd, ROUND(a.net_ex5::numeric, 0) AS net_ex_top5_usd,
+  ROUND(a.net::numeric, 0) AS net_usd, ROUND(a.net_ex5::numeric, 0) AS ex_top5_usd,
   ROUND(COALESCE(a.net7, 0)::numeric, 0) AS net_7d_usd,
-  COALESCE(oa.n_open, 0) AS open_n, ROUND(COALESCE(oa.unreal, 0), 0) AS open_unreal_usd,
+  COALESCE(oa.n_open, 0) AS open_n, ROUND(COALESCE(oa.unreal, 0), 0) AS open_usd,
   ROUND((COALESCE(a.net, 0) + COALESCE(oa.unreal, 0))::numeric, 0) AS all_in_usd,
   ROUND((EXTRACT(EPOCH FROM now() - e.last_entry) / 3600)::numeric, 0) AS last_entry_h,
   concat_ws(' · ',
@@ -682,11 +685,14 @@ def fleet_command():
                      "design.  \n" + LEGEND), 24, 3)],
         [(table("Needs your attention", attention_sql(),
                 desc="P0 = act now, P1 = look today, P2 = when convenient, INFO = deliberate state. "
-                     "Empty of problems = 'all clear'."), 24, 7)],
+                     "Empty of problems = 'all clear'.",
+                widths={"kind": 150, "subject": 170}), 24, 7)],
         [(table("Scorecard — per strategy, current era", scorecard_sql(),
-                desc="exp = average per closed trade. payoff = avg win / avg loss. net_ex_top5 = net without the best "
-                     "5% of trades (tail dependence). open_unreal and all_in mark rugs (liq < $100) at -100%. "
-                     "Flags are advisory."), 24, SCORECARD_H)],
+                desc="exp = average per closed trade. payoff = avg win / avg loss. net = realized in the current era. "
+                     "ex_top5 = net without the best 5% of trades (tail dependence). open = unrealized on open positions; "
+                     "open and all_in mark rugs (liq < $100) at -100%. "
+                     "Flags are advisory.",
+                widths={"strategy": 100, "state": 150, "era_start": 100, "flags": 330}), 24, SCORECARD_H)],
         [(rolling_expectancy(STRATS), 24, 9)],
         [(table("Open positions — all strategies, current liquidity, rug-marked", open_positions_sql(all_open)), 24, 9)],
         [(closed_trades(all_open), 24, 10)],

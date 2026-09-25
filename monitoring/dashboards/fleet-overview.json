@@ -340,6 +340,30 @@
         ]
        }
       ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "kind"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 150
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "subject"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 170
+       }
+      ]
      }
     ]
    },
@@ -373,7 +397,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "WITH strat(strategy, halt_id) AS (VALUES ('cluster','copy'),('conviction','copy_conviction'),('swing','copy_swing'),('teamfollow','copy_teamfollow'),('cohortfire','copy_cohortfire'),('promobuy','copy_promobuy')),\nc AS (SELECT sim_metadata->>'strategy' AS st, pnl_usd, pnl_pct, exit_at,\n        row_number() OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY pnl_usd DESC) AS rk,\n        count(*) OVER (PARTITION BY sim_metadata->>'strategy') AS cnt,\n        row_number() OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at DESC) AS recent\n      FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed'\n        AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy')),\nagg AS (SELECT st, count(*) AS n, avg(pnl_usd) AS exp_usd, avg(pnl_pct) AS exp_pct, avg((pnl_usd > 0)::int) * 100 AS win,\n          avg(pnl_usd) FILTER (WHERE pnl_usd > 0) AS aw, avg(pnl_usd) FILTER (WHERE pnl_usd <= 0) AS al,\n          sum(pnl_usd) AS net, sum(pnl_usd) FILTER (WHERE rk > ceil(cnt * 0.05)) AS net_ex5,\n          sum(pnl_usd) FILTER (WHERE exit_at > now() - interval '7 days') AS net7,\n          avg(pnl_usd) FILTER (WHERE recent <= 50) AS exp50\n        FROM c GROUP BY st),\no AS (\n  SELECT t.id, t.asset, t.entry_at, t.sim_metadata->>'strategy' AS strategy,\n    COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', '') AS who,\n    (t.sim_metadata->>'peak_pct_since_entry')::numeric AS peak_pct,\n    (t.sim_metadata->>'entry_liquidity_usd')::numeric AS el,\n    COALESCE((t.sim_metadata->>'remaining_size_usd')::numeric, t.size_usd::numeric) AS rem,\n    t.entry_price::numeric AS ep, l.liquidity_usd::numeric AS liq, l.price::numeric AS px, l.logged_at,\n    CASE WHEN l.logged_at IS NULL THEN 'NO DATA'\n         WHEN l.liquidity_usd < 100 THEN 'RUG'\n         WHEN l.logged_at < now() - interval '2 hours' THEN 'STALE'\n         WHEN (t.sim_metadata->>'entry_liquidity_usd')::numeric > 0\n              AND l.liquidity_usd < 0.2 * (t.sim_metadata->>'entry_liquidity_usd')::numeric\n              THEN 'LIQ COLLAPSED'\n         ELSE 'ok' END AS status\n  FROM trades t\n  LEFT JOIN LATERAL (SELECT liquidity_usd, price, logged_at FROM position_liquidity_log p\n                     WHERE p.trade_id = t.id ORDER BY logged_at DESC LIMIT 1) l ON true\n  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='open' AND t.sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy')\n), ou AS (\n  SELECT o.*, CASE WHEN status='RUG' THEN -rem\n                   WHEN px IS NOT NULL AND ep > 0 THEN rem * (px / ep - 1) END AS unreal\n  FROM o),\noa AS (SELECT strategy AS st, count(*) AS n_open, sum(unreal) AS unreal, count(*) FILTER (WHERE status = 'RUG') AS rugs\n       FROM ou GROUP BY strategy),\ne AS (SELECT sim_metadata->>'strategy' AS st, min(entry_at) AS era_start, max(entry_at) AS last_entry\n      FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy') GROUP BY 1)\nSELECT s.strategy,\n  COALESCE('HALTED · ' || h.halt_type, 'running') AS state,\n  to_char(e.era_start AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS era_start,\n  COALESCE(a.n, 0) AS n_closed,\n  ROUND(a.exp_usd::numeric, 1) AS exp_usd, ROUND(a.exp_pct::numeric, 1) AS exp_pct, ROUND(a.win::numeric, 0) AS win_pct,\n  ROUND((a.aw / NULLIF(abs(a.al), 0))::numeric, 2) AS payoff,\n  ROUND(a.net::numeric, 0) AS net_era_usd, ROUND(a.net_ex5::numeric, 0) AS net_ex_top5_usd,\n  ROUND(COALESCE(a.net7, 0)::numeric, 0) AS net_7d_usd,\n  COALESCE(oa.n_open, 0) AS open_n, ROUND(COALESCE(oa.unreal, 0), 0) AS open_unreal_usd,\n  ROUND((COALESCE(a.net, 0) + COALESCE(oa.unreal, 0))::numeric, 0) AS all_in_usd,\n  ROUND((EXTRACT(EPOCH FROM now() - e.last_entry) / 3600)::numeric, 0) AS last_entry_h,\n  concat_ws(' · ',\n    CASE WHEN a.exp50 < 0 THEN 'exp<0 last 50' END,\n    CASE WHEN h.halt_type IS NULL AND e.last_entry < now() - interval '24 hours' THEN 'no entry 24h' END,\n    CASE WHEN oa.rugs > 0 THEN oa.rugs || ' rug open' END,\n    CASE WHEN COALESCE(a.n, 0) < 30 THEN 'low N' END,\n    CASE WHEN a.net > 0 AND a.net_ex5 < 0 THEN 'tail-dependent' END) AS flags\nFROM strat s\nLEFT JOIN agg a ON a.st = s.strategy\nLEFT JOIN oa ON oa.st = s.strategy\nLEFT JOIN e ON e.st = s.strategy\nLEFT JOIN LATERAL (SELECT halt_type FROM halts WHERE bot_id = s.halt_id AND resumed_at IS NULL\n                   ORDER BY halted_at DESC LIMIT 1) h ON true\nORDER BY CASE s.strategy WHEN 'cluster' THEN 0 WHEN 'conviction' THEN 1 WHEN 'swing' THEN 2 WHEN 'teamfollow' THEN 3 WHEN 'cohortfire' THEN 4 WHEN 'promobuy' THEN 5 END"
+     "rawSql": "WITH strat(strategy, halt_id) AS (VALUES ('cluster','copy'),('conviction','copy_conviction'),('swing','copy_swing'),('teamfollow','copy_teamfollow'),('cohortfire','copy_cohortfire'),('promobuy','copy_promobuy')),\nc AS (SELECT sim_metadata->>'strategy' AS st, pnl_usd, pnl_pct, exit_at,\n        row_number() OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY pnl_usd DESC) AS rk,\n        count(*) OVER (PARTITION BY sim_metadata->>'strategy') AS cnt,\n        row_number() OVER (PARTITION BY sim_metadata->>'strategy' ORDER BY exit_at DESC) AS recent\n      FROM trades WHERE bot_id='copy' AND mode='paper' AND fill_status='closed'\n        AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy')),\nagg AS (SELECT st, count(*) AS n, avg(pnl_usd) AS exp_usd, avg(pnl_pct) AS exp_pct, avg((pnl_usd > 0)::int) * 100 AS win,\n          avg(pnl_usd) FILTER (WHERE pnl_usd > 0) AS aw, avg(pnl_usd) FILTER (WHERE pnl_usd <= 0) AS al,\n          sum(pnl_usd) AS net, sum(pnl_usd) FILTER (WHERE rk > ceil(cnt * 0.05)) AS net_ex5,\n          sum(pnl_usd) FILTER (WHERE exit_at > now() - interval '7 days') AS net7,\n          avg(pnl_usd) FILTER (WHERE recent <= 50) AS exp50\n        FROM c GROUP BY st),\no AS (\n  SELECT t.id, t.asset, t.entry_at, t.sim_metadata->>'strategy' AS strategy,\n    COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', '') AS who,\n    (t.sim_metadata->>'peak_pct_since_entry')::numeric AS peak_pct,\n    (t.sim_metadata->>'entry_liquidity_usd')::numeric AS el,\n    COALESCE((t.sim_metadata->>'remaining_size_usd')::numeric, t.size_usd::numeric) AS rem,\n    t.entry_price::numeric AS ep, l.liquidity_usd::numeric AS liq, l.price::numeric AS px, l.logged_at,\n    CASE WHEN l.logged_at IS NULL THEN 'NO DATA'\n         WHEN l.liquidity_usd < 100 THEN 'RUG'\n         WHEN l.logged_at < now() - interval '2 hours' THEN 'STALE'\n         WHEN (t.sim_metadata->>'entry_liquidity_usd')::numeric > 0\n              AND l.liquidity_usd < 0.2 * (t.sim_metadata->>'entry_liquidity_usd')::numeric\n              THEN 'LIQ COLLAPSED'\n         ELSE 'ok' END AS status\n  FROM trades t\n  LEFT JOIN LATERAL (SELECT liquidity_usd, price, logged_at FROM position_liquidity_log p\n                     WHERE p.trade_id = t.id ORDER BY logged_at DESC LIMIT 1) l ON true\n  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='open' AND t.sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy')\n), ou AS (\n  SELECT o.*, CASE WHEN status='RUG' THEN -rem\n                   WHEN px IS NOT NULL AND ep > 0 THEN rem * (px / ep - 1) END AS unreal\n  FROM o),\noa AS (SELECT strategy AS st, count(*) AS n_open, sum(unreal) AS unreal, count(*) FILTER (WHERE status = 'RUG') AS rugs\n       FROM ou GROUP BY strategy),\ne AS (SELECT sim_metadata->>'strategy' AS st, min(entry_at) AS era_start, max(entry_at) AS last_entry\n      FROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy') GROUP BY 1)\nSELECT s.strategy,\n  COALESCE('HALTED · ' || h.halt_type, 'running') AS state,\n  to_char(e.era_start AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS era_start,\n  COALESCE(a.n, 0) AS n_closed,\n  ROUND(a.exp_usd::numeric, 1) AS exp_usd, ROUND(a.win::numeric, 0) AS win_pct,\n  ROUND((a.aw / NULLIF(abs(a.al), 0))::numeric, 2) AS payoff,\n  ROUND(a.net::numeric, 0) AS net_usd, ROUND(a.net_ex5::numeric, 0) AS ex_top5_usd,\n  ROUND(COALESCE(a.net7, 0)::numeric, 0) AS net_7d_usd,\n  COALESCE(oa.n_open, 0) AS open_n, ROUND(COALESCE(oa.unreal, 0), 0) AS open_usd,\n  ROUND((COALESCE(a.net, 0) + COALESCE(oa.unreal, 0))::numeric, 0) AS all_in_usd,\n  ROUND((EXTRACT(EPOCH FROM now() - e.last_entry) / 3600)::numeric, 0) AS last_entry_h,\n  concat_ws(' · ',\n    CASE WHEN a.exp50 < 0 THEN 'exp<0 last 50' END,\n    CASE WHEN h.halt_type IS NULL AND e.last_entry < now() - interval '24 hours' THEN 'no entry 24h' END,\n    CASE WHEN oa.rugs > 0 THEN oa.rugs || ' rug open' END,\n    CASE WHEN COALESCE(a.n, 0) < 30 THEN 'low N' END,\n    CASE WHEN a.net > 0 AND a.net_ex5 < 0 THEN 'tail-dependent' END) AS flags\nFROM strat s\nLEFT JOIN agg a ON a.st = s.strategy\nLEFT JOIN oa ON oa.st = s.strategy\nLEFT JOIN e ON e.st = s.strategy\nLEFT JOIN LATERAL (SELECT halt_type FROM halts WHERE bot_id = s.halt_id AND resumed_at IS NULL\n                   ORDER BY halted_at DESC LIMIT 1) h ON true\nORDER BY CASE s.strategy WHEN 'cluster' THEN 0 WHEN 'conviction' THEN 1 WHEN 'swing' THEN 2 WHEN 'teamfollow' THEN 3 WHEN 'cohortfire' THEN 4 WHEN 'promobuy' THEN 5 END"
     }
    ],
    "fieldConfig": {
@@ -600,6 +624,54 @@
         ]
        }
       ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "strategy"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 100
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 150
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "era_start"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 100
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "flags"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 330
+       }
+      ]
      }
     ]
    },
@@ -607,7 +679,7 @@
     "showHeader": true,
     "cellHeight": "sm"
    },
-   "description": "exp = average per closed trade. payoff = avg win / avg loss. net_ex_top5 = net without the best 5% of trades (tail dependence). open_unreal and all_in mark rugs (liq < $100) at -100%. Flags are advisory.",
+   "description": "exp = average per closed trade. payoff = avg win / avg loss. net = realized in the current era. ex_top5 = net without the best 5% of trades (tail dependence). open = unrealized on open positions; open and all_in mark rugs (liq < $100) at -100%. Flags are advisory.",
    "gridPos": {
     "x": 0,
     "y": 10,
