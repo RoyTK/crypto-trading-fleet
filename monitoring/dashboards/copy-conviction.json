@@ -1659,6 +1659,80 @@
    }
   },
   {
+   "id": 18,
+   "type": "barchart",
+   "title": "Net P&L per trigger wallet — (n) = trades (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT LEFT(t.sim_metadata->>'trigger_wallet', 6) || ' (' || count(*) || ')' AS label,\n  ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd\nFROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed' AND t.sim_metadata->>'strategy'='conviction' AND $__timeFilter(t.exit_at) AND t.sim_metadata->>'trigger_wallet' IS NOT NULL\nGROUP BY t.sim_metadata->>'trigger_wallet' ORDER BY net_usd DESC"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyUSD",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 0
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "custom": {
+      "fillOpacity": 85,
+      "lineWidth": 0
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "xField": "label",
+    "colorByField": "net_usd",
+    "orientation": "vertical",
+    "showValue": "never",
+    "xTickLabelRotation": -50,
+    "xTickLabelSpacing": 0,
+    "barWidth": 0.85,
+    "groupWidth": 0.7,
+    "stacking": "none",
+    "legend": {
+     "showLegend": false,
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "single"
+    }
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 30,
+    "w": 24,
+    "h": 9
+   }
+  },
+  {
    "id": 1,
    "type": "table",
    "title": "P&L by trigger wallet (time range) — the cull lever",
@@ -1912,7 +1986,7 @@
    "description": "'demote?' = at least 5 trades and net negative. Advisory — you decide.",
    "gridPos": {
     "x": 0,
-    "y": 30,
+    "y": 39,
     "w": 12,
     "h": 9
    }
@@ -2171,7 +2245,7 @@
    "description": "Each trade's P&L split across its participating wallets, grouped by the wallet's style class (scripts/wallet_style_classify.py). Snipers/MMs are structurally unfollowable.",
    "gridPos": {
     "x": 12,
-    "y": 30,
+    "y": 39,
     "w": 12,
     "h": 9
    }
@@ -2429,13 +2503,13 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 39,
+    "y": 48,
     "w": 24,
     "h": 9
    }
   },
   {
-   "id": 18,
+   "id": 19,
    "type": "table",
    "title": "Open positions — current liquidity, rug-marked",
    "datasource": {
@@ -2687,13 +2761,13 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 48,
+    "y": 57,
     "w": 24,
     "h": 8
    }
   },
   {
-   "id": 19,
+   "id": 20,
    "type": "table",
    "title": "Closed trades (time range, latest 100)",
    "datasource": {
@@ -2945,13 +3019,13 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 56,
+    "y": 65,
     "w": 24,
     "h": 10
    }
   },
   {
-   "id": 20,
+   "id": 21,
    "type": "table",
    "title": "Halt history (time range)",
    "datasource": {
@@ -3203,7 +3277,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 66,
+    "y": 75,
     "w": 24,
     "h": 6
    }

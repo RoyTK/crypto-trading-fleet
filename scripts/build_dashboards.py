@@ -28,6 +28,7 @@ RUG_USD = 100          # current liquidity below this = rug (pulled pools read ~
 COLLAPSE_FRAC = 0.2    # current liq < 20% of entry liq = LIQ COLLAPSED
 STRATS = ["cluster", "conviction", "swing", "teamfollow", "cohortfire", "promobuy"]
 DORMANT_BY_DESIGN = {"cohortfire"}   # not flagged as "idle" on the attention strip
+SCORECARD_H = 9       # grid rows; must show all strategies without scrolling (verified by screenshot)
 
 
 def halt_id(s: str) -> str:
@@ -197,6 +198,24 @@ def timeseries(title, sql, unit="currencyUSD", zero_line=True, desc=None):
 def text_panel(md):
     return {"id": pid(), "type": "text", "title": "", "transparent": True,
             "options": {"mode": "markdown", "content": md}}
+
+
+def bar(title, sql, desc=None):
+    """Horizontal-label bar chart: one bar per entity, value = net $, label carries N trades.
+    Bars coloured red/green by net P&L."""
+    p = {"id": pid(), "type": "barchart", "title": title, "datasource": DS, "targets": tgt(sql),
+         "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 0, "thresholds": USD_TH,
+                                      "color": {"mode": "thresholds"},
+                                      "custom": {"fillOpacity": 85, "lineWidth": 0}},
+                         "overrides": []},
+         "options": {"xField": "label", "colorByField": "net_usd", "orientation": "vertical",
+                     "showValue": "never", "xTickLabelRotation": -50, "xTickLabelSpacing": 0,
+                     "barWidth": 0.85, "groupWidth": 0.7, "stacking": "none",
+                     "legend": {"showLegend": False, "displayMode": "list", "placement": "bottom"},
+                     "tooltip": {"mode": "single"}}}
+    if desc:
+        p["description"] = desc
+    return p
 
 
 def layout(rows):
@@ -478,6 +497,49 @@ GROUP BY 1 ORDER BY attributed_net_usd""",
              "(scripts/wallet_style_classify.py). Snipers/MMs are structurally unfollowable.")
 
 
+def b_trigger_wallet(s):
+    return bar("Net P&L per trigger wallet — (n) = trades (time range)", f"""SELECT LEFT(t.sim_metadata->>'trigger_wallet', 6) || ' (' || count(*) || ')' AS label,
+  ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd
+FROM trades t WHERE {closed(s, 't')} AND $__timeFilter(t.exit_at) AND t.sim_metadata->>'trigger_wallet' IS NOT NULL
+GROUP BY t.sim_metadata->>'trigger_wallet' ORDER BY net_usd DESC""")
+
+
+def b_wallet_attrib():
+    return bar("Net P&L per wallet — best & worst 15, (n) = trades (attributed share, time range)", f"""WITH w AS (
+  SELECT wa.wallet_address, count(*) AS n, sum(wa.attributed_pnl_usd) AS net
+  FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id
+  WHERE wa.bot_id = 'copy' AND {closed('cluster', 't')} AND $__timeFilter(t.exit_at)
+  GROUP BY 1),
+r AS (SELECT *, row_number() OVER (ORDER BY net DESC) AS top, row_number() OVER (ORDER BY net ASC) AS bot FROM w)
+SELECT LEFT(wallet_address, 6) || ' (' || n || ')' AS label, ROUND(net::numeric, 0) AS net_usd
+FROM r WHERE top <= 15 OR bot <= 15 ORDER BY net DESC""",
+        desc="All wallets are in the table below; the chart shows the 15 best and 15 worst.")
+
+
+def b_team(s, prefix):
+    strat_in = in_list(["teamfollow", "teamfollow_watch"]) if s == "teamfollow" else f"'{s}'"
+    watch = ("|| CASE WHEN bool_or(t.sim_metadata->>'strategy' = 'teamfollow_watch') "
+             "AND NOT bool_or(t.sim_metadata->>'strategy' = 'teamfollow') THEN ' w' ELSE '' END"
+             if s == "teamfollow" else "")
+    return bar(f"Net P&L per {'team' if prefix == 'T' else 'cohort'} — (n) = trades"
+               + (", w = watch track" if s == "teamfollow" else "") + " (time range)",
+               f"""SELECT '{prefix}' || (t.sim_metadata->>'team_id') {watch} || ' (' || count(*) || ')' AS label,
+  ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd
+FROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'
+  AND t.sim_metadata->>'strategy' IN ({strat_in}) AND t.sim_metadata->>'team_id' IS NOT NULL
+  AND $__timeFilter(t.exit_at)
+GROUP BY t.sim_metadata->>'team_id' ORDER BY net_usd DESC""")
+
+
+BARS = {  # strategies with wallets or teams get the per-entity bar chart (Roy 2026-09-25)
+    "cluster": b_wallet_attrib,
+    "conviction": lambda: b_trigger_wallet("conviction"),
+    "swing": lambda: b_trigger_wallet("swing"),
+    "teamfollow": lambda: b_team("teamfollow", "T"),
+    "cohortfire": lambda: b_team("cohortfire", "C"),
+}
+
+
 MODULES = {
     "cluster":    [m_wallet_attrib, lambda: m_style("cluster"), m_cluster_size],
     "conviction": [lambda: m_wallet_trigger("conviction"), lambda: m_style("conviction"), m_nbuys],
@@ -516,6 +578,7 @@ def strategy_page(s):
         [(rolling_expectancy([s]), 12, 8), (pnl_distribution(s), 12, 8)],
         [(exit_reasons(s), 12, 9), (entry_conditions(s), 12, 9)],
         [(changes_before_after(s), 24, 6)],
+        *([[(BARS[s](), 24, 9)]] if s in BARS else []),
         *mod_rows,
         [(table("Open positions — current liquidity, rug-marked", open_positions_sql(open_strats)), 24, 8)],
         [(closed_trades(open_strats), 24, 10)],
@@ -621,7 +684,7 @@ def fleet_command():
         [(table("Scorecard — per strategy, current era", scorecard_sql(),
                 desc="exp = average per closed trade. payoff = avg win / avg loss. net_ex_top5 = net without the best "
                      "5% of trades (tail dependence). open_unreal and all_in mark rugs (liq < $100) at -100%. "
-                     "Flags are advisory."), 24, 8)],
+                     "Flags are advisory."), 24, SCORECARD_H)],
         [(rolling_expectancy(STRATS), 24, 9)],
         [(table("Open positions — all strategies, current liquidity, rug-marked", open_positions_sql(all_open)), 24, 9)],
         [(closed_trades(all_open), 24, 10)],

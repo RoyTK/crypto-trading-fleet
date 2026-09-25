@@ -610,7 +610,7 @@
     "x": 0,
     "y": 9,
     "w": 24,
-    "h": 8
+    "h": 9
    }
   },
   {
@@ -675,7 +675,7 @@
    "description": "Above the grey line = making money per trade right now. Blue markers = changes, red = halts.",
    "gridPos": {
     "x": 0,
-    "y": 17,
+    "y": 18,
     "w": 24,
     "h": 9
    }
@@ -933,7 +933,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 26,
+    "y": 27,
     "w": 24,
     "h": 9
    }
@@ -1191,7 +1191,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 35,
+    "y": 36,
     "w": 24,
     "h": 10
    }

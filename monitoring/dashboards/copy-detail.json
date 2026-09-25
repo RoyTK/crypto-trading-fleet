@@ -1659,6 +1659,81 @@
    }
   },
   {
+   "id": 18,
+   "type": "barchart",
+   "title": "Net P&L per wallet — best & worst 15, (n) = trades (attributed share, time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "WITH w AS (\n  SELECT wa.wallet_address, count(*) AS n, sum(wa.attributed_pnl_usd) AS net\n  FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id\n  WHERE wa.bot_id = 'copy' AND t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed' AND t.sim_metadata->>'strategy'='cluster' AND $__timeFilter(t.exit_at)\n  GROUP BY 1),\nr AS (SELECT *, row_number() OVER (ORDER BY net DESC) AS top, row_number() OVER (ORDER BY net ASC) AS bot FROM w)\nSELECT LEFT(wallet_address, 6) || ' (' || n || ')' AS label, ROUND(net::numeric, 0) AS net_usd\nFROM r WHERE top <= 15 OR bot <= 15 ORDER BY net DESC"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyUSD",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 0
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "custom": {
+      "fillOpacity": 85,
+      "lineWidth": 0
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "xField": "label",
+    "colorByField": "net_usd",
+    "orientation": "vertical",
+    "showValue": "never",
+    "xTickLabelRotation": -50,
+    "xTickLabelSpacing": 0,
+    "barWidth": 0.85,
+    "groupWidth": 0.7,
+    "stacking": "none",
+    "legend": {
+     "showLegend": false,
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "single"
+    }
+   },
+   "description": "All wallets are in the table below; the chart shows the 15 best and 15 worst.",
+   "gridPos": {
+    "x": 0,
+    "y": 30,
+    "w": 24,
+    "h": 9
+   }
+  },
+  {
    "id": 1,
    "type": "table",
    "title": "P&L by wallet — attributed share, pnl / cluster size (time range)",
@@ -1912,7 +1987,7 @@
    "description": "Each trade's P&L split evenly across the wallets in its cluster. 'demote?' = >=5 trades and net negative.",
    "gridPos": {
     "x": 0,
-    "y": 30,
+    "y": 39,
     "w": 12,
     "h": 9
    }
@@ -2171,7 +2246,7 @@
    "description": "Each trade's P&L split across its participating wallets, grouped by the wallet's style class (scripts/wallet_style_classify.py). Snipers/MMs are structurally unfollowable.",
    "gridPos": {
     "x": 12,
-    "y": 30,
+    "y": 39,
     "w": 12,
     "h": 9
    }
@@ -2429,13 +2504,13 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 39,
+    "y": 48,
     "w": 24,
     "h": 9
    }
   },
   {
-   "id": 18,
+   "id": 19,
    "type": "table",
    "title": "Open positions — current liquidity, rug-marked",
    "datasource": {
@@ -2687,13 +2762,13 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 48,
+    "y": 57,
     "w": 24,
     "h": 8
    }
   },
   {
-   "id": 19,
+   "id": 20,
    "type": "table",
    "title": "Closed trades (time range, latest 100)",
    "datasource": {
@@ -2945,13 +3020,13 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 56,
+    "y": 65,
     "w": 24,
     "h": 10
    }
   },
   {
-   "id": 20,
+   "id": 21,
    "type": "table",
    "title": "Halt history (time range)",
    "datasource": {
@@ -3203,7 +3278,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 66,
+    "y": 75,
     "w": 24,
     "h": 6
    }
