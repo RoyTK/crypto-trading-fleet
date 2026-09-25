@@ -7,7 +7,7 @@
  "refresh": "1m",
  "timezone": "America/Chicago",
  "time": {
-  "from": "now-30d",
+  "from": "now-90d",
   "to": "now"
  },
  "tags": [
@@ -72,7 +72,7 @@
    "asDropdown": false,
    "title": "Pages",
    "includeVars": false,
-   "keepTime": true,
+   "keepTime": false,
    "icon": "external link"
   }
  ],
@@ -605,6 +605,7 @@
        "mode": "line"
       }
      },
+     "noValue": "No trades in the selected time range (check the time picker, top right)",
      "thresholds": {
       "mode": "absolute",
       "steps": [
@@ -665,7 +666,8 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": [
      {
@@ -925,7 +927,8 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": [
      {
@@ -1184,7 +1187,8 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": [
      {
@@ -1714,6 +1718,7 @@
        }
       ]
      },
+     "noValue": "No trades in the selected time range (check the time picker, top right)",
      "color": {
       "mode": "thresholds"
      },
@@ -1777,7 +1782,8 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": [
      {
@@ -2037,7 +2043,8 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": [
      {
@@ -2297,7 +2304,8 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": [
      {
@@ -2815,7 +2823,8 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": [
      {
@@ -3074,7 +3083,8 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": [
      {

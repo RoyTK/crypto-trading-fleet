@@ -71,7 +71,7 @@
    "asDropdown": false,
    "title": "Pages",
    "includeVars": false,
-   "keepTime": true,
+   "keepTime": false,
    "icon": "external link"
   }
  ],
@@ -384,7 +384,8 @@
       "fillOpacity": 0,
       "showPoints": "never",
       "spanNulls": true
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": []
    },

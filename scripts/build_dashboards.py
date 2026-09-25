@@ -28,6 +28,7 @@ RUG_USD = 100          # current liquidity below this = rug (pulled pools read ~
 COLLAPSE_FRAC = 0.2    # current liq < 20% of entry liq = LIQ COLLAPSED
 STRATS = ["cluster", "conviction", "swing", "teamfollow", "cohortfire", "promobuy"]
 DORMANT_BY_DESIGN = {"cohortfire"}   # not flagged as "idle" on the attention strip
+DEFAULT_RANGE = {"conviction": "now-90d", "cohortfire": "now-90d"}  # paused -> show their last trades
 SCORECARD_H = 9       # grid rows; must show all strategies without scrolling (verified by screenshot)
 
 
@@ -148,6 +149,9 @@ TABLE_OVERRIDES = [
 
 
 
+EMPTY_TIME = "No trades in the selected time range (check the time picker, top right)"
+
+
 def table(title, sql, desc=None, widths=None):
     ov = list(TABLE_OVERRIDES) + [
         {"matcher": {"id": "byName", "options": col}, "properties": [{"id": "custom.width", "value": w}]}
@@ -156,6 +160,8 @@ def table(title, sql, desc=None, widths=None):
          "fieldConfig": {"defaults": {"custom": {"align": "auto", "filterable": False, "minWidth": 50}},
                          "overrides": ov},
          "options": {"showHeader": True, "cellHeight": "sm"}}
+    if "time range" in title:
+        p["fieldConfig"]["defaults"]["noValue"] = EMPTY_TIME
     if desc:
         p["description"] = desc
     return p
@@ -186,7 +192,7 @@ def stat(title, sql, unit=None, thresholds=None, mappings=None, desc=None):
 def timeseries(title, sql, unit="currencyUSD", zero_line=True, desc=None):
     custom = {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 0, "showPoints": "never",
               "spanNulls": True}
-    d = {"unit": unit, "custom": custom}
+    d = {"unit": unit, "custom": custom, "noValue": EMPTY_TIME}
     if zero_line:
         custom["thresholdsStyle"] = {"mode": "line"}
         d["thresholds"] = {"mode": "absolute", "steps": [{"color": "transparent", "value": None},
@@ -209,7 +215,7 @@ def bar(title, sql, desc=None):
     """Horizontal-label bar chart: one bar per entity, value = net $, label carries N trades.
     Bars coloured red/green by net P&L."""
     p = {"id": pid(), "type": "barchart", "title": title, "datasource": DS, "targets": tgt(sql),
-         "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 0, "thresholds": USD_TH,
+         "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 0, "thresholds": USD_TH, "noValue": EMPTY_TIME,
                                       "color": {"mode": "thresholds"},
                                       "custom": {"fillOpacity": 85, "lineWidth": 0}},
                          "overrides": []},
@@ -262,7 +268,7 @@ def dashboard(uid, title, panels, tags, strategies=None, time_from="now-30d"):
             "refresh": "1m", "timezone": TZ, "time": {"from": time_from, "to": "now"},
             "tags": [NAV_TAG] + tags, "annotations": annotations(strategies),
             "links": [{"type": "dashboards", "tags": [NAV_TAG], "asDropdown": False,
-                       "title": "Pages", "includeVars": False, "keepTime": True, "icon": "external link"}],
+                       "title": "Pages", "includeVars": False, "keepTime": False, "icon": "external link"}],
             "templating": {"list": []}, "panels": panels}
 
 
@@ -349,7 +355,7 @@ SELECT substr(factor, 3) AS factor, substr(bk, 3) AS bucket, count(*) AS n,
 FROM b GROUP BY factor, bk ORDER BY factor, bk""")
 
 
-def changes_before_after(s):
+def changes_before_after(s):  # noqa: C901
     fam = family(s, "t")
     base = "t.bot_id='copy' AND t.fill_status='closed' AND t.mode IN ('paper','archived')"
     return table("Did each change help? — 14 days before vs since (until next change)", f"""SELECT to_char(c.changed_at AT TIME ZONE '{TZ}', 'YYYY-MM-DD HH24:MI') AS changed, c.kind, c.description,
@@ -589,7 +595,8 @@ def strategy_page(s):
         [(closed_trades(open_strats), 24, 10)],
         [(halt_history([halt_id(s)]), 24, 6)],
     ]
-    return dashboard(uid, title, layout(rows), ["copy", s], strategies=[s])
+    return dashboard(uid, title, layout(rows), ["copy", s], strategies=[s],
+                     time_from=DEFAULT_RANGE.get(s, "now-30d"))
 
 
 # --------------------------------------------------------------- Fleet Command -----

@@ -71,7 +71,7 @@
    "asDropdown": false,
    "title": "Pages",
    "includeVars": false,
-   "keepTime": true,
+   "keepTime": false,
    "icon": "external link"
   }
  ],
@@ -721,6 +721,7 @@
        "mode": "line"
       }
      },
+     "noValue": "No trades in the selected time range (check the time picker, top right)",
      "thresholds": {
       "mode": "absolute",
       "steps": [
@@ -1040,7 +1041,8 @@
       "align": "auto",
       "filterable": false,
       "minWidth": 50
-     }
+     },
+     "noValue": "No trades in the selected time range (check the time picker, top right)"
     },
     "overrides": [
      {
