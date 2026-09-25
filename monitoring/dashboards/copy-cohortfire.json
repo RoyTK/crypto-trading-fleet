@@ -209,7 +209,6 @@
     "textMode": "value",
     "justifyMode": "center"
    },
-   "description": "First trade under the strategy's current tag (resets re-tag older trades).",
    "gridPos": {
     "x": 3,
     "y": 3,
@@ -270,7 +269,7 @@
   {
    "id": 6,
    "type": "stat",
-   "title": "Exp / trade",
+   "title": "Exp/trade",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -384,7 +383,7 @@
   {
    "id": 8,
    "type": "stat",
-   "title": "Net realized",
+   "title": "Net P&L",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -500,7 +499,6 @@
     "textMode": "value",
     "justifyMode": "center"
    },
-   "description": "Unrealized P&L of open positions; liquidity < $100 counts as a rug at -100%.",
    "gridPos": {
     "x": 18,
     "y": 3,
