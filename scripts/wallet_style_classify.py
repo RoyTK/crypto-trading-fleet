@@ -96,7 +96,26 @@ def classify(median_age_h, swaps, tokens):
     return "OTHER"
 
 
+def upsert_styles(out: dict) -> int:
+    """Persist classifications to wallet_style (dashboards read it)."""
+    q = text("INSERT INTO wallet_style (address, cls, median_age_h, n_aged, swaps, tokens, classified_at) "
+             "VALUES (:a, :c, :m, :n, :sw, :tk, now()) ON CONFLICT (address) DO UPDATE SET "
+             "cls=EXCLUDED.cls, median_age_h=EXCLUDED.median_age_h, n_aged=EXCLUDED.n_aged, "
+             "swaps=EXCLUDED.swaps, tokens=EXCLUDED.tokens, classified_at=now()")
+    with session_scope() as s:
+        for a, v in out.items():
+            s.execute(q, {"a": a, "c": v["cls"], "m": v.get("median_age_h"), "n": v.get("n_aged"),
+                          "sw": v.get("swaps"), "tk": v.get("tokens")})
+        s.execute(text("COMMIT"))
+    return len(out)
+
+
 def main():
+    import sys
+    if len(sys.argv) > 2 and sys.argv[1] == "--load-only":
+        n = upsert_styles(json.load(open(sys.argv[2])))
+        print(f"loaded {n} wallet styles into wallet_style")
+        return
     with session_scope() as s:
         roster = {r.address: dict(tier=r.tier, swing=r.swing, conviction=r.conviction)
                   for r in s.execute(text(ROSTER_SQL))}
@@ -144,6 +163,7 @@ def main():
                       buys_per_tok=a["buys_per_tok"], tier=meta["tier"],
                       swing=meta["swing"], conviction=meta["conviction"])
     json.dump(out, open("/tmp/wallet_style.json", "w"))
+    upsert_styles(out)
 
     print("\n=== STYLE COUNTS (of follow-roster wallets) ===")
     for k in ("SNIPER", "MM_HFT", "MM_ESTABLISHED", "SELECTOR", "OTHER"):
