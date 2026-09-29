@@ -1057,7 +1057,7 @@ def wallet_flow_since(
 # cohortfire (cohort). Table strategy_entity_status (migration 0015); absent row = active.
 
 def get_entity_status(strategy: str, entity) -> str:
-    """'watch' or 'active' for a wallet/team in a strategy. Fail-open → 'active'."""
+    """'active' | 'watch' | 'retired' for a wallet/team in a strategy. Fail-open → 'active'."""
     if entity is None or entity == "":
         return "active"
     try:
@@ -1091,9 +1091,13 @@ def list_entity_status(strategy: str) -> dict:
                     "WHERE strategy = :s"), {"s": strategy})}
 
 
-def watch_tag(strategy: str, entity) -> str:
-    """Strategy tag for a new trade: '<strategy>_watch' when the triggering entity is on watch."""
-    return f"{strategy}_watch" if get_entity_status(strategy, entity) == "watch" else strategy
+def watch_tag(strategy: str, entity) -> Optional[str]:
+    """Strategy tag for a new trade: '<strategy>_watch' when the triggering entity is on watch,
+    None when it is RETIRED (re-failed on watch — the caller must skip the entry)."""
+    st = get_entity_status(strategy, entity)
+    if st == "retired":
+        return None
+    return f"{strategy}_watch" if st == "watch" else strategy
 
 
 def first_low_liquidity_at(trade_id: int, floor_usd: float) -> Optional[datetime]:

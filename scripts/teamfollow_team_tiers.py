@@ -10,6 +10,9 @@ at the TEAM level, not by over-raising the age floor):
     measured, ISOLATED from live via _strategy_clause). It re-proves on FORWARD watch PnL (trades AFTER
     its demotion timestamp — its re-tagged history does NOT count against it; those losses were under
     the old regime). PROMOTE back to active if forward net > 0 over >= promote_min_trades.
+  - RETIRE (2026-09-29, Roy) a watch team whose FORWARD watch trades meet the demote thresholds
+    again: status 'retired', the entry path skips it entirely. History + open positions kept.
+    Undo: `promote` sets it back to active only if re-proved; set status manually otherwise.
   - (future) live gate: a proven-in-paper team graduates to live.
 
 Status is DB-backed (teamfollow_team_status): survives autopull's git reset AND applies live (the entry
@@ -98,7 +101,7 @@ def demote_chronic() -> list:
     active_pnl = _active_team_pnl()
     demoted = []
     for team, (n, net) in active_pnl.items():
-        if (status.get(team) or {}).get("status") == "watch":
+        if (status.get(team) or {}).get("status") in ("watch", "retired"):
             continue
         slow = n >= cs.copy_teamfollow_demote_min_trades_slow and net <= cs.copy_teamfollow_demote_net_slow
         fast = n >= cs.copy_teamfollow_demote_min_trades_fast and net <= cs.copy_teamfollow_demote_net_fast
@@ -109,6 +112,29 @@ def demote_chronic() -> list:
     if not demoted:
         print("no active teams hit the chronic-loss demote thresholds.")
     return demoted
+
+
+def retire_refailed() -> list:
+    """Retire WATCH teams whose forward (post-demotion) watch trades hit the demote thresholds again."""
+    ensure_team_status_table()
+    cs = get_copy_settings()
+    status = list_teamfollow_team_status()
+    wp = _watch_pnl()
+    retired = []
+    for team, st in status.items():
+        if st.get("status") != "watch":
+            continue
+        n, net = wp.get(team, {}).get("fwd", (0, 0.0))
+        slow = n >= cs.copy_teamfollow_demote_min_trades_slow and net <= cs.copy_teamfollow_demote_net_slow
+        fast = n >= cs.copy_teamfollow_demote_min_trades_fast and net <= cs.copy_teamfollow_demote_net_fast
+        if slow or fast:
+            tag = "fast-bleed" if fast else "chronic"
+            set_teamfollow_team_status(team, "retired", f"retired: re-failed on watch ({tag}) ${net:.0f} over {n} trades since cull")
+            retired.append(team)
+            print(f"team {team} -> RETIRED (re-failed on watch: ${net:.0f} over {n} trades since cull)")
+    if not retired:
+        print("no watch teams re-failed.")
+    return retired
 
 
 def promote(min_trades: int) -> list:
@@ -131,9 +157,12 @@ def promote(min_trades: int) -> list:
 
 
 def cycle() -> None:
-    """The daily lifecycle: auto-demote chronic losers, then promote re-proven watch teams."""
+    """The daily lifecycle: auto-demote chronic losers, retire watch teams that re-failed,
+    then promote re-proven watch teams."""
     print("=== demote_chronic ===")
     demote_chronic()
+    print("=== retire (watch teams that re-failed since their cull) ===")
+    retire_refailed()
     mt = get_copy_settings().copy_teamfollow_watch_promote_min_trades
     print(f"=== promote (forward watch net>0 over >={mt}) ===")
     promote(mt)

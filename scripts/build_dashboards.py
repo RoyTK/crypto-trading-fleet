@@ -585,7 +585,7 @@ GROUP BY t.sim_metadata->>'team_id' ORDER BY net_usd DESC""")
 
 def b_team_watch():
     """Culled teamfollow teams: paper trades SINCE the cull only (what promotion is judged on)."""
-    return bar("Culled teams (watch track) — trades since the cull; promoted back at ≥10 trades net positive",
+    return bar("Culled teams (watch track) — trades since the cull; back to live at ≥10 trades net positive, retired if they re-fail",
                """SELECT 'T' || st.team_id || ' (' || count(t.id) || ')' AS label,
   ROUND(coalesce(sum(t.pnl_usd), 0)::numeric, 0) AS net_usd
 FROM teamfollow_team_status st
@@ -595,7 +595,8 @@ LEFT JOIN trades t ON t.bot_id='copy' AND t.mode='paper' AND t.fill_status='clos
 WHERE st.status = 'watch'
 GROUP BY st.team_id ORDER BY net_usd DESC""",
                desc="Every team currently culled to the watch track, with only the trades it has made since it was culled. "
-                    "All-time time range: the window picker does not apply.")
+                    "A team that meets the cull rule again here is RETIRED (stops trading) and leaves this chart; "
+                    "retired teams are listed on the Wallet Pool page. The time picker does not apply.")
 
 
 BARS = {  # strategies with wallets or teams get the per-entity bar chart (Roy 2026-09-25)
@@ -835,13 +836,15 @@ GROUP BY wp.tier ORDER BY CASE wp.tier WHEN 'active' THEN 1 WHEN 'teamfollow' TH
 FROM wallet_pool wp JOIN wallet_style ws ON ws.address = wp.address
 WHERE wp.tier = 'active' AND ws.cls IN ('SNIPER', 'MM_HFT', 'MM_ESTABLISHED') ORDER BY ws.cls, wp.address""",
                 desc="The re-tier skipped these on purpose. Review whether swing/conviction should keep them."), 12, 8)],
-        [(table("Culled to watch — every wallet/team strategy", """SELECT strategy, entity AS wallet, status, reason,
+        [(table("Culled (watch track) and retired — every wallet/team strategy", """SELECT strategy, entity AS wallet, status, reason,
   to_char(updated_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS since
-FROM strategy_entity_status WHERE status = 'watch'
+FROM strategy_entity_status WHERE status IN ('watch', 'retired')
 UNION ALL
 SELECT 'teamfollow', 'team ' || team_id, status, reason, to_char(updated_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD')
-FROM teamfollow_team_status WHERE status = 'watch'
-ORDER BY 1, 5 DESC""", desc="Cluster wallets culled for losses move to the pool's watch tier instead (see tier table)."), 24, 7)],
+FROM teamfollow_team_status WHERE status IN ('watch', 'retired')
+ORDER BY 1, 3 DESC, 5 DESC""", desc=("watch = culled, paper-trading on its own track to re-prove (back to active at ≥10 trades net "
+       "positive). retired = re-failed on watch by the same cull rule; no longer trades. Cluster wallets "
+       "culled for losses move to the pool's watch tier and are pruned if they stay losers.")), 24, 8)],
         [(table("Active SELECTOR wallets — the copyable cohort", """SELECT wp.address AS wallet, ROUND(ws.median_age_h::numeric, 2) AS median_age_h, ws.swaps, ws.tokens,
   wp.swing, wp.conviction, wp.pinned, wp.events_30d, wp.source
 FROM wallet_pool wp JOIN wallet_style ws ON ws.address = wp.address

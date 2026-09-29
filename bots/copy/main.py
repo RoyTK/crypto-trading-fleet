@@ -1115,6 +1115,9 @@ class CopyBot(BotLifecycle):
         # touching the live book. Status is DB-backed (survives autopull; applies live).
         team_status = get_teamfollow_team_status(team_id)
         strat_tag = "teamfollow_watch" if team_status == "watch" else "teamfollow"
+        if team_status == "retired":  # re-failed on the watch track (2026-09-29)
+            self.log.info("teamfollow_retired_skip", asset=candidate.asset, team_id=team_id)
+            return
 
         # Per-strategy dedup: only an OPEN position in this token FOR THIS TIER blocks
         # (active teamfollow and its watch sub-track dedup independently).
@@ -1283,6 +1286,9 @@ class CopyBot(BotLifecycle):
         cohort_id = (candidate.payload or {}).get("team_id")
         # Cohort watch lifecycle (2026-09-29): culled cohorts trade on 'cohortfire_watch'.
         strat_tag = watch_tag("cohortfire", cohort_id)
+        if strat_tag is None:  # retired: re-failed on the watch track (2026-09-29)
+            self.log.info("cohortfire_retired_skip", asset=candidate.asset, entity=str(cohort_id))
+            return
         if has_open_position(candidate.asset, candidate.venue, strategy=strat_tag):
             self.log.info("cohortfire_dedup_skip", asset=candidate.asset, strategy=strat_tag)
             return
@@ -1656,8 +1662,11 @@ class CopyBot(BotLifecycle):
                 return
         except Exception:
             pass
-        if has_open_position(candidate.asset, candidate.venue,
-                             strategy=watch_tag("conviction", wallet)):
+        tag = watch_tag("conviction", wallet)
+        if tag is None:
+            self.log.info("conviction_retired_skip", asset=candidate.asset, trigger_wallet=wallet)
+            return
+        if has_open_position(candidate.asset, candidate.venue, strategy=tag):
             return
         trigger_price: Optional[float] = None
         if candidate.venue == "solana" and self._session is not None:
@@ -1740,6 +1749,9 @@ class CopyBot(BotLifecycle):
         # Wallet watch lifecycle (2026-09-29): a wallet culled to watch keeps trading on
         # the isolated 'conviction_watch' track until it re-proves.
         strat_tag = watch_tag("conviction", trigger_wallet)
+        if strat_tag is None:  # retired: re-failed on the watch track (2026-09-29)
+            self.log.info("conviction_retired_skip", asset=candidate.asset, entity=str(trigger_wallet))
+            return
         # Per-strategy dedup: only blocked by an existing OPEN position on this track
         # in this token (cluster positions don't block conviction).
         if has_open_position(candidate.asset, candidate.venue, strategy=strat_tag):
@@ -1947,6 +1959,9 @@ class CopyBot(BotLifecycle):
         trigger_wallet = (candidate.payload or {}).get("trigger_wallet")
         # Wallet watch lifecycle (2026-09-29): culled wallets trade on 'swing_watch' (isolated).
         strat_tag = watch_tag("swing", trigger_wallet)
+        if strat_tag is None:  # retired: re-failed on the watch track (2026-09-29)
+            self.log.info("swing_retired_skip", asset=candidate.asset, entity=str(trigger_wallet))
+            return
         # Per-strategy dedup: only an existing OPEN position on this track in this token blocks.
         if has_open_position(candidate.asset, candidate.venue, strategy=strat_tag):
             self.log.info("swing_dedup_skip", asset=candidate.asset, chain=candidate.chain,

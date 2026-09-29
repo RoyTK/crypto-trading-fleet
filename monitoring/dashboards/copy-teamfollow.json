@@ -1857,7 +1857,7 @@
   {
    "id": 20,
    "type": "barchart",
-   "title": "Culled teams (watch track) — trades since the cull; promoted back at ≥10 trades net positive",
+   "title": "Culled teams (watch track) — trades since the cull; back to live at ≥10 trades net positive, retired if they re-fail",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -1922,7 +1922,7 @@
      "mode": "single"
     }
    },
-   "description": "Every team currently culled to the watch track, with only the trades it has made since it was culled. All-time time range: the window picker does not apply.",
+   "description": "Every team currently culled to the watch track, with only the trades it has made since it was culled. A team that meets the cull rule again here is RETIRED (stops trading) and leaves this chart; retired teams are listed on the Wallet Pool page. The time picker does not apply.",
    "gridPos": {
     "x": 0,
     "y": 56,

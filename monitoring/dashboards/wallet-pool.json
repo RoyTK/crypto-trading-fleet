@@ -668,7 +668,7 @@
   {
    "id": 5,
    "type": "table",
-   "title": "Culled to watch — every wallet/team strategy",
+   "title": "Culled (watch track) and retired — every wallet/team strategy",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -683,7 +683,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "SELECT strategy, entity AS wallet, status, reason,\n  to_char(updated_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS since\nFROM strategy_entity_status WHERE status = 'watch'\nUNION ALL\nSELECT 'teamfollow', 'team ' || team_id, status, reason, to_char(updated_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD')\nFROM teamfollow_team_status WHERE status = 'watch'\nORDER BY 1, 5 DESC"
+     "rawSql": "SELECT strategy, entity AS wallet, status, reason,\n  to_char(updated_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS since\nFROM strategy_entity_status WHERE status IN ('watch', 'retired')\nUNION ALL\nSELECT 'teamfollow', 'team ' || team_id, status, reason, to_char(updated_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD')\nFROM teamfollow_team_status WHERE status IN ('watch', 'retired')\nORDER BY 1, 3 DESC, 5 DESC"
     }
    ],
    "fieldConfig": {
@@ -917,12 +917,12 @@
     "showHeader": true,
     "cellHeight": "sm"
    },
-   "description": "Cluster wallets culled for losses move to the pool's watch tier instead (see tier table).",
+   "description": "watch = culled, paper-trading on its own track to re-prove (back to active at ≥10 trades net positive). retired = re-failed on watch by the same cull rule; no longer trades. Cluster wallets culled for losses move to the pool's watch tier and are pruned if they stay losers.",
    "gridPos": {
     "x": 0,
     "y": 17,
     "w": 24,
-    "h": 7
+    "h": 8
    }
   },
   {
@@ -1179,7 +1179,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 24,
+    "y": 25,
     "w": 12,
     "h": 10
    }
@@ -1438,7 +1438,7 @@
    },
    "gridPos": {
     "x": 12,
-    "y": 24,
+    "y": 25,
     "w": 12,
     "h": 10
    }

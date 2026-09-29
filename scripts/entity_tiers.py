@@ -48,11 +48,12 @@ def _active(strategy: str) -> dict:
 
 
 def _watch_forward(strategy: str) -> dict:
-    """entity -> (n, net) over CLOSED '<strategy>_watch' trades entered AFTER its demotion."""
+    """entity -> (n, net, avg position) over CLOSED '<strategy>_watch' trades entered AFTER its demotion."""
     e = ENTITY[strategy]
     with session_scope() as s:
-        return {str(r[0]): (int(r[1]), float(r[2])) for r in s.execute(text(f"""
-            SELECT {e.replace('sim_metadata', 't.sim_metadata')}, count(*), coalesce(sum(t.pnl_usd), 0)
+        return {str(r[0]): (int(r[1]), float(r[2]), float(r[3] or 0)) for r in s.execute(text(f"""
+            SELECT {e.replace('sim_metadata', 't.sim_metadata')}, count(*), coalesce(sum(t.pnl_usd), 0),
+                   avg(t.size_usd)
             FROM trades t JOIN strategy_entity_status st
               ON st.strategy = :s AND st.status = 'watch'
              AND st.entity = {e.replace('sim_metadata', 't.sim_metadata')}
@@ -97,7 +98,7 @@ def cycle(dry_run: bool = False) -> None:
               f"slow n>={cs.copy_cull_min_trades_slow} & net<=-{cs.copy_cull_loss_positions_slow}x pos) ===")
         hit = 0
         for ent, (n, net, pos) in sorted(_active(strategy).items(), key=lambda kv: kv[1][1]):
-            if (status.get(ent) or {}).get("status") == "watch":
+            if (status.get(ent) or {}).get("status") in ("watch", "retired"):
                 continue
             v = _verdict(n, net, pos, cs)
             if v:
@@ -114,7 +115,16 @@ def cycle(dry_run: bool = False) -> None:
         for ent, st in status.items():
             if st.get("status") != "watch":
                 continue
-            fn, fnet = fwd.get(ent, (0, 0.0))
+            fn, fnet, fpos = fwd.get(ent, (0, 0.0, 0.0))
+            rv = _verdict(fn, fnet, fpos, cs)
+            if rv:
+                reason = f"retired: re-failed on watch ({rv}) ${fnet:.0f} over {fn} trades since cull"
+                if dry_run:
+                    print(f"  [dry-run] {strategy:10} {ent[:12]:12} would -> RETIRED ({reason})")
+                else:
+                    set_entity_status(strategy, ent, "retired", reason)
+                    print(f"  {strategy:10} {ent[:12]:12} -> RETIRED ({reason})")
+                continue
             if fn >= mt and fnet > 0:
                 if dry_run:
                     print(f"  [dry-run] {strategy:10} {ent[:12]:12} would -> ACTIVE (+${fnet:.0f} over {fn} forward)")
@@ -131,7 +141,7 @@ def report(only: str = None) -> None:
         for ent in sorted(set(act) | set(status), key=lambda e: act.get(e, (0, 0.0, 0))[1]):
             st = (status.get(ent) or {}).get("status", "active")
             n, net, _ = act.get(ent, (0, 0.0, 0))
-            fn, fnet = fwd.get(ent, (0, 0.0))
+            fn, fnet, _ = fwd.get(ent, (0, 0.0, 0.0))
             print(f"  {ent[:12]:12} | {st:6} | n={n:>3} ${net:>8.0f} | n={fn:>3} ${fnet:>7.0f} | "
                   f"{((status.get(ent) or {}).get('reason') or '')[:50]}")
 

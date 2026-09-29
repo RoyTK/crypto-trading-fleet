@@ -1782,7 +1782,7 @@
   {
    "id": 18,
    "type": "barchart",
-   "title": "Net P&L per cohort — (n) = trades (time range)",
+   "title": "Net P&L per live cohort — (n) = trades (time range)",
    "datasource": {
     "type": "postgres",
     "uid": "fleet-postgres"
@@ -1797,7 +1797,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "SELECT 'C' || (t.sim_metadata->>'team_id')  || ' (' || count(*) || ')' AS label,\n  ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd\nFROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'\n  AND t.sim_metadata->>'strategy' IN ('cohortfire') AND t.sim_metadata->>'team_id' IS NOT NULL\n  AND $__timeFilter(t.exit_at)\nGROUP BY t.sim_metadata->>'team_id' ORDER BY net_usd DESC"
+     "rawSql": "SELECT 'C' || (t.sim_metadata->>'team_id') || ' (' || count(*) || ')' AS label,\n  ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd\nFROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'\n  AND t.sim_metadata->>'strategy' = 'cohortfire' AND t.sim_metadata->>'team_id' IS NOT NULL\n  AND $__timeFilter(t.exit_at)\nGROUP BY t.sim_metadata->>'team_id' ORDER BY net_usd DESC"
     }
    ],
    "fieldConfig": {
