@@ -369,7 +369,7 @@ WHERE c.strategy IN ('{s}','fleet') ORDER BY c.changed_at DESC""",
         desc="Expectancy per trade for trades ENTERED in the 14 days before each logged change vs after it. "
              "Log changes with scripts/log_change.py.",
         # fixed widths: no sideways scrollbar (a scrollbar toggling on/off made this panel flicker)
-        widths={"changed": 125, "kind": 80, "description": 420})
+        widths={"changed": 125, "kind": 80, "description": 380})
 
 
 def closed_trades(strategies):
