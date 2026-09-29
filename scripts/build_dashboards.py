@@ -310,6 +310,37 @@ WHERE $__timeFilter(time) ORDER BY 1""",
         desc="Above the grey line = making money per trade right now. Blue markers = changes, red = halts.")
 
 
+def cumulative_pnl(s):
+    """Cumulative realized P&L, restarting at $0 at every major revision (strategy_changes kind
+    era_start|revision). One series per version so versions can be compared side by side. Trades
+    belong to the version live when they OPENED; plotted at exit. Same trade set as the scorecard
+    (current tag + retired _pre_reset eras; _watch tracks excluded)."""
+    return timeseries(
+        "Cumulative P&L — restarts at $0 on each major revision",
+        f"""WITH r AS (
+  SELECT changed_at FROM strategy_changes WHERE strategy='{s}' AND kind IN ('era_start','revision')),
+t AS (
+  SELECT t.exit_at, t.pnl_usd,
+         (SELECT max(r.changed_at) FROM r WHERE r.changed_at <= t.entry_at) AS seg
+  FROM trades t
+  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed' AND t.exit_at IS NOT NULL
+    AND {family(s)}),
+x AS (
+  SELECT exit_at AS time, seg,
+         SUM(pnl_usd) OVER (PARTITION BY seg ORDER BY exit_at ROWS UNBOUNDED PRECEDING) AS value
+  FROM t
+  UNION ALL
+  SELECT DISTINCT seg, seg, 0 FROM t WHERE seg IS NOT NULL)
+SELECT time,
+       CASE WHEN seg IS NULL THEN 'before first revision'
+            ELSE 'since ' || to_char(seg AT TIME ZONE '{TZ}', 'YYYY-MM-DD') END AS metric,
+       value
+FROM x WHERE $__timeFilter(time) ORDER BY 1""",
+        desc=("Realized P&L added up trade by trade. Each major revision (logged with "
+              "`log_change --kind revision`, or an era start) starts a new line at $0, so every "
+              "version is judged on its own trades. Trades count toward the version live when they opened."))
+
+
 def pnl_distribution(s):
     return table("P&L per trade — distribution & tail (time range)", f"""WITH c AS (
   SELECT pnl_usd, pnl_pct FROM trades WHERE {closed(s)} AND $__timeFilter(exit_at)),
@@ -600,6 +631,7 @@ def strategy_page(s):
     rows = [
         [(text_panel(f"## {title}\n{blurb}  \n{LEGEND}"), 24, 3)],
         stat_strip(s),
+        [(cumulative_pnl(s), 24, 9)],
         [(rolling_expectancy([s]), 12, 9), (pnl_distribution(s), 12, 9)],
         [(exit_reasons(s), 12, 13), (entry_conditions(s), 12, 13)],
         [(changes_before_after(s), 24, 9)],   # headroom: content exactly filling the box flickered

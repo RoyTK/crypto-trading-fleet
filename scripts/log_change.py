@@ -10,7 +10,8 @@ Usage (inside bot_copy or framework container):
   python -m scripts.log_change --list
 
 strategy: cluster|conviction|swing|teamfollow|cohortfire|promobuy|fleet
-kind:     era_start|fix|config|roster|halt|other
+kind:     era_start|revision|fix|config|roster|halt|other
+          revision = MAJOR strategy revision: the page's cumulative P&L line restarts at $0
 """
 from __future__ import annotations
 
@@ -23,7 +24,7 @@ from sqlalchemy import text
 from framework.db import session_scope
 
 STRATEGIES = ("cluster", "conviction", "swing", "teamfollow", "cohortfire", "promobuy", "fleet")
-KINDS = ("era_start", "fix", "config", "roster", "halt", "other")
+KINDS = ("era_start", "revision", "fix", "config", "roster", "halt", "other")
 
 _INSERT = text(
     "INSERT INTO strategy_changes (strategy, changed_at, kind, description, ref) "
