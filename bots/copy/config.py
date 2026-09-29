@@ -261,6 +261,16 @@ class CopySettings(BaseSettings):
     # -$400). Thin-but-live tokens now book at their real price with
     # liquidity-aware exit slippage (see _build_paper_exit / _liquidity_aware_exit_price).
     copy_rug_liquidity_floor_usd: float = Field(default=50.0)
+    # LIQUIDITY-PULL RUG CLOSE (2026-09-28, Roy): close ANY open position whose CURRENT
+    # liquidity stays below copy_rug_liquidity_floor_usd, at ~-100% ('rug_no_liquidity'),
+    # regardless of price. Pulled pools freeze the price at the last trade, so the older
+    # rug check (price collapse >10,000x AND dead pool) never fired: 5 teamfollow rugs sat
+    # "open" at ~0% loss for up to 16 days. Guards against a bad Birdeye reading: the low
+    # reading must persist >= confirm minutes AND a second liquidity lookup must agree;
+    # unknown liquidity is never a rug. The loss is booked at the time the pool was first
+    # logged below the floor (position_liquidity_log), not at detection time.
+    copy_rug_liq_close_enabled: bool = Field(default=True)
+    copy_rug_liq_confirm_minutes: float = Field(default=10.0)
     # Floor for modeled paper slippage (2026-06-21). The dex_quoter fix
     # (0f7e73c) switched entry slippage from a flat 100bps estimate to
     # Jupiter's priceImpactPct (~3bps), which is unrealistically optimistic

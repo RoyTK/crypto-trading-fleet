@@ -555,8 +555,11 @@ def close_paper_trade(
     exit_fill: SimulatedFill,
     exit_reason: str,
     exit_meta: Optional[dict] = None,
+    exit_at: Optional[datetime] = None,
 ) -> None:
-    """Close an open paper trade. Handles BOTH the legacy single-exit
+    """Close an open paper trade. `exit_at` defaults to now; pass it only when the
+    exit genuinely happened earlier (a liquidity-pull rug detected after the fact is
+    booked at the time the pool was first seen drained). Handles BOTH the legacy single-exit
     lifecycle AND the new partial-exit ladder (where 0-3 tiers may have
     already fired before this close).
 
@@ -611,7 +614,7 @@ def close_paper_trade(
         entry_fee = size_usd * (dex_fee_pct(liquidity_usd=close_liq) / 100.0)
 
         t.exit_price = exit_price
-        t.exit_at = datetime.now(timezone.utc)
+        t.exit_at = exit_at or datetime.now(timezone.utc)
         t.exit_reason = exit_reason
         t.fill_status = "closed"
         t.fees_usd = float(t.fees_usd or 0.0) + exit_fill.fees_usd + entry_fee
@@ -1044,6 +1047,24 @@ def wallet_flow_since(
     except Exception:
         _log.exception("wallet_flow_since_failed", token=token, wallet=wallet)
         return (0.0, 0.0)
+
+
+def first_low_liquidity_at(trade_id: int, floor_usd: float) -> Optional[datetime]:
+    """Start of the CURRENT unbroken run of below-floor liquidity readings for an open
+    position, from the persisted hourly `position_liquidity_log` (survives restarts).
+    Readings at/above the floor break the run. None if no low reading is logged.
+    Used to book a liquidity-pull rug at the time the pool was drained. Fail-safe → None."""
+    try:
+        with session_scope() as s:
+            return s.execute(text(
+                "SELECT min(logged_at) FROM position_liquidity_log "
+                "WHERE trade_id = :t AND liquidity_usd IS NOT NULL AND liquidity_usd < :f "
+                "AND logged_at > COALESCE((SELECT max(logged_at) FROM position_liquidity_log "
+                "  WHERE trade_id = :t AND liquidity_usd >= :f), '-infinity'::timestamptz)"
+            ), {"t": trade_id, "f": floor_usd}).scalar()
+    except Exception:
+        _log.exception("first_low_liquidity_at_failed", trade_id=trade_id)
+        return None
 
 
 def pre_entry_roster_buyers(token: str, venue: str, within_minutes: float) -> int:

@@ -43,6 +43,7 @@ from bots.copy.loop_helpers import (
     close_paper_trade,
     cohort_net_flow,
     execute_paper_partial_close,
+    first_low_liquidity_at,
     has_open_position,
     has_recent_strategy_trade,
     has_recent_conviction_trade,
@@ -290,6 +291,10 @@ class CopyBot(BotLifecycle):
         # Position liquidity-trajectory logging (2026-07-23): throttle map
         # trade_id -> last snapshot time (in-memory; re-seeds on restart).
         self._liq_log_last: dict[int, datetime] = {}
+        # Liquidity-pull rug close (2026-09-28): trade_id -> when this process first saw
+        # the position's liquidity below the rug floor (confirm window; the booked exit time
+        # comes from the persisted position_liquidity_log when available).
+        self._rug_low_since: dict[int, datetime] = {}
 
     # ---- Lifecycle hooks ---------------------------------------------------
 
@@ -2239,6 +2244,46 @@ class CopyBot(BotLifecycle):
             base_exit_reason,
         )
 
+    async def _close_liquidity_rug(self, trade, cur_liq: float, mid: Optional[float],
+                                   now: datetime) -> bool:
+        """Close an open paper position whose pool has been drained. Returns True if closed.
+
+        Confirmation (never realize a loss on a bad reading): the below-floor liquidity must
+        have persisted >= copy_rug_liq_confirm_minutes (earliest of: first seen by this
+        process, or the start of the current unbroken low run in position_liquidity_log), AND
+        an independent liquidity lookup must also read below the floor. The loss is booked at
+        that start time — when the pool was drained — not now, so old rugs don't land as one
+        fresh day's loss and trip a daily-drawdown halt."""
+        floor = self.copy_settings.copy_rug_liquidity_floor_usd
+        seen = self._rug_low_since.get(trade.trade_id, now)
+        logged = await asyncio.to_thread(first_low_liquidity_at, trade.trade_id, floor)
+        first_low = min(seen, logged) if logged else seen
+        if (now - first_low) < timedelta(minutes=self.copy_settings.copy_rug_liq_confirm_minutes):
+            return False
+        confirm = await self._exit_liquidity(trade.asset, trade.venue, mid or trade.entry_price)
+        if confirm is None or confirm >= floor:
+            self.log.info("liquidity_rug_not_confirmed", trade_id=trade.trade_id,
+                          asset=trade.asset, batch_liq=cur_liq, confirm_liq=confirm)
+            self._rug_low_since.pop(trade.trade_id, None)
+            return False
+        close_price = float(trade.entry_price or 0.0) * RUG_PRICE_FACTOR
+        fill = SimulatedFill(fill_price=close_price, fees_usd=0.0, slippage_bps=0.0,
+                             metadata={"side": "exit", "rugged": True, "liquidity_usd": confirm,
+                                       "rug_detected_at": now.isoformat()})
+        close_paper_trade(
+            trade_id=trade.trade_id, exit_price=close_price, exit_fill=fill,
+            exit_reason="rug_no_liquidity", exit_at=first_low,
+            exit_meta={"exit_signal": "liquidity_rug",
+                       "rug_first_low_liquidity_at": first_low.isoformat(),
+                       "rug_liquidity_usd": confirm})
+        self._rug_low_since.pop(trade.trade_id, None)
+        self._liq_ema.pop(trade.trade_id, None)
+        self._liq_log_last.pop(trade.trade_id, None)
+        self.log.warning("liquidity_rug_closed", trade_id=trade.trade_id, asset=trade.asset,
+                         strategy=trade.strategy, liquidity_usd=confirm,
+                         booked_at=first_low.isoformat(), size_usd=trade.size_usd)
+        return True
+
     async def _manage_open_positions(self) -> None:
         opens = list_open_paper_trades()
         # Drive shadow/live exits in parallel with the paper-trade exits below.
@@ -2305,6 +2350,19 @@ class CopyBot(BotLifecycle):
                         "age_hours": ((now - trade.entry_at).total_seconds() / 3600.0
                                       if trade.entry_at else None),
                     })
+
+            # Liquidity-pull RUG (2026-09-28): a drained pool freezes the price at the last
+            # trade, so price-based rug checks never fire. Judge by liquidity alone, before
+            # any price logic. Unknown liquidity (None) is never treated as a rug.
+            if trade.venue == "solana" and self.copy_settings.copy_rug_liq_close_enabled:
+                floor = self.copy_settings.copy_rug_liquidity_floor_usd
+                cur_liq = sol_liq.get(trade.asset)
+                if cur_liq is not None and cur_liq < floor:
+                    self._rug_low_since.setdefault(trade.trade_id, now)
+                    if await self._close_liquidity_rug(trade, cur_liq, mid, now):
+                        continue
+                elif cur_liq is not None:
+                    self._rug_low_since.pop(trade.trade_id, None)
 
             # Timeout is age-based — must fire even when pricing is unavailable
             # (rugged token, oracle gap, quota exhausted). Without this,

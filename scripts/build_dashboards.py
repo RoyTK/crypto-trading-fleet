@@ -10,7 +10,7 @@ time ranges, stale panels). Every page is now built from the same building block
 Conventions: timezone America/Chicago; stat strips = CURRENT ERA (since the strategy's
 last reset re-tag); charts/tables follow the time picker ($__timeFilter); markers from
 strategy_changes + halts; open positions carry CURRENT liquidity (position_liquidity_log)
-and are marked RUG at -100% when liquidity < $100.
+and are marked RUG at -100% when liquidity < $50.
 
 Usage:  python scripts/build_dashboards.py [--out monitoring/dashboards]
 Then validate on the server: python scripts/validate_dashboards.py <files>
@@ -24,7 +24,7 @@ import os
 DS = {"type": "postgres", "uid": "fleet-postgres"}
 TZ = "America/Chicago"
 NAV_TAG = "fleet-v2"
-RUG_USD = 100          # current liquidity below this = rug (pulled pools read ~$0.000001)
+RUG_USD = 50           # = copy_rug_liquidity_floor_usd (the bot closes below this); pulled pools read ~$0.000001
 COLLAPSE_FRAC = 0.2    # current liq < 20% of entry liq = LIQ COLLAPSED
 STRATS = ["cluster", "conviction", "swing", "teamfollow", "cohortfire", "promobuy"]
 DORMANT_BY_DESIGN = {"cohortfire"}   # not flagged as "idle" on the attention strip
@@ -567,7 +567,7 @@ PAGES = {  # strategy -> (uid, title, blurb)
 }
 
 LEGEND = ("*Stat strip = current era (since the strategy's last reset). Charts and tables follow the time "
-          "picker. Blue markers = logged changes, red = halts. Open positions with current liquidity < $100 "
+          "picker. Blue markers = logged changes, red = halts. Open positions with current liquidity < $50 "
           "are marked **RUG at −100%**.*")
 
 
@@ -694,7 +694,7 @@ def fleet_command():
         [(table("Scorecard — per strategy, current era", scorecard_sql(),
                 desc="exp = average per closed trade. payoff = avg win / avg loss. net = realized in the current era. "
                      "ex_top5 = net without the best 5% of trades (tail dependence). open = unrealized on open positions; "
-                     "open and all_in mark rugs (liq < $100) at -100%. "
+                     "open and all_in mark rugs (liq < $50) at -100%. "
                      "Flags are advisory.",
                 widths={"strategy": 100, "state": 150, "era_start": 100, "flags": 270}), 24, SCORECARD_H)],
         [(rolling_expectancy(STRATS), 24, 9)],
