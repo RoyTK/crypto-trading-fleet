@@ -571,18 +571,31 @@ FROM r WHERE top <= 15 OR bot <= 15 ORDER BY net DESC""",
 
 
 def b_team(s, prefix):
-    strat_in = in_list(["teamfollow", "teamfollow_watch"]) if s == "teamfollow" else f"'{s}'"
-    watch = ("|| CASE WHEN bool_or(t.sim_metadata->>'strategy' = 'teamfollow_watch') "
-             "AND NOT bool_or(t.sim_metadata->>'strategy' = 'teamfollow') THEN ' w' ELSE '' END"
-             if s == "teamfollow" else "")
-    return bar(f"Net P&L per {'team' if prefix == 'T' else 'cohort'} — (n) = trades"
-               + (", w = watch track" if s == "teamfollow" else "") + " (time range)",
-               f"""SELECT '{prefix}' || (t.sim_metadata->>'team_id') {watch} || ' (' || count(*) || ')' AS label,
+    """Live teams/cohorts only. A culled one's trades are re-tagged '<s>_watch', so they drop out
+    of this chart and show in b_team_watch instead (Roy 2026-09-29: culled teams must not appear
+    among the live ones)."""
+    return bar(f"Net P&L per live {'team' if prefix == 'T' else 'cohort'} — (n) = trades (time range)",
+               f"""SELECT '{prefix}' || (t.sim_metadata->>'team_id') || ' (' || count(*) || ')' AS label,
   ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd
 FROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'
-  AND t.sim_metadata->>'strategy' IN ({strat_in}) AND t.sim_metadata->>'team_id' IS NOT NULL
+  AND t.sim_metadata->>'strategy' = '{s}' AND t.sim_metadata->>'team_id' IS NOT NULL
   AND $__timeFilter(t.exit_at)
 GROUP BY t.sim_metadata->>'team_id' ORDER BY net_usd DESC""")
+
+
+def b_team_watch():
+    """Culled teamfollow teams: paper trades SINCE the cull only (what promotion is judged on)."""
+    return bar("Culled teams (watch track) — trades since the cull; promoted back at ≥10 trades net positive",
+               """SELECT 'T' || st.team_id || ' (' || count(t.id) || ')' AS label,
+  ROUND(coalesce(sum(t.pnl_usd), 0)::numeric, 0) AS net_usd
+FROM teamfollow_team_status st
+LEFT JOIN trades t ON t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'
+  AND t.sim_metadata->>'strategy' = 'teamfollow_watch' AND t.sim_metadata->>'team_id' = st.team_id::text
+  AND t.entry_at > st.updated_at
+WHERE st.status = 'watch'
+GROUP BY st.team_id ORDER BY net_usd DESC""",
+               desc="Every team currently culled to the watch track, with only the trades it has made since it was culled. "
+                    "All-time time range: the window picker does not apply.")
 
 
 BARS = {  # strategies with wallets or teams get the per-entity bar chart (Roy 2026-09-25)
@@ -636,6 +649,7 @@ def strategy_page(s):
         [(exit_reasons(s), 12, 13), (entry_conditions(s), 12, 13)],
         [(changes_before_after(s), 24, 9)],   # headroom: content exactly filling the box flickered
         *([[(BARS[s](), 24, 9)]] if s in BARS else []),
+        *([[(b_team_watch(), 24, 7)]] if s == "teamfollow" else []),
         *mod_rows,
         [(table("Open positions — current liquidity, rug-marked", open_positions_sql(open_strats)), 24, 11)],
         [(closed_trades(open_strats), 24, 10)],
