@@ -269,6 +269,20 @@ class CopySettings(BaseSettings):
     # reading must persist >= confirm minutes AND a second liquidity lookup must agree;
     # unknown liquidity is never a rug. The loss is booked at the time the pool was first
     # logged below the floor (position_liquidity_log), not at detection time.
+    # PER-STRATEGY WALLET/TEAM CULL (2026-09-29, Roy): the same rule for every wallet-based
+    # strategy, generalised from teamfollow's team demote and scaled to each strategy's trade
+    # size ("position"): an entity (trigger wallet / team / cohort / cluster wallet) judged ONLY
+    # on its own strategy's current-era closed trades is moved to WATCH when
+    #   FAST: >= cull_min_trades_fast trades AND net <= -cull_loss_positions_fast x position, or
+    #   SLOW: >= cull_min_trades_slow trades AND net <= -cull_loss_positions_slow x position.
+    # Watch entities keep paper-trading on '<strategy>_watch' (isolated) and are promoted back
+    # when forward watch net > 0 over >= cull_promote_min_trades. Daily: scripts.entity_tiers.
+    # (Teamfollow's own knobs above encode the same rule for its $500 positions.)
+    copy_cull_min_trades_fast: int = Field(default=5)
+    copy_cull_loss_positions_fast: float = Field(default=1.0)
+    copy_cull_min_trades_slow: int = Field(default=10)
+    copy_cull_loss_positions_slow: float = Field(default=0.5)
+    copy_cull_promote_min_trades: int = Field(default=10)
     copy_rug_liq_close_enabled: bool = Field(default=True)
     copy_rug_liq_confirm_minutes: float = Field(default=10.0)
     # Floor for modeled paper slippage (2026-06-21). The dex_quoter fix

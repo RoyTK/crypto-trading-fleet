@@ -105,25 +105,32 @@ def _snapshot_wallets() -> list[WalletSnapshot]:
         # Per-wallet attributed PnL (2026-06-21) — drives PnL-based demotion.
         # COUNT = number of closed copied trades this wallet participated in;
         # SUM = its equal-share attributed PnL. Only 'copy' bot rows.
+        # 2026-09-29: CLUSTER-ONLY, current era. This decides membership of cluster's active
+        # pool, so it must not count P&L the wallet triggered in swing/teamfollow/promobuy/...
+        # (25 cluster-profitable wallets were being judged losers on other strategies' trades)
+        # nor retired '_pre_reset' eras. avg_share = trade size / cluster size = the wallet's
+        # "position" for the scaled cull rule.
         attr_rows = s.execute(text("""
-            SELECT wallet_address,
+            SELECT wa.wallet_address,
                    COUNT(*) AS n,
-                   COALESCE(SUM(attributed_pnl_usd), 0) AS pnl,
-                   COALESCE(MIN(attributed_pnl_usd), 0) AS worst,
-                   COUNT(*) FILTER (WHERE attributed_pnl_usd > 0) AS wins
-            FROM wallet_attributions
-            WHERE bot_id = 'copy'
-            GROUP BY wallet_address
+                   COALESCE(SUM(wa.attributed_pnl_usd), 0) AS pnl,
+                   COALESCE(MIN(wa.attributed_pnl_usd), 0) AS worst,
+                   COUNT(*) FILTER (WHERE wa.attributed_pnl_usd > 0) AS wins,
+                   COALESCE(AVG(t.size_usd / NULLIF(wa.cluster_size, 0)), 0) AS avg_share
+            FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id
+            WHERE wa.bot_id = 'copy' AND t.mode = 'paper'
+              AND t.sim_metadata->>'strategy' = 'cluster'
+            GROUP BY wa.wallet_address
         """)).all()
-        attr: dict[str, tuple[int, float, float, int]] = {
-            r.wallet_address: (int(r.n), float(r.pnl), float(r.worst), int(r.wins))
+        attr: dict[str, tuple[int, float, float, int, float]] = {
+            r.wallet_address: (int(r.n), float(r.pnl), float(r.worst), int(r.wins), float(r.avg_share))
             for r in attr_rows
         }
 
         for w in s.execute(select(WalletPool)).scalars():
             events_7d, events_48h = aux.get(w.address, (0, 0))
-            attributed_trades, attributed_pnl_usd, worst_attributed, attributed_wins = attr.get(
-                w.address, (0, 0.0, 0.0, 0))
+            attributed_trades, attributed_pnl_usd, worst_attributed, attributed_wins, avg_share = attr.get(
+                w.address, (0, 0.0, 0.0, 0, 0.0))
             snapshots.append(WalletSnapshot(
                 address=w.address,
                 tier=w.tier,
@@ -142,6 +149,7 @@ def _snapshot_wallets() -> list[WalletSnapshot]:
                 attributed_pnl_usd=attributed_pnl_usd,
                 worst_attributed_pnl_usd=worst_attributed,
                 attributed_wins=attributed_wins,
+                avg_share_usd=avg_share,
                 source=w.source,
             ))
     return snapshots

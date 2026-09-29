@@ -81,7 +81,7 @@
  },
  "panels": [
   {
-   "id": 4,
+   "id": 5,
    "type": "text",
    "title": "",
    "transparent": true,
@@ -97,7 +97,7 @@
    }
   },
   {
-   "id": 5,
+   "id": 6,
    "type": "stat",
    "title": "State",
    "datasource": {
@@ -167,7 +167,7 @@
    }
   },
   {
-   "id": 6,
+   "id": 7,
    "type": "stat",
    "title": "Era start",
    "datasource": {
@@ -217,7 +217,7 @@
    }
   },
   {
-   "id": 7,
+   "id": 8,
    "type": "stat",
    "title": "N closed",
    "datasource": {
@@ -267,7 +267,7 @@
    }
   },
   {
-   "id": 8,
+   "id": 9,
    "type": "stat",
    "title": "Exp/trade",
    "datasource": {
@@ -330,7 +330,7 @@
    }
   },
   {
-   "id": 9,
+   "id": 10,
    "type": "stat",
    "title": "Win rate",
    "datasource": {
@@ -381,7 +381,7 @@
    }
   },
   {
-   "id": 10,
+   "id": 11,
    "type": "stat",
    "title": "Net P&L",
    "datasource": {
@@ -444,7 +444,7 @@
    }
   },
   {
-   "id": 11,
+   "id": 12,
    "type": "stat",
    "title": "Open P&L",
    "datasource": {
@@ -507,7 +507,7 @@
    }
   },
   {
-   "id": 12,
+   "id": 13,
    "type": "stat",
    "title": "Last entry",
    "datasource": {
@@ -570,7 +570,7 @@
    }
   },
   {
-   "id": 13,
+   "id": 14,
    "type": "timeseries",
    "title": "Rolling expectancy — avg $ per trade over last 30 trades",
    "datasource": {
@@ -638,7 +638,7 @@
    }
   },
   {
-   "id": 14,
+   "id": 15,
    "type": "table",
    "title": "P&L per trade — distribution & tail (time range)",
    "datasource": {
@@ -898,7 +898,7 @@
    }
   },
   {
-   "id": 15,
+   "id": 16,
    "type": "table",
    "title": "Why trades close — exit reason × hold × P&L (time range)",
    "datasource": {
@@ -1157,7 +1157,7 @@
    }
   },
   {
-   "id": 16,
+   "id": 17,
    "type": "table",
    "title": "Entry conditions vs outcome — are we entering late? (time range)",
    "datasource": {
@@ -1416,7 +1416,7 @@
    }
   },
   {
-   "id": 17,
+   "id": 18,
    "type": "table",
    "title": "Did each change help? — 14 days before vs since (until next change)",
    "datasource": {
@@ -1676,7 +1676,7 @@
    }
   },
   {
-   "id": 18,
+   "id": 19,
    "type": "barchart",
    "title": "Net P&L per trigger wallet — (n) = trades (time range)",
    "datasource": {
@@ -2013,6 +2013,266 @@
   {
    "id": 2,
    "type": "table",
+   "title": "Watch lifecycle — active track vs culled-to-watch track (time range)",
+   "datasource": {
+    "type": "postgres",
+    "uid": "fleet-postgres"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "postgres",
+      "uid": "fleet-postgres"
+     },
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code",
+     "rawSql": "SELECT t.sim_metadata->>'strategy' AS track,\n  count(DISTINCT COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id')) AS entities,\n  count(*) AS n, ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd, ROUND(avg(t.pnl_usd)::numeric, 1) AS exp_usd,\n  ROUND(avg((t.pnl_usd > 0)::int) * 100) AS win_pct\nFROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'\n  AND t.sim_metadata->>'strategy' IN ('swing', 'swing_watch') AND $__timeFilter(t.exit_at)\nGROUP BY 1 ORDER BY 1"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "filterable": false,
+      "minWidth": 50
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_usd$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyUSD"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*_pct$"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "asset"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/token/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "wallet"
+      },
+      "properties": [
+       {
+        "id": "links",
+        "value": [
+         {
+          "title": "Birdeye wallet",
+          "targetBlank": true,
+          "url": "https://birdeye.so/solana/wallet-analyzer/${__value.raw}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "RUG": {
+            "color": "red",
+            "index": 0
+           },
+           "LIQ COLLAPSED": {
+            "color": "orange",
+            "index": 1
+           },
+           "STALE": {
+            "color": "#6e6e6e",
+            "index": 2
+           },
+           "NO DATA": {
+            "color": "#6e6e6e",
+            "index": 3
+           },
+           "ok": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "sev"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "custom.width",
+        "value": 60
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "P0": {
+            "color": "red",
+            "index": 0
+           },
+           "P1": {
+            "color": "orange",
+            "index": 1
+           },
+           "P2": {
+            "color": "yellow",
+            "index": 2
+           },
+           "INFO": {
+            "color": "blue",
+            "index": 3
+           },
+           "OK": {
+            "color": "green",
+            "index": 4
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "state"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "regex",
+          "options": {
+           "pattern": "^HALTED.*",
+           "result": {
+            "color": "red",
+            "index": 0
+           }
+          }
+         },
+         {
+          "type": "value",
+          "options": {
+           "running": {
+            "color": "green",
+            "index": 1
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "description": "Wallets/teams that lose >= 1 position over 5+ trades (or >= half a position over 10+) are moved to the watch track (scripts/entity_tiers.py, daily). They keep trading on paper there, excluded from the scorecard, and return after 10 net-positive forward trades.",
+   "gridPos": {
+    "x": 12,
+    "y": 44,
+    "w": 12,
+    "h": 9
+   }
+  },
+  {
+   "id": 3,
+   "type": "table",
    "title": "P&L by wallet style — sniper / MM / selector (time range)",
    "datasource": {
     "type": "postgres",
@@ -2264,14 +2524,14 @@
    },
    "description": "Each trade's P&L split across its participating wallets, grouped by the wallet's style class (scripts/wallet_style_classify.py). Snipers/MMs are structurally unfollowable.",
    "gridPos": {
-    "x": 12,
-    "y": 44,
+    "x": 0,
+    "y": 53,
     "w": 12,
     "h": 9
    }
   },
   {
-   "id": 3,
+   "id": 4,
    "type": "table",
    "title": "Hold time — thesis is multi-day (time range)",
    "datasource": {
@@ -2523,14 +2783,14 @@
     "cellHeight": "sm"
    },
    "gridPos": {
-    "x": 0,
+    "x": 12,
     "y": 53,
-    "w": 24,
+    "w": 12,
     "h": 9
    }
   },
   {
-   "id": 19,
+   "id": 20,
    "type": "table",
    "title": "Open positions — current liquidity, rug-marked",
    "datasource": {
@@ -2547,7 +2807,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "WITH o AS (\n  SELECT t.id, t.asset, t.entry_at, t.sim_metadata->>'strategy' AS strategy,\n    COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', '') AS who,\n    (t.sim_metadata->>'peak_pct_since_entry')::numeric AS peak_pct,\n    (t.sim_metadata->>'entry_liquidity_usd')::numeric AS el,\n    COALESCE((t.sim_metadata->>'remaining_size_usd')::numeric, t.size_usd::numeric) AS rem,\n    t.entry_price::numeric AS ep, l.liquidity_usd::numeric AS liq, l.price::numeric AS px, l.logged_at,\n    CASE WHEN l.logged_at IS NULL THEN 'NO DATA'\n         WHEN l.liquidity_usd < 50 THEN 'RUG'\n         WHEN l.logged_at < now() - interval '2 hours' THEN 'STALE'\n         WHEN (t.sim_metadata->>'entry_liquidity_usd')::numeric > 0\n              AND l.liquidity_usd < 0.2 * (t.sim_metadata->>'entry_liquidity_usd')::numeric\n              THEN 'LIQ COLLAPSED'\n         ELSE 'ok' END AS status\n  FROM trades t\n  LEFT JOIN LATERAL (SELECT liquidity_usd, price, logged_at FROM position_liquidity_log p\n                     WHERE p.trade_id = t.id ORDER BY logged_at DESC LIMIT 1) l ON true\n  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='open' AND t.sim_metadata->>'strategy' IN ('swing')\n), ou AS (\n  SELECT o.*, CASE WHEN status='RUG' THEN -rem\n                   WHEN px IS NOT NULL AND ep > 0 THEN rem * (px / ep - 1) END AS unreal\n  FROM o)\nSELECT id, strategy, asset, status, ROUND(rem,0) AS size_usd, ROUND(unreal,0) AS unreal_usd,\n  ROUND((EXTRACT(EPOCH FROM now()-entry_at)/3600)::numeric,1) AS held_h,\n  ROUND(el,0) AS entry_liq_usd, ROUND(liq,0) AS liq_now_usd,\n  ROUND((liq / NULLIF(el,0) - 1) * 100, 0) AS liq_chg_pct,\n  ROUND((EXTRACT(EPOCH FROM now()-logged_at)/60)::numeric,0) AS liq_age_min,\n  ROUND(peak_pct,1) AS peak_pct, LEFT(who,10) AS trigger, entry_at\nFROM ou\nORDER BY CASE status WHEN 'RUG' THEN 0 WHEN 'LIQ COLLAPSED' THEN 1 WHEN 'STALE' THEN 2\n         WHEN 'NO DATA' THEN 3 ELSE 4 END, unreal NULLS FIRST"
+     "rawSql": "WITH o AS (\n  SELECT t.id, t.asset, t.entry_at, t.sim_metadata->>'strategy' AS strategy,\n    COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', '') AS who,\n    (t.sim_metadata->>'peak_pct_since_entry')::numeric AS peak_pct,\n    (t.sim_metadata->>'entry_liquidity_usd')::numeric AS el,\n    COALESCE((t.sim_metadata->>'remaining_size_usd')::numeric, t.size_usd::numeric) AS rem,\n    t.entry_price::numeric AS ep, l.liquidity_usd::numeric AS liq, l.price::numeric AS px, l.logged_at,\n    CASE WHEN l.logged_at IS NULL THEN 'NO DATA'\n         WHEN l.liquidity_usd < 50 THEN 'RUG'\n         WHEN l.logged_at < now() - interval '2 hours' THEN 'STALE'\n         WHEN (t.sim_metadata->>'entry_liquidity_usd')::numeric > 0\n              AND l.liquidity_usd < 0.2 * (t.sim_metadata->>'entry_liquidity_usd')::numeric\n              THEN 'LIQ COLLAPSED'\n         ELSE 'ok' END AS status\n  FROM trades t\n  LEFT JOIN LATERAL (SELECT liquidity_usd, price, logged_at FROM position_liquidity_log p\n                     WHERE p.trade_id = t.id ORDER BY logged_at DESC LIMIT 1) l ON true\n  WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='open' AND t.sim_metadata->>'strategy' IN ('swing','swing_watch')\n), ou AS (\n  SELECT o.*, CASE WHEN status='RUG' THEN -rem\n                   WHEN px IS NOT NULL AND ep > 0 THEN rem * (px / ep - 1) END AS unreal\n  FROM o)\nSELECT id, strategy, asset, status, ROUND(rem,0) AS size_usd, ROUND(unreal,0) AS unreal_usd,\n  ROUND((EXTRACT(EPOCH FROM now()-entry_at)/3600)::numeric,1) AS held_h,\n  ROUND(el,0) AS entry_liq_usd, ROUND(liq,0) AS liq_now_usd,\n  ROUND((liq / NULLIF(el,0) - 1) * 100, 0) AS liq_chg_pct,\n  ROUND((EXTRACT(EPOCH FROM now()-logged_at)/60)::numeric,0) AS liq_age_min,\n  ROUND(peak_pct,1) AS peak_pct, LEFT(who,10) AS trigger, entry_at\nFROM ou\nORDER BY CASE status WHEN 'RUG' THEN 0 WHEN 'LIQ COLLAPSED' THEN 1 WHEN 'STALE' THEN 2\n         WHEN 'NO DATA' THEN 3 ELSE 4 END, unreal NULLS FIRST"
     }
    ],
    "fieldConfig": {
@@ -2789,7 +3049,7 @@
    }
   },
   {
-   "id": 20,
+   "id": 21,
    "type": "table",
    "title": "Closed trades (time range, latest 100)",
    "datasource": {
@@ -2806,7 +3066,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "SELECT t.id, t.sim_metadata->>'strategy' AS strategy, t.asset,\n  LEFT(COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', ''), 10) AS trigger,\n  ROUND(t.size_usd::numeric, 0) AS size_usd, ROUND(t.pnl_usd::numeric, 2) AS pnl_usd, ROUND(t.pnl_pct::numeric, 1) AS pnl_pct,\n  t.exit_reason, ROUND((EXTRACT(EPOCH FROM t.exit_at - t.entry_at) / 3600)::numeric, 2) AS hold_h,\n  ROUND((t.sim_metadata->>'token_age_at_entry_hours')::numeric, 2) AS token_age_h,\n  ROUND((t.sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq_usd, t.entry_at, t.exit_at\nFROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'\n  AND t.sim_metadata->>'strategy' IN ('swing') AND $__timeFilter(t.exit_at)\nORDER BY t.exit_at DESC LIMIT 100"
+     "rawSql": "SELECT t.id, t.sim_metadata->>'strategy' AS strategy, t.asset,\n  LEFT(COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id', ''), 10) AS trigger,\n  ROUND(t.size_usd::numeric, 0) AS size_usd, ROUND(t.pnl_usd::numeric, 2) AS pnl_usd, ROUND(t.pnl_pct::numeric, 1) AS pnl_pct,\n  t.exit_reason, ROUND((EXTRACT(EPOCH FROM t.exit_at - t.entry_at) / 3600)::numeric, 2) AS hold_h,\n  ROUND((t.sim_metadata->>'token_age_at_entry_hours')::numeric, 2) AS token_age_h,\n  ROUND((t.sim_metadata->>'entry_liquidity_usd')::numeric, 0) AS entry_liq_usd, t.entry_at, t.exit_at\nFROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'\n  AND t.sim_metadata->>'strategy' IN ('swing','swing_watch') AND $__timeFilter(t.exit_at)\nORDER BY t.exit_at DESC LIMIT 100"
     }
    ],
    "fieldConfig": {
@@ -3048,7 +3308,7 @@
    }
   },
   {
-   "id": 21,
+   "id": 22,
    "type": "table",
    "title": "Halt history (time range)",
    "datasource": {

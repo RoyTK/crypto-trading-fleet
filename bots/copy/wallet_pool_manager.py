@@ -113,6 +113,9 @@ class WalletSnapshot:
     # Number of this wallet's attributed trades that were net-positive
     # (2026-06-25). Drives the sustained-loser win-rate gate.
     attributed_wins: int = 0
+    # Average attributed position size in USD (trade size / cluster size) over the wallet's
+    # CLUSTER trades (2026-09-29). > 0 switches demotion to the fleet-wide scaled cull rule.
+    avg_share_usd: float = 0.0
     # Discovery source — used to prioritize promotion (2026-06-21). Vetted
     # browser_opus curated wallets promote ahead of raw birdeye_gainers.
     source: Optional[str] = None
@@ -134,6 +137,21 @@ def _is_proven_loser(w: "WalletSnapshot", min_trades: int, pnl_floor: float) -> 
 
     NOTE: `worst_attributed_pnl_usd` and the DEMOTE_SUSTAINED_* gate are no
     longer consulted here — net-negative is the whole test now."""
+    if w.avg_share_usd > 0:
+        # 2026-09-29 (Roy): the SAME rule as every other wallet/team strategy — teamfollow's
+        # two-tier demote scaled to position size (here the wallet's average attributed share):
+        # FAST >= 5 trades & net <= -1.0 x position, SLOW >= 10 trades & net <= -0.5 x position.
+        # Judged on CLUSTER-ONLY attribution (the caller filters), so losses the wallet
+        # triggered in other strategies no longer demote it from cluster's pool.
+        try:
+            from bots.copy.config import get_copy_settings
+            cs = get_copy_settings()
+            ft, fl = cs.copy_cull_min_trades_fast, cs.copy_cull_loss_positions_fast
+            st, sl = cs.copy_cull_min_trades_slow, cs.copy_cull_loss_positions_slow
+        except Exception:
+            ft, fl, st, sl = 5, 1.0, 10, 0.5
+        n, net, pos = w.attributed_trades, w.attributed_pnl_usd, w.avg_share_usd
+        return (n >= ft and net <= -fl * pos) or (n >= st and net <= -sl * pos)
     if w.attributed_trades < min_trades:
         return False
     return w.attributed_pnl_usd < pnl_floor

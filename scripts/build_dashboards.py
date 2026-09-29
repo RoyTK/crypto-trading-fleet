@@ -440,6 +440,19 @@ GROUP BY 1 ORDER BY 1""",
         desc="Watch teams trade on paper but are excluded from the scorecard until promoted.")
 
 
+def m_lifecycle(s):
+    return table("Watch lifecycle — active track vs culled-to-watch track (time range)", f"""SELECT t.sim_metadata->>'strategy' AS track,
+  count(DISTINCT COALESCE(t.sim_metadata->>'trigger_wallet', t.sim_metadata->>'team_id')) AS entities,
+  count(*) AS n, ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd, ROUND(avg(t.pnl_usd)::numeric, 1) AS exp_usd,
+  ROUND(avg((t.pnl_usd > 0)::int) * 100) AS win_pct
+FROM trades t WHERE t.bot_id='copy' AND t.mode='paper' AND t.fill_status='closed'
+  AND t.sim_metadata->>'strategy' IN ('{s}', '{s}_watch') AND $__timeFilter(t.exit_at)
+GROUP BY 1 ORDER BY 1""",
+        desc="Wallets/teams that lose >= 1 position over 5+ trades (or >= half a position over 10+) are moved "
+             "to the watch track (scripts/entity_tiers.py, daily). They keep trading on paper there, excluded "
+             "from the scorecard, and return after 10 net-positive forward trades.")
+
+
 def m_promo_source():
     return table("P&L by promo source (time range)", f"""SELECT sf.features_json->>'source' AS source, count(*) AS n, ROUND(sum(t.pnl_usd)::numeric, 0) AS net_usd,
   ROUND(avg(t.pnl_usd)::numeric, 1) AS exp_usd, ROUND(avg((t.pnl_usd > 0)::int) * 100) AS win_pct
@@ -550,10 +563,12 @@ BARS = {  # strategies with wallets or teams get the per-entity bar chart (Roy 2
 
 MODULES = {
     "cluster":    [m_wallet_attrib, lambda: m_style("cluster"), m_cluster_size],
-    "conviction": [lambda: m_wallet_trigger("conviction"), lambda: m_style("conviction"), m_nbuys],
-    "swing":      [lambda: m_wallet_trigger("swing"), lambda: m_style("swing"), m_hold],
+    "conviction": [lambda: m_wallet_trigger("conviction"), lambda: m_lifecycle("conviction"),
+                   lambda: m_style("conviction"), m_nbuys],
+    "swing":      [lambda: m_wallet_trigger("swing"), lambda: m_lifecycle("swing"),
+                   lambda: m_style("swing"), m_hold],
     "teamfollow": [lambda: m_team("teamfollow", "team"), m_team_lifecycle, lambda: m_style("teamfollow")],
-    "cohortfire": [lambda: m_team("cohortfire", "cohort")],
+    "cohortfire": [lambda: m_team("cohortfire", "cohort"), lambda: m_lifecycle("cohortfire")],
     "promobuy":   [m_promo_source, m_promo_track],
 }
 
@@ -574,7 +589,7 @@ LEGEND = ("*Stat strip = current era (since the strategy's last reset). Charts a
 def strategy_page(s):
     _id[0] = 0
     uid, title, blurb = PAGES[s]
-    open_strats = ["teamfollow", "teamfollow_watch"] if s == "teamfollow" else [s]
+    open_strats = [s, f"{s}_watch"] if s in ("teamfollow", "conviction", "swing", "cohortfire") else [s]
     mods = [m() for m in MODULES[s]]
     mod_rows = [[(mods[i], 12, 9)] + ([(mods[i + 1], 12, 9)] if i + 1 < len(mods) else [])
                 for i in range(0, len(mods), 2)]
@@ -772,6 +787,13 @@ GROUP BY wp.tier ORDER BY CASE wp.tier WHEN 'active' THEN 1 WHEN 'teamfollow' TH
 FROM wallet_pool wp JOIN wallet_style ws ON ws.address = wp.address
 WHERE wp.tier = 'active' AND ws.cls IN ('SNIPER', 'MM_HFT', 'MM_ESTABLISHED') ORDER BY ws.cls, wp.address""",
                 desc="The re-tier skipped these on purpose. Review whether swing/conviction should keep them."), 12, 8)],
+        [(table("Culled to watch — every wallet/team strategy", """SELECT strategy, entity AS wallet, status, reason,
+  to_char(updated_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS since
+FROM strategy_entity_status WHERE status = 'watch'
+UNION ALL
+SELECT 'teamfollow', 'team ' || team_id, status, reason, to_char(updated_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD')
+FROM teamfollow_team_status WHERE status = 'watch'
+ORDER BY 1, 5 DESC""", desc="Cluster wallets culled for losses move to the pool's watch tier instead (see tier table)."), 24, 7)],
         [(table("Active SELECTOR wallets — the copyable cohort", """SELECT wp.address AS wallet, ROUND(ws.median_age_h::numeric, 2) AS median_age_h, ws.swaps, ws.tokens,
   wp.swing, wp.conviction, wp.pinned, wp.events_30d, wp.source
 FROM wallet_pool wp JOIN wallet_style ws ON ws.address = wp.address

@@ -522,3 +522,37 @@ def test_full_daily_cycle_mixed_transitions():
     assert "w_drop" in d.drop
     assert "w_stay" not in d.drop
     assert "w_stay" not in d.promote  # events_7d too low
+
+
+# ---- 2026-09-29: fleet-wide scaled cull rule (cluster judged on cluster-only attribution) ----
+from bots.copy.wallet_pool_manager import _is_proven_loser  # noqa: E402
+
+
+def _scaled(n: int, net: float, share: float = 100.0):
+    w = _w("SCALED", tier="active")
+    w.attributed_trades, w.attributed_pnl_usd, w.avg_share_usd = n, net, share
+    return w
+
+
+def test_scaled_fast_bleed_demotes_at_one_position_loss():
+    assert _is_proven_loser(_scaled(5, -100.0), 5, 0.0)          # 5 trades, -1.0 x position
+
+
+def test_scaled_small_loss_is_spared():
+    # Under the old rule any net loss over 5 trades demoted; the scaled rule spares a
+    # wallet that is only slightly negative.
+    assert not _is_proven_loser(_scaled(6, -20.0), 5, 0.0)
+
+
+def test_scaled_slow_bleed_needs_ten_trades_and_half_a_position():
+    assert not _is_proven_loser(_scaled(9, -60.0), 5, 0.0)       # < 10 trades, < 1 position
+    assert _is_proven_loser(_scaled(10, -50.0), 5, 0.0)          # 10 trades, -0.5 x position
+
+
+def test_scaled_rule_ignores_winners():
+    assert not _is_proven_loser(_scaled(40, 250.0), 5, 0.0)
+
+
+def test_no_share_falls_back_to_legacy_rule():
+    w = _scaled(5, -1.0, share=0.0)                             # avg_share 0 -> legacy net<0 test
+    assert _is_proven_loser(w, 5, 0.0)

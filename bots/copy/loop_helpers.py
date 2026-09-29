@@ -117,8 +117,10 @@ def persist_paper_trade(
     # tracked on its own metric (strategy='conviction'). Force a distinct tier
     # so a conviction trade can never leak into the cluster validation set even
     # if its trigger wallet happens to be active-tier.
-    if strategy == "conviction":
+    if strategy.startswith("conviction"):
         wallet_tier = "conviction"
+    elif strategy.startswith(("swing", "cohortfire")):
+        wallet_tier = strategy.split("_")[0]
     elif strategy.startswith("teamfollow"):
         # Same isolation as conviction: never tag teamfollow (or its _watch sub-track)
         # 'active' (that's the cluster kill-criteria filter) — keep the experiment's
@@ -216,7 +218,8 @@ def _strategy_clause(strategy: Optional[str]):
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'cohortfire%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'promobuy%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'swing%'")
-    if strategy in ("teamfollow_watch", "cohortfire_watch", "promobuy_watch"):
+    if strategy in ("teamfollow_watch", "cohortfire_watch", "promobuy_watch",
+                    "conviction_watch", "swing_watch"):
         # Demoted-team WATCH sub-track (2026-07-24): its OWN isolated bucket, so it
         # neither consumes the live family's alloc cap nor pollutes its metrics/dd.
         return text(f"coalesce(sim_metadata->>'strategy','') = '{strategy}'")
@@ -1047,6 +1050,50 @@ def wallet_flow_since(
     except Exception:
         _log.exception("wallet_flow_since_failed", token=token, wallet=wallet)
         return (0.0, 0.0)
+
+
+# ---- Per-strategy wallet/team watch lifecycle (2026-09-29) ------------------------------
+# Generalises teamfollow's team watch track to conviction / swing (trigger wallet) and
+# cohortfire (cohort). Table strategy_entity_status (migration 0015); absent row = active.
+
+def get_entity_status(strategy: str, entity) -> str:
+    """'watch' or 'active' for a wallet/team in a strategy. Fail-open → 'active'."""
+    if entity is None or entity == "":
+        return "active"
+    try:
+        with session_scope() as s:
+            st = s.execute(text(
+                "SELECT status FROM strategy_entity_status WHERE strategy = :s AND entity = :e"
+            ), {"s": strategy, "e": str(entity)}).scalar()
+        return st or "active"
+    except Exception:
+        _log.exception("get_entity_status_failed", strategy=strategy, entity=str(entity))
+        return "active"
+
+
+def set_entity_status(strategy: str, entity, status: str, reason: str = "") -> None:
+    """Upsert status; updated_at = now() is the demotion boundary for the forward re-prove."""
+    with session_scope() as s:
+        s.execute(text(
+            "INSERT INTO strategy_entity_status (strategy, entity, status, reason, updated_at) "
+            "VALUES (:s, :e, :st, :r, now()) ON CONFLICT (strategy, entity) DO UPDATE SET "
+            "status = EXCLUDED.status, reason = EXCLUDED.reason, updated_at = now()"
+        ), {"s": strategy, "e": str(entity), "st": status, "r": reason})
+        s.execute(text("COMMIT"))
+
+
+def list_entity_status(strategy: str) -> dict:
+    """entity -> {status, reason, updated_at} for a strategy."""
+    with session_scope() as s:
+        return {r.entity: {"status": r.status, "reason": r.reason, "updated_at": r.updated_at}
+                for r in s.execute(text(
+                    "SELECT entity, status, reason, updated_at FROM strategy_entity_status "
+                    "WHERE strategy = :s"), {"s": strategy})}
+
+
+def watch_tag(strategy: str, entity) -> str:
+    """Strategy tag for a new trade: '<strategy>_watch' when the triggering entity is on watch."""
+    return f"{strategy}_watch" if get_entity_status(strategy, entity) == "watch" else strategy
 
 
 def first_low_liquidity_at(trade_id: int, floor_usd: float) -> Optional[datetime]:

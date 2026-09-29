@@ -63,6 +63,7 @@ from bots.copy.loop_helpers import (
     update_trade_token_age,
     update_trade_token_meta,
     wallet_flow_since,
+    watch_tag,
     write_cluster_detection,
 )
 from bots.copy.executor import CopyExecutor
@@ -1279,13 +1280,15 @@ class CopyBot(BotLifecycle):
         except Exception:
             self.log.exception("cohortfire_halt_check_failed")
 
-        if has_open_position(candidate.asset, candidate.venue, strategy="cohortfire"):
-            self.log.info("cohortfire_dedup_skip", asset=candidate.asset)
+        cohort_id = (candidate.payload or {}).get("team_id")
+        # Cohort watch lifecycle (2026-09-29): culled cohorts trade on 'cohortfire_watch'.
+        strat_tag = watch_tag("cohortfire", cohort_id)
+        if has_open_position(candidate.asset, candidate.venue, strategy=strat_tag):
+            self.log.info("cohortfire_dedup_skip", asset=candidate.asset, strategy=strat_tag)
             return
 
-        cohort_id = (candidate.payload or {}).get("team_id")
         capital = self.copy_settings.copy_cohortfire_paper_capital_usd
-        current_alloc = open_allocation_pct(capital, strategy="cohortfire")
+        current_alloc = open_allocation_pct(capital, strategy=strat_tag)
         notional_usd = size_teamfollow_position(
             paper_capital_usd=capital,
             current_open_alloc_pct=current_alloc,
@@ -1347,7 +1350,7 @@ class CopyBot(BotLifecycle):
         signal_id = persist_signal(candidate)
         paper_trade_id = persist_paper_trade(
             signal_id=signal_id, candidate=candidate, sim_fill=sim_fill,
-            notional_usd=notional_usd, leverage=1.0, strategy="cohortfire",
+            notional_usd=notional_usd, leverage=1.0, strategy=strat_tag,
         )
         self.log.info("cohortfire_paper_opened", asset=candidate.asset, cohort_id=cohort_id,
                       cluster_size=candidate.cluster_size, notional_usd=round(notional_usd, 2),
@@ -1653,7 +1656,8 @@ class CopyBot(BotLifecycle):
                 return
         except Exception:
             pass
-        if has_open_position(candidate.asset, candidate.venue, strategy="conviction"):
+        if has_open_position(candidate.asset, candidate.venue,
+                             strategy=watch_tag("conviction", wallet)):
             return
         trigger_price: Optional[float] = None
         if candidate.venue == "solana" and self._session is not None:
@@ -1732,15 +1736,19 @@ class CopyBot(BotLifecycle):
         except Exception:
             self.log.exception("conviction_halt_check_failed")
 
-        # Per-strategy dedup: only blocked by an existing OPEN conviction
-        # position in this token (cluster positions don't block conviction).
-        if has_open_position(candidate.asset, candidate.venue, strategy="conviction"):
-            self.log.info("conviction_dedup_skip", asset=candidate.asset, chain=candidate.chain)
+        trigger_wallet = (candidate.payload or {}).get("trigger_wallet")
+        # Wallet watch lifecycle (2026-09-29): a wallet culled to watch keeps trading on
+        # the isolated 'conviction_watch' track until it re-proves.
+        strat_tag = watch_tag("conviction", trigger_wallet)
+        # Per-strategy dedup: only blocked by an existing OPEN position on this track
+        # in this token (cluster positions don't block conviction).
+        if has_open_position(candidate.asset, candidate.venue, strategy=strat_tag):
+            self.log.info("conviction_dedup_skip", asset=candidate.asset, chain=candidate.chain,
+                          strategy=strat_tag)
             return
 
-        trigger_wallet = (candidate.payload or {}).get("trigger_wallet")
         capital = self.copy_settings.copy_conviction_paper_capital_usd
-        current_alloc = open_allocation_pct(capital, strategy="conviction")
+        current_alloc = open_allocation_pct(capital, strategy=strat_tag)
         notional_usd = size_conviction_position(
             paper_capital_usd=capital,
             current_open_alloc_pct=current_alloc,
@@ -1804,7 +1812,7 @@ class CopyBot(BotLifecycle):
             sim_fill=sim_fill,
             notional_usd=notional_usd,
             leverage=1.0,
-            strategy="conviction",
+            strategy=strat_tag,
             trigger_wallet=trigger_wallet,
         )
         self.log.info(
@@ -1851,8 +1859,9 @@ class CopyBot(BotLifecycle):
         single-wallet-specific exit. Best-effort; failures are logged.
         """
         matches = [
-            t for t in list_open_paper_trades(strategy="conviction")
-            if t.trigger_wallet == ev.wallet_address
+            t for t in list_open_paper_trades()
+            if t.strategy in ("conviction", "conviction_watch")
+            and t.trigger_wallet == ev.wallet_address
             and t.asset == ev.token_mint
             and t.venue == ev.chain
         ]
@@ -1935,14 +1944,17 @@ class CopyBot(BotLifecycle):
             self.log.info("swing_reentry_cooldown_skip", asset=candidate.asset)
             return
 
-        # Per-strategy dedup: only an existing OPEN swing position in this token blocks.
-        if has_open_position(candidate.asset, candidate.venue, strategy="swing"):
-            self.log.info("swing_dedup_skip", asset=candidate.asset, chain=candidate.chain)
+        trigger_wallet = (candidate.payload or {}).get("trigger_wallet")
+        # Wallet watch lifecycle (2026-09-29): culled wallets trade on 'swing_watch' (isolated).
+        strat_tag = watch_tag("swing", trigger_wallet)
+        # Per-strategy dedup: only an existing OPEN position on this track in this token blocks.
+        if has_open_position(candidate.asset, candidate.venue, strategy=strat_tag):
+            self.log.info("swing_dedup_skip", asset=candidate.asset, chain=candidate.chain,
+                          strategy=strat_tag)
             return
 
-        trigger_wallet = (candidate.payload or {}).get("trigger_wallet")
         capital = cs.copy_swing_paper_capital_usd
-        current_alloc = open_allocation_pct(capital, strategy="swing")
+        current_alloc = open_allocation_pct(capital, strategy=strat_tag)
         notional_usd = size_swing_position(
             paper_capital_usd=capital,
             current_open_alloc_pct=current_alloc,
@@ -1999,7 +2011,7 @@ class CopyBot(BotLifecycle):
             sim_fill=sim_fill,
             notional_usd=notional_usd,
             leverage=1.0,
-            strategy="swing",
+            strategy=strat_tag,
             trigger_wallet=trigger_wallet,
         )
         self.log.info(
@@ -2040,8 +2052,9 @@ class CopyBot(BotLifecycle):
         Best-effort; failures are logged.
         """
         matches = [
-            t for t in list_open_paper_trades(strategy="swing")
-            if t.trigger_wallet == ev.wallet_address
+            t for t in list_open_paper_trades()
+            if t.strategy in ("swing", "swing_watch")
+            and t.trigger_wallet == ev.wallet_address
             and t.asset == ev.token_mint
             and t.venue == ev.chain
         ]
@@ -2097,8 +2110,9 @@ class CopyBot(BotLifecycle):
         follow-the-wallet-out. Additive to the exit stack; best-effort.
         """
         matches = [
-            t for t in list_open_paper_trades(strategy="teamfollow")
-            if t.asset == ev.token_mint
+            t for t in list_open_paper_trades()
+            if t.strategy in ("teamfollow", "teamfollow_watch")
+            and t.asset == ev.token_mint
             and t.venue == ev.chain
             and ev.wallet_address in (t.cluster_wallets or [])
         ]
