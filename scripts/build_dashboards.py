@@ -649,7 +649,7 @@ def strategy_page(s):
         [(exit_reasons(s), 12, 13), (entry_conditions(s), 12, 13)],
         [(changes_before_after(s), 24, 9)],   # headroom: content exactly filling the box flickered
         *([[(BARS[s](), 24, 9)]] if s in BARS else []),
-        *([[(b_team_watch(), 24, 7)]] if s == "teamfollow" else []),
+        *([[(b_team_watch(), 24, 9)]] if s == "teamfollow" else []),
         *mod_rows,
         [(table("Open positions — current liquidity, rug-marked", open_positions_sql(open_strats)), 24, 11)],
         [(closed_trades(open_strats), 24, 10)],

@@ -1927,7 +1927,7 @@
     "x": 0,
     "y": 56,
     "w": 24,
-    "h": 7
+    "h": 9
    }
   },
   {
@@ -2184,7 +2184,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 63,
+    "y": 65,
     "w": 12,
     "h": 9
    }
@@ -2444,7 +2444,7 @@
    "description": "Watch teams trade on paper but are excluded from the scorecard until promoted.",
    "gridPos": {
     "x": 12,
-    "y": 63,
+    "y": 65,
     "w": 12,
     "h": 9
    }
@@ -2704,7 +2704,7 @@
    "description": "Each trade's P&L split across its participating wallets, grouped by the wallet's style class (scripts/wallet_style_classify.py). Snipers/MMs are structurally unfollowable.",
    "gridPos": {
     "x": 0,
-    "y": 72,
+    "y": 74,
     "w": 24,
     "h": 9
    }
@@ -2963,7 +2963,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 81,
+    "y": 83,
     "w": 24,
     "h": 11
    }
@@ -3222,7 +3222,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 92,
+    "y": 94,
     "w": 24,
     "h": 10
    }
@@ -3481,7 +3481,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 102,
+    "y": 104,
     "w": 24,
     "h": 6
    }
