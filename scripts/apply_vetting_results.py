@@ -158,6 +158,13 @@ def _apply(file_path: Path, *, dry_run: bool, sync_helius: bool = True) -> int:
                 if w.tier == "pruned":
                     skipped += 1
                     continue
+                if w.pinned:
+                    # Pinned = a strategy roster depends on it (e.g. cohortfire's RED-COHORT
+                    # snipers fail cluster vetting by design). 2026-08-03 a backlog vet pruned
+                    # 48 of them and silenced cohortfire for 8 weeks.
+                    print(f"  [skip] {addr[:14]}… REJECT but pinned ({w.pinned_reason or ''}) — leaving")
+                    skipped += 1
+                    continue
                 if not dry_run:
                     w.tier = "pruned"
                     w.demoted_at = now

@@ -843,9 +843,10 @@ async def _process_webhook(
             else:
                 matched_sells += 1
 
-        # Cohort-fire: republish watch-tier BUYS from RED-COHORT wallets to their own
-        # channel (independent of should_publish — watch is otherwise observe-only).
-        if (tier == "watch" and kind == "buy"
+        # Cohort-fire: republish BUYS from roster wallets to their own channel, from ANY
+        # tier (independent of should_publish — watch is otherwise observe-only; a roster
+        # wallet that is also active/teamfollow must still feed cohortfire).
+        if (kind == "buy"
                 and matched_event["wallet_address"] in COHORT_WALLETS):
             csig = matched_event.get("tx_signature")
             cok = True
