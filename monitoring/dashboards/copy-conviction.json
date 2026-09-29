@@ -1660,6 +1660,42 @@
         ]
        }
       ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "changed"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 125
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "kind"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 80
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "description"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 420
+       }
+      ]
      }
     ]
    },
@@ -1672,7 +1708,7 @@
     "x": 0,
     "y": 29,
     "w": 24,
-    "h": 6
+    "h": 9
    }
   },
   {
@@ -1745,7 +1781,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 35,
+    "y": 38,
     "w": 24,
     "h": 9
    }
@@ -2005,7 +2041,7 @@
    "description": "'demote?' = at least 5 trades and net negative. Advisory — you decide.",
    "gridPos": {
     "x": 0,
-    "y": 44,
+    "y": 47,
     "w": 12,
     "h": 9
    }
@@ -2265,7 +2301,7 @@
    "description": "Wallets/teams that lose >= 1 position over 5+ trades (or >= half a position over 10+) are moved to the watch track (scripts/entity_tiers.py, daily). They keep trading on paper there, excluded from the scorecard, and return after 10 net-positive forward trades.",
    "gridPos": {
     "x": 12,
-    "y": 44,
+    "y": 47,
     "w": 12,
     "h": 9
    }
@@ -2525,7 +2561,7 @@
    "description": "Each trade's P&L split across its participating wallets, grouped by the wallet's style class (scripts/wallet_style_classify.py). Snipers/MMs are structurally unfollowable.",
    "gridPos": {
     "x": 0,
-    "y": 53,
+    "y": 56,
     "w": 12,
     "h": 9
    }
@@ -2784,7 +2820,7 @@
    },
    "gridPos": {
     "x": 12,
-    "y": 53,
+    "y": 56,
     "w": 12,
     "h": 9
    }
@@ -3043,7 +3079,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 62,
+    "y": 65,
     "w": 24,
     "h": 11
    }
@@ -3302,7 +3338,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 73,
+    "y": 76,
     "w": 24,
     "h": 10
    }
@@ -3561,7 +3597,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 83,
+    "y": 86,
     "w": 24,
     "h": 6
    }

@@ -1660,6 +1660,42 @@
         ]
        }
       ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "changed"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 125
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "kind"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 80
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "description"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 420
+       }
+      ]
      }
     ]
    },
@@ -1672,7 +1708,7 @@
     "x": 0,
     "y": 29,
     "w": 24,
-    "h": 6
+    "h": 9
    }
   },
   {
@@ -1929,7 +1965,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 35,
+    "y": 38,
     "w": 12,
     "h": 9
    }
@@ -2188,7 +2224,7 @@
    },
    "gridPos": {
     "x": 12,
-    "y": 35,
+    "y": 38,
     "w": 12,
     "h": 9
    }
@@ -2447,7 +2483,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 44,
+    "y": 47,
     "w": 24,
     "h": 11
    }
@@ -2706,7 +2742,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 55,
+    "y": 58,
     "w": 24,
     "h": 10
    }
@@ -2965,7 +3001,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 65,
+    "y": 68,
     "w": 24,
     "h": 6
    }

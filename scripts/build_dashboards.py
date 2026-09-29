@@ -367,7 +367,9 @@ LEFT JOIN LATERAL (SELECT count(*) n, ROUND(avg(t.pnl_usd)::numeric, 1) e FROM t
                                WHERE c2.strategy IN ('{s}','fleet') AND c2.changed_at > c.changed_at), now())) a ON true
 WHERE c.strategy IN ('{s}','fleet') ORDER BY c.changed_at DESC""",
         desc="Expectancy per trade for trades ENTERED in the 14 days before each logged change vs after it. "
-             "Log changes with scripts/log_change.py.")
+             "Log changes with scripts/log_change.py.",
+        # fixed widths: no sideways scrollbar (a scrollbar toggling on/off made this panel flicker)
+        widths={"changed": 125, "kind": 80, "description": 420})
 
 
 def closed_trades(strategies):
@@ -600,7 +602,7 @@ def strategy_page(s):
         stat_strip(s),
         [(rolling_expectancy([s]), 12, 9), (pnl_distribution(s), 12, 9)],
         [(exit_reasons(s), 12, 13), (entry_conditions(s), 12, 13)],
-        [(changes_before_after(s), 24, 6)],
+        [(changes_before_after(s), 24, 9)],   # headroom: content exactly filling the box flickered
         *([[(BARS[s](), 24, 9)]] if s in BARS else []),
         *mod_rows,
         [(table("Open positions — current liquidity, rug-marked", open_positions_sql(open_strats)), 24, 11)],
