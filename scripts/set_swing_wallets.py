@@ -66,7 +66,8 @@ def _print_roster() -> None:
     print(f"\n{n_active}/{len(rows)} are active-tier (only active-tier wallets produce triggers).")
 
 
-def _apply(addresses: list[str], *, add: bool, reason: str, ensure_active: bool) -> int:
+def _apply(addresses: list[str], *, add: bool, reason: str, ensure_active: bool,
+           probation: bool = True) -> int:
     addresses = [a for a in dict.fromkeys(addresses) if a]  # dedupe, keep order
     if not addresses:
         print("no addresses given", file=sys.stderr)
@@ -102,6 +103,18 @@ def _apply(addresses: list[str], *, add: bool, reason: str, ensure_active: bool)
             changed += 1
         s.execute(text("COMMIT"))
 
+    # PROBATION (Roy 2026-10-01): a NEW wallet trades only on the isolated 'swing_watch' track
+    # until it earns promotion (scripts/entity_tiers: >= copy_cull_promote_min_trades forward trades,
+    # net > 0 and still > 0 without its best trade). Existing statuses are never overwritten.
+    if add and probation:
+        from bots.copy.loop_helpers import list_entity_status, set_entity_status
+        known = list_entity_status("swing")
+        for addr in addresses:
+            if addr in missing or addr in known:
+                continue
+            set_entity_status("swing", addr, "watch", "probation: new wallet (" + (reason or "added") + ")")
+            print(f"  {addr[:12]} on PROBATION (swing_watch) until proven")
+
     verb = "flagged" if add else "removed"
     print(f"{verb} {changed} wallet(s).")
     if missing:
@@ -122,6 +135,8 @@ def main() -> int:
     ap.add_argument("--add-file", metavar="PATH", help="file of addresses to flag (one per line)")
     ap.add_argument("--remove", nargs="*", default=[], metavar="ADDR", help="addresses to unflag")
     ap.add_argument("--reason", default="", help="swing_reason note (for --add)")
+    ap.add_argument("--no-probation", action="store_true",
+                    help="skip probation: the wallet trades on the LIVE track immediately")
     ap.add_argument("--ensure-active", action="store_true",
                     help="also set tier='active' for added wallets (so their buys arrive)")
     args = ap.parse_args()
@@ -142,7 +157,8 @@ def main() -> int:
         if not args.reason:
             print("--reason is required when adding wallets", file=sys.stderr)
             return 2
-        rc = _apply(add_list, add=True, reason=args.reason, ensure_active=args.ensure_active)
+        rc = _apply(add_list, add=True, reason=args.reason, ensure_active=args.ensure_active,
+                    probation=not args.no_probation)
     elif args.remove:
         rc = _apply(list(args.remove), add=False, reason="", ensure_active=False)
     else:

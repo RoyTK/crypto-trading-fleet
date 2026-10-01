@@ -114,10 +114,13 @@ WINDOWS: dict[str, dict[str, datetime]] = {
     # +15-41% mean / 0-11% rug; snipers retired). All prior conviction trades re-tagged
     # 'conviction_pre_reset' (retired -$3,901). Window restarts so it validates the NEW
     # signal+roster fresh; explicit strategy='conviction' tag drops the retired trades.
+    # RESET 2026-10-01 (Roy): conviction resumes as a FRESH ERA on the July roster minus the 08-03
+    # auto-vetted batch (one churner, EYvwg12v, made 71 of their 80 trades, -$1,375), under the
+    # cull/retire rules + probation for new wallets. Prior trades re-tagged 'conviction_pre_reset_1001'.
     "copy_conviction": {
-        "start":        datetime(2026, 7, 1, 16, 0, tzinfo=timezone.utc),
-        "end_primary":  datetime(2026, 8, 30, 16, 0, tzinfo=timezone.utc),
-        "end_extended": datetime(2026, 9, 29, 16, 0, tzinfo=timezone.utc),
+        "start":        datetime(2026, 10, 1, 16, 0, tzinfo=timezone.utc),
+        "end_primary":  datetime(2026, 11, 30, 16, 0, tzinfo=timezone.utc),
+        "end_extended": datetime(2026, 12, 30, 16, 0, tzinfo=timezone.utc),
     },
 }
 

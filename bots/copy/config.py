@@ -283,6 +283,9 @@ class CopySettings(BaseSettings):
     copy_cull_min_trades_slow: int = Field(default=10)
     copy_cull_loss_positions_slow: float = Field(default=0.5)
     copy_cull_promote_min_trades: int = Field(default=10)
+    # Promotion must not hang on one big trade (Roy 2026-10-01): a watch/probation entity is
+    # promoted only if its forward net is still > 0 with its single best trade removed.
+    copy_promote_require_ex_best: bool = Field(default=True)
     copy_rug_liq_close_enabled: bool = Field(default=True)
     copy_rug_liq_confirm_minutes: float = Field(default=10.0)
     # Floor for modeled paper slippage (2026-06-21). The dex_quoter fix

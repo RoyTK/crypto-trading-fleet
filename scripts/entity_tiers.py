@@ -9,8 +9,13 @@ current-era closed trades:
                    or SLOW: n >= copy_cull_min_trades_slow AND net <= -copy_cull_loss_positions_slow x position
   On demote the entity's '<strategy>' trades are RE-TAGGED '<strategy>_watch' (the live number then
   reflects only entities in good standing) and new trades from it tag '<strategy>_watch' (isolated
-  paper track). PROMOTE back when FORWARD watch net > 0 over >= copy_cull_promote_min_trades
-  (forward = entered after the demotion; its re-tagged history does not count against it).
+  paper track). PROMOTE back when FORWARD watch net > 0 over >= copy_cull_promote_min_trades AND
+  still > 0 without its single best trade (copy_promote_require_ex_best; Roy 2026-10-01: success
+  must not hang on one trade). Forward = entered after the demotion; history doesn't count.
+  RETIRE (2026-09-29) when its FORWARD watch trades meet the demote rule again: it stops trading
+  entirely (entry path skips it); history and open positions are kept. Undo with `promote`.
+  PROBATION (2026-10-01): NEW wallets start on watch (reason 'probation: ...') via the roster
+  scripts and must earn promotion by the same rule before trading on the live track.
 Status lives in strategy_entity_status (applies live — the entry path reads it per fire).
 Teamfollow keeps its own job (same rule for its $500 positions); cluster is handled by the daily
 wallet-pool job (wallet_pool_manager) on cluster-only attribution.
@@ -48,12 +53,13 @@ def _active(strategy: str) -> dict:
 
 
 def _watch_forward(strategy: str) -> dict:
-    """entity -> (n, net, avg position) over CLOSED '<strategy>_watch' trades entered AFTER its demotion."""
+    """entity -> (n, net, avg position, best trade) over CLOSED '<strategy>_watch' trades entered
+    AFTER its demotion (or after it was put on probation)."""
     e = ENTITY[strategy]
     with session_scope() as s:
-        return {str(r[0]): (int(r[1]), float(r[2]), float(r[3] or 0)) for r in s.execute(text(f"""
+        return {str(r[0]): (int(r[1]), float(r[2]), float(r[3] or 0), float(r[4] or 0)) for r in s.execute(text(f"""
             SELECT {e.replace('sim_metadata', 't.sim_metadata')}, count(*), coalesce(sum(t.pnl_usd), 0),
-                   avg(t.size_usd)
+                   avg(t.size_usd), max(t.pnl_usd)
             FROM trades t JOIN strategy_entity_status st
               ON st.strategy = :s AND st.status = 'watch'
              AND st.entity = {e.replace('sim_metadata', 't.sim_metadata')}
@@ -115,7 +121,7 @@ def cycle(dry_run: bool = False) -> None:
         for ent, st in status.items():
             if st.get("status") != "watch":
                 continue
-            fn, fnet, fpos = fwd.get(ent, (0, 0.0, 0.0))
+            fn, fnet, fpos, fbest = fwd.get(ent, (0, 0.0, 0.0, 0.0))
             rv = _verdict(fn, fnet, fpos, cs)
             if rv:
                 reason = f"retired: re-failed on watch ({rv}) ${fnet:.0f} over {fn} trades since cull"
@@ -125,7 +131,8 @@ def cycle(dry_run: bool = False) -> None:
                     set_entity_status(strategy, ent, "retired", reason)
                     print(f"  {strategy:10} {ent[:12]:12} -> RETIRED ({reason})")
                 continue
-            if fn >= mt and fnet > 0:
+            robust = (fnet - max(fbest, 0.0)) > 0 if cs.copy_promote_require_ex_best else True
+            if fn >= mt and fnet > 0 and robust:
                 if dry_run:
                     print(f"  [dry-run] {strategy:10} {ent[:12]:12} would -> ACTIVE (+${fnet:.0f} over {fn} forward)")
                 else:
@@ -141,7 +148,7 @@ def report(only: str = None) -> None:
         for ent in sorted(set(act) | set(status), key=lambda e: act.get(e, (0, 0.0, 0))[1]):
             st = (status.get(ent) or {}).get("status", "active")
             n, net, _ = act.get(ent, (0, 0.0, 0))
-            fn, fnet, _ = fwd.get(ent, (0, 0.0, 0.0))
+            fn, fnet, _, _ = fwd.get(ent, (0, 0.0, 0.0, 0.0))
             print(f"  {ent[:12]:12} | {st:6} | n={n:>3} ${net:>8.0f} | n={fn:>3} ${fnet:>7.0f} | "
                   f"{((status.get(ent) or {}).get('reason') or '')[:50]}")
 

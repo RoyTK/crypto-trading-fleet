@@ -55,11 +55,12 @@ def _watch_pnl() -> dict:
     Forward = the re-prove window (its re-tagged history has entry_at < the demotion ts)."""
     out = {}
     with session_scope() as s:
-        for team, fn, fnet, tn, tnet in s.execute(text("""
+        for team, fn, fnet, tn, tnet, fbest in s.execute(text("""
             SELECT (t.sim_metadata->>'team_id')::int,
                    count(*) FILTER (WHERE t.entry_at > s.updated_at),
                    round(coalesce(sum(t.pnl_usd) FILTER (WHERE t.entry_at > s.updated_at),0)::numeric,2),
-                   count(*), round(coalesce(sum(t.pnl_usd),0)::numeric,2)
+                   count(*), round(coalesce(sum(t.pnl_usd),0)::numeric,2),
+                   coalesce(max(t.pnl_usd) FILTER (WHERE t.entry_at > s.updated_at),0)
             FROM trades t
             JOIN teamfollow_team_status s
               ON (t.sim_metadata->>'team_id')::int = s.team_id AND s.status='watch'
@@ -67,7 +68,8 @@ def _watch_pnl() -> dict:
               AND t.sim_metadata->>'strategy'='teamfollow_watch' AND t.exit_at IS NOT NULL
             GROUP BY 1, s.updated_at
         """)).all():
-            out[int(team)] = {"fwd": (int(fn), float(fnet)), "total": (int(tn), float(tnet))}
+            out[int(team)] = {"fwd": (int(fn), float(fnet)), "total": (int(tn), float(tnet)),
+                              "best": float(fbest)}
     return out
 
 
@@ -147,12 +149,15 @@ def promote(min_trades: int) -> list:
         if s.get("status") != "watch":
             continue
         fn, fnet = wp.get(team, {}).get("fwd", (0, 0.0))
-        if fn >= min_trades and fnet > 0:
+        best = max(wp.get(team, {}).get("best", 0.0), 0.0)
+        robust = (fnet - best) > 0 if get_copy_settings().copy_promote_require_ex_best else True
+        if fn >= min_trades and fnet > 0 and robust:
             set_teamfollow_team_status(team, "active", f"re-proved: +${fnet:.2f} over {fn} forward watch trades")
             promoted.append((team, fnet, fn))
             print(f"team {team} -> ACTIVE (re-proved +${fnet:.2f} over {fn} forward watch trades)")
         else:
-            print(f"team {team} stays WATCH (forward watch n={fn} net=${fnet:.2f}; need n>={min_trades} & net>0)")
+            print(f"team {team} stays WATCH (forward watch n={fn} net=${fnet:.2f}, ex-best ${fnet - best:.2f}; "
+                  f"need n>={min_trades} & net>0 & ex-best>0)")
     return promoted
 
 
