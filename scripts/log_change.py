@@ -23,7 +23,7 @@ from sqlalchemy import text
 
 from framework.db import session_scope
 
-STRATEGIES = ("cluster", "conviction", "swing", "teamfollow", "cohortfire", "promobuy", "fleet")
+STRATEGIES = ("cluster", "conviction", "swing", "teamfollow", "cohortfire", "promobuy", "selmom", "fleet")
 KINDS = ("era_start", "revision", "fix", "config", "roster", "halt", "other")
 
 _INSERT = text(

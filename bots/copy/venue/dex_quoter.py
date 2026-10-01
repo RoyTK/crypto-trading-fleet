@@ -380,6 +380,41 @@ async def fetch_token_creation(
         return None
 
 
+async def fetch_price_history(
+    session: aiohttp.ClientSession,
+    mint: str,
+    time_from: int,
+    time_to: int,
+    interval: str = "15m",
+) -> list[tuple[int, float]]:
+    """Birdeye /defi/history_price for a Solana token: sorted [(unix, price)]. [] on any failure."""
+    settings = get_copy_settings()
+    if not settings.birdeye_api_key:
+        return []
+    url = "https://public-api.birdeye.so/defi/history_price"
+    headers = {"X-API-KEY": settings.birdeye_api_key, "x-chain": "solana"}
+    params = {"address": mint, "address_type": "token", "type": interval,
+              "time_from": int(time_from), "time_to": int(time_to)}
+    try:
+        async with session.get(url, params=params, headers=headers,
+                                timeout=aiohttp.ClientTimeout(total=10)) as r:
+            _usage_bump("birdeye", r.status)
+            if r.status != 200:
+                return []
+            body = await r.json()
+    except Exception:
+        return []
+    items = ((body or {}).get("data") or {}).get("items") or [] if isinstance(body, dict) else []
+    out = []
+    for i in items:
+        try:
+            if i.get("value"):
+                out.append((int(i["unixTime"]), float(i["value"])))
+        except (TypeError, ValueError, KeyError):
+            continue
+    return sorted(out)
+
+
 async def fetch_token_liquidity(
     session: aiohttp.ClientSession,
     mint: str,

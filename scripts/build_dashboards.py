@@ -26,10 +26,10 @@ TZ = "America/Chicago"
 NAV_TAG = "fleet-v2"
 RUG_USD = 50           # = copy_rug_liquidity_floor_usd (the bot closes below this); pulled pools read ~$0.000001
 COLLAPSE_FRAC = 0.2    # current liq < 20% of entry liq = LIQ COLLAPSED
-STRATS = ["cluster", "conviction", "swing", "teamfollow", "cohortfire", "promobuy"]
+STRATS = ["cluster", "conviction", "swing", "selmom", "teamfollow", "cohortfire", "promobuy"]
 DORMANT_BY_DESIGN = {"cohortfire"}   # not flagged as "idle" on the attention strip
-DEFAULT_RANGE = {"conviction": "now-90d", "cohortfire": "now-90d"}  # paused -> show their last trades
-SCORECARD_H = 9       # grid rows; must show all strategies without scrolling (verified by screenshot)
+DEFAULT_RANGE = {"cohortfire": "now-90d"}  # paused -> show their last trades
+SCORECARD_H = 10      # grid rows; must show all strategies without scrolling (verified by screenshot)
 
 
 def halt_id(s: str) -> str:
@@ -517,6 +517,20 @@ FROM (SELECT CASE {buckets_case} END AS b, pnl_usd FROM (SELECT {expr} AS v, pnl
 GROUP BY b ORDER BY b""")
 
 
+def m_selmom_runup():
+    return m_bucketed("Outcome by run-up from the 24h low at entry (time range)", "selmom",
+                      "(sim_metadata->>'selmom_runup_from_low')::float",
+                      "WHEN v IS NULL THEN '9 ?' WHEN v < 20 THEN '1 10-20x' WHEN v < 50 THEN '2 20-50x' "
+                      "WHEN v < 200 THEN '3 50-200x' ELSE '4 200x+'")
+
+
+def m_selmom_delay():
+    return m_bucketed("Outcome by entry delay after the selector's buy (time range)", "selmom",
+                      "(sim_metadata->>'selmom_entry_delay_s')::float",
+                      "WHEN v IS NULL THEN '9 ?' WHEN v < 15 THEN '1 <15s' WHEN v < 30 THEN '2 15-30s' "
+                      "WHEN v < 60 THEN '3 30-60s' ELSE '4 60s+'")
+
+
 def m_cluster_size():
     return m_bucketed("Outcome by cluster size (time range)", "cluster",
                       "(sim_metadata->>'cluster_size')::int",
@@ -603,6 +617,7 @@ BARS = {  # strategies with wallets or teams get the per-entity bar chart (Roy 2
     "cluster": b_wallet_attrib,
     "conviction": lambda: b_trigger_wallet("conviction"),
     "swing": lambda: b_trigger_wallet("swing"),
+    "selmom": lambda: b_trigger_wallet("selmom"),
     "teamfollow": lambda: b_team("teamfollow", "T"),
     "cohortfire": lambda: b_team("cohortfire", "C"),
 }
@@ -617,14 +632,16 @@ MODULES = {
     "teamfollow": [lambda: m_team("teamfollow", "team"), m_team_lifecycle, lambda: m_style("teamfollow")],
     "cohortfire": [lambda: m_team("cohortfire", "cohort"), lambda: m_lifecycle("cohortfire")],
     "promobuy":   [m_promo_source, m_promo_track],
+    "selmom":     [lambda: m_wallet_trigger("selmom"), m_selmom_runup, m_selmom_delay],
 }
 
 PAGES = {  # strategy -> (uid, title, blurb)
     "cluster":    ("copy-detail", "COPY · Cluster", "3+ active wallets co-buy within 15 min → enter; own ladder/trailing exits."),
-    "conviction": ("copy-conviction", "COPY · Conviction", "Single-wallet accumulation trigger. HALTED manually 2026-08-05 (entry gate being redesigned)."),
+    "conviction": ("copy-conviction", "COPY · Conviction", "Single-wallet accumulation trigger. Fresh era 2026-10-01: July roster, culled/retired wallets and new wallets on probation trade on the watch track."),
     "swing":      ("copy-swing", "COPY · Swing", "Multi-day follow-in, exit when the trigger wallet net-distributes ≥50%."),
     "teamfollow": ("copy-teamfollow", "COPY · Team-follow", "≥2 members of a known team co-buy → enter. Watch-track teams trade on paper until promoted."),
     "cohortfire": ("copy-cohortfire", "COPY · Cohort-fire", "Red-cohort group co-buy with a $50k liquidity floor. Dormant by design."),
+    "selmom":     ("copy-selmom", "COPY · Selector-momentum", "First tracked SELECTOR buy of a token already ≥10× off its 24h low → enter within ~1 min; fleet exits. Forward test of the Phase-2 study lead (backtest n=86, data-mined)."),
     "promobuy":   ("copy-promobuy", "COPY · Promo-buy", "Paid-promo tokens (Dexscreener) → enter; has-liq / null-liq tracks."),
 }
 

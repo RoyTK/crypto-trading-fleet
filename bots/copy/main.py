@@ -87,6 +87,7 @@ from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
 from bots.copy.signals.conviction import ConvictionDetector
 from bots.copy.signals.sell_cluster import SellClusterDetector
+from bots.copy.signals.selmom import SelectorMomentumDetector
 from bots.copy.signals.swing import SwingDetector
 from bots.copy.signals.teamfollow import TeamFollowDetector
 from bots.copy import signal_features
@@ -96,10 +97,12 @@ from bots.copy.loop_helpers import _classify_cluster_wallet_tier
 from bots.copy.sizing import (
     size_conviction_position,
     size_position,
+    size_selmom_position,
     size_swing_position,
     size_teamfollow_position,
 )
 from bots.copy.venue.dex_quoter import (
+    fetch_price_history,
     fetch_token_creation,
     fetch_token_liquidity,
     fetch_dexscreener_pair,
@@ -264,6 +267,9 @@ class CopyBot(BotLifecycle):
         # follow-out. Conviction sibling off the SAME buy+sell streams; roster =
         # wallet_pool.swing=true, loaded in on_start. Own bankroll/halt ('copy_swing').
         self.swing = SwingDetector()
+        # Selector-momentum (2026-10-01): first SELECTOR buy of a token already >=10x off its
+        # 24h low -> enter at once. Own bankroll/halt ('copy_selmom'). Ships dark.
+        self.selmom = SelectorMomentumDetector()
         self.executor = CopyExecutor()
         self._last_reconcile_ts: float = 0.0
         self._last_position_check_ts: float = 0.0
@@ -322,6 +328,8 @@ class CopyBot(BotLifecycle):
         # Only loaded when enabled; otherwise the detector stays empty (no triggers).
         if self.copy_settings.copy_swing_enabled:
             self._load_swing_wallets()
+        if self.copy_settings.copy_selmom_enabled:
+            self._load_selector_wallets()
         # Team-follow roster (JSON in the repo; experiment strategy). Only loaded
         # when enabled — otherwise the detector stays empty (no triggers).
         if self.copy_settings.copy_teamfollow_enabled:
@@ -423,6 +431,11 @@ class CopyBot(BotLifecycle):
         if self.copy_settings.copy_swing_enabled:
             self._evaluate_swing()
 
+        # Selector-momentum (2026-10-01) — forward test of the Phase-2 study lead.
+        if self.copy_settings.copy_selmom_enabled:
+            for c in self.selmom.evaluate():
+                asyncio.create_task(self._consume_selmom_candidate(c))
+
         # Team-follow experiment (2026-07-01) — isolated strategy, own bankroll +
         # channel. Fires on >=2 same-team co-buys; gated by copy_teamfollow_enabled.
         if self.copy_settings.copy_teamfollow_enabled:
@@ -515,6 +528,8 @@ class CopyBot(BotLifecycle):
                         self.conviction.observe_buy(ev)
                         # Swing-copy observes the same stream (own roster filter).
                         self.swing.observe_buy(ev)
+                        # Selector-momentum observes the same stream (selector filter).
+                        self.selmom.observe_buy(ev)
                     except Exception:
                         self.log.exception("buys_message_parse_failed")
             except asyncio.CancelledError:
@@ -2902,6 +2917,84 @@ class CopyBot(BotLifecycle):
             return
         self.conviction.set_wallets(addrs)
         self.log.info("conviction_wallets_loaded", count=len(addrs))
+
+    def _load_selector_wallets(self) -> None:
+        """SELECTOR-class wallets for selector-momentum. Non-fatal (empty = no triggers)."""
+        try:
+            from bots.copy.loop_helpers import list_selector_wallets
+            addrs = list_selector_wallets()
+        except Exception:
+            self.log.exception("selmom_selectors_load_failed")
+            return
+        self.selmom.set_selectors(addrs)
+        self.log.info("selmom_selectors_loaded", count=len(addrs))
+
+    async def _consume_selmom_candidate(self, candidate: SignalCandidate) -> None:
+        """Selector-momentum entry: confirm FIRST selector buy + run-up from the 24h low, then
+        open a paper trade at once (the backtest edge vanished at a 15-min entry)."""
+        import time as _time
+        from bots.copy.loop_helpers import prior_selector_buy_exists
+        cs = self.copy_settings
+        try:
+            if is_bot_halted("copy_selmom"):
+                return
+        except Exception:
+            self.log.exception("selmom_halt_check_failed")
+        pl = candidate.payload or {}
+        trig_s = float(pl.get("trigger_ts_ms") or 0) / 1000.0
+        if trig_s and _time.time() - trig_s > cs.copy_selmom_max_trigger_age_s:
+            self.log.info("selmom_stale_skip", asset=candidate.asset, age_s=round(_time.time() - trig_s))
+            return
+        if has_open_position(candidate.asset, candidate.venue, strategy="selmom"):
+            return
+        before = datetime.fromtimestamp(trig_s - 2, tz=timezone.utc) if trig_s else datetime.now(timezone.utc)
+        if await asyncio.to_thread(prior_selector_buy_exists, candidate.asset, before):
+            return  # not the first selector buy of this token
+        if self._session is None:
+            return
+        now_u = int(_time.time())
+        hist = await fetch_price_history(self._session, candidate.asset, now_u - 24 * 3600, now_u, "15m")
+        pre = [p for u, p in hist if u <= now_u]
+        if len(pre) < cs.copy_selmom_min_history_points:
+            self.log.info("selmom_short_history_skip", asset=candidate.asset, points=len(pre))
+            return
+        try:
+            cur = (await multi_price_solana(self._session, [candidate.asset])).get(candidate.asset)
+        except Exception:
+            cur = None
+        cur = cur or pre[-1]
+        low = min(pre)
+        runup = cur / low if low > 0 else 0.0
+        if runup < cs.copy_selmom_min_runup_from_low:
+            self.log.info("selmom_runup_skip", asset=candidate.asset, runup=round(runup, 2))
+            return
+        capital = cs.copy_selmom_paper_capital_usd
+        notional_usd = size_selmom_position(capital, open_allocation_pct(capital, strategy="selmom"))
+        if notional_usd <= 0:
+            self.log.info("selmom_size_zero_skip", asset=candidate.asset)
+            return
+        snapshot = CopyMarketSnapshot(chain=candidate.chain, session=self._session)
+        sim_fill = await self.simulator.simulate_entry_async(
+            asset=candidate.asset, notional_usd=notional_usd, leverage=1.0,
+            direction=candidate.direction, market_snapshot=snapshot)
+        candidate.payload["runup_from_low_24h"] = round(runup, 3)
+        candidate.payload["entry_delay_s"] = round(_time.time() - trig_s, 1) if trig_s else None
+        signal_id = persist_signal(candidate)
+        paper_trade_id = persist_paper_trade(
+            signal_id=signal_id, candidate=candidate, sim_fill=sim_fill, notional_usd=notional_usd,
+            leverage=1.0, strategy="selmom", trigger_wallet=pl.get("trigger_wallet"))
+        self.log.info("selmom_paper_opened", asset=candidate.asset, trigger_wallet=pl.get("trigger_wallet"),
+                      runup=round(runup, 2), notional_usd=round(notional_usd, 2), trade_id=paper_trade_id,
+                      fill=sim_fill.fill_price, delay_s=round(_time.time() - trig_s, 1) if trig_s else None)
+        if paper_trade_id is not None:
+            try:
+                info = await fetch_token_creation(self._session, candidate.asset)
+                if info and info.get("created_unix"):
+                    update_trade_token_age(paper_trade_id, created_unix=info["created_unix"],
+                                           age_hours=max(0.0, (_time.time() - info["created_unix"]) / 3600.0),
+                                           tx=info.get("tx"))
+            except Exception:
+                self.log.exception("selmom_token_age_capture_failed", asset=candidate.asset)
 
     def _load_swing_wallets(self) -> None:
         """Load the swing roster from the DB (wallet_pool.swing=true) and push it

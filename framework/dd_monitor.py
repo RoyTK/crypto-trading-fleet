@@ -208,6 +208,7 @@ def _paper_capital_for(bot_id: str) -> float:
         "copy_cohortfire": "COPY_COHORTFIRE_PAPER_CAPITAL_USD",
         "copy_promobuy": "COPY_PROMOBUY_PAPER_CAPITAL_USD",
         "copy_swing": "COPY_SWING_PAPER_CAPITAL_USD",
+        "copy_selmom": "COPY_SELMOM_PAPER_CAPITAL_USD",
     }.get(bot_id)
     if env_key:
         raw = os.environ.get(env_key)
@@ -293,6 +294,7 @@ def check_all_bots_dd() -> None:
             jobs.append(("copy_cohortfire", "copy", th, "cohortfire", None))
             jobs.append(("copy_promobuy", "copy", th, "promobuy", None))
             jobs.append(("copy_swing", "copy", th, "swing", None))
+            jobs.append(("copy_selmom", "copy", th, "selmom", None))
         else:
             jobs.append((bot_id, bot_id, th, None, None))
 

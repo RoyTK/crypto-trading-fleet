@@ -423,7 +423,7 @@
      "format": "time_series",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "SELECT date_trunc('day', created_at) AS time, sim_metadata->>'strategy' AS metric, ROUND(100.0 * count(*) FILTER (WHERE fill_status = 'no_fill') / count(*), 1) AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND $__timeFilter(created_at) AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy') GROUP BY 1, 2 ORDER BY 1"
+     "rawSql": "SELECT date_trunc('day', created_at) AS time, sim_metadata->>'strategy' AS metric, ROUND(100.0 * count(*) FILTER (WHERE fill_status = 'no_fill') / count(*), 1) AS value FROM trades WHERE bot_id='copy' AND mode='paper' AND $__timeFilter(created_at) AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','selmom','teamfollow','cohortfire','promobuy') GROUP BY 1, 2 ORDER BY 1"
     }
    ],
    "fieldConfig": {
@@ -474,7 +474,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "SELECT sim_metadata->>'strategy' AS strategy, count(*) AS n,\n  ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY (sim_metadata->>'slippage_bps')::float)::numeric, 0) AS entry_med_bps,\n  ROUND(percentile_cont(0.9) WITHIN GROUP (ORDER BY (sim_metadata->>'slippage_bps')::float)::numeric, 0) AS entry_p90_bps,\n  ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY (sim_metadata->>'exit_slippage_bps')::float)::numeric, 0) AS exit_med_bps\nFROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'slippage_bps' IS NOT NULL\n  AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','teamfollow','cohortfire','promobuy') AND $__timeFilter(created_at)\nGROUP BY 1 ORDER BY 1"
+     "rawSql": "SELECT sim_metadata->>'strategy' AS strategy, count(*) AS n,\n  ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY (sim_metadata->>'slippage_bps')::float)::numeric, 0) AS entry_med_bps,\n  ROUND(percentile_cont(0.9) WITHIN GROUP (ORDER BY (sim_metadata->>'slippage_bps')::float)::numeric, 0) AS entry_p90_bps,\n  ROUND(percentile_cont(0.5) WITHIN GROUP (ORDER BY (sim_metadata->>'exit_slippage_bps')::float)::numeric, 0) AS exit_med_bps\nFROM trades WHERE bot_id='copy' AND mode='paper' AND sim_metadata->>'slippage_bps' IS NOT NULL\n  AND sim_metadata->>'strategy' IN ('cluster','conviction','swing','selmom','teamfollow','cohortfire','promobuy') AND $__timeFilter(created_at)\nGROUP BY 1 ORDER BY 1"
     }
    ],
    "fieldConfig": {
@@ -733,7 +733,7 @@
      "format": "table",
      "rawQuery": true,
      "editorMode": "code",
-     "rawSql": "SELECT bot_id, halt_type, severity, halted_at, resumed_at, resumed_by, LEFT(reason, 120) AS reason\nFROM halts WHERE bot_id IN ('copy','copy_conviction','copy_swing','copy_teamfollow','copy_cohortfire','copy_promobuy') AND $__timeFilter(halted_at) ORDER BY halted_at DESC"
+     "rawSql": "SELECT bot_id, halt_type, severity, halted_at, resumed_at, resumed_by, LEFT(reason, 120) AS reason\nFROM halts WHERE bot_id IN ('copy','copy_conviction','copy_swing','copy_selmom','copy_teamfollow','copy_cohortfire','copy_promobuy') AND $__timeFilter(halted_at) ORDER BY halted_at DESC"
     }
    ],
    "fieldConfig": {

@@ -128,6 +128,16 @@ def size_swing_position(
     return notional_usd
 
 
+def size_selmom_position(paper_capital_usd: float, current_open_alloc_pct: float = 0.0) -> float:
+    """Selector-momentum: flat copy_selmom_sizing_pct of its own bankroll, within its alloc cap."""
+    settings = get_copy_settings()
+    base_pct = settings.copy_selmom_sizing_pct
+    headroom_pct = settings.copy_selmom_alloc_cap_pct - current_open_alloc_pct
+    if base_pct <= 0 or headroom_pct <= 0:
+        return 0.0
+    return paper_capital_usd * (min(base_pct, headroom_pct) / 100.0)
+
+
 def size_teamfollow_position(
     paper_capital_usd: float,
     current_open_alloc_pct: float = 0.0,

@@ -119,7 +119,7 @@ def persist_paper_trade(
     # if its trigger wallet happens to be active-tier.
     if strategy.startswith("conviction"):
         wallet_tier = "conviction"
-    elif strategy.startswith(("swing", "cohortfire")):
+    elif strategy.startswith(("swing", "cohortfire", "selmom")):
         wallet_tier = strategy.split("_")[0]
     elif strategy.startswith("teamfollow"):
         # Same isolation as conviction: never tag teamfollow (or its _watch sub-track)
@@ -163,6 +163,9 @@ def persist_paper_trade(
                 "conviction_n_buys": (candidate.payload or {}).get("n_buys"),
                 "conviction_accumulation_seconds": (candidate.payload or {}).get("accumulation_seconds"),
                 "conviction_window_sells_usd": (candidate.payload or {}).get("window_sells_usd"),
+                # Selector-momentum: price / 24h low at entry, and seconds from the selector's buy.
+                "selmom_runup_from_low": (candidate.payload or {}).get("runup_from_low_24h"),
+                "selmom_entry_delay_s": (candidate.payload or {}).get("entry_delay_s"),
             },
         )
         s.add(trade)
@@ -217,13 +220,14 @@ def _strategy_clause(strategy: Optional[str]):
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'teamfollow%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'cohortfire%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'promobuy%' "
-                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'swing%'")
+                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'swing%' "
+                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'selmom%'")
     if strategy in ("teamfollow_watch", "cohortfire_watch", "promobuy_watch",
                     "conviction_watch", "swing_watch"):
         # Demoted-team WATCH sub-track (2026-07-24): its OWN isolated bucket, so it
         # neither consumes the live family's alloc cap nor pollutes its metrics/dd.
         return text(f"coalesce(sim_metadata->>'strategy','') = '{strategy}'")
-    if strategy in ("teamfollow", "cohortfire", "promobuy", "swing"):
+    if strategy in ("teamfollow", "cohortfire", "promobuy", "swing", "selmom"):
         # Whitelisted literal (guarded by the `in` check) → own-family ACTIVE prefix,
         # EXCLUDING retired '_pre_reset%' eras AND the '_watch%' sub-track (both must
         # not consume the live cap or leak into the live family's PnL/dd).
@@ -1089,6 +1093,28 @@ def list_entity_status(strategy: str) -> dict:
                 for r in s.execute(text(
                     "SELECT entity, status, reason, updated_at FROM strategy_entity_status "
                     "WHERE strategy = :s"), {"s": strategy})}
+
+
+def list_selector_wallets() -> list[str]:
+    """SELECTOR-class wallets (wallet_style, scripts/wallet_style_classify.py) that are not pruned."""
+    with session_scope() as s:
+        return [r[0] for r in s.execute(text(
+            "SELECT ws.address FROM wallet_style ws JOIN wallet_pool wp ON wp.address = ws.address "
+            "WHERE ws.cls = 'SELECTOR' AND wp.tier <> 'pruned'"))]
+
+
+def prior_selector_buy_exists(token_mint: str, before: datetime) -> bool:
+    """True if any SELECTOR wallet bought this token in the tracked swap log before `before`
+    (the selector-momentum trigger is the FIRST selector buy). Fail-safe -> True (skip)."""
+    try:
+        with session_scope() as s:
+            return s.execute(text(
+                "SELECT 1 FROM wallet_swaps_log sl JOIN wallet_style ws ON ws.address = sl.wallet_address "
+                "AND ws.cls = 'SELECTOR' WHERE sl.token_mint = :t AND sl.side = 'buy' AND sl.event_at < :b "
+                "LIMIT 1"), {"t": token_mint, "b": before}).first() is not None
+    except Exception:
+        _log.exception("prior_selector_buy_check_failed", token=token_mint)
+        return True
 
 
 def watch_tag(strategy: str, entity) -> Optional[str]:

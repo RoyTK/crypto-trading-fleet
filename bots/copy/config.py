@@ -283,6 +283,19 @@ class CopySettings(BaseSettings):
     copy_cull_min_trades_slow: int = Field(default=10)
     copy_cull_loss_positions_slow: float = Field(default=0.5)
     copy_cull_promote_min_trades: int = Field(default=10)
+    # SELECTOR-MOMENTUM (2026-10-01) — forward paper test of the Phase-2 lead: the FIRST tracked
+    # SELECTOR buy of a token already >= copy_selmom_min_runup_from_low x off its 24h low ->
+    # enter at once with the fleet's standard exits. Own $10k bankroll / halt 'copy_selmom'.
+    copy_selmom_enabled: bool = Field(default=False)
+    copy_selmom_paper_capital_usd: float = Field(default=10000.0)
+    copy_selmom_sizing_pct: float = Field(default=4.0)        # $400 on $10k, like conviction
+    copy_selmom_alloc_cap_pct: float = Field(default=60.0)
+    copy_selmom_min_runup_from_low: float = Field(default=10.0)
+    copy_selmom_min_history_points: int = Field(default=4)    # 15m bars before the buy
+    copy_selmom_min_buy_usd: float = Field(default=0.0)
+    copy_selmom_max_trigger_age_s: float = Field(default=90.0)  # the edge needed a ~1-min entry
+    copy_selmom_stop_pct: float = Field(default=8.0)
+    copy_selmom_timeout_hours: int = Field(default=12)
     # Promotion must not hang on one big trade (Roy 2026-10-01): a watch/probation entity is
     # promoted only if its forward net is still > 0 with its single best trade removed.
     copy_promote_require_ex_best: bool = Field(default=True)
