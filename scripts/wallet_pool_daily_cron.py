@@ -274,6 +274,24 @@ def main() -> int:
         promote_vetted_only=settings.copy_promote_vetted_only,
     )
 
+    # Pinning leak fix (2026-10-03): roster-pinned wallets (swing/conviction) stay active +
+    # pinned for their roster, but a cluster proven-loser among them stops counting toward
+    # cluster signals (cluster-only exclusion; see wallet_pool_manager.cluster_exclusions).
+    try:
+        from bots.copy.loop_helpers import list_entity_status, set_entity_status
+        from bots.copy.wallet_pool_manager import cluster_exclusions
+        with session_scope() as s:
+            roster_pinned = {r[0] for r in s.execute(text(
+                "SELECT address FROM wallet_pool WHERE pinned AND (swing OR conviction "
+                "OR coalesce(pinned_reason, '') ILIKE 'swing%')"))}
+        excluded = {a for a, st in list_entity_status("cluster").items()
+                    if st.get("status") in ("watch", "retired")}
+        for addr, reason in cluster_exclusions(snapshots, roster_pinned, excluded):
+            set_entity_status("cluster", addr, "watch", reason)
+            log.info("cluster_excluded_roster_pinned", wallet=addr, reason=reason)
+    except Exception:
+        log.exception("cluster_exclusions_failed")
+
     log.info("decisions",
              promote=len(decisions.promote),
              demote=len(decisions.demote),

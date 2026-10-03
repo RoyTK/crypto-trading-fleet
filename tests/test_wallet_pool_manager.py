@@ -556,3 +556,27 @@ def test_scaled_rule_ignores_winners():
 def test_no_share_falls_back_to_legacy_rule():
     w = _scaled(5, -1.0, share=0.0)                             # avg_share 0 -> legacy net<0 test
     assert _is_proven_loser(w, 5, 0.0)
+
+
+# ---- 2026-10-03: pinning leak — roster-pinned wallets still face CLUSTER's cull ----------
+def _pinned_loser(addr, n, pnl, share=133.0):
+    w = _w(addr, "active", pinned=True)
+    w.attributed_trades, w.attributed_pnl_usd, w.avg_share_usd = n, pnl, share
+    return w
+
+
+def test_cluster_exclusions_catch_roster_pinned_loser():
+    from bots.copy.wallet_pool_manager import cluster_exclusions
+    loser = _pinned_loser("SWING_LOSER", 18, -192.0)        # slow rule: >=10 & <= -0.5 x 133
+    ok = _pinned_loser("SWING_OK", 18, +50.0)
+    manual = _pinned_loser("MANUAL_PIN", 18, -500.0)        # pinned by Roy, not a roster pin
+    out = cluster_exclusions([loser, ok, manual], {"SWING_LOSER", "SWING_OK"}, set())
+    assert [a for a, _ in out] == ["SWING_LOSER"]
+
+
+def test_cluster_exclusions_skip_already_excluded_and_inactive():
+    from bots.copy.wallet_pool_manager import cluster_exclusions
+    loser = _pinned_loser("L", 18, -192.0)
+    watch = _pinned_loser("W", 18, -192.0)
+    watch.tier = "watch"
+    assert cluster_exclusions([loser, watch], {"L", "W"}, {"L"}) == []

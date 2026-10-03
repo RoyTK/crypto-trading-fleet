@@ -157,6 +157,26 @@ def _is_proven_loser(w: "WalletSnapshot", min_trades: int, pnl_floor: float) -> 
     return w.attributed_pnl_usd < pnl_floor
 
 
+def cluster_exclusions(wallets: list["WalletSnapshot"], roster_pinned: set[str],
+                       already_excluded: set[str]) -> list[tuple[str, str]]:
+    """Roster-pinned wallets that fail CLUSTER's cull rule (Roy 2026-10-03: fix the pinning leak).
+
+    A wallet pinned to protect its place on another strategy's roster (swing/conviction) stays
+    active + pinned — those strategies need its buys — but pinning must not shield it from
+    cluster's own cull. Returns (address, reason) for each active roster-pinned wallet that is a
+    proven loser on its cluster-only attribution; the caller marks it cluster-excluded
+    (strategy_entity_status 'cluster' = 'watch'), and the cluster detector ignores its buys.
+    Manual pins (not in roster_pinned) are left alone."""
+    out = []
+    for w in wallets:
+        if w.tier != "active" or w.address not in roster_pinned or w.address in already_excluded:
+            continue
+        if _is_proven_loser(w, DEMOTE_MIN_ATTRIBUTED_TRADES, DEMOTE_ATTRIBUTED_PNL_BELOW_USD):
+            out.append((w.address, f"cluster cull (roster-pinned, stays on its roster): "
+                                   f"${w.attributed_pnl_usd:.0f} over {w.attributed_trades} cluster trades"))
+    return out
+
+
 def _source_priority(source: Optional[str]) -> int:
     """Promotion ordering: vetted browser_opus curated wallets first, then
     legacy migration, then raw leaderboard scrapes (birdeye_gainers)."""

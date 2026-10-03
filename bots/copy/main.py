@@ -270,6 +270,10 @@ class CopyBot(BotLifecycle):
         # Selector-momentum (2026-10-01): first SELECTOR buy of a token already >=10x off its
         # 24h low -> enter at once. Own bankroll/halt ('copy_selmom'). Ships dark.
         self.selmom = SelectorMomentumDetector()
+        # Cluster-only exclusions (2026-10-03): wallets culled from cluster that stay active for
+        # another roster (swing/conviction). Refreshed every 10 min from strategy_entity_status.
+        self._cluster_excluded: set[str] = set()
+        self._cluster_excluded_ts: float = 0.0
         self.executor = CopyExecutor()
         self._last_reconcile_ts: float = 0.0
         self._last_position_check_ts: float = 0.0
@@ -408,6 +412,15 @@ class CopyBot(BotLifecycle):
 
     async def iterate(self) -> None:
         now = time()
+        if now - self._cluster_excluded_ts >= 600:
+            self._cluster_excluded_ts = now
+            try:
+                from bots.copy.loop_helpers import list_entity_status
+                st = await asyncio.to_thread(list_entity_status, "cluster")
+                self._cluster_excluded = {a for a, v in st.items()
+                                          if v.get("status") in ("watch", "retired")}
+            except Exception:
+                self.log.exception("cluster_exclusions_load_failed")
 
         # Cluster evaluation runs every iteration — the Redis subscriber
         # populates cluster state asynchronously, so we just need to check
@@ -522,7 +535,8 @@ class CopyBot(BotLifecycle):
                             timestamp_ms=int(payload["timestamp_ms"]),
                             tx_signature=payload.get("tx_signature", ""),
                         )
-                        self.cluster.observe_buy(ev)
+                        if ev.wallet_address not in self._cluster_excluded:
+                            self.cluster.observe_buy(ev)
                         # Conviction strategy observes the SAME stream. Cheap
                         # set-membership filter; firing is gated in iterate().
                         self.conviction.observe_buy(ev)
