@@ -862,6 +862,25 @@ FROM teamfollow_team_status WHERE status IN ('watch', 'retired')
 ORDER BY 1, 3 DESC, 5 DESC""", desc=("watch = culled, paper-trading on its own track to re-prove (back to active at ≥10 trades net "
        "positive). retired = re-failed on watch by the same cull rule; no longer trades. Cluster wallets "
        "culled for losses move to the pool's watch tier and are pruned if they stay losers.")), 24, 8)],
+        [(table("Bot farms — wallets that buy together (one operator, report only)", """WITH cl AS (
+  SELECT wa.wallet_address w, count(*) n, ROUND(sum(wa.attributed_pnl_usd)::numeric, 0) net
+  FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id
+  WHERE t.sim_metadata->>'strategy' = 'cluster' AND t.mode = 'paper' GROUP BY 1),
+sw AS (
+  SELECT sim_metadata->>'trigger_wallet' w, count(*) n, ROUND(sum(pnl_usd)::numeric, 0) net FROM trades
+  WHERE bot_id = 'copy' AND fill_status = 'closed' AND sim_metadata->>'strategy' LIKE 'swing%' GROUP BY 1)
+SELECT wb.bundle_id AS grp, wb.bundle_size AS size, wb.address AS wallet, coalesce(wp.tier, '?') AS tier,
+  concat_ws(' ', CASE WHEN wp.swing THEN 'swing' END, CASE WHEN wp.conviction THEN 'conviction' END,
+            CASE WHEN wp.pinned THEN 'pinned' END) AS rosters,
+  wb.buys AS buys_14d, wb.joint_pct, coalesce(cl.n, 0) AS cluster_n, coalesce(cl.net, 0) AS cluster_net_usd,
+  coalesce(sw.n, 0) AS swing_n, coalesce(sw.net, 0) AS swing_net_usd
+FROM wallet_bundle wb LEFT JOIN wallet_pool wp ON wp.address = wb.address
+LEFT JOIN cl ON cl.w = wb.address LEFT JOIN sw ON sw.w = wb.address
+ORDER BY wb.bundle_size DESC, wb.bundle_id, wb.address""",
+            desc=("Daily bot-farm detector (scripts/bot_farm_detect.py): wallets whose buys land within 2s of a "
+                  "partner's buy of the same token on >= 90% of buys (14 days). One group = one operator: it can "
+                  "fake a 3-wallet cluster and triggers swing once per wallet. Report only: a profitable group is "
+                  "kept.")), 24, 9)],
         [(table("Active SELECTOR wallets — the copyable cohort", """SELECT wp.address AS wallet, ROUND(ws.median_age_h::numeric, 2) AS median_age_h, ws.swaps, ws.tokens,
   wp.swing, wp.conviction, wp.pinned, wp.events_30d, wp.source
 FROM wallet_pool wp JOIN wallet_style ws ON ws.address = wp.address
