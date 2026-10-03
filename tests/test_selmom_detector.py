@@ -8,7 +8,7 @@ def _ev(wallet, token, usd=100.0, chain="solana"):
                           notional_usd=usd, timestamp_ms=1_000, tx_signature="sig")
 
 
-def test_selector_buy_queues_candidate_with_fleet_exits():
+def test_selector_buy_queues_candidate_with_wide_stop():
     d = SelectorMomentumDetector(["SEL"])
     d.observe_buy(_ev("SEL", "TOK"))
     out = d.evaluate()
@@ -16,7 +16,7 @@ def test_selector_buy_queues_candidate_with_fleet_exits():
     c = out[0]
     assert c.signal_type == "selmom_buy" and c.asset == "TOK"
     assert c.payload["trigger_wallet"] == "SEL"
-    assert c.stop_pct == 8.0 and c.timeout_hours == 12
+    assert c.stop_pct == 30.0 and c.timeout_hours == 12
     assert d.evaluate() == []
 
 

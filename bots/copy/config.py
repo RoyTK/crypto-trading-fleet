@@ -294,7 +294,11 @@ class CopySettings(BaseSettings):
     copy_selmom_min_history_points: int = Field(default=4)    # 15m bars before the buy
     copy_selmom_min_buy_usd: float = Field(default=0.0)
     copy_selmom_max_trigger_age_s: float = Field(default=90.0)  # the edge needed a ~1-min entry
-    copy_selmom_stop_pct: float = Field(default=8.0)
+    # 30% (Roy 2026-10-03, option a): the fleet 8% stop was whipsawed within 1-2 min on these
+    # mid-pump tokens (17/19 stops, fills -11..-78%); the 1-min-bar backtest could not see that.
+    # 30% = the replay's pre-fixed "wide" variant. Trailing (+20% activation, 45%) unchanged.
+    # The 8% stop elsewhere is evidence-based (project_cluster_edge_restore) and NOT changed.
+    copy_selmom_stop_pct: float = Field(default=30.0)
     copy_selmom_timeout_hours: int = Field(default=12)
     # Promotion must not hang on one big trade (Roy 2026-10-01): a watch/probation entity is
     # promoted only if its forward net is still > 0 with its single best trade removed.

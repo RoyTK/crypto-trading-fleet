@@ -87,7 +87,7 @@
    "transparent": true,
    "options": {
     "mode": "markdown",
-    "content": "## COPY · Selector-momentum\nFirst tracked SELECTOR buy of a token already ≥10× off its 24h low → enter within ~1 min; fleet exits. Forward test of the Phase-2 study lead (backtest n=86, data-mined).  \n*Stat strip = current era (since the strategy's last reset). Charts and tables follow the time picker. Blue markers = logged changes, red = halts. Open positions with current liquidity < $50 are marked **RUG at −100%**.*"
+    "content": "## COPY · Selector-momentum\nFirst tracked SELECTOR buy of a token already ≥10× off its 24h low → enter within ~1 min; 30% stop + fleet trailing/partials (stop widened 10-03). Forward test of the Phase-2 study lead (backtest n=86, data-mined).  \n*Stat strip = current era (since the strategy's last reset). Charts and tables follow the time picker. Blue markers = logged changes, red = halts. Open positions with current liquidity < $50 are marked **RUG at −100%**.*"
    },
    "gridPos": {
     "x": 0,

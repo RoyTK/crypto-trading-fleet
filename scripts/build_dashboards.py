@@ -641,7 +641,7 @@ PAGES = {  # strategy -> (uid, title, blurb)
     "swing":      ("copy-swing", "COPY · Swing", "Multi-day follow-in, exit when the trigger wallet net-distributes ≥50%."),
     "teamfollow": ("copy-teamfollow", "COPY · Team-follow", "≥2 members of a known team co-buy → enter. Watch-track teams trade on paper until promoted."),
     "cohortfire": ("copy-cohortfire", "COPY · Cohort-fire", "Red-cohort group co-buy with a $50k liquidity floor. Dormant by design."),
-    "selmom":     ("copy-selmom", "COPY · Selector-momentum", "First tracked SELECTOR buy of a token already ≥10× off its 24h low → enter within ~1 min; fleet exits. Forward test of the Phase-2 study lead (backtest n=86, data-mined)."),
+    "selmom":     ("copy-selmom", "COPY · Selector-momentum", "First tracked SELECTOR buy of a token already ≥10× off its 24h low → enter within ~1 min; 30% stop + fleet trailing/partials (stop widened 10-03). Forward test of the Phase-2 study lead (backtest n=86, data-mined)."),
     "promobuy":   ("copy-promobuy", "COPY · Promo-buy", "Paid-promo tokens (Dexscreener) → enter; has-liq / null-liq tracks."),
 }
 
