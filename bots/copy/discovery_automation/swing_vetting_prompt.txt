@@ -1,0 +1,56 @@
+SWING-COPY WALLET VETTING (browser Claude) — created 2026-10-03
+===============================================================
+
+WHAT SWING DOES
+---------------
+Swing follows ONE wallet INTO a token when that wallet NET-buys >= $500 (buys minus sells) and
+follows it OUT when the wallet has net-sold >= 50% of what it built (small "suppression" sells
+are held through). Hold horizon: hours to days. Our latency (7s – 2 min) is noise on that
+horizon — so the wallet we want BUILDS a position over hours/days and SELLS IT DOWN GRADUALLY.
+A wallet that flips in minutes, market-makes, or is one of several wallets run by the same bot
+loses us money (live data: market-maker/bot wallets caused most of swing's losses).
+
+THIS RUN IS BLIND
+-----------------
+Do NOT look up our own trading results for these wallets (no Grafana, no DB). Judge only what
+Birdeye/Solscan show. Your verdicts are compared afterwards with our actual P&L to test the
+vetting itself.
+
+DATA SOURCES
+------------
+Use the DATA SOURCES section of conviction_discovery_vetting_prompt.txt unchanged (Birdeye
+forge periodic + token-traded endpoints; wallet-analyzer page DOM as the fallback). From
+token-traded derive: nTok, medBuys (median buys per token), medSells (median sells per token),
+liqPnl (% of profit from liquid tokens), hold_shape bins (<1m/1-5m/5-15m/15-60m/1-6h/6-24h/
+1-7d/>7d) from each token's first->last trade span. Also note Txs per day from ANALYTICS.
+Bot-farm check (Solscan, https://solscan.io/account/<ADDR>): who funded the wallet (first
+inbound SOL transfer) — record the funder's first 8 chars. Wallets in this list that share a
+funder, or show identical token lists/timing on Birdeye, are ONE operator.
+
+VETTING CRITERIA
+----------------
+KEEP_SWING only if ALL hold:
+  [ ] Hold shape: (6-24h + 1-7d) mass >= ~35% of tokens, AND <1m < ~30%, AND >7d not a
+      majority (>~60% >7d = parked bags, not swings).
+  [ ] Builds AND unwinds: medBuys >= ~2 and medSells >= ~2 (accumulates, then sells down in
+      pieces — that is what our net-flow entry/exit follows). medSells = 1 dumps in one go:
+      fine only if hold shape is clearly multi-hour.
+  [ ] Not a market-maker/HFT bot: Txs/day < ~200 and tokens traded per week < ~150.
+  [ ] Followable profit: liqPnl >= ~50%.
+  [ ] Banked track record: realized PnL >= ~$5-10k on nTok >= ~10.
+  [ ] Not a bundle: no shared funder / mirrored activity with another wallet in this list.
+REJECT (note which):
+  - mostly <1m–15m holds                        -> TOO_FAST
+  - thousands of txs, hundreds of tokens/week   -> MM_BOT
+  - shares a funder / mirrors another wallet    -> BUNDLE  (name the partner)
+  - big unrealized bag vs realized              -> BAGHOLDER
+  - profit mostly from illiquid micro-mints     -> UNFOLLOWABLE_THIN
+  - passes shape but thin realized / nTok < 10  -> LOW_SAMPLE
+  - can't decide                                -> UNCERTAIN (say why)
+
+OUTPUT
+------
+One line per wallet, appended to
+C:\Users\Roy\OneDrive\Documents\Claude\revet_swing_results_2026-10-03.txt :
+  address,VERDICT,funder8,nTok,medBuys,medSells,hold_6h_7d_pct,lt1m_pct,txs_per_day,realized_usd,short reason
+Nothing is applied to the pool from this file automatically.
