@@ -16,13 +16,47 @@ Do NOT look up our own trading results for these wallets (no Grafana, no DB). Ju
 Birdeye/Solscan show. Your verdicts are compared afterwards with our actual P&L to test the
 vetting itself.
 
-DATA SOURCES
-------------
-Use the DATA SOURCES section of conviction_discovery_vetting_prompt.txt unchanged (Birdeye
-forge periodic + token-traded endpoints; wallet-analyzer page DOM as the fallback). From
-token-traded derive: nTok, medBuys (median buys per token), medSells (median sells per token),
-liqPnl (% of profit from liquid tokens), hold_shape bins (<1m/1-5m/5-15m/15-60m/1-6h/6-24h/
-1-7d/>7d) from each token's first->last trade span. Also note Txs per day from ANALYTICS.
+DATA SOURCES (Birdeye, no login)
+--------------------------------
+PRIMARY = direct-fetch the internal `forge` endpoints (credentials:include). This
+vetted 310 wallets across two runs with ZERO errors and no UI scraping — use it:
+  - periodic (realized/unrealized PnL, the >500%/>100% distribution bands, rug%):
+      GET https://birdeye.so/forge/solana/wallet-pnl/periodic?wallet=<ADDR>&periodic=
+      NOTE: the distribution bands are TOKEN COUNTS, not %. Compute
+      pct_ge_100 = (gt_500 + 100_500) / sum(all bands). Bands are mutually exclusive.
+  - token-traded (per-token liquidity flag for followability, buy counts for
+    accumulation, first->last trade span for hold-shape):
+      GET https://birdeye.so/forge/solana/wallet-pnl/token-traded?wallet=<ADDR>&order_field=volume_usd&order_type=desc&offset=0&limit=100&hide=
+      From this derive: liqShare (% of tokens that are liquid/followable), liqPnl
+      (% of the wallet's PnL that comes from those followable tokens), medBuys
+      (median buys/token = accumulation depth), nTok (sample size), and hold_shape
+      (bin each token's last_trade-first_trade span into <1m/1-5m/5-15m/15-60m/
+      1-6h/6-24h/1-7d/>7d; "mid" = the 5m-24h mass).
+  - holding-duration (per-trade durations in seconds; finer hold view, recent
+    sample only): POST https://birdeye.so/forge/solana/wallet-pnl/holding-duration
+    (wallet in POST body; GET 404s). Optional — token-traded spans are enough.
+FALLBACK / spot-check = the UI page https://birdeye.so/solana/wallet-analyzer/<ADDRESS>
+(timeframe = ALL): WIN RATE, PNL DISTRIBUTION, ANALYTICS (Avg Hold, Txs), SUSPICIOUS
+ACTIONS, and the "Hide Low Liq/Scam" toggle on TOKENS TRADED.
+★ IF THE FORGE API IS OFFLINE -> USE THE VISUAL/DOM METHOD (don't abort the run). The
+  forge endpoints sometimes go FULLY dark (errors/empty/timeouts for EVERY wallet, not
+  just one). When that happens, the wallet-analyzer PAGE is served by a different, working
+  backend and shows the SAME Birdeye-computed metrics — read them straight off the
+  rendered page (DOM/visible text). Confirmed (browser-Opus, 2026-06-29): the visual/DOM
+  route is fully effective and bypasses the dead forge API entirely; it's how vetting
+  worked originally and the whole scoped expansion can run this way. Decide the route ONCE
+  per run: if the first couple of forge calls fail, switch the WHOLE run to the analyzer
+  page rather than retrying forge on every wallet. Map the page fields to the same derived
+  metrics (realized/unrealized PnL, PNL DISTRIBUTION bands -> pct_ge_100, TOKENS TRADED
+  liquidity toggle -> liqShare/liqPnl, Avg Hold + per-token spans -> hold_shape/mid mass).
+  Always pull FULL addresses from the href, never truncated on-screen text. Everything
+  downstream (criteria, KEEP/REJECT verdicts, output rows) is identical either way.
+NOTE: `instant_sell` is NOT exposed by the forge endpoints (only the UI Suspicious-
+Actions panel) -> record it `n/a` and use the hold_shape <1m % as the flip proxy
+instead (it's the better signal anyway).
+
+From token-traded also derive medSells (median sells per token). Note Txs per day from the
+wallet-analyzer ANALYTICS panel.
 Bot-farm check (Solscan, https://solscan.io/account/<ADDR>): who funded the wallet (first
 inbound SOL transfer) — record the funder's first 8 chars. Wallets in this list that share a
 funder, or show identical token lists/timing on Birdeye, are ONE operator.
@@ -50,7 +84,11 @@ REJECT (note which):
 
 OUTPUT
 ------
-One line per wallet, appended to
-C:\Users\Roy\OneDrive\Documents\Claude\revet_swing_results_2026-10-03.txt :
+When done, give the results as ONE downloadable text file named revet_swing_results_2026-10-03.txt
+(also show it in a code block). One line per wallet, no header:
   address,VERDICT,funder8,nTok,medBuys,medSells,hold_6h_7d_pct,lt1m_pct,txs_per_day,realized_usd,short reason
-Nothing is applied to the pool from this file automatically.
+Keep commas out of the reason. Nothing is applied to the pool from this file automatically.
+
+WALLETS TO VET (56)
+-------------------
+(paste one address per line here; the paste-ready copy with the current roster is OneDrive Documents/Claude/swing_vetting_PASTE_2026-10-03.txt)
