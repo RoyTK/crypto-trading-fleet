@@ -28,7 +28,9 @@ class WebhookConfig:
     webhook_url: str           # public HTTPS endpoint (webhooks.royfleet.dev/copy/helius)
     auth_header: str           # shared secret echoed back as Authorization
     addresses: list[str]
-    transaction_types: tuple[str, ...] = ("SWAP", "SWAP_EXACT_OUT")
+    # ANY since 2026-11-17: SWAP-only missed ~2/3 of our wallets' buys (pump.fun/Meteora/bot-router
+    # trades are typed TRANSFER or UNKNOWN). The receiver's parsers ignore non-trades.
+    transaction_types: tuple[str, ...] = ("ANY",)
     webhook_type: str = "enhanced"
 
 
@@ -143,7 +145,7 @@ async def sync_pool_tiers(
     active_url: str,
     watch_url: str,
     auth_header: str,
-    transaction_types: tuple[str, ...] = ("SWAP", "SWAP_EXACT_OUT"),
+    transaction_types: tuple[str, ...] = ("ANY",),
 ) -> dict[str, tuple[str, str]]:
     """Sync BOTH the active and watch webhooks to match the given address lists.
 

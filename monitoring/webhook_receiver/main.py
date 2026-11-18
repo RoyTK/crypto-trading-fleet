@@ -245,6 +245,69 @@ def _ms_to_dt(timestamp_ms: int):
         return datetime.now(timezone.utc)
 
 
+def _parse_via_balance_changes(
+    event: dict,
+    pool: set[str],
+    sol_price_usd: float,
+    timestamp_ms: int,
+    side: str,
+) -> Optional[dict]:
+    """Last-resort parser from the wallet's NET balance changes (Helius accountData) — 2026-11-17.
+
+    Webhooks were SWAP-only until 2026-11-17 and we logged ~1/3 of our wallets' buys: multi-hop
+    pump.fun / Meteora / bot-router trades are typed TRANSFER or UNKNOWN, and they often hand the
+    wallet a dust "reward" token on the side, which breaks the transfer parsers (a second
+    non-stable token makes the sell parser skip and the buy parser pick the wrong mint).
+    Rule: quote = SOL (native, net of fees) + wSOL + USDC + USDT, in USD.
+      BUY  = quote net outflow and a non-quote token net gain  -> the gained token with the
+             largest change in token units (dust reward tokens are tiny)
+      SELL = quote net inflow and a non-quote token net loss   -> the token with the largest drop
+    Plain token transfers (no quote flow) are never a trade."""
+    acct = event.get("accountData") or []
+    for wallet in pool:
+        native = 0
+        tok: dict[str, float] = {}
+        quote_tok_usd = 0.0
+        seen = False
+        for a in acct:
+            if a.get("account") == wallet:
+                native += int(a.get("nativeBalanceChange") or 0)
+                seen = True
+            for tb in a.get("tokenBalanceChanges") or []:
+                if tb.get("userAccount") != wallet:
+                    continue
+                seen = True
+                raw = tb.get("rawTokenAmount") or {}
+                try:
+                    amt = int(raw.get("tokenAmount") or 0) / (10 ** int(raw.get("decimals") or 0))
+                except Exception:
+                    continue
+                mint = tb.get("mint")
+                if mint == WSOL_MINT:
+                    quote_tok_usd += amt * sol_price_usd
+                elif mint in (USDC_MINT, USDT_MINT):
+                    quote_tok_usd += amt
+                elif mint:
+                    tok[mint] = tok.get(mint, 0.0) + amt
+        if not seen or not tok:
+            continue
+        quote_usd = native / 1_000_000_000 * sol_price_usd + quote_tok_usd
+        if side == "buy":
+            gained = {m: v for m, v in tok.items() if v > 0}
+            if quote_usd >= -1.0 or not gained:
+                continue
+            mint, notional = max(gained, key=gained.get), -quote_usd
+        else:
+            lost = {m: -v for m, v in tok.items() if v < 0}
+            if quote_usd <= 1.0 or not lost:
+                continue
+            mint, notional = max(lost, key=lost.get), quote_usd
+        return {"wallet_address": wallet, "chain": "solana", "token_mint": mint,
+                "notional_usd": notional, "timestamp_ms": timestamp_ms,
+                "tx_signature": event.get("signature", "")}
+    return None
+
+
 def _parse_swap_event(
     event: dict,
     pool: set[str],
@@ -268,7 +331,10 @@ def _parse_swap_event(
         out = _parse_via_events_swap(event, swap, pool, sol_price_usd, timestamp_ms)
         if out is not None:
             return out
-    return _parse_via_transfers(event, pool, sol_price_usd, timestamp_ms)
+    out = _parse_via_transfers(event, pool, sol_price_usd, timestamp_ms)
+    if out is not None:
+        return out
+    return _parse_via_balance_changes(event, pool, sol_price_usd, timestamp_ms, "buy")
 
 
 def _parse_sell_event(
@@ -293,7 +359,10 @@ def _parse_sell_event(
         out = _parse_sell_via_events_swap(event, swap, pool, sol_price_usd, timestamp_ms)
         if out is not None:
             return out
-    return _parse_sell_via_transfers(event, pool, sol_price_usd, timestamp_ms)
+    out = _parse_sell_via_transfers(event, pool, sol_price_usd, timestamp_ms)
+    if out is not None:
+        return out
+    return _parse_via_balance_changes(event, pool, sol_price_usd, timestamp_ms, "sell")
 
 
 def _parse_sell_via_events_swap(
