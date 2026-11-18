@@ -32,6 +32,10 @@ class WebhookConfig:
     # trades are typed TRANSFER or UNKNOWN). The receiver's parsers ignore non-trades.
     transaction_types: tuple[str, ...] = ("ANY",)
     webhook_type: str = "enhanced"
+    # "success" since 2026-11-18: with ANY types, Helius' default ("all") also delivered sniper bots'
+    # FAILED txs — ~12 subscribed wallets sent 10k+ failed txs each in 3h (deliveries 771/h -> 28k/h,
+    # 7% matched). A failed tx is never a fill, so nothing tradeable is lost.
+    txn_status: str = "success"
 
 
 async def list_webhooks(session: aiohttp.ClientSession, api_key: str) -> list[dict]:
@@ -54,6 +58,7 @@ async def create_webhook(
         "transactionTypes": list(cfg.transaction_types),
         "accountAddresses": cfg.addresses,
         "webhookType": cfg.webhook_type,
+        "txnStatus": cfg.txn_status,
         "authHeader": cfg.auth_header,
     }
     async with session.post(url, params={"api-key": api_key}, json=body,
@@ -76,6 +81,7 @@ async def update_webhook(
         "transactionTypes": list(cfg.transaction_types),
         "accountAddresses": cfg.addresses,
         "webhookType": cfg.webhook_type,
+        "txnStatus": cfg.txn_status,
         "authHeader": cfg.auth_header,
     }
     async with session.put(url, params={"api-key": api_key}, json=body,
@@ -129,7 +135,8 @@ async def sync_webhook(
     current_types = set(match.get("transactionTypes") or [])
     target_types = set(cfg.transaction_types)
 
-    if current_addrs == target_addrs and current_types == target_types:
+    if (current_addrs == target_addrs and current_types == target_types
+            and (match.get("txnStatus") or "all") == cfg.txn_status):
         return (webhook_id, "noop")
 
     await update_webhook(session, api_key, webhook_id, cfg)
