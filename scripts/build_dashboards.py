@@ -27,7 +27,7 @@ NAV_TAG = "fleet-v2"
 RUG_USD = 50           # = copy_rug_liquidity_floor_usd (the bot closes below this); pulled pools read ~$0.000001
 COLLAPSE_FRAC = 0.2    # current liq < 20% of entry liq = LIQ COLLAPSED
 STRATS = ["cluster", "conviction", "swing", "selmom", "teamfollow", "cohortfire", "promobuy"]
-DORMANT_BY_DESIGN = {"cohortfire"}   # not flagged as "idle" on the attention strip
+DORMANT_BY_DESIGN = {"cohortfire", "selmom"}   # not flagged as "idle" on the attention strip
 DEFAULT_RANGE = {"cohortfire": "now-90d"}  # paused -> show their last trades
 SCORECARD_H = 10      # grid rows; must show all strategies without scrolling (verified by screenshot)
 
@@ -641,7 +641,7 @@ PAGES = {  # strategy -> (uid, title, blurb)
     "swing":      ("copy-swing", "COPY · Swing", "Multi-day follow-in, exit when the trigger wallet net-distributes ≥50%."),
     "teamfollow": ("copy-teamfollow", "COPY · Team-follow", "≥2 members of a known team co-buy → enter. Watch-track teams trade on paper until promoted."),
     "cohortfire": ("copy-cohortfire", "COPY · Cohort-fire", "Red-cohort group co-buy with a $50k liquidity floor. Dormant by design."),
-    "selmom":     ("copy-selmom", "COPY · Selector-momentum", "First tracked SELECTOR buy of a token already ≥10× off its 24h low → enter within ~1 min; 30% stop + fleet trailing/partials (stop widened 10-03). Forward test of the Phase-2 study lead (backtest n=86, data-mined)."),
+    "selmom":     ("copy-selmom", "COPY · Selector-momentum", "RETIRED 2026-11-17 (64 trades, −$5,254): first SELECTOR buy of a token ≥10× off its 24h low → enter within ~1 min. The backtest edge did not survive live fills. Page kept as history."),
     "promobuy":   ("copy-promobuy", "COPY · Promo-buy", "Paid-promo tokens (Dexscreener) → enter; has-liq / null-liq tracks."),
 }
 
