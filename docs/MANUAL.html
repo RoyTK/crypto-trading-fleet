@@ -25,7 +25,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-09-25 21:54 UTC.</em></p>
+<em>Last built: 2026-11-18 03:19 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -66,7 +66,8 @@ or Ctrl-F to jump around.</p>
 </ul>
 </li>
 <li><a href="#13-recurring-tasks-step-by-step">1.3 Recurring Tasks — Step by Step</a><ul>
-<li><a href="#a-run-a-wallet-discovery-vetting-pass-the-main-chore">A. Run a wallet discovery + vetting pass (the main chore)</a></li>
+<li><a href="#a0-automatic-weekly-wallet-discovery-since-2026-11-17-no-action-needed">A0. Automatic weekly wallet discovery (since 2026-11-17 — no action needed)</a></li>
+<li><a href="#a-run-a-wallet-discovery-vetting-pass-attended-optional">A. Run a wallet discovery + vetting pass (attended, optional)</a></li>
 <li><a href="#b-sync-vetting-results-into-the-live-system">B. Sync vetting results into the live system</a></li>
 <li><a href="#c-check-helius-credit-usage-watch-the-bill">C. Check Helius credit usage (watch the bill)</a></li>
 <li><a href="#d-responding-to-alerts">D. Responding to alerts</a></li>
@@ -464,10 +465,28 @@ point you to the right section or do the task with you.</p>
 </blockquote>
 <hr />
 <h2 id="13-recurring-tasks-step-by-step">1.3 Recurring Tasks — Step by Step</h2>
-<p><em>Last reviewed: 2026-07-02</em></p>
+<p><em>Last reviewed: 2026-11-17</em></p>
 <p>These are the hands-on chores. Each is written as a recipe. They assume you can open a
 terminal and Discord; the engineer sections explain the commands in more depth.</p>
-<h3 id="a-run-a-wallet-discovery-vetting-pass-the-main-chore">A. Run a wallet discovery + vetting pass (the main chore)</h3>
+<h3 id="a0-automatic-weekly-wallet-discovery-since-2026-11-17-no-action-needed">A0. Automatic weekly wallet discovery (since 2026-11-17 — no action needed)</h3>
+<p>A server job finds and vets new wallets every <strong>Sunday 09:00 UTC</strong> using the paid Birdeye API
+(<code>scripts/discovery_weekly.py</code>, log <code>~/logs/discovery_weekly.log</code>). It replaced the old headless
+browser vetter, which Birdeye's Cloudflare check blocked from ~September 2026 — silently, so the
+wallet pool shrank and the fleet nearly stopped trading.</p>
+<ul>
+<li>Candidates: wallets that bought several tokens <em>before</em> they ran (<code>prerun_accumulators</code>).</li>
+<li>Vetting only removes <strong>junk</strong> (market-maker bots, bot farms, realized profit under $5k). Checked
+  against our own results, no vetting method predicted which wallets make us money — so everything
+  else goes on <strong>probation</strong> and our own paper trades decide.</li>
+<li><strong>Probation:</strong> a new wallet counts toward clusters, but a cluster that only reaches 3 wallets
+  because of it trades on the separate paper track <code>cluster_watch</code>. Promoted after ≥10 trades that
+  are net positive <em>and still positive without the best trade</em>; retired (and pruned) if it fails the
+  cull rule. Conviction KEEPs go on the <code>conviction_watch</code> track the same way.</li>
+<li>Every verdict is stored in <code>wallet_vet_log</code>. A <strong>P1 alert</strong> fires if a run fails; a P2 summary
+  otherwise. If that alert stops arriving on Sundays, check the log.</li>
+</ul>
+<p>The attended browser pass below is still useful for deeper one-off vets (e.g. bot-farm funder checks).</p>
+<h3 id="a-run-a-wallet-discovery-vetting-pass-attended-optional">A. Run a wallet discovery + vetting pass (attended, optional)</h3>
 <p><strong>Why:</strong> COPY only trades on a curated list of skilled wallets. Wallets go stale over time,
 so we periodically find new good ones. This is done <strong>attended</strong> (you start it and let it
 run) from Roy's office PC, because it drives a web browser.</p>

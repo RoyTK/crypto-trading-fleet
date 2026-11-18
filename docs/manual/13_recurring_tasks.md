@@ -1,11 +1,31 @@
 ## Recurring Tasks — Step by Step
 
-_Last reviewed: 2026-07-02_
+_Last reviewed: 2026-11-17_
 
 These are the hands-on chores. Each is written as a recipe. They assume you can open a
 terminal and Discord; the engineer sections explain the commands in more depth.
 
-### A. Run a wallet discovery + vetting pass (the main chore)
+### A0. Automatic weekly wallet discovery (since 2026-11-17 — no action needed)
+
+A server job finds and vets new wallets every **Sunday 09:00 UTC** using the paid Birdeye API
+(`scripts/discovery_weekly.py`, log `~/logs/discovery_weekly.log`). It replaced the old headless
+browser vetter, which Birdeye's Cloudflare check blocked from ~September 2026 — silently, so the
+wallet pool shrank and the fleet nearly stopped trading.
+
+- Candidates: wallets that bought several tokens *before* they ran (`prerun_accumulators`).
+- Vetting only removes **junk** (market-maker bots, bot farms, realized profit under $5k). Checked
+  against our own results, no vetting method predicted which wallets make us money — so everything
+  else goes on **probation** and our own paper trades decide.
+- **Probation:** a new wallet counts toward clusters, but a cluster that only reaches 3 wallets
+  because of it trades on the separate paper track `cluster_watch`. Promoted after ≥10 trades that
+  are net positive *and still positive without the best trade*; retired (and pruned) if it fails the
+  cull rule. Conviction KEEPs go on the `conviction_watch` track the same way.
+- Every verdict is stored in `wallet_vet_log`. A **P1 alert** fires if a run fails; a P2 summary
+  otherwise. If that alert stops arriving on Sundays, check the log.
+
+The attended browser pass below is still useful for deeper one-off vets (e.g. bot-farm funder checks).
+
+### A. Run a wallet discovery + vetting pass (attended, optional)
 
 **Why:** COPY only trades on a curated list of skilled wallets. Wallets go stale over time,
 so we periodically find new good ones. This is done **attended** (you start it and let it
