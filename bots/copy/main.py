@@ -426,6 +426,12 @@ class CopyBot(BotLifecycle):
                 self._cluster_probation = {a for a, v in st.items() if v.get("status") == "probation"}
             except Exception:
                 self.log.exception("cluster_exclusions_load_failed")
+            # Conviction roster refresh (2026-11-17): weekly discovery adds probation wallets;
+            # set_wallets only swaps the roster set (accumulation windows are kept).
+            try:
+                await asyncio.to_thread(self._load_conviction_wallets)
+            except Exception:
+                self.log.exception("conviction_roster_refresh_failed")
 
         # Cluster evaluation runs every iteration — the Redis subscriber
         # populates cluster state asynchronously, so we just need to check
