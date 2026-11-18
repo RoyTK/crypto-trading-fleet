@@ -61,6 +61,14 @@ def detect():
 
     for a, b in links:
         parent[find(a)] = find(b)
+    # Known operator links that buy timing can't see (wallet_links, e.g. a feeder that forwards
+    # tokens to a seller wallet). Merged into the same groups.
+    with session_scope() as s:
+        known = s.execute(text("SELECT a, b, reason FROM wallet_links")).all()
+    link_reason = {}
+    for a, b, why in known:
+        parent[find(a)] = find(b)
+        link_reason[a] = link_reason[b] = why
     groups = {}
     for w in parent:
         groups.setdefault(find(w), []).append(w)
@@ -71,7 +79,8 @@ def detect():
     out = []
     for gid, members in enumerate(sorted(groups.values(), key=lambda m: -len(m)), 1):
         for w in sorted(members):
-            out.append((w, gid, len(members), buys.get(w, 0), round(best.get(w, 0.0), 1)))
+            out.append((w, gid, len(members), buys.get(w, 0), round(best.get(w, 0.0), 1),
+                        link_reason.get(w)))
     return out
 
 
@@ -81,15 +90,16 @@ def main():
     n_groups = len({g for _, g, *_ in out})
     print(f"bot-farm detector: {n_groups} groups, {len(out)} wallets "
           f"(>= {MIN_JOINT_PCT:.0f}% of buys within {WINDOW_S}s of a partner, {LOOKBACK_DAYS}d)")
-    for w, g, size, b, p in out:
-        print(f"  group {g:3} (size {size})  {w}  buys={b}  joint={p}%")
+    for w, g, size, b, p, why in out:
+        print(f"  group {g:3} (size {size})  {w}  buys={b}  joint={p}%" + (f"  link: {why}" if why else ""))
     if dry:
         return
     with session_scope() as s:
         s.execute(text("DELETE FROM wallet_bundle"))
-        for w, g, size, b, p in out:
-            s.execute(text("INSERT INTO wallet_bundle (address, bundle_id, bundle_size, buys, joint_pct, detected_at) "
-                           "VALUES (:w, :g, :n, :b, :p, now())"), {"w": w, "g": g, "n": size, "b": b, "p": p})
+        for w, g, size, b, p, why in out:
+            s.execute(text("INSERT INTO wallet_bundle (address, bundle_id, bundle_size, buys, joint_pct, link_reason, "
+                           "detected_at) VALUES (:w, :g, :n, :b, :p, :why, now())"),
+                      {"w": w, "g": g, "n": size, "b": b, "p": p, "why": why})
         s.execute(text("COMMIT"))
     print("wallet_bundle rebuilt")
 

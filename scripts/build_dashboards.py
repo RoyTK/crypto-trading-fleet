@@ -872,7 +872,7 @@ sw AS (
 SELECT wb.bundle_id AS grp, wb.bundle_size AS size, wb.address AS wallet, coalesce(wp.tier, '?') AS tier,
   concat_ws(' ', CASE WHEN wp.swing THEN 'swing' END, CASE WHEN wp.conviction THEN 'conviction' END,
             CASE WHEN wp.pinned THEN 'pinned' END) AS rosters,
-  wb.buys AS buys_14d, wb.joint_pct, coalesce(cl.n, 0) AS cluster_n, coalesce(cl.net, 0) AS cluster_net_usd,
+  wb.buys AS buys_14d, wb.joint_pct, coalesce(wb.link_reason, '') AS linked_by, coalesce(cl.n, 0) AS cluster_n, coalesce(cl.net, 0) AS cluster_net_usd,
   coalesce(sw.n, 0) AS swing_n, coalesce(sw.net, 0) AS swing_net_usd
 FROM wallet_bundle wb LEFT JOIN wallet_pool wp ON wp.address = wb.address
 LEFT JOIN cl ON cl.w = wb.address LEFT JOIN sw ON sw.w = wb.address
