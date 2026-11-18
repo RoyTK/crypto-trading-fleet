@@ -99,13 +99,20 @@ KEEP_CONVICTION only if ALL of these hold:
       realized wallets as KEEP; this floor fixes that.)
   [ ] Sample: nTok >= ~10-15. nTok < 6 = LOW_SAMPLE (e.g. a 100% pct_ge_100 on 2
       tokens is meaningless), do NOT tag KEEP.
-  [ ] Rides to multiples: pct_ge_100 meaningful (>~8%) on the followable subset.
+  [ ] Rides to multiples: INFORMATIONAL ONLY, not a gate (2026-11-17 calibration: a >8%
+      pct_ge_100 bar rejected every wallet, best was 6.8%; accumulators bank many sub-2x
+      wins). Report pct_ge_100; don't reject on it.
   [ ] Accumulation: medBuys >= ~3 (builds over multiple buys, matches our trigger).
       medBuys = 1 (one-shot) is a SNIPER, not an accumulator, even if PnL is huge.
 REJECT (note which trip):
   - >1m-flipper (>~60% trades <1 minute)           -> TOO_FAST_FOR_CONVICTION
   - liqPnl low / book's profit is sub-$5k mints     -> UNFOLLOWABLE_THIN
-  - large unrealized bag / negative realized        -> BAGHOLDER
+  - negative realized, OR a large unrealized bag AND a hold shape that shows it rarely
+    exits (majority >7d / most tokens never sold)    -> BAGHOLDER
+      2026-11-17 calibration: conviction copies the wallet's SELL, so dead bags on OTHER
+      tokens don't touch our trades. COPY's best conviction wallet ever (wQETjfST, +$1,250
+      over 30 trades) was wrongly rejected as a bag-holder (-$51k unrealized vs $37k
+      realized) while it sold most positions on time. Judge whether it EXITS, not its bag.
       (NUANCE: a large unrealized bag is OK IF realized clearly EXCEEDS it AND the hold
       shape is followable/fast — e.g. RUN 5 'MANLET' keeper ApRnQN2: realized $950k vs
       -$520k bag, gt7d only 3% = a current open position, NOT a chronic bagholder, KEEP.

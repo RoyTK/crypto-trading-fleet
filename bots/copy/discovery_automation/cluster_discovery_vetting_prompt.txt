@@ -166,11 +166,19 @@ PER-RUN WORKFLOW
   wallet-analyzer TOKENS-TRADED table for a wallet's token history. Same analysis, no forge.
 
 QUALIFICATION (KEEP only if ALL true — these are the live criteria)
+★ 2026-11-17 CALIBRATION (blind re-vet scored against COPY's own P&L): the old MEDIAN-hold
+  TOO_FAST rule rejected COPY's best cluster wallets (ApRnQN2 +$729, GijFWw +$535, 9LxMdvs1
+  +$336) while the clean KEEPs it produced netted -$70. Wallets whose PROFIT comes from >15-min
+  holds earned +$1,117. So: judge hold time by WHERE THE PROFIT COMES FROM (below). Our P&L
+  outranks this prompt - if a rule here would reject a wallet that makes COPY money, the rule
+  is wrong. New KEEPs enter COPY on probation and are judged on their COPY results.
 - REALIZED PnL significantly positive. Use REALIZED, not Total. Total = Realized +
   Unrealized; a big Total can be paper gains on still-held bags. Realized = banked
   = exit skill = what the bot copies.
-- Unrealized NOT deeply negative. REJECT if unrealized losses exceed realized gains
-  (bag-holder who rides tokens to zero — the anti-pattern).
+- Unrealized NOT deeply negative. If unrealized losses exceed realized gains, flag it
+  BAGHOLDER - but if the profit-weighted hold and realized multi-x record are strong, mark
+  UNCERTAIN instead of REJECT (2026-11-17: FSHXkmt8, rejected as a bag-holder, made COPY
+  +$491; COPY only borrows the ENTRY, so a bag elsewhere matters less than entry quality).
 - Avg Holding Duration — long holds are FINE; do NOT reject on hold time alone.
   ★ 2026-06-25 CORRECTION (the single most important change to this prompt): in CLUSTER
   mode COPY only borrows a wallet's co-buy ENTRY, then exits on its OWN ~15-min ladder —
@@ -185,9 +193,14 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
     * SLOW + bad entries -> REJECT: reject a slow wallet ONLY if it is a net BAG-HOLDER
       (unrealized losses dwarf realized -> it picks tokens that die), or an MM/HFT/dust
       farmer. Bad entries are the real "slow" failure mode — NOT the hold time itself.
-    * TOO FAST (sub-~15-min holds — e.g. 7-second or 1-minute snipers): UNFOLLOWABLE.
-      COPY buys what they're already dumping. A wallet that qualifies on everything
-      ELSE but holds sub-15-min is NOT a KEEP — mark it verdict=TOO_FAST (see Output).
+    * TOO FAST: UNFOLLOWABLE only if MOST OF ITS PROFIT (>~50% of realized gains) comes
+      from holds under ~15 min - e.g. 7-second or 1-minute snipers. COPY buys what they're
+      already dumping. Do NOT use the median/typical hold: many good wallets cut losers in
+      minutes (lots of fast exits) while their PROFIT comes from longer holds - those are
+      KEEPs (2026-11-17 calibration). Compute profit-by-hold from token-traded: sum realized
+      PnL of tokens by first->last span bucket; report pct_profit_gt15m. A wallet that
+      qualifies on everything ELSE but makes most of its profit sub-15-min is NOT a KEEP -
+      mark it verdict=TOO_FAST (see Output).
       It's an excellent wallet for a future faster (MEV-grade) bot, but COPY's
       latency can't follow it, so it must not be ingested into COPY.
     * FAST-DUMP ON THIN MINTS (2026-06-25 lesson — UNFOLLOWABLE, REJECT): even when
@@ -205,12 +218,19 @@ QUALIFICATION (KEEP only if ALL true — these are the live criteria)
       hold seconds even though a few longer holds drag the AVG up, mark REJECT (reason
       "fast-dump on thin mints; COPY can't follow"). Proof: COPY's own attribution
       pruned the 2wHHnAmd/46ojZjmv/9yxmCNwZ cohort at a NET LOSS despite their elite
-      personal PnL. Judge MEDIAN/typical hold + buy-time token depth, not the average.
+      personal PnL. Judge PROFIT-WEIGHTED hold + buy-time token depth, not the average.
 - Multiple multi-x wins (>100% and >500% in the distribution). Several beats one
   big win — a one-hit wonder is not a repeatable edge.
 - NOT brand new (>= ~1 week old; 1+ month preferred). NOT a pure market-maker/HFT
   bot (millions of txns, ~0 hold, constant both-sides trading, thin per-trade PnL).
-- Classified as Smart Money by Birdeye.
+- Birdeye "Smart Money" tag: SOFT signal only (missing on ~75% of wallets, incl. winners) -
+  note it, never reject on its absence. Birdeye "insider/bundler" tags are on nearly every
+  wallet - ignore them.
+- NOT a BOT FARM: if this wallet and another wallet bought the same tokens within ~1 minute
+  on >~90% of their recent tokens (or one directly funds the other), they are ONE operator.
+  Mark the others verdict=BUNDLE naming the partner; at most one wallet of a group can be a
+  KEEP. (A group of 3 alone can fake a 3-wallet cluster - 34 fake cluster trades, -$953.)
+  Shared EXCHANGE funders (Binance/Bybit/Coinbase hot wallets) are NOT bundles.
 ★ CLUSTER CO-SIGNER EXCEPTION (relax the individual bar for proven group members):
 a wallet found via the co-trader walk (route 1) that RECURS as a co-buyer with our
 anchors across MULTIPLE SUCCESSFUL clusters is valuable for its CLUSTER PARTICIPATION
