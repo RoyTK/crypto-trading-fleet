@@ -34,6 +34,7 @@ from framework.db import session_scope
 ACTIVE_TARGET = 500
 MIN_RUNNERS = 3
 DEFAULT_MAX = 120
+MAX_CONVICTION_ADDS = 10
 
 
 def _alert(severity: str, title: str, body: str) -> None:
@@ -121,6 +122,13 @@ def main():
             by[a]["reason"] = f"bot farm with {ranked[0][:8]}"
     for r in results:
         r.pop("swaps", None)
+    # cap conviction probation adds per run (best realized first) so new wallets can't swamp
+    # conviction's paper bankroll; the rest get re-vetted next week
+    cv_keep = sorted((r for r in results if r["conviction"] == "KEEP_CONVICTION"),
+                     key=lambda r: -(r.get("metrics") or {}).get("realized", 0))
+    for r in cv_keep[MAX_CONVICTION_ADDS:]:
+        r["conviction"] = "UNCERTAIN"
+        r["reason"] = (r.get("reason") or "") + "; conviction add capped this run"
     errors = sum(1 for r in results if r["cluster"] == "ERROR")
     tally = {}
     for r in results:

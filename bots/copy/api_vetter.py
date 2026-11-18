@@ -157,7 +157,9 @@ def classify(summary: dict, spans: dict[str, float], token_pnl: dict[str, dict])
         cl, why = "KEEP", f"{share15:.0%} profit >=15m, {multi_x} multi-x"
 
     # conviction
-    if realized <= 0:
+    if mm:
+        cv = "MM_BOT"
+    elif realized <= 0:
         cv = "BAGHOLDER" if bag else "REJECT"
     elif realized < 5000 or n_tok < 10:
         cv = "LOW_SAMPLE"

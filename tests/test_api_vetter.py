@@ -83,3 +83,12 @@ def test_admission_gate_only_blocks_junk():
     assert not admit_cluster_probation({"cluster": "MM_BOT", "metrics": {"realized": 3_000_000}})
     assert not admit_cluster_probation({"cluster": "BUNDLE", "metrics": {"realized": 90_000}})
     assert not admit_cluster_probation({"cluster": "KEEP", "metrics": {"realized": 4_000}})
+
+
+def test_mm_bot_never_conviction_keep():
+    spans, pnl = _tokens(n_slow_winners=0)
+    for i in range(5):
+        spans[f"m{i}"] = 90
+        pnl[f"m{i}"] = {"realized": 300, "realized_pct": 40, "buys": 4, "bought_qty": 10, "sold_qty": 10}
+    r = classify(_summary(20_000, trades=2_000_000), spans, pnl)
+    assert r["cluster"] == "MM_BOT" and r["conviction"] == "MM_BOT"
