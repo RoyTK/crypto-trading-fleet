@@ -96,6 +96,7 @@ class CopyExecutor:
         sim_fill: SimulatedFill,
         notional_usd: float,
         leverage: float = 1.0,
+        strategy: str = "cluster",
     ) -> Optional[int]:
         """Insert a paper Trade row. Delegates to loop_helpers.persist_paper_trade
         to avoid duplicating the wallet_tier classification + audit logic."""
@@ -107,6 +108,7 @@ class CopyExecutor:
             sim_fill=sim_fill,
             notional_usd=notional_usd,
             leverage=leverage,
+            strategy=strategy,
         )
 
     # ------------------------------------------------------------------

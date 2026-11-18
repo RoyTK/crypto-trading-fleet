@@ -96,6 +96,56 @@ def _verdict(n: int, net: float, pos: float, cs):
     return None
 
 
+def _cluster_probation_forward() -> dict:
+    """wallet -> (n, net, avg share, best) over its CLUSTER attributions (live + probation track)
+    on trades entered after it went on probation."""
+    with session_scope() as s:
+        return {r[0]: (int(r[1]), float(r[2]), float(r[3] or 0), float(r[4] or 0)) for r in s.execute(text("""
+            SELECT wa.wallet_address, count(*), coalesce(sum(wa.attributed_pnl_usd), 0),
+                   avg(t.size_usd / NULLIF(wa.cluster_size, 0)), max(wa.attributed_pnl_usd)
+            FROM wallet_attributions wa JOIN trades t ON t.id = wa.trade_id
+            JOIN strategy_entity_status st ON st.strategy = 'cluster' AND st.status = 'probation'
+             AND st.entity = wa.wallet_address
+            WHERE t.mode = 'paper' AND t.fill_status = 'closed'
+              AND t.sim_metadata->>'strategy' IN ('cluster', 'cluster_watch') AND t.entry_at > st.updated_at
+            GROUP BY 1"""))}
+
+
+def cluster_probation_cycle(dry_run: bool = False) -> None:
+    """Cluster probation (2026-11-17): new API-vetted wallets start as 'probation'. PROMOTE (status
+    row removed -> full cluster member) at >= copy_cull_promote_min_trades forward trades with net > 0
+    and still > 0 without the best trade. RETIRE on the standard cull rule; a retired wallet not on
+    another roster is pruned (unsubscribed from Helius)."""
+    cs = get_copy_settings()
+    fwd = _cluster_probation_forward()
+    status = list_entity_status("cluster")
+    print("=== cluster probation ===")
+    for ent, st in status.items():
+        if st.get("status") != "probation":
+            continue
+        n, net, pos, best = fwd.get(ent, (0, 0.0, 0.0, 0.0))
+        v = _verdict(n, net, pos, cs)
+        if v:
+            reason = f"probation failed ({v}): ${net:.0f} over {n} cluster trades"
+            print(f"  {'[dry-run] ' if dry_run else ''}{ent[:12]} -> RETIRED ({reason})")
+            if not dry_run:
+                set_entity_status("cluster", ent, "retired", reason)
+                with session_scope() as s:
+                    s.execute(text(
+                        "UPDATE wallet_pool SET tier = 'pruned', demoted_at = now() WHERE address = :a "
+                        "AND tier = 'active' AND NOT swing AND NOT conviction AND NOT pinned"), {"a": ent})
+                    s.execute(text("COMMIT"))
+            continue
+        robust = (net - max(best, 0.0)) > 0 if cs.copy_promote_require_ex_best else True
+        if n >= cs.copy_cull_promote_min_trades and net > 0 and robust:
+            print(f"  {'[dry-run] ' if dry_run else ''}{ent[:12]} -> PROMOTED (+${net:.0f} over {n})")
+            if not dry_run:
+                with session_scope() as s:
+                    s.execute(text("DELETE FROM strategy_entity_status WHERE strategy = 'cluster' AND entity = :e"),
+                              {"e": ent})
+                    s.execute(text("COMMIT"))
+
+
 def cycle(dry_run: bool = False) -> None:
     cs = get_copy_settings()
     for strategy in ENTITY:
@@ -161,6 +211,7 @@ def main():
         report(a[1] if len(a) > 1 else None)
     elif a[0] == "cycle":
         cycle(dry_run="--dry-run" in a)
+        cluster_probation_cycle(dry_run="--dry-run" in a)
     elif a[0] in ("demote", "promote") and len(a) >= 3:
         reason = a[3] if len(a) > 3 else f"manual {a[0]}"
         if a[0] == "demote":

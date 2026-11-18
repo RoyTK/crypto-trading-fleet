@@ -121,6 +121,8 @@ def persist_paper_trade(
         wallet_tier = "conviction"
     elif strategy.startswith(("swing", "cohortfire", "selmom")):
         wallet_tier = strategy.split("_")[0]
+    elif strategy == "cluster_watch":
+        wallet_tier = "cluster_watch"   # probation track: never in the cluster validation set
     elif strategy.startswith("teamfollow"):
         # Same isolation as conviction: never tag teamfollow (or its _watch sub-track)
         # 'active' (that's the cluster kill-criteria filter) — keep the experiment's
@@ -221,9 +223,10 @@ def _strategy_clause(strategy: Optional[str]):
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'cohortfire%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'promobuy%' "
                     "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'swing%' "
-                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'selmom%'")
+                    "AND coalesce(sim_metadata->>'strategy','') NOT LIKE 'selmom%' "
+                    "AND coalesce(sim_metadata->>'strategy','') <> 'cluster_watch'")
     if strategy in ("teamfollow_watch", "cohortfire_watch", "promobuy_watch",
-                    "conviction_watch", "swing_watch"):
+                    "conviction_watch", "swing_watch", "cluster_watch"):
         # Demoted-team WATCH sub-track (2026-07-24): its OWN isolated bucket, so it
         # neither consumes the live family's alloc cap nor pollutes its metrics/dd.
         return text(f"coalesce(sim_metadata->>'strategy','') = '{strategy}'")
@@ -1093,6 +1096,21 @@ def list_entity_status(strategy: str) -> dict:
                 for r in s.execute(text(
                     "SELECT entity, status, reason, updated_at FROM strategy_entity_status "
                     "WHERE strategy = :s"), {"s": strategy})}
+
+
+def cluster_track(wallets_payload, probation: set, min_wallets: int) -> str:
+    """'cluster' if the cluster reaches min_wallets WITHOUT probation wallets, else 'cluster_watch'
+    (cluster probation, 2026-11-17). No probation wallet involved -> always 'cluster'."""
+    if isinstance(wallets_payload, dict):
+        ws = list(wallets_payload.keys())
+    elif isinstance(wallets_payload, list):
+        ws = [w for w in wallets_payload if isinstance(w, str)]
+    else:
+        ws = []
+    on_probation = [w for w in ws if w in probation]
+    if not on_probation:
+        return "cluster"
+    return "cluster" if len(ws) - len(on_probation) >= min_wallets else "cluster_watch"
 
 
 def list_selector_wallets() -> list[str]:

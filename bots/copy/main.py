@@ -83,6 +83,7 @@ from bots.copy.config import (
     LIQ_EMA_ALPHA,
 )
 from bots.copy.reconciliation import make_fetcher_evm, make_fetcher_solana
+from bots.copy.config import CLUSTER_MIN_WALLETS
 from bots.copy.signals.base import SignalCandidate
 from bots.copy.signals.cluster import ClusterDetector
 from bots.copy.signals.conviction import ConvictionDetector
@@ -93,7 +94,7 @@ from bots.copy.signals.teamfollow import TeamFollowDetector
 from bots.copy import signal_features
 from bots.copy import position_liq_log
 from bots.copy import shadow_log
-from bots.copy.loop_helpers import _classify_cluster_wallet_tier
+from bots.copy.loop_helpers import _classify_cluster_wallet_tier, cluster_track
 from bots.copy.sizing import (
     size_conviction_position,
     size_position,
@@ -273,6 +274,9 @@ class CopyBot(BotLifecycle):
         # Cluster-only exclusions (2026-10-03): wallets culled from cluster that stay active for
         # another roster (swing/conviction). Refreshed every 10 min from strategy_entity_status.
         self._cluster_excluded: set[str] = set()
+        # Cluster PROBATION (2026-11-17): newly discovered wallets count toward clusters, but a
+        # cluster that only reaches CLUSTER_MIN_WALLETS thanks to them trades on 'cluster_watch'.
+        self._cluster_probation: set[str] = set()
         self._cluster_excluded_ts: float = 0.0
         self.executor = CopyExecutor()
         self._last_reconcile_ts: float = 0.0
@@ -419,6 +423,7 @@ class CopyBot(BotLifecycle):
                 st = await asyncio.to_thread(list_entity_status, "cluster")
                 self._cluster_excluded = {a for a, v in st.items()
                                           if v.get("status") in ("watch", "retired")}
+                self._cluster_probation = {a for a, v in st.items() if v.get("status") == "probation"}
             except Exception:
                 self.log.exception("cluster_exclusions_load_failed")
 
@@ -961,15 +966,20 @@ class CopyBot(BotLifecycle):
     # ---- Signal handling ---------------------------------------------------
 
     async def _consume_candidate(self, candidate: SignalCandidate) -> None:
+        # Cluster probation (2026-11-17): if the cluster only reaches the trigger size thanks
+        # to wallets still on probation, it trades on the isolated paper track 'cluster_watch'
+        # (no shadow/live), so new wallets prove themselves without touching the live book.
+        strat_tag = cluster_track(
+            (candidate.payload or {}).get("wallets"), self._cluster_probation, CLUSTER_MIN_WALLETS)
         # Scope dedup + allocation to the cluster strategy so a conviction
         # position in the same token never blocks a cluster buy (they're
         # independent and may co-hold — see project plan 2026-06-24).
-        if has_open_position(candidate.asset, candidate.venue, strategy="cluster"):
-            self.log.info("dedup_skip", asset=candidate.asset, chain=candidate.chain)
+        if has_open_position(candidate.asset, candidate.venue, strategy=strat_tag):
+            self.log.info("dedup_skip", asset=candidate.asset, chain=candidate.chain, strategy=strat_tag)
             return
 
         paper_capital = self.copy_settings.copy_paper_capital_usd
-        current_alloc = open_allocation_pct(paper_capital, strategy="cluster")
+        current_alloc = open_allocation_pct(paper_capital, strategy=strat_tag)
         notional_usd = size_position(
             cluster_size=candidate.cluster_size,
             paper_capital_usd=paper_capital,
@@ -1037,12 +1047,15 @@ class CopyBot(BotLifecycle):
             sim_fill=sim_fill,
             notional_usd=notional_usd,
             leverage=1.0,
+            strategy=strat_tag,
         )
+        if strat_tag == "cluster_watch":
+            self.log.info("cluster_probation_paper_opened", asset=candidate.asset, trade_id=paper_trade_id)
         # Executor-driven shadow + live placement (both gated by config and
         # never able to block the paper path). Both calls are no-ops when
         # copy_live_enabled=false, which is the default until Roy provisions
-        # the keypair + .env on Hetzner.
-        if paper_trade_id is not None and self._session is not None:
+        # the keypair + .env on Hetzner. Never for the probation track.
+        if paper_trade_id is not None and self._session is not None and strat_tag == "cluster":
             try:
                 await self.executor.maybe_place_shadow(
                     session=self._session,
@@ -2484,7 +2497,7 @@ class CopyBot(BotLifecycle):
                 # keep it tight when flat/draining. Only cluster trades with a
                 # stamped entry_liquidity; everything else keeps trade.stop_pct.
                 eff_stop = trade.stop_pct
-                if (trade.venue == "solana" and trade.strategy in ("cluster", "promobuy")
+                if (trade.venue == "solana" and trade.strategy in ("cluster", "cluster_watch", "promobuy")
                         and trade.entry_liquidity_usd):
                     cur_liq = sol_liq.get(trade.asset)
                     if cur_liq is not None and cur_liq > 0:
