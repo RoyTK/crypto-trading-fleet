@@ -208,6 +208,17 @@ def bundle_groups(swaps_by_wallet: dict[str, list[tuple[str, str, float]]],
     return [g for g in groups.values() if len(g) > 1]
 
 
+def admit_cluster_probation(result: dict) -> bool:
+    """Cluster ADMISSION gate (2026-11-17). Scored against our own P&L, no vet (browser or API)
+    predicted which wallets make us money: the strict KEEP gate admitted +$522 (−$673 without best
+    trades) and rejected +$249. What vetting DOES catch is junk. So: admit everything except junk
+    to cluster PROBATION and let our own trades decide (Roy: seek aggressively, promote only the
+    proven). Junk = MM bot, bot-farm member, errors, realized < $5k."""
+    if result.get("cluster") in ("MM_BOT", "BUNDLE", "ERROR"):
+        return False
+    return (result.get("metrics") or {}).get("realized", 0) >= 5000
+
+
 # ---------------------------------------------------------------- fetching ----
 def fetch_wallet(be: Birdeye, wallet: str, max_pages: int = 5) -> Optional[dict]:
     """summary + recent swaps + per-token P&L for the swapped tokens. None if the summary fails."""

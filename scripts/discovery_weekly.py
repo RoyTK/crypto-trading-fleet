@@ -10,9 +10,11 @@ Pipeline:
   2. Vet each through bots.copy.api_vetter (paid Birdeye API, recalibrated rules).
   3. Bot farms inside the batch: at most one wallet per group can enter; the rest are BUNDLE.
   4. Apply (Roy 2026-10-01: seek aggressively, promote only the proven):
-       cluster KEEP or UNCERTAIN       -> tier 'active' + cluster status 'probation'
+       cluster: everything except junk -> tier 'active' + cluster status 'probation'
+                (api_vetter.admit_cluster_probation — calibration showed no vet predicts our P&L;
+                 it only reliably catches junk: MM bots, bot farms, realized < $5k)
        conviction KEEP_CONVICTION      -> conviction roster on probation (conviction_watch)
-       definitive rejects              -> tier 'pruned' (source api_vet_reject) so they aren't re-vetted
+       junk                            -> tier 'pruned' (source api_vet_reject) so they aren't re-vetted
        ERROR                           -> untouched (retried next run)
      Every verdict + metrics is logged to wallet_vet_log for later calibration against our P&L.
   5. Helius sync; alert. P2 summary; P1 when the run fails (no successful vets or > 50% errors).
@@ -25,14 +27,13 @@ from datetime import datetime, timezone
 
 from sqlalchemy import text
 
-from bots.copy.api_vetter import Birdeye, bundle_groups, vet_wallet
+from bots.copy.api_vetter import Birdeye, admit_cluster_probation, bundle_groups, vet_wallet
 from bots.copy.config import get_copy_settings
 from framework.db import session_scope
 
 ACTIVE_TARGET = 500
 MIN_RUNNERS = 3
 DEFAULT_MAX = 120
-REJECTS = {"REJECT", "TOO_FAST", "MM_BOT", "LOW_SAMPLE", "BUNDLE"}
 
 
 def _alert(severity: str, title: str, body: str) -> None:
@@ -65,7 +66,7 @@ def apply(results: list[dict], tag: str) -> dict:
                               conviction_verdict, reason, metrics) VALUES (:a, :t, :src, :cl, :cv, :why, :m)"""),
                       {"a": a, "t": now, "src": tag, "cl": cl, "cv": cv, "why": r.get("reason", ""),
                        "m": json.dumps(r.get("metrics") or {})})
-            enter = cl in ("KEEP", "UNCERTAIN") or cv == "KEEP_CONVICTION"
+            enter = admit_cluster_probation(r) or cv == "KEEP_CONVICTION"
             if enter:
                 s.execute(text("""INSERT INTO wallet_pool (address, chain, tier, source, added_at, promoted_at)
                                   VALUES (:a, 'solana', 'active', :src, :t, :t) ON CONFLICT (address) DO NOTHING"""),
@@ -74,14 +75,14 @@ def apply(results: list[dict], tag: str) -> dict:
                     s.execute(text("UPDATE wallet_pool SET conviction = true, conviction_at = :t, "
                                    "conviction_reason = :r WHERE address = :a"),
                               {"a": a, "t": now, "r": f"{tag}: API-vetted KEEP_CONVICTION (probation)"})
-            elif cl in REJECTS and cv not in ("UNCERTAIN", "ERROR"):
+            elif cv not in ("UNCERTAIN", "ERROR"):
                 s.execute(text("""INSERT INTO wallet_pool (address, chain, tier, source, added_at, demoted_at)
                                   VALUES (:a, 'solana', 'pruned', 'api_vet_reject', :t, :t)
                                   ON CONFLICT (address) DO NOTHING"""), {"a": a, "t": now})
                 n["pruned"] += 1
         s.execute(text("COMMIT"))
     for r in results:   # statuses after the pool rows exist
-        if r["cluster"] in ("KEEP", "UNCERTAIN") or r["conviction"] == "KEEP_CONVICTION":
+        if admit_cluster_probation(r) or r["conviction"] == "KEEP_CONVICTION":
             set_entity_status("cluster", r["address"], "probation",
                               f"{tag}: new wallet ({r['cluster']}) — proves on cluster_watch")
             n["cluster_probation"] += 1

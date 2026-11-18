@@ -74,3 +74,12 @@ def test_bundle_groups():
     b = [(f"t{i}", "buy", 1010.0 + i * 100) for i in range(12)]
     c = [(f"x{i}", "buy", 1000.0 + i * 100) for i in range(12)]
     assert bundle_groups({"A": a, "B": b, "C": c}) == [{"A", "B"}]
+
+
+def test_admission_gate_only_blocks_junk():
+    from bots.copy.api_vetter import admit_cluster_probation
+    ok = {"cluster": "TOO_FAST", "metrics": {"realized": 90_000}}
+    assert admit_cluster_probation(ok)
+    assert not admit_cluster_probation({"cluster": "MM_BOT", "metrics": {"realized": 3_000_000}})
+    assert not admit_cluster_probation({"cluster": "BUNDLE", "metrics": {"realized": 90_000}})
+    assert not admit_cluster_probation({"cluster": "KEEP", "metrics": {"realized": 4_000}})
