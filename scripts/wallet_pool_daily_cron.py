@@ -248,6 +248,44 @@ async def _sync_helius(api_key: str, auth_secret: str, active_url: str, watch_ur
         )
 
 
+# Activity-based rules paused until 30 days after the 2026-11-18 capture fix (Roy 2026-11-18).
+# Helius relabelled pump.fun trades (SWAP -> TRANSFER/UNKNOWN) ~10-08..10-17 and our SWAP-only
+# webhooks dropped them, so events_30d / last_event_at under-count real activity for that window
+# ("quiet" wallets that weren't). Money-based rules (proven loser on our own trades) stay on.
+ACTIVITY_RULES_RESUME = datetime(2026, 12, 18, tzinfo=timezone.utc)
+
+# Auto-pin for conviction/swing roster wallets (Roy 2026-11-18). Those strategies only hear
+# ACTIVE-tier buys (copy:buys), so a roster wallet demoted to watch by cluster's rules went deaf
+# (7 of 12 main conviction wallets on 11-18). Pinned = immune to cluster tier transitions; a
+# cluster loser among them is still excluded from cluster via cluster_exclusions().
+ROSTER_PIN_REASON = "roster: conviction/swing (auto)"
+_LIVE_ROSTER_SQL = """
+    ((p.conviction AND NOT EXISTS (SELECT 1 FROM strategy_entity_status x WHERE x.entity = p.address
+                                   AND x.strategy = 'conviction' AND x.status = 'retired'))
+     OR (p.swing AND NOT EXISTS (SELECT 1 FROM strategy_entity_status x WHERE x.entity = p.address
+                                 AND x.strategy = 'swing' AND x.status = 'retired')))
+"""
+
+
+def _pin_roster_wallets() -> tuple[int, int]:
+    """Pin + activate live conviction/swing roster wallets; unpin auto-pins no longer on a roster.
+    Pruned and teamfollow-tier wallets are left alone. Returns (activated, unpinned)."""
+    with session_scope() as s:
+        activated = s.execute(text(f"""
+            UPDATE wallet_pool p SET tier = 'active', promoted_at = now()
+            WHERE p.tier = 'watch' AND {_LIVE_ROSTER_SQL}
+        """)).rowcount
+        s.execute(text(f"""
+            UPDATE wallet_pool p SET pinned = true, pinned_at = now(), pinned_reason = :r
+            WHERE p.tier = 'active' AND NOT p.pinned AND {_LIVE_ROSTER_SQL}
+        """), {"r": ROSTER_PIN_REASON})
+        unpinned = s.execute(text(f"""
+            UPDATE wallet_pool p SET pinned = false, pinned_reason = NULL
+            WHERE p.pinned AND p.pinned_reason = :r AND NOT {_LIVE_ROSTER_SQL}
+        """), {"r": ROSTER_PIN_REASON}).rowcount
+    return activated, unpinned
+
+
 def main() -> int:
     configure_logging()
     settings = get_copy_settings()
@@ -267,11 +305,22 @@ def main() -> int:
     # we want events_30d to stay fresh so the dashboard reflects reality.
     _recompute_event_counts()
     _refresh_attribution_timestamps()
+    roster_activated, roster_unpinned = 0, 0
+    try:
+        roster_activated, roster_unpinned = _pin_roster_wallets()
+        log.info("roster_wallets_pinned", activated=roster_activated, unpinned=roster_unpinned)
+    except Exception:
+        log.exception("roster_pin_failed")
     snapshots = _snapshot_wallets()
+    activity_kw = {}
+    if datetime.now(timezone.utc) < ACTIVITY_RULES_RESUME:
+        activity_kw = {"demote_events_30d_below": 0, "drop_days_silent": 100_000}
+        log.info("activity_rules_paused", until=ACTIVITY_RULES_RESUME.date().isoformat())
     decisions = decide_tier_changes(
         snapshots,
         active_list_target=settings.copy_active_list_target,
         promote_vetted_only=settings.copy_promote_vetted_only,
+        **activity_kw,
     )
 
     # Pinning leak fix (2026-10-03): roster-pinned wallets (swing/conviction) stay active +
@@ -298,7 +347,8 @@ def main() -> int:
              drop=len(decisions.drop),
              swap_in=len(decisions.swap_in))
 
-    if (decisions.promote or decisions.demote or decisions.drop or decisions.swap_in):
+    if (decisions.promote or decisions.demote or decisions.drop or decisions.swap_in
+            or roster_activated or roster_unpinned):
         _apply_transitions(decisions)
         # Helius sync requires all four env vars. If watch_url isn't set yet
         # (initial deploy), skip the sync but keep the DB transitions —
