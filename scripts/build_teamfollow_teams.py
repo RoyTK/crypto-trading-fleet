@@ -9,8 +9,9 @@ buyer's first buy), using the original rule:
                 and shared / min(runners_A, runners_B) >= MIN_OVERLAP
   team        = connected component of linked pairs (size 2..MAX_TEAM)
 
-Liveness: a team needs >= 2 members whose latest runner buy is within LIVE_DAYS (dormant teams were
-the November failure). Members already on another tier (active/watch) are left out because a
+Liveness is checked ON-CHAIN (Helius getSignaturesForAddress): a member counts if it made a successful
+tx in the last LIVE_DAYS days; a team needs >= 2 live members (dormant teams were the November
+failure). Members above MAX_TX_PER_DAY successful txs/day are dropped (spray bots; webhook-credit hogs). Members already on another tier (active/watch) are left out because a
 wallet has one tier and only 'teamfollow'-tier wallets feed the team detector; teams that drop below
 2 members are skipped. Wallets already on the roster are skipped (no double membership).
 
@@ -40,7 +41,8 @@ MIN_SHARED = 3
 MIN_OVERLAP = 0.35
 RUNNERS_MIN, RUNNERS_MAX = 3, 60       # wallets on > 60 runners are spray bots
 MAX_TEAM = 12
-LIVE_DAYS = 30
+LIVE_DAYS = 7
+MAX_TX_PER_DAY = 1000
 NEW_TEAM_ID_BASE = 2000
 ROSTER = Path(__file__).resolve().parent.parent / "bots" / "copy" / "teamfollow_roster.json"
 HELIUS = "https://api.helius.xyz/v0/webhooks"
@@ -98,6 +100,32 @@ def build_teams(rows):
     return teams
 
 
+def onchain_activity(wallet: str, key: str) -> tuple[int, float]:
+    """(successful txs in the last LIVE_DAYS days, successful txs/day over that span; capped at 2 pages)."""
+    import time
+    url = f"https://mainnet.helius-rpc.com/?api-key={key}"
+    cut = time.time() - LIVE_DAYS * 86400
+    n, before = 0, None
+    for _ in range(2):
+        p = {"limit": 1000}
+        if before:
+            p["before"] = before
+        body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "getSignaturesForAddress",
+                           "params": [wallet, p]}).encode()
+        res = json.loads(urllib.request.urlopen(urllib.request.Request(
+            url, body, {"Content-Type": "application/json"}), timeout=60).read()).get("result") or []
+        done = False
+        for x in res:
+            if (x.get("blockTime") or 0) < cut:
+                done = True
+                break
+            n += x.get("err") is None
+        if done or len(res) < 1000:
+            break
+        before = res[-1]["signature"]
+    return n, n / LIVE_DAYS
+
+
 def main():
     apply = "--apply" in sys.argv
     teams = build_teams(load_rows())
@@ -105,22 +133,29 @@ def main():
     on_roster = {w for t in roster["teams"] for w in t["members"]}
     with session_scope() as s:
         tier = dict(s.execute(text("SELECT address, tier FROM wallet_pool")).all())
-    live_cut = datetime.now(timezone.utc) - timedelta(days=LIVE_DAYS)
-    picked, skipped = [], {"too_big": 0, "dormant": 0, "lt2_free": 0}
+    key = os.environ["HELIUS_API_KEY"]
+    picked, skipped = [], {"too_big": 0, "dormant": 0, "lt2_free": 0, "bot_members": 0}
     for t in sorted(teams, key=lambda t: (-t["co_runners"], -len(t["members"]))):
         if len(t["members"]) > MAX_TEAM:
             skipped["too_big"] += 1
+            print(f"  (skipped oversized component: {len(t['members'])} wallets, co_runners {t['co_runners']})")
             continue
         free = [w for w in t["members"] if w not in on_roster and tier.get(w) in (None, "pruned")]
-        live = [w for w in free if t["last_buy"][w] >= live_cut]
+        act = {w: onchain_activity(w, key) for w in free}
+        bots = [w for w in free if act[w][1] > MAX_TX_PER_DAY]
+        free = [w for w in free if w not in bots]
+        live = [w for w in free if act[w][0] > 0]
+        if bots:
+            skipped["bot_members"] += len(bots)
         if len(free) < 2:
             skipped["lt2_free"] += 1
             continue
         if len(live) < 2:
             skipped["dormant"] += 1
             continue
-        picked.append({"members": free, "co_runners": t["co_runners"],
-                       "live": len(live), "last": max(t["last_buy"][w] for w in free)})
+        picked.append({"members": free, "co_runners": t["co_runners"], "live": len(live),
+                       "last": max(t["last_buy"][w] for w in free),
+                       "tx_day": round(sum(act[w][1] for w in free))})
     next_id = max([NEW_TEAM_ID_BASE - 1] + [t["team_id"] for t in roster["teams"]]) + 1
     for i, t in enumerate(picked):
         t["team_id"] = next_id + i
@@ -128,7 +163,7 @@ def main():
     print(f"teams found {len(teams)}; picked {len(picked)} ({n_w} wallets); skipped {skipped}")
     for t in picked:
         print(f"  team {t['team_id']}: size {len(t['members'])} live {t['live']} co_runners {t['co_runners']}"
-              f" last {t['last']:%m-%d}  " + ",".join(w[:8] for w in t["members"]))
+              f" runner-buy {t['last']:%m-%d} tx/day {t['tx_day']}  " + ",".join(w[:8] for w in t["members"]))
     if not apply or not picked:
         return
     today = datetime.now(timezone.utc).date().isoformat()
@@ -154,7 +189,7 @@ def main():
     for t in picked:
         set_teamfollow_team_status(t["team_id"], "watch", "probation: new team (rebuild 2026-11-18)")
     # add to the teamfollow webhook (fetch by id: the list endpoint omits addresses)
-    k = os.environ["HELIUS_API_KEY"]
+    k = key
     for h in json.loads(urllib.request.urlopen(f"{HELIUS}?api-key={k}").read()):
         if not h["webhookURL"].endswith("/teamfollow"):
             continue
