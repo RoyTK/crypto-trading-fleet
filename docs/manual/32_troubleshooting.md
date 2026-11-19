@@ -34,6 +34,22 @@ Symptom → likely cause → fix. Start with the symptom you see in Discord/logs
   the offender, slow discovery, or raise the budget. Remember both active + watch cost
   credits.
 
+### "A strategy stopped trading but nothing was changed" (2026-11-18 diagnostic)
+- **Check capture first.** Compare a wallet's on-chain activity (Helius `getSignaturesForAddress`)
+  with its rows in `wallet_swaps_log`. If it trades on-chain but we log nothing, trades are being
+  dropped at the webhook. In Oct 2026 Helius relabelled pump.fun trades (`SWAP` → `TRANSFER` /
+  `UNKNOWN`) and our SWAP-only webhooks silently dropped them; fixed 11-18 by subscribing to `ANY`
+  types with `txnStatus=success` (failed txs are noise and cost credits).
+- **Then check the roster can hear.** Conviction and swing only see **active-tier** buys. The
+  daily pool job now auto-pins live conviction/swing roster wallets so cluster's rules can't
+  demote them to watch (log event `roster_wallets_pinned`).
+- **Then check the wallets still trade.** Team-follow's original big wallets went dormant on-chain.
+  Rebuild teams with `python -m scripts.build_teamfollow_teams` (dry run) / `--apply` — pause
+  autopull first (`touch .autopull_paused`), then commit the roster JSON it writes and unpause.
+  New teams start on **watch** (probation).
+- **Activity-based demotions** (quiet active wallet → watch, silent watch wallet → pruned) are
+  paused until 2026-12-18 because the October capture gap under-counts activity.
+
 ### "Helius webhook 400 / sync errors"
 - **Cause:** address-list churn or a malformed sync.
 - **Fix:** `docker compose exec -T framework python -m scripts.helius_webhook_setup --list`

@@ -25,7 +25,7 @@
 <body>
 <h1 id="crypto-trading-fleet-maintenance-manual">Crypto Trading Fleet — Maintenance Manual</h1>
 <p><em>Living document — rebuilt from <code>docs/manual/</code> by <code>scripts/build_manual.py</code>.</em><br />
-<em>Last built: 2026-11-18 03:19 UTC.</em></p>
+<em>Last built: 2026-11-19 00:42 UTC.</em></p>
 <blockquote>
 <p><strong>How to read this:</strong> <strong>Part 1 — Operator track (sections 1.x)</strong> is plain-language,
 for keeping the system alive day to day. <strong>Part 2 — Engineer track (2.x)</strong> is technical,
@@ -139,6 +139,7 @@ or Ctrl-F to jump around.</p>
 <li><a href="#heartbeat-silent-a-service-went-quiet-p1">"Heartbeat silent" / a service went quiet (P1)</a></li>
 <li><a href="#kill-criterion-fired-p1">"kill criterion fired" (P1)</a></li>
 <li><a href="#helius-credits-spiking-approaching-the-30m-cap">"Helius credits spiking" / approaching the 30M cap</a></li>
+<li><a href="#a-strategy-stopped-trading-but-nothing-was-changed-2026-11-18-diagnostic">"A strategy stopped trading but nothing was changed" (2026-11-18 diagnostic)</a></li>
 <li><a href="#helius-webhook-400-sync-errors">"Helius webhook 400 / sync errors"</a></li>
 <li><a href="#a-trade-booked-a-fake-profit-on-a-rugged-token">"A trade booked a fake profit on a rugged token"</a></li>
 <li><a href="#i-changed-env-but-nothing-happened">"I changed <code>.env</code> but nothing happened"</a></li>
@@ -1599,6 +1600,23 @@ in <code>memory/project_decision_log.md</code> and <code>memory/project_fleet_de
 <li><strong>Fix:</strong> check <code>credit_pool_snapshot</code> (top heavy-hitters) and the Helius dashboard; prune
   the offender, slow discovery, or raise the budget. Remember both active + watch cost
   credits.</li>
+</ul>
+<h3 id="a-strategy-stopped-trading-but-nothing-was-changed-2026-11-18-diagnostic">"A strategy stopped trading but nothing was changed" (2026-11-18 diagnostic)</h3>
+<ul>
+<li><strong>Check capture first.</strong> Compare a wallet's on-chain activity (Helius <code>getSignaturesForAddress</code>)
+  with its rows in <code>wallet_swaps_log</code>. If it trades on-chain but we log nothing, trades are being
+  dropped at the webhook. In Oct 2026 Helius relabelled pump.fun trades (<code>SWAP</code> → <code>TRANSFER</code> /
+  <code>UNKNOWN</code>) and our SWAP-only webhooks silently dropped them; fixed 11-18 by subscribing to <code>ANY</code>
+  types with <code>txnStatus=success</code> (failed txs are noise and cost credits).</li>
+<li><strong>Then check the roster can hear.</strong> Conviction and swing only see <strong>active-tier</strong> buys. The
+  daily pool job now auto-pins live conviction/swing roster wallets so cluster's rules can't
+  demote them to watch (log event <code>roster_wallets_pinned</code>).</li>
+<li><strong>Then check the wallets still trade.</strong> Team-follow's original big wallets went dormant on-chain.
+  Rebuild teams with <code>python -m scripts.build_teamfollow_teams</code> (dry run) / <code>--apply</code> — pause
+  autopull first (<code>touch .autopull_paused</code>), then commit the roster JSON it writes and unpause.
+  New teams start on <strong>watch</strong> (probation).</li>
+<li><strong>Activity-based demotions</strong> (quiet active wallet → watch, silent watch wallet → pruned) are
+  paused until 2026-12-18 because the October capture gap under-counts activity.</li>
 </ul>
 <h3 id="helius-webhook-400-sync-errors">"Helius webhook 400 / sync errors"</h3>
 <ul>

@@ -1,7 +1,7 @@
 # Crypto Trading Fleet — Maintenance Manual
 
 *Living document — rebuilt from `docs/manual/` by `scripts/build_manual.py`.*  
-*Last built: 2026-11-18 03:19 UTC.*
+*Last built: 2026-11-19 00:42 UTC.*
 
 > **How to read this:** **Part 1 — Operator track (sections 1.x)** is plain-language,
 > for keeping the system alive day to day. **Part 2 — Engineer track (2.x)** is technical,
@@ -96,6 +96,7 @@
     - ["Heartbeat silent" / a service went quiet (P1)](#heartbeat-silent-a-service-went-quiet-p1)
     - ["kill criterion fired" (P1)](#kill-criterion-fired-p1)
     - ["Helius credits spiking" / approaching the 30M cap](#helius-credits-spiking-approaching-the-30m-cap)
+    - ["A strategy stopped trading but nothing was changed" (2026-11-18 diagnostic)](#a-strategy-stopped-trading-but-nothing-was-changed-2026-11-18-diagnostic)
     - ["Helius webhook 400 / sync errors"](#helius-webhook-400-sync-errors)
     - ["A trade booked a fake profit on a rugged token"](#a-trade-booked-a-fake-profit-on-a-rugged-token)
     - ["I changed `.env` but nothing happened"](#i-changed-env-but-nothing-happened)
@@ -1389,6 +1390,22 @@ Symptom → likely cause → fix. Start with the symptom you see in Discord/logs
 - **Fix:** check `credit_pool_snapshot` (top heavy-hitters) and the Helius dashboard; prune
   the offender, slow discovery, or raise the budget. Remember both active + watch cost
   credits.
+
+### "A strategy stopped trading but nothing was changed" (2026-11-18 diagnostic)
+- **Check capture first.** Compare a wallet's on-chain activity (Helius `getSignaturesForAddress`)
+  with its rows in `wallet_swaps_log`. If it trades on-chain but we log nothing, trades are being
+  dropped at the webhook. In Oct 2026 Helius relabelled pump.fun trades (`SWAP` → `TRANSFER` /
+  `UNKNOWN`) and our SWAP-only webhooks silently dropped them; fixed 11-18 by subscribing to `ANY`
+  types with `txnStatus=success` (failed txs are noise and cost credits).
+- **Then check the roster can hear.** Conviction and swing only see **active-tier** buys. The
+  daily pool job now auto-pins live conviction/swing roster wallets so cluster's rules can't
+  demote them to watch (log event `roster_wallets_pinned`).
+- **Then check the wallets still trade.** Team-follow's original big wallets went dormant on-chain.
+  Rebuild teams with `python -m scripts.build_teamfollow_teams` (dry run) / `--apply` — pause
+  autopull first (`touch .autopull_paused`), then commit the roster JSON it writes and unpause.
+  New teams start on **watch** (probation).
+- **Activity-based demotions** (quiet active wallet → watch, silent watch wallet → pruned) are
+  paused until 2026-12-18 because the October capture gap under-counts activity.
 
 ### "Helius webhook 400 / sync errors"
 - **Cause:** address-list churn or a malformed sync.
